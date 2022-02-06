@@ -12,7 +12,14 @@ endif()
 
 add_executable(
     QINP
-    "src/qinp"
+    "src/qinp.cpp"
+    "src/Tokenizer.cpp"
+    "src/ArgsParser.cpp"
+)
+
+include_directories(
+	QINP
+	"src/"
 )
 
 set_property(TARGET QINP PROPERTY CXX_STANDARD 17)
