@@ -28,3 +28,11 @@ struct Token
 };
 
 typedef std::vector<Token> TokenList;
+
+std::string TokenTypeToString(Token::Type type);
+
+std::ostream& operator<<(std::ostream& os, const Token::Position& pos);
+
+std::ostream& operator<<(std::ostream& os, Token::Type type);
+
+std::ostream& operator<<(std::ostream& os, const Token& token);

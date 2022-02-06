@@ -15,6 +15,7 @@ add_executable(
     "src/qinp.cpp"
     "src/Tokenizer.cpp"
     "src/ArgsParser.cpp"
+    "src/TokenizerTypes.cpp"
 )
 
 include_directories(

@@ -1,25 +1,25 @@
 indent tab 1
 import std.std
 
-int sum(int a, int b)...						\\ Forward declaration
+i32 sum(i32 a, i32 b)...						\\ Forward declaration
 
 pack User:										\\ Packs are similar to classes
 	string name
-	int age
+	i32 age
 
-User User::__construct(string name, int age):	\\ Member function are declared/defined outside of the pack definition
+User User::__construct(string name, i32 age):	\\ Member functions are declared/defined outside of the pack definition
 	self.name = name
 	self.age = age
 
 User User::__destruct() default 				\\ Constructor/Destructor/... May have default bodies.
 
-int User::futureAge(int passedYears):
+i32 User::futureAge(i32 passedYears):
 	return sum(self.age, passedYears)
 
-int sum(int a, int b):
+i32 sum(i32 a, i32 b):
 	return a + b
 
-int main(int argc, char** argv, char** env):
+i32 main(i32 argc, u8** argv, u8** env):
 	User user("TecStylos", 17)
 	print(user.name + " is " + user.age + " years old.\n")
 	print("In 10 years he will be " + user.futureAge(10) + " years old \n")

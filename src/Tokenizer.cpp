@@ -28,7 +28,7 @@ bool isKeyword(const std::string& str)
 		"indent", "tab", "space",
 		"import", "default",
 		"return", "self",
-		"sizeof", "offset",
+		"sizeof", "offsetof",
 		"true", "false",
 		"if", "elif", "else",
 		"for", "while", "do",

@@ -54,9 +54,7 @@ int main(int argc, char** argv, char** environ)
 		auto tokens = tokenize(code, file);
 
 		for (auto& token : tokens)
-		{
-			std::cout << token.pos.file << ":" << token.pos.line << ":" << token.pos.column << ": _'" << token.value << "'_" << std::endl;
-		}
+			std::cout << token << std::endl;
 	}
 	catch (const QinpError& e)
 	{
