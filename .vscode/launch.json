@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/bin/Debug/QINP",
-            "args": [ "-h", "examples/goal.qnp" ],
+            "args": [ "-h", "examples/test.qnp" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
         }

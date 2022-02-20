@@ -23,6 +23,7 @@ struct Token
 		Operator,
 		Separator,
 		Literal,
+		EndOfCode,
 	} type;
 	std::string value;
 };

@@ -8,6 +8,9 @@
 #include "Errors/QinpError.h"
 #include "Tokenizer.h"
 #include "ArgsParser.h"
+#include "ProgramGenerator.h"
+
+#include "NasmGenerators/NasmGen_Linux_x86_64.h"
 
 std::string readTextFile(const std::string& filename)
 {
@@ -17,6 +20,21 @@ std::string readTextFile(const std::string& filename)
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	return buffer.str();
+}
+
+int execCmd(const std::string& command)
+{
+	auto pipe = popen(command.c_str(), "r");
+	if (!pipe) throw QinpError("popen() failed!");
+	return pclose(pipe);
+}
+
+void writeTextFileOverwrite(const std::string& filename, const std::string& text)
+{
+	std::ofstream file(filename, std::ios::trunc);
+	if (!file.is_open())
+		throw QinpError("Unable to open file!");
+	file << text;
 }
 
 std::map<std::string, std::string> getEnv(char** env)
@@ -47,14 +65,40 @@ int main(int argc, char** argv, char** environ)
 		auto args = parseArgs(getArgs(argc, argv), argNames);
 		auto env = getEnv(environ);
 
-		auto file = args.values[0];
+		auto inFilename = args.values[0];
 	
-		auto code = readTextFile(file);
+		auto code = readTextFile(inFilename);
 
-		auto tokens = tokenize(code, file);
+		std::cout << "\n------ CODE ------\n" << code << "\n------------------\n" << std::endl;
+
+		auto tokens = tokenize(code, inFilename);
 
 		for (auto& token : tokens)
 			std::cout << token << std::endl;
+
+		auto program = generateProgram(tokens);
+
+		std::string output = generateNasm_Linux_x86_64(program);
+
+		std::cout << "\n------ OUTPUT ------\n" << output << "\n------------------\n" << std::endl;
+	
+		writeTextFileOverwrite(inFilename + ".asm", output);
+
+		auto nasmCmd = "nasm -f elf64 " + inFilename + ".asm";
+		std::cout << "Executing: '" << nasmCmd << "'..." << std::endl;
+		if (execCmd(nasmCmd))
+			throw QinpError("Assembler Error!");
+
+		auto ldCmd = "ld -m elf_x86_64 -o " + inFilename + ".out " + inFilename + ".o";
+		std::cout << "Executing: '" << ldCmd << "'..." << std::endl;
+		if (execCmd(ldCmd))
+			throw QinpError("Linker Error!");
+
+		auto runCmd = "./" + inFilename + ".out";
+		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
+		int runRet = execCmd(runCmd);
+		std::cout << "Return code: " << runRet << std::endl;
+		
 	}
 	catch (const QinpError& e)
 	{

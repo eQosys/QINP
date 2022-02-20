@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Errors/QinpError.h"
+#include "QinpError.h"
 
 #include "TokenizerTypes.h"
 

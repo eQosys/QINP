@@ -16,6 +16,8 @@ add_executable(
     "src/Tokenizer.cpp"
     "src/ArgsParser.cpp"
     "src/TokenizerTypes.cpp"
+    "src/ProgramGenerator.cpp"
+    "src/NasmGenerators/NasmGen_Linux_x86_64.cpp"
 )
 
 include_directories(
