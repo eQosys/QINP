@@ -29,12 +29,12 @@ std::string generateNasm_Linux_x86_64(const ProgramRef program)
 				ss << "mov rax, " << std::to_string(((LiteralExpression*)expr)->value) << "\n";
 				break;
 			default:
-				throw NasmGenError("Unsupported expression type!");
+				throw NasmGenError(statement->pos, "Unsupported expression type!");
 			}
 			break;
 		}
 		default:
-			throw NasmGenError("Unsupported statement type!");
+			throw NasmGenError(statement->pos, "Unsupported statement type!");
 		}
 	}
 

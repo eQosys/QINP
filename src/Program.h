@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "TokenizerTypes.h"
+
 struct Statement
 {
 	enum class Type
@@ -11,10 +13,14 @@ struct Statement
 		None,
 		Return,
 		Expression,
-	} type;
+	};
 
-	Statement(Type type)
-		: type(type) {}
+	Statement(const Token::Position& pos, Type type)
+		: type(type), pos(pos)
+	{}
+
+	Type type;
+	Token::Position pos;
 };
 typedef std::shared_ptr<Statement> StatementRef;
 
@@ -29,8 +35,8 @@ struct Expression : public Statement
 		UnaryOp,
 	};
 
-	Expression(ExprType type)
-		: Statement(Statement::Type::Expression), eType(type)
+	Expression(const Token::Position& pos, ExprType type)
+		: Statement(pos, Statement::Type::Expression), eType(type)
 	{}
 
 	ExprType eType;
@@ -39,8 +45,8 @@ typedef std::shared_ptr<Expression> ExpressionRef;
 
 struct LiteralExpression : public Expression
 {
-	LiteralExpression(const std::string& valStr)
-		: Expression(ExprType::Literal), value(std::stoi(valStr))
+	LiteralExpression(const Token::Position& pos, const std::string& valStr)
+		: Expression(pos, ExprType::Literal), value(std::stoi(valStr))
 	{}
 
 	int value;
@@ -48,8 +54,8 @@ struct LiteralExpression : public Expression
 
 struct ReturnStatement : public Statement
 {
-	ReturnStatement()
-		: Statement(Statement::Type::Return)
+	ReturnStatement(const Token::Position& pos)
+		: Statement(pos, Statement::Type::Return)
 	{}
 };
 

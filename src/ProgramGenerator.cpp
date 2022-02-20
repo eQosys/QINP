@@ -43,7 +43,7 @@ bool parseExpression(ProgGenInfo& info)
 	switch (token.type)
 	{
 		case Token::Type::Literal:
-			info.program->body.push_back(std::make_shared<LiteralExpression>(token.value));
+			info.program->body.push_back(std::make_shared<LiteralExpression>(token.pos, token.value));
 			nextToken(info);
 			parseExpectedNewline(info);
 			break;
@@ -64,7 +64,7 @@ bool parseStatementExit(ProgGenInfo& info)
 	if (!parseExpression(info))
 		throw ProgGenError(peekToken(info).pos, "Expected expression after exit keyword!");
 
-	info.program->body.push_back(std::make_shared<ReturnStatement>());
+	info.program->body.push_back(std::make_shared<ReturnStatement>(exitToken.pos));
 
 	return true;
 }

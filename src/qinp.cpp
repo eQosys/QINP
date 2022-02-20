@@ -98,7 +98,6 @@ int main(int argc, char** argv, char** environ)
 		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
 		int runRet = execCmd(runCmd);
 		std::cout << "Return code: " << runRet << std::endl;
-		
 	}
 	catch (const QinpError& e)
 	{
