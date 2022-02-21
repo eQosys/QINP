@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #include "Errors/QinpError.h"
 #include "Tokenizer.h"
@@ -84,14 +85,17 @@ int main(int argc, char** argv, char** environ)
 
 		std::cout << "------ OUTPUT ------\n" << output << "------------------\n" << std::endl;
 	
-		writeTextFileOverwrite(inFilename + ".asm", output);
+		std::string asmFilename = std::filesystem::path(inFilename).replace_extension(".asm").string();
+		writeTextFileOverwrite(asmFilename, output);
 
-		auto nasmCmd = "nasm -f elf64 " + inFilename + ".asm";
+		auto objFilename = std::filesystem::path(inFilename).replace_extension(".o").string();
+		auto nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
 		std::cout << "Executing: '" << nasmCmd << "'..." << std::endl;
 		if (execCmd(nasmCmd))
 			throw QinpError("Assembler Error!");
 
-		auto ldCmd = "ld -m elf_x86_64 -o " + inFilename + ".out " + inFilename + ".o";
+		auto outFilename = std::filesystem::path(inFilename).replace_extension(".out").string();
+		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
 		std::cout << "Executing: '" << ldCmd << "'..." << std::endl;
 		if (execCmd(ldCmd))
 			throw QinpError("Linker Error!");
