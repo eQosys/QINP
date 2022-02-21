@@ -69,18 +69,20 @@ int main(int argc, char** argv, char** environ)
 	
 		auto code = readTextFile(inFilename);
 
-		std::cout << "\n------ CODE ------\n" << code << "\n------------------\n" << std::endl;
+		std::cout << "------ CODE ------\n" << code << "\n------------------\n" << std::endl;
 
 		auto tokens = tokenize(code, inFilename);
 
+		std::cout << "------ TOKENS ------\n";
 		for (auto& token : tokens)
 			std::cout << token << std::endl;
+		std::cout << "------------------\n" << std::endl;
 
 		auto program = generateProgram(tokens);
 
 		std::string output = generateNasm_Linux_x86_64(program);
 
-		std::cout << "\n------ OUTPUT ------\n" << output << "\n------------------\n" << std::endl;
+		std::cout << "------ OUTPUT ------\n" << output << "------------------\n" << std::endl;
 	
 		writeTextFileOverwrite(inFilename + ".asm", output);
 
@@ -97,7 +99,7 @@ int main(int argc, char** argv, char** environ)
 		auto runCmd = "./" + inFilename + ".out";
 		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
 		int runRet = execCmd(runCmd);
-		std::cout << "Return code: " << runRet << std::endl;
+		std::cout << "Exit code: " << runRet / 256 << std::endl;
 	}
 	catch (const QinpError& e)
 	{

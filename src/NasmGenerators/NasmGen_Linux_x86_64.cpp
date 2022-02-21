@@ -4,7 +4,51 @@
 
 #include "Errors/NasmGenError.h"
 
-std::string generateNasm_Linux_x86_64(const ProgramRef program)
+void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
+{
+	switch (expr->eType)
+	{
+	case Expression::ExprType::Literal:
+		ss << "mov rax, " << std::to_string(expr->value) << "\n";
+		break;
+	case Expression::ExprType::Sum:
+		generateNasm_Linux_x86_64(expr->left.get(), ss);
+		ss << "push rax\n";
+		generateNasm_Linux_x86_64(expr->right.get(), ss);
+		ss << "mov rbx, rax\n";
+		ss << "pop rax\n";
+		ss << "add rax, rbx\n";
+		break;
+	case Expression::ExprType::Difference:
+		generateNasm_Linux_x86_64(expr->left.get(), ss);
+		ss << "push rax\n";
+		generateNasm_Linux_x86_64(expr->right.get(), ss);
+		ss << "mov rbx, rax\n";
+		ss << "pop rax\n";
+		ss << "sub rax, rbx\n";
+		break;
+	case Expression::ExprType::Product:
+		generateNasm_Linux_x86_64(expr->left.get(), ss);
+		ss << "push rax\n";
+		generateNasm_Linux_x86_64(expr->right.get(), ss);
+		ss << "mov rbx, rax\n";
+		ss << "pop rax\n";
+		ss << "mul rbx\n";
+		break;
+	case Expression::ExprType::Division:
+		generateNasm_Linux_x86_64(expr->left.get(), ss);
+		ss << "push rax\n";
+		generateNasm_Linux_x86_64(expr->right.get(), ss);
+		ss << "mov rbx, rax\n";
+		ss << "pop rax\n";
+		ss << "div rbx\n";
+		break;
+	default:
+		throw NasmGenError(expr->pos, "Unsupported expression type!");
+	}
+}
+
+std::string generateNasm_Linux_x86_64(ProgramRef program)
 {
 	std::stringstream ss;
 
@@ -21,22 +65,12 @@ std::string generateNasm_Linux_x86_64(const ProgramRef program)
 			ss << "syscall\n";
 			break;
 		case Statement::Type::Expression:
-		{
-			auto expr = (Expression*)(statement.get());
-			switch (expr->eType)
-			{
-			case Expression::ExprType::Literal:
-				ss << "mov rax, " << std::to_string(((LiteralExpression*)expr)->value) << "\n";
-				break;
-			default:
-				throw NasmGenError(statement->pos, "Unsupported expression type!");
-			}
+			generateNasm_Linux_x86_64((Expression*)statement.get(), ss);
 			break;
-		}
 		default:
 			throw NasmGenError(statement->pos, "Unsupported statement type!");
 		}
 	}
-
+	
 	return ss.str();
 }

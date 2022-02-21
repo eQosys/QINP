@@ -37,20 +37,80 @@ bool parseExpectedNewline(ProgGenInfo& info)
 	return true;
 }
 
-bool parseExpression(ProgGenInfo& info)
+ExpressionRef parseExpression(ProgGenInfo& info);
+
+ExpressionRef parseLiteral(ProgGenInfo& info)
 {
-	auto& token = peekToken(info);
-	switch (token.type)
+	auto& litToken = peekToken(info);
+	if (litToken.type != Token::Type::Literal)
+		return nullptr;
+
+	nextToken(info);
+	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
+	exp->eType = Expression::ExprType::Literal;
+	exp->value = std::stoi(litToken.value);
+
+	return exp;
+}
+
+ExpressionRef parseFactor(ProgGenInfo& info)
+{
+	ExpressionRef exp = nullptr;
+	auto& parenOpen = peekToken(info);
+	if (parenOpen.type == Token::Type::Separator && parenOpen.value == "(")
 	{
-		case Token::Type::Literal:
-			info.program->body.push_back(std::make_shared<LiteralExpression>(token.pos, token.value));
-			nextToken(info);
-			parseExpectedNewline(info);
-			break;
-		default:
-			return false;
+		nextToken(info);
+		exp = parseExpression(info);
+		if (!exp) return nullptr;
+
+		auto& parenClose = peekToken(info);
+		if (parenClose.type != Token::Type::Separator || parenClose.value != ")")
+			throw ProgGenError(parenClose.pos, "Expected ')'!");
+		nextToken(info);
 	}
-	return true;
+	else
+	{
+		exp = parseLiteral(info);
+	}
+	return exp;
+}
+
+ExpressionRef parseSummand(ProgGenInfo& info)
+{
+	ExpressionRef exp = std::make_shared<Expression>(Token::Position());
+	exp->left = parseFactor(info);
+	if (!exp->left) return nullptr;
+
+	auto& opToken = peekToken(info);
+	exp->pos = opToken.pos;
+	if (opToken.type == Token::Type::Operator && (opToken.value == "*" || opToken.value == "/"))
+	{
+		exp->eType = (opToken.value == "*") ? Expression::ExprType::Product : Expression::ExprType::Division;
+		nextToken(info);
+		exp->right = parseFactor(info);
+		if (!exp->right) return nullptr;
+		return exp;
+	}
+	return exp->left;
+}
+
+ExpressionRef parseExpression(ProgGenInfo& info)
+{
+	auto exp = std::make_shared<Expression>(Token::Position());
+	exp->left = parseSummand(info);
+	if (!exp->left) return nullptr;
+	
+	auto& opToken = peekToken(info);
+	exp->pos = opToken.pos;
+	if (opToken.type == Token::Type::Operator && (opToken.value == "+" || opToken.value == "-"))
+	{
+		exp->eType = opToken.value == "+" ? Expression::ExprType::Sum : Expression::ExprType::Difference;
+		nextToken(info);
+		exp->right = parseSummand(info);
+		if (!exp->right) return nullptr;
+		return exp;
+	}
+	return exp->left;
 }
 
 bool parseStatementExit(ProgGenInfo& info)
@@ -61,8 +121,10 @@ bool parseStatementExit(ProgGenInfo& info)
 
 	nextToken(info);
 
-	if (!parseExpression(info))
-		throw ProgGenError(peekToken(info).pos, "Expected expression after exit keyword!");
+	auto exp = parseExpression(info);
+	if (!exp)
+		throw ProgGenError(exitToken.pos, "Expected expression after 'exit'!");
+	info.program->body.push_back(exp);
 
 	info.program->body.push_back(std::make_shared<ReturnStatement>(exitToken.pos));
 

@@ -24,6 +24,8 @@ struct Statement
 };
 typedef std::shared_ptr<Statement> StatementRef;
 
+struct Expression;
+typedef std::shared_ptr<Expression> ExpressionRef;
 struct Expression : public Statement
 {
 	enum class ExprType
@@ -31,24 +33,19 @@ struct Expression : public Statement
 		None,
 		Literal,
 		Identifier,
-		BinaryOp,
-		UnaryOp,
+		Sum,
+		Difference,
+		Product,
+		Division,
 	};
 
-	Expression(const Token::Position& pos, ExprType type)
-		: Statement(pos, Statement::Type::Expression), eType(type)
+	Expression(const Token::Position& pos)
+		: Statement(pos, Statement::Type::Expression)
 	{}
 
-	ExprType eType;
-};
-typedef std::shared_ptr<Expression> ExpressionRef;
-
-struct LiteralExpression : public Expression
-{
-	LiteralExpression(const Token::Position& pos, const std::string& valStr)
-		: Expression(pos, ExprType::Literal), value(std::stoi(valStr))
-	{}
-
+	ExprType eType = ExprType::None;
+	ExpressionRef left = nullptr;
+	ExpressionRef right = nullptr;
 	int value;
 };
 
