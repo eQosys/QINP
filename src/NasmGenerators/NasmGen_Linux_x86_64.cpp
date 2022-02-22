@@ -53,9 +53,21 @@ void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
 	case Expression::ExprType::Relational_GreaterEqual:
 		throw NasmGenError(expr->pos, "Relational Greater Equal not supported!");
 	case Expression::ExprType::Shift_Left:
-		throw NasmGenError(expr->pos, "Shift Left not supported!");
+		generateNasm_Linux_x86_64(expr->left.get(), ss);
+		ss << "push rax\n";
+		generateNasm_Linux_x86_64(expr->right.get(), ss);
+		ss << "mov cl, al\n";
+		ss << "pop rax\n";
+		ss << "shl rax, cl\n";
+		break;
 	case Expression::ExprType::Shift_Right:
-		throw NasmGenError(expr->pos, "Shift Right not supported!");
+		generateNasm_Linux_x86_64(expr->left.get(), ss);
+		ss << "push rax\n";
+		generateNasm_Linux_x86_64(expr->right.get(), ss);
+		ss << "mov cl, al\n";
+		ss << "pop rax\n";
+		ss << "shr rax, cl\n";
+		break;
 	case Expression::ExprType::Sum:
 		generateNasm_Linux_x86_64(expr->left.get(), ss);
 		ss << "push rax\n";
