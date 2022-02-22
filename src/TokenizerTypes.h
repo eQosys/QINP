@@ -15,6 +15,7 @@ struct Token
 	{
 		None,
 		Keyword,
+		BuiltinType,
 		Identifier,
 		String,
 		Newline,
@@ -37,3 +38,7 @@ std::ostream& operator<<(std::ostream& os, const Token::Position& pos);
 std::ostream& operator<<(std::ostream& os, Token::Type type);
 
 std::ostream& operator<<(std::ostream& os, const Token& token);
+
+bool isKeyword(const std::string& name);
+
+bool isBuiltinType(const std::string& name);

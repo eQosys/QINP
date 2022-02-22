@@ -13,6 +13,7 @@ endif()
 add_executable(
     QINP
     "src/qinp.cpp"
+    "src/Program.cpp"
     "src/Tokenizer.cpp"
     "src/ArgsParser.cpp"
     "src/TokenizerTypes.cpp"

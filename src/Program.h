@@ -3,14 +3,18 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <map>
 
 #include "TokenizerTypes.h"
 
 struct Datatype
 {
-	int indirection = 0;
+	int ptrDepth = 0;
 	std::string name;
 };
+
+bool operator==(const Datatype& left, const Datatype& right);
+bool operator!=(const Datatype& left, const Datatype& right);
 
 struct Statement
 {
@@ -37,6 +41,8 @@ struct Expression : public Statement
 	enum class ExprType
 	{
 		None,
+
+		Conversion,
 
 		Assign,
 		Assign_Sum,
@@ -79,6 +85,7 @@ struct Expression : public Statement
 		Remainder,
 
 		Literal,
+		GlobalVariable,
 	};
 
 	Expression(const Token::Position& pos)
@@ -94,12 +101,21 @@ struct Expression : public Statement
 	long long valIntSigned; // Signed integer literal
 	unsigned long long valIntUnsigned; // Unsigned integer literal
 	double valFloat; // Floating point literal
+	int offset; // Local/global variable
 };
 
 typedef std::vector<StatementRef> Body;
 
+struct Variable
+{
+	bool isLocal = false;
+	int offset = -1;
+	Datatype datatype;
+};
+
 struct Program
 {
+	std::map<std::string, Variable> globals;
 	Body body;
 };
 typedef std::shared_ptr<Program> ProgramRef;

@@ -18,34 +18,6 @@ bool isIDSpecial(char c) { return c == '_'; }
 bool isIDBegin(char c) { return isAlpha(c) || isIDSpecial(c); }
 bool isIDMid(char c) { return isAlphaNum(c) || isIDSpecial(c); }
 
-bool isKeyword(const std::string& str)
-{
-	static const std::set<std::string> keywords =
-	{
-		"exit",
-		// "const", "void", "bool",
-		// "i8", "i16", "i32", "i64",
-		// "u8", "u16", "u32", "u64",
-		// "f32", "f64",
-		// "indent", "tab", "space",
-		// "import", "default",
-		// "return", "exit", "self",
-		// "sizeof", "offsetof",
-		// "true", "false",
-		// "if", "elif", "else",
-		// "for", "while", "do",
-		// "break", "continue",
-		// "new", "delete",
-		// "goto", "operator",
-		// "enum", "union", "pack",
-		// "blueprint",
-		// "pass",
-		// "switch", "case"
-	};
-
-	return keywords.find(str) != keywords.end();
-}
-
 static const std::set<std::string> operators =
 {
 	"+",  "-",  "*",  "/",  "%",  "^",  "&",  "|",  "!",  "=",  "<<",  ">>",  "<",  ">",  "&&",  "||",  "++",  "--",  "~",
@@ -202,6 +174,8 @@ TokenList tokenize(const std::string& code, const std::string& name)
 			--index;
 			if (isKeyword(token.value))
 				token.type = Token::Type::Keyword;
+			else if (isBuiltinType(token.value))
+				token.type = Token::Type::BuiltinType;
 			state = State::EndToken;
 			break;
 		case State::CheckSingleLineComment:

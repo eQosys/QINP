@@ -20,7 +20,7 @@ void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
 		throw NasmGenError(expr->pos, "Assignment by Quotient not supported!");
 	case Expression::ExprType::Assign_Remainder:
 		throw NasmGenError(expr->pos, "Assignment by Remainder not supported!");
-	case Expression::ExprType::Assign_Bw_LeftShift: 
+	case Expression::ExprType::Assign_Bw_LeftShift:
 		throw NasmGenError(expr->pos, "Assignment by Left Shift not supported!");
 	case Expression::ExprType::Assign_Bw_RightShift:
 		throw NasmGenError(expr->pos, "Assignment by Right Shift not supported!");
@@ -110,7 +110,7 @@ void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
 		ss << "mov rax, rdx\n";
 		break;
 	case Expression::ExprType::Literal:
-		ss << "mov rax, " << std::to_string(expr->valIntSigned) << "\n";
+		ss << "mov rax, " << std::to_string(expr->valIntUnsigned) << "\n";
 		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");
