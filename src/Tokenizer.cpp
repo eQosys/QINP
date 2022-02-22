@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <set>
 #include <stdexcept>
+#include <set>
 
 #include "Errors/QinpError.h"
 #include "Errors/TokenizerError.h"
@@ -21,54 +22,49 @@ bool isKeyword(const std::string& str)
 {
 	static const std::set<std::string> keywords =
 	{
-		"const", "void", "bool",
-		"i8", "i16", "i32", "i64",
-		"u8", "u16", "u32", "u64",
-		"f32", "f64",
-		"indent", "tab", "space",
-		"import", "default",
-		"return", "exit", "self",
-		"sizeof", "offsetof",
-		"true", "false",
-		"if", "elif", "else",
-		"for", "while", "do",
-		"break", "continue",
-		"new", "delete",
-		"goto", "operator",
-		"enum", "union", "pack",
-		"blueprint",
-		"pass",
-		"switch", "case"
+		"exit",
+		// "const", "void", "bool",
+		// "i8", "i16", "i32", "i64",
+		// "u8", "u16", "u32", "u64",
+		// "f32", "f64",
+		// "indent", "tab", "space",
+		// "import", "default",
+		// "return", "exit", "self",
+		// "sizeof", "offsetof",
+		// "true", "false",
+		// "if", "elif", "else",
+		// "for", "while", "do",
+		// "break", "continue",
+		// "new", "delete",
+		// "goto", "operator",
+		// "enum", "union", "pack",
+		// "blueprint",
+		// "pass",
+		// "switch", "case"
 	};
 
 	return keywords.find(str) != keywords.end();
 }
 
-static const std::vector<std::string> operators =
+static const std::set<std::string> operators =
 {
 	"+",  "-",  "*",  "/",  "%",  "^",  "&",  "|",  "!",  "=",  "<<",  ">>",  "<",  ">",  "&&",  "||",  "++",  "--",  "~",
 	"+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "!=", "==", "<<=", ">>=", "<=", ">="
 };
 
-static const std::vector<std::string> separators =
+static const std::set<std::string> separators =
 {
 	"(", ")", "[", "]", "{", "}", ":", "::", ",", ".", "..."
 };
 
 bool isOperatorBegin(const std::string& str)
 {
-	for (auto& op : operators)
-		if (op.find(str) == 0)
-			return true;
-	return false;
+	return operators.find(str) != operators.end();
 }
 
 bool isSeparatorBegin(const std::string& str)
 {
-	for (auto& sep : separators)
-		if (sep.find(str) == 0)
-			return true;
-	return false;
+	return separators.find(str) != separators.end();
 }
 
 char getEscapeChar(char c)

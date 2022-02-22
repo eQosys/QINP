@@ -35,7 +35,7 @@ void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
 		ss << "pop rax\n";
 		ss << "mul rbx\n";
 		break;
-	case Expression::ExprType::Division:
+	case Expression::ExprType::Quotient:
 		generateNasm_Linux_x86_64(expr->left.get(), ss);
 		ss << "push rax\n";
 		generateNasm_Linux_x86_64(expr->right.get(), ss);
