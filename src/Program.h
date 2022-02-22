@@ -6,12 +6,18 @@
 
 #include "TokenizerTypes.h"
 
+struct Datatype
+{
+	int indirection = 0;
+	std::string name;
+};
+
 struct Statement
 {
 	enum class Type
 	{
 		None,
-		Return,
+		Exit,
 		Expression,
 	};
 
@@ -80,18 +86,15 @@ struct Expression : public Statement
 	{}
 
 	ExprType eType = ExprType::None;
-	ExpressionRef left = nullptr;
-	ExpressionRef right = nullptr;
-	int value;
-};
+	bool isLValue = false;
+	Datatype datatype;
 
-struct ReturnStatement : public Statement
-{
-	ReturnStatement(const Token::Position& pos)
-		: Statement(pos, Statement::Type::Return)
-	{}
+	ExpressionRef left; // Binary operator
+	ExpressionRef right;
+	long long valIntSigned; // Signed integer literal
+	unsigned long long valIntUnsigned; // Unsigned integer literal
+	double valFloat; // Floating point literal
 };
-
 
 typedef std::vector<StatementRef> Body;
 

@@ -147,69 +147,10 @@ ExpressionRef parseLiteral(ProgGenInfo& info)
 	nextToken(info);
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 	exp->eType = Expression::ExprType::Literal;
-	exp->value = std::stoi(litToken.value);
+	exp->valIntSigned = std::stoi(litToken.value);
 
 	return exp;
 }
-
-// ExpressionRef parseFactor(ProgGenInfo& info)
-// {
-// 	ExpressionRef exp = nullptr;
-// 	auto& parenOpen = peekToken(info);
-// 	if (parenOpen.type == Token::Type::Separator && parenOpen.value == "(")
-// 	{
-// 		nextToken(info);
-// 		exp = parseExpression(info);
-
-// 		auto& parenClose = peekToken(info);
-// 		if (parenClose.type != Token::Type::Separator || parenClose.value != ")")
-// 			throw ProgGenError(parenClose.pos, "Expected ')'!");
-// 		nextToken(info);
-// 	}
-// 	else
-// 	{
-// 		exp = parseLiteral(info);
-// 	}
-// 	return exp;
-// }
-
-// ExpressionRef parseSummand(ProgGenInfo& info)
-// {
-// 	auto exp = parseFactor(info);
-
-// 	auto pOpToken = &peekToken(info);
-
-// 	while (pOpToken->type == Token::Type::Operator && (pOpToken->value == "*" || pOpToken->value == "/"))
-// 	{
-// 		auto temp = std::make_shared<Expression>(pOpToken->pos);
-// 		temp->left = exp;
-// 		temp->eType = (pOpToken->value == "*") ? Expression::ExprType::Product : Expression::ExprType::Quotient;
-// 		nextToken(info);
-// 		temp->right = parseFactor(info);
-// 		exp = temp;
-// 		pOpToken = &peekToken(info);
-// 	}
-// 	return exp;
-// }
-
-// ExpressionRef parseExpression(ProgGenInfo& info)
-// {
-// 	auto exp = parseSummand(info);
-	
-// 	auto pOpToken = &peekToken(info);
-
-// 	while (pOpToken->type == Token::Type::Operator && (pOpToken->value == "+" || pOpToken->value == "-"))
-// 	{
-// 		auto temp = std::make_shared<Expression>(pOpToken->pos);
-// 		temp->left = exp;
-// 		temp->eType = pOpToken->value == "+" ? Expression::ExprType::Sum : Expression::ExprType::Difference;
-// 		nextToken(info);
-// 		temp->right = parseSummand(info);
-// 		exp = temp;
-// 		pOpToken = &peekToken(info);
-// 	}
-// 	return exp;
-// }
 
 ExpressionRef parseAfterDefaultBinaryPrec(ProgGenInfo& info)
 {
@@ -270,7 +211,7 @@ bool parseStatementExit(ProgGenInfo& info)
 
 	parseExpectedNewline(info);
 
-	info.program->body.push_back(std::make_shared<ReturnStatement>(exitToken.pos));
+	info.program->body.push_back(std::make_shared<Statement>(exitToken.pos, Statement::Type::Exit));
 
 	return true;
 }
