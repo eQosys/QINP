@@ -25,6 +25,8 @@ struct NasmGenInfo
 	CellInfo secReg;
 };
 
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
+
 void pushPrimReg(NasmGenInfo& ngi)
 {
 	ngi.ss << "  push rax\n";
@@ -85,6 +87,15 @@ std::string secRegName(NasmGenInfo& ngi)
 	throw NasmGenError(Token::Position(), "Invalid secReg state!");
 }
 
+void generateArithmeticBase(NasmGenInfo& ngi, const Expression* expr)
+{
+	generateNasm_Linux_x86_64(ngi, expr->left.get());
+	pushPrimReg(ngi);
+	generateNasm_Linux_x86_64(ngi, expr->right.get());
+	movePrimToSec(ngi);
+	popPrimReg(ngi);
+}
+
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
 	auto& ss = ngi.ss;
@@ -97,6 +108,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
+		if (ngi.secReg.state == CellState::lValue)
+			ss << "  mov rdx, [rdx]\n";
 		ss << "  mov [rax], rdx\n";
 		break;
 	case Expression::ExprType::Assign_Sum:
@@ -158,43 +171,23 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  shr " << primRegName(ngi) << ", cl\n";
 		break;
 	case Expression::ExprType::Sum:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateArithmeticBase(ngi, expr);
 		ss << "  add " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Difference:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateArithmeticBase(ngi, expr);
 		ss << "  sub " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Product:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateArithmeticBase(ngi, expr);
 		ss << "  mul " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Quotient:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateArithmeticBase(ngi, expr);
 		ss << "  div " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Remainder:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateArithmeticBase(ngi, expr);
 		ss << "  div " << secRegName(ngi) << "\n";
 		moveSecToPrim(ngi);
 		break;
