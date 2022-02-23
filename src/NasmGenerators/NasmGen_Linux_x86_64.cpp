@@ -13,6 +13,7 @@ struct CellInfo
 		lValue,
 		rValue,
 	} state = State::Unused;
+	int size = 0;
 };
 
 typedef CellInfo::State CellState;
@@ -27,62 +28,85 @@ struct NasmGenInfo
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
 
+std::string regName(char baseChar, int size)
+{
+	std::stringstream ss;
+	switch (size)
+	{
+	case 1: ss << baseChar << "l"; break;
+	case 2: ss << baseChar << "x"; break;
+	case 4: ss << "e" << baseChar << "x"; break;
+	case 8: ss << "r" << baseChar << "x"; break;
+	default: throw NasmGenError(Token::Position(), "Invalid register size!");
+	}
+	return ss.str();
+}
+
+std::string primRegName(int size)
+{
+	return regName('a', size);
+}
+std::string secRegName(int size)
+{
+	return regName('d', size);
+}
+
 void pushPrimReg(NasmGenInfo& ngi)
 {
-	ngi.ss << "  push rax\n";
+	ngi.ss << "  push " << primRegName(8) << "\n";
 	ngi.stackCells.push(ngi.primReg);
 	ngi.primReg.state = CellState::Unused;
 }
 void popPrimReg(NasmGenInfo& ngi)
 {
-	ngi.ss << "  pop rax\n";
 	ngi.primReg = ngi.stackCells.top();
 	ngi.stackCells.pop();
+	ngi.ss << "  pop " << primRegName(8) << "\n";
 }
 void pushSecReg(NasmGenInfo& ngi)
 {
-	ngi.ss << "  push rdx\n";
+	ngi.ss << "  push " << secRegName(8) << "\n";
 	ngi.stackCells.push(ngi.secReg);
 	ngi.secReg.state = CellState::Unused;
 }
 void popSecReg(NasmGenInfo& ngi)
 {
-	ngi.ss << "  pop rdx\n";
 	ngi.secReg = ngi.stackCells.top();
 	ngi.stackCells.pop();
+	ngi.ss << "  pop " << secRegName(8) << "\n";
 }
 void movePrimToSec(NasmGenInfo& ngi)
 {
-	ngi.ss << "  mov rdx, rax\n";
+	ngi.ss << "  mov " << secRegName(ngi.primReg.size) << ", " << primRegName(ngi.primReg.size) << "\n";
 	ngi.secReg = ngi.primReg;
 }
 void moveSecToPrim(NasmGenInfo& ngi)
 {
-	ngi.ss << "  mov rax, rdx\n";
+	ngi.ss << "  mov " << primRegName(ngi.secReg.size) << ", " << secRegName(ngi.secReg.size) << "\n";
 	ngi.primReg = ngi.secReg;
 }
 
-std::string primRegName(NasmGenInfo& ngi)
+std::string primRegUsage(NasmGenInfo& ngi)
 {
 	switch (ngi.primReg.state)
 	{
 	case CellState::Unused:
 	case CellState::rValue:
-		return "rax";
+		return primRegName(ngi.primReg.size);
 	case CellState::lValue:
-		return "[rax]";
+		return "[" + primRegName(ngi.primReg.size) + "]";
 	}
 	throw NasmGenError(Token::Position(), "Invalid primReg state!");
 }
-std::string secRegName(NasmGenInfo& ngi)
+std::string secRegUsage(NasmGenInfo& ngi)
 {
 	switch (ngi.secReg.state)
 	{
 	case CellState::Unused:
 	case CellState::rValue:
-		return "rdx";
+		return secRegName(ngi.secReg.size);
 	case CellState::lValue:
-		return "[rdx]";
+		return "[" + secRegName(ngi.secReg.size) + "]";
 	}
 	throw NasmGenError(Token::Position(), "Invalid secReg state!");
 }
@@ -99,6 +123,7 @@ void generateArithmeticBase(NasmGenInfo& ngi, const Expression* expr)
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
 	auto& ss = ngi.ss;
+	int dtSize = getDatatypeSize(expr->datatype);
 	switch (expr->eType)
 	{
 	case Expression::ExprType::Conversion:
@@ -109,8 +134,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
 		if (ngi.secReg.state == CellState::lValue)
-			ss << "  mov rdx, [rdx]\n";
-		ss << "  mov [rax], rdx\n";
+			ss << "  mov " << secRegName(ngi.secReg.size) << ", [rdx]\n";
+		ss << "  mov [rax], " << secRegName(ngi.secReg.size) << "\n";
 		break;
 	case Expression::ExprType::Assign_Sum:
 		throw NasmGenError(expr->pos, "Assignment by Sum not supported!");
@@ -160,7 +185,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		ss << "  mov cl, al\n";
 		popPrimReg(ngi);
-		ss << "  shl " << primRegName(ngi) << ", cl\n";
+		ss << "  shl " << primRegUsage(ngi) << ", cl\n";
 		break;
 	case Expression::ExprType::Shift_Right:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
@@ -168,36 +193,38 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		ss << "  mov cl, al\n";
 		popPrimReg(ngi);
-		ss << "  shr " << primRegName(ngi) << ", cl\n";
+		ss << "  shr " << primRegUsage(ngi) << ", cl\n";
 		break;
 	case Expression::ExprType::Sum:
 		generateArithmeticBase(ngi, expr);
-		ss << "  add " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Difference:
 		generateArithmeticBase(ngi, expr);
-		ss << "  sub " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Product:
 		generateArithmeticBase(ngi, expr);
-		ss << "  mul " << secRegName(ngi) << "\n";
+		ss << "  mul " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Quotient:
 		generateArithmeticBase(ngi, expr);
-		ss << "  div " << secRegName(ngi) << "\n";
+		ss << "  div " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Remainder:
 		generateArithmeticBase(ngi, expr);
-		ss << "  div " << secRegName(ngi) << "\n";
+		ss << "  div " << secRegUsage(ngi) << "\n";
 		moveSecToPrim(ngi);
 		break;
 	case Expression::ExprType::Literal:
-		ss << "  mov rax, " << std::to_string(expr->valIntUnsigned) << "\n";
+		ss << "  mov " << primRegName(dtSize) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		ngi.primReg.state = CellState::rValue;
+		ngi.primReg.size = dtSize;
 		break;
 	case Expression::ExprType::GlobalVariable:
-		ss << "  mov rax, " << expr->globName << "\n";
+		ss << "  mov " << primRegName(dtSize) << ", " << expr->globName << "\n";
 		ngi.primReg.state = CellState::lValue;
+		ngi.primReg.size = dtSize;
 		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");
@@ -217,7 +244,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 		switch (statement->type)
 		{
 		case Statement::Type::Exit:
-			ss << "  mov rdi, " << primRegName(ngi) << "\n";
+			ss << "  mov rdi, " << primRegUsage(ngi) << "\n";
 			ss << "  mov rax, 60\n";
 			ss << "  syscall\n";
 			break;

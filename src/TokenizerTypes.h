@@ -7,9 +7,9 @@ struct Token
 {
 	struct Position
 	{
-		std::string file;
-		int line;
-		int column;
+		std::string file = "<unknown>";
+		int line = 0;
+		int column = 0;
 	} pos;
 	enum class Type
 	{
