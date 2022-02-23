@@ -86,9 +86,17 @@ TokenList tokenize(const std::string& code, const std::string& name)
 
 	auto handleEndToken = [&]()
 	{
-		if (token.type != Token::Type::Whitespace || tokens.back().type == Token::Type::Newline)
-			tokens.push_back(token);
 		state = State::BeginToken;
+		if (
+			token.type == Token::Type::Whitespace &&
+			tokens.back().type != Token::Type::Newline &&
+			tokens.back().type != Token::Type::Whitespace
+			)
+			return;
+		if (token.type == Token::Type::Comment)
+			return;
+		
+		tokens.push_back(token);
 	};
 
 	while (++index < code.size() + 1)

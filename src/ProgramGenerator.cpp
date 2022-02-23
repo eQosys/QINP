@@ -137,37 +137,6 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	return temp;
 }
 
-int getBuiltinTypeSize(const std::string& name)
-{
-	static const std::map<std::string, int> sizes =
-	{
-		//{ "i8", 1 },
-		//{ "i16", 2 },
-		//{ "i32", 4 },
-		//{ "i64", 8 },
-		{ "u8", 1 },
-		{ "u16", 2 },
-		{ "u32", 4 },
-		{ "u64", 8 },
-		//{ "f32", 4 },
-		//{ "f64", 8 },
-	};
-
-	auto it = sizes.find(name);
-	return (it != sizes.end()) ? it->second : -1;
-}
-
-int getDatatypeSize(ProgGenInfo& info, const Datatype& datatype)
-{
-	if (datatype.ptrDepth > 0)
-		return sizeof(void*);
-	int size = getBuiltinTypeSize(datatype.name);
-	if (size > 0)
-		return size;
-
-	throw ProgGenError(peekToken(info).pos, "Unknown datatype: " + datatype.name);
-}
-
 const Variable& getVariable(ProgGenInfo& info, const std::string& name)
 {
 	auto& program = info.program;
@@ -176,6 +145,14 @@ const Variable& getVariable(ProgGenInfo& info, const std::string& name)
 	if (it == variables.end())
 		throw ProgGenError(peekToken(info).pos, "Unknown variable: " + name);
 	return it->second;
+}
+
+bool parseEmptyLine(ProgGenInfo& info)
+{
+	if (peekToken(info).type != Token::Type::Newline)
+		return false;
+	nextToken(info);
+	return true;
 }
 
 void parseExpectedNewline(ProgGenInfo& info)
@@ -238,6 +215,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	exp->isLValue = true;
 	exp->offset = var.offset;
 	exp->datatype = var.datatype;
+	exp->globName = litToken.value;
 
 	return exp;
 }
@@ -360,7 +338,10 @@ bool parseDeclDef(ProgGenInfo& info)
 		throw ProgGenError(nameToken.pos, "Expected identifier!");
 
 	var.offset = info.globOffset;
-	info.globOffset += getDatatypeSize(info, var.datatype);
+	int varSize = getDatatypeSize(var.datatype);
+	if (varSize < 0)
+		throw ProgGenError(typeToken.pos, "Invalid datatype!");
+	info.globOffset += varSize;
 
 	info.program->globals.insert({ nameToken.value, var });
 
@@ -400,6 +381,7 @@ ProgramRef generateProgram(const TokenList& tokens)
 	while (info.currToken < tokens.size())
 	{
 		auto token = info.tokens[info.currToken];
+		if (parseEmptyLine(info)) continue;
 		if (parseDeclDef(info)) continue;
 		if (parseStatementExit(info)) continue;
 		if (parseExpression(info)) continue;

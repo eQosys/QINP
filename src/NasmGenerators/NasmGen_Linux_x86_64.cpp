@@ -1,15 +1,104 @@
 #include "NasmGen_Linux_x86_64.h"
 
+#include <stack>
 #include <sstream>
 
 #include "Errors/NasmGenError.h"
 
-void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
+struct CellInfo
 {
+	enum class State
+	{
+		Unused,
+		lValue,
+		rValue,
+	} state = State::Unused;
+};
+
+typedef CellInfo::State CellState;
+
+struct NasmGenInfo
+{
+	std::stringstream ss;
+	std::stack<CellInfo> stackCells;
+	CellInfo primReg;
+	CellInfo secReg;
+};
+
+void pushPrimReg(NasmGenInfo& ngi)
+{
+	ngi.ss << "  push rax\n";
+	ngi.stackCells.push(ngi.primReg);
+	ngi.primReg.state = CellState::Unused;
+}
+void popPrimReg(NasmGenInfo& ngi)
+{
+	ngi.ss << "  pop rax\n";
+	ngi.primReg = ngi.stackCells.top();
+	ngi.stackCells.pop();
+}
+void pushSecReg(NasmGenInfo& ngi)
+{
+	ngi.ss << "  push rdx\n";
+	ngi.stackCells.push(ngi.secReg);
+	ngi.secReg.state = CellState::Unused;
+}
+void popSecReg(NasmGenInfo& ngi)
+{
+	ngi.ss << "  pop rdx\n";
+	ngi.secReg = ngi.stackCells.top();
+	ngi.stackCells.pop();
+}
+void movePrimToSec(NasmGenInfo& ngi)
+{
+	ngi.ss << "  mov rdx, rax\n";
+	ngi.secReg = ngi.primReg;
+}
+void moveSecToPrim(NasmGenInfo& ngi)
+{
+	ngi.ss << "  mov rax, rdx\n";
+	ngi.primReg = ngi.secReg;
+}
+
+std::string primRegName(NasmGenInfo& ngi)
+{
+	switch (ngi.primReg.state)
+	{
+	case CellState::Unused:
+	case CellState::rValue:
+		return "rax";
+	case CellState::lValue:
+		return "[rax]";
+	}
+	throw NasmGenError(Token::Position(), "Invalid primReg state!");
+}
+std::string secRegName(NasmGenInfo& ngi)
+{
+	switch (ngi.secReg.state)
+	{
+	case CellState::Unused:
+	case CellState::rValue:
+		return "rdx";
+	case CellState::lValue:
+		return "[rdx]";
+	}
+	throw NasmGenError(Token::Position(), "Invalid secReg state!");
+}
+
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
+{
+	auto& ss = ngi.ss;
 	switch (expr->eType)
 	{
+	case Expression::ExprType::Conversion:
+		throw NasmGenError(expr->pos, "Conversions are not supported!");
 	case Expression::ExprType::Assign:
-		throw NasmGenError(expr->pos, "Assignment not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+		ss << "  mov [rax], rdx\n";
+		break;
 	case Expression::ExprType::Assign_Sum:
 		throw NasmGenError(expr->pos, "Assignment by Sum not supported!");
 	case Expression::ExprType::Assign_Difference:
@@ -53,64 +142,69 @@ void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
 	case Expression::ExprType::Relational_GreaterEqual:
 		throw NasmGenError(expr->pos, "Relational Greater Equal not supported!");
 	case Expression::ExprType::Shift_Left:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov cl, al\n";
-		ss << "pop rax\n";
-		ss << "shl rax, cl\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		ss << "  mov cl, al\n";
+		popPrimReg(ngi);
+		ss << "  shl " << primRegName(ngi) << ", cl\n";
 		break;
 	case Expression::ExprType::Shift_Right:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov cl, al\n";
-		ss << "pop rax\n";
-		ss << "shr rax, cl\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		ss << "  mov cl, al\n";
+		popPrimReg(ngi);
+		ss << "  shr " << primRegName(ngi) << ", cl\n";
 		break;
 	case Expression::ExprType::Sum:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov rbx, rax\n";
-		ss << "pop rax\n";
-		ss << "add rax, rbx\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		movePrimToSec(ngi);
+		popPrimReg(ngi);
+		ss << "  add " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Difference:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov rbx, rax\n";
-		ss << "pop rax\n";
-		ss << "sub rax, rbx\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		movePrimToSec(ngi);
+		popPrimReg(ngi);
+		ss << "  sub " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Product:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov rbx, rax\n";
-		ss << "pop rax\n";
-		ss << "mul rbx\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		movePrimToSec(ngi);
+		popPrimReg(ngi);
+		ss << "  mul " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Quotient:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov rbx, rax\n";
-		ss << "pop rax\n";
-		ss << "div rbx\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		movePrimToSec(ngi);
+		popPrimReg(ngi);
+		ss << "  div " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Remainder:
-		generateNasm_Linux_x86_64(expr->left.get(), ss);
-		ss << "push rax\n";
-		generateNasm_Linux_x86_64(expr->right.get(), ss);
-		ss << "mov rbx, rax\n";
-		ss << "pop rax\n";
-		ss << "div rbx\n";
-		ss << "mov rax, rdx\n";
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		movePrimToSec(ngi);
+		popPrimReg(ngi);
+		ss << "  div " << secRegName(ngi) << "\n";
+		moveSecToPrim(ngi);
 		break;
 	case Expression::ExprType::Literal:
-		ss << "mov rax, " << std::to_string(expr->valIntUnsigned) << "\n";
+		ss << "  mov rax, " << std::to_string(expr->valIntUnsigned) << "\n";
+		ngi.primReg.state = CellState::rValue;
+		break;
+	case Expression::ExprType::GlobalVariable:
+		ss << "  mov rax, " << expr->globName << "\n";
+		ngi.primReg.state = CellState::lValue;
 		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");
@@ -119,26 +213,41 @@ void generateNasm_Linux_x86_64(const Expression* expr, std::stringstream& ss)
 
 std::string generateNasm_Linux_x86_64(ProgramRef program)
 {
-	std::stringstream ss;
+	NasmGenInfo ngi;
+	auto& ss = ngi.ss;
 
 	ss << "SECTION .text\n";
-	ss << "global _start\n";
+	ss << "  global _start\n";
 	ss << "_start:\n";
 	for (auto& statement : program->body)
 	{
 		switch (statement->type)
 		{
 		case Statement::Type::Exit:
-			ss << "mov rdi, rax\n";
-			ss << "mov rax, 60\n";
-			ss << "syscall\n";
+			ss << "  mov rdi, " << primRegName(ngi) << "\n";
+			ss << "  mov rax, 60\n";
+			ss << "  syscall\n";
 			break;
 		case Statement::Type::Expression:
-			generateNasm_Linux_x86_64((Expression*)statement.get(), ss);
+			generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
 			break;
 		default:
 			throw NasmGenError(statement->pos, "Unsupported statement type!");
 		}
+	}
+	
+	ss << "SECTION .bss\n";
+	for (auto& glob : program->globals)
+	{
+		std::string sizeStr;
+		switch (getDatatypeSize(glob.second.datatype))
+		{
+		case 1: sizeStr = "b"; break;
+		case 2: sizeStr = "w"; break;
+		case 4: sizeStr = "d"; break;
+		case 8: sizeStr = "q"; break;
+		}
+		ss << "  " << glob.first << " res" << sizeStr << " 1\n";
 	}
 	
 	return ss.str();

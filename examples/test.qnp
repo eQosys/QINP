@@ -1,2 +1,5 @@
-u32 variable = 100
-exit ((1 + 2) * (3 + 4) * (5 + 6) / 3 + 5) % 5
+u64 var1
+
+var1 = 5 * 3
+
+exit var1

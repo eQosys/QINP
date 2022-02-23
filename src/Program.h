@@ -16,6 +16,10 @@ struct Datatype
 bool operator==(const Datatype& left, const Datatype& right);
 bool operator!=(const Datatype& left, const Datatype& right);
 
+int getBuiltinTypeSize(const std::string& name);
+
+int getDatatypeSize(const Datatype& datatype);
+
 struct Statement
 {
 	enum class Type
@@ -101,7 +105,8 @@ struct Expression : public Statement
 	long long valIntSigned; // Signed integer literal
 	unsigned long long valIntUnsigned; // Unsigned integer literal
 	double valFloat; // Floating point literal
-	int offset; // Local/global variable
+	int offset; // Local variable
+	std::string globName; // Global variable
 };
 
 typedef std::vector<StatementRef> Body;
