@@ -1,4 +1,7 @@
 u32 var1 = 5 * 3
 u64 var2 = 100 + var1
 u8 var3 = var2
-exit var3
+u64 var4 = var3 + 10
+u64 var5 = 2
+var5 = var5 << 2
+exit var5

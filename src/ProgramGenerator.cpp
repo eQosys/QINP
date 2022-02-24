@@ -266,6 +266,18 @@ bool leftConversionIsProhibited(Expression::ExprType eType)
 	static const std::set<Expression::ExprType> prohibitedTypes = 
 	{
 		Expression::ExprType::Assign,
+		Expression::ExprType::Assign_Sum,
+		Expression::ExprType::Assign_Difference,
+		Expression::ExprType::Assign_Product,
+		Expression::ExprType::Assign_Quotient,
+		Expression::ExprType::Assign_Remainder,
+		Expression::ExprType::Assign_Bw_LeftShift,
+		Expression::ExprType::Assign_Bw_RightShift,
+		Expression::ExprType::Assign_Bw_AND,
+		Expression::ExprType::Assign_Bw_XOR,
+		Expression::ExprType::Assign_Bw_OR,
+		Expression::ExprType::Shift_Left,
+		Expression::ExprType::Shift_Right,
 	};
 
 	return prohibitedTypes.find(eType) != prohibitedTypes.end();
@@ -273,7 +285,6 @@ bool leftConversionIsProhibited(Expression::ExprType eType)
 
 void autoFixDatatypeMismatch(ExpressionRef exp)
 {
-	// TODO: Disable automatic (left) conversion for some ExprTypes (e.g. assign)
 	if (exp->left->datatype == exp->right->datatype)
 		return;
 
@@ -333,6 +344,19 @@ bool parseExpression(ProgGenInfo& info)
 	return !!exp;
 }
 
+bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
+{
+	auto expr = getParseExpression(info);
+	if (!expr)
+		return false;
+
+	if (expr->datatype != targetType)
+		expr = genConvertExpression(expr, targetType);
+	info.program->body.push_back(expr);
+
+	return true;
+}
+
 bool parseDeclDef(ProgGenInfo& info)
 {
 	auto& typeToken = peekToken(info);
@@ -381,10 +405,7 @@ bool parseStatementExit(ProgGenInfo& info)
 	nextToken(info);
 	auto& exprBegin = peekToken(info);
 
-	auto expr = getParseExpression(info);
-	if (getDatatypeSize(expr->datatype) != 8)
-		expr = genConvertExpression(expr, Datatype{0, "u64"});
-	info.program->body.push_back(expr);
+	parseExpression(info, { 0, "u64" });
 
 	parseExpectedNewline(info);
 

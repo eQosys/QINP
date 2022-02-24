@@ -48,7 +48,7 @@ std::string primRegName(int size)
 }
 std::string secRegName(int size)
 {
-	return regName('d', size);
+	return regName('c', size);
 }
 
 void pushPrimReg(NasmGenInfo& ngi)
@@ -84,6 +84,30 @@ void moveSecToPrim(NasmGenInfo& ngi)
 {
 	ngi.ss << "  mov " << primRegName(ngi.secReg.size) << ", " << secRegName(ngi.secReg.size) << "\n";
 	ngi.primReg = ngi.secReg;
+}
+
+bool primRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
+{
+	if (ngi.primReg.state != CellState::lValue)
+		return false;
+	if (pushAddr)
+		pushPrimReg(ngi);
+
+	ngi.ss << "  mov " << primRegName(ngi.primReg.size) << ", [" << primRegName(8) << "]\n";
+	ngi.primReg.state = CellState::rValue;
+	return true;
+}
+
+bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
+{
+	if (ngi.secReg.state != CellState::lValue)
+		return false;
+	if (pushAddr)
+		pushSecReg(ngi);
+
+	ngi.ss << "  mov " << secRegName(ngi.secReg.size) << ", [" << secRegName(8) << "]\n";
+	ngi.secReg.state = CellState::rValue;
+	return true;
 }
 
 std::string primRegUsage(NasmGenInfo& ngi)
@@ -134,8 +158,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		if (oldSize >= dtSize)
 			break;
 
-		if (ngi.primReg.state == CellState::lValue)
-			ss << "  mov " << primRegName(ngi.primReg.size) << ", [rax]\n";
+		primRegLToRVal(ngi);
 
 		switch (oldSize)
 		{
@@ -153,9 +176,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
-		if (ngi.secReg.state == CellState::lValue)
-			ss << "  mov " << secRegName(ngi.secReg.size) << ", [rdx]\n";
-		ss << "  mov [rax], " << secRegName(ngi.secReg.size) << "\n";
+		secRegLToRVal(ngi);
+		ss << "  mov [" << primRegName(8) << "], " << secRegName(ngi.secReg.size) << "\n";
 		break;
 	case Expression::ExprType::Assign_Sum:
 		throw NasmGenError(expr->pos, "Assignment by Sum not supported!");
@@ -203,17 +225,19 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		ss << "  mov cl, al\n";
+		movePrimToSec(ngi); //ss << "  mov cl, al\n";
 		popPrimReg(ngi);
-		ss << "  shl " << primRegUsage(ngi) << ", cl\n";
+		primRegLToRVal(ngi);
+		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 		break;
 	case Expression::ExprType::Shift_Right:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		ss << "  mov cl, al\n";
+		movePrimToSec(ngi); //ss << "  mov cl, al\n";
 		popPrimReg(ngi);
-		ss << "  shr " << primRegUsage(ngi) << ", cl\n";
+		primRegLToRVal(ngi);
+		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 		break;
 	case Expression::ExprType::Sum:
 		generateArithmeticBase(ngi, expr);
