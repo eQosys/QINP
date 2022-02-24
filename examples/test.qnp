@@ -1,3 +1,4 @@
-u64 var1 = 5 * 3
+u32 var1 = 5 * 3
 u64 var2 = 100 + var1
-exit var2
+u8 var3 = var2
+exit var3

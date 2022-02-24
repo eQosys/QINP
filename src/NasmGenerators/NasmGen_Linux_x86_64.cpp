@@ -94,7 +94,7 @@ std::string primRegUsage(NasmGenInfo& ngi)
 	case CellState::rValue:
 		return primRegName(ngi.primReg.size);
 	case CellState::lValue:
-		return "[" + primRegName(ngi.primReg.size) + "]";
+		return "[" + primRegName(8) + "]";
 	}
 	throw NasmGenError(Token::Position(), "Invalid primReg state!");
 }
@@ -127,7 +127,27 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	switch (expr->eType)
 	{
 	case Expression::ExprType::Conversion:
-		throw NasmGenError(expr->pos, "Conversions are not supported!");
+	{
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		
+		int oldSize = getDatatypeSize(expr->left->datatype);
+		if (oldSize >= dtSize)
+			break;
+
+		if (ngi.primReg.state == CellState::lValue)
+			ss << "  mov " << primRegName(ngi.primReg.size) << ", [rax]\n";
+
+		switch (oldSize)
+		{
+		case 1: ss << "  cbw\n"; if (dtSize == 2) break;
+		case 2: ss << "  cwd\n"; if (dtSize == 4) break;
+		case 4: ss << "  cdq\n"; break;
+		}
+
+		ngi.primReg.state = CellState::rValue;
+		ngi.primReg.size = dtSize;
+	}
+		break;
 	case Expression::ExprType::Assign:
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		pushPrimReg(ngi);
@@ -222,7 +242,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.size = dtSize;
 		break;
 	case Expression::ExprType::GlobalVariable:
-		ss << "  mov " << primRegName(dtSize) << ", " << expr->globName << "\n";
+		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
 		ngi.primReg.state = CellState::lValue;
 		ngi.primReg.size = dtSize;
 		break;

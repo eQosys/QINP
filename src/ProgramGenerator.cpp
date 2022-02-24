@@ -1,6 +1,7 @@
 #include "ProgramGenerator.h"
 
 #include <map>
+#include <set>
 #include <algorithm>
 
 #include "Errors/ProgGenError.h"
@@ -260,13 +261,28 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	return exp;
 }
 
+bool leftConversionIsProhibited(Expression::ExprType eType)
+{
+	static const std::set<Expression::ExprType> prohibitedTypes = 
+	{
+		Expression::ExprType::Assign,
+	};
+
+	return prohibitedTypes.find(eType) != prohibitedTypes.end();
+}
+
 void autoFixDatatypeMismatch(ExpressionRef exp)
 {
 	// TODO: Disable automatic (left) conversion for some ExprTypes (e.g. assign)
 	if (exp->left->datatype == exp->right->datatype)
 		return;
 
-	Datatype newDatatype = getBestConvDatatype(exp->left, exp->right);
+	Datatype newDatatype;
+	if (leftConversionIsProhibited(exp->eType))
+		newDatatype = exp->left->datatype;
+	else
+		newDatatype = getBestConvDatatype(exp->left, exp->right);
+
 	if (newDatatype.name.empty())
 		throw ProgGenError(
 			exp->pos, "Cannot convert between " +
@@ -365,7 +381,10 @@ bool parseStatementExit(ProgGenInfo& info)
 	nextToken(info);
 	auto& exprBegin = peekToken(info);
 
-	parseExpression(info);
+	auto expr = getParseExpression(info);
+	if (getDatatypeSize(expr->datatype) != 8)
+		expr = genConvertExpression(expr, Datatype{0, "u64"});
+	info.program->body.push_back(expr);
 
 	parseExpectedNewline(info);
 
