@@ -177,6 +177,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
+		
+		if (ngi.primReg.state != CellState::lValue)
+			throw NasmGenError(expr->pos, "Cannot assign to non-lvalue!");
+
 		ss << "  mov [" << primRegName(8) << "], " << secRegName(ngi.secReg.size) << "\n";
 		break;
 	case Expression::ExprType::Assign_Sum:
@@ -225,7 +229,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi); //ss << "  mov cl, al\n";
+		movePrimToSec(ngi);
 		popPrimReg(ngi);
 		primRegLToRVal(ngi);
 		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
@@ -234,7 +238,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi); //ss << "  mov cl, al\n";
+		movePrimToSec(ngi);
 		popPrimReg(ngi);
 		primRegLToRVal(ngi);
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
