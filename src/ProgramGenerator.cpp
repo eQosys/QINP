@@ -154,26 +154,26 @@ const Variable& getVariable(ProgGenInfo& info, const std::string& name)
 	auto& variables = program->globals;
 	auto it = variables.find(name);
 	if (it == variables.end())
-		throw ProgGenError(peekToken(info).pos, "Unknown variable: " + name);
+		throw ProgGenError(peekToken(info).pos, "Unknown variable: " + name + "!");
 	return it->second;
 }
 
-std::string preprocessAsmCode(ProgGenInfo& info, const std::string& asmCode)
+std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 {
 	std::string result;
 	bool parseVar = false;
 	bool parsedParen = false;
 	std::string varName = "";
-	for (int i = 0; i < asmCode.size(); ++i)
+	for (int i = 0; i < asmToken.value.size(); ++i)
 	{
-		char c = asmCode[i];
+		char c = asmToken.value[i];
 
 		if (parseVar)
 		{
 			if (!parsedParen)
 			{
 				if (c != '(')
-					throw ProgGenError(peekToken(info).pos, "Expected '(' after '$'");
+					throw ProgGenError(asmToken.pos, "Expected '(' after '$'!");
 				parsedParen = true;
 				continue;
 			}
@@ -186,7 +186,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const std::string& asmCode)
 
 			auto& var = getVariable(info, varName);
 			if (var.isLocal)
-				throw ProgGenError(peekToken(info).pos, "Local variable cannot be used in asm code: " + varName);
+				throw ProgGenError(asmToken.pos, "Local variable cannot be used in asm code: " + varName + "!");
 				
 			result += varName;
 			parseVar = false;
@@ -202,7 +202,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const std::string& asmCode)
 	}
 
 	if (parseVar)
-		throw ProgGenError(peekToken(info).pos, "Missing ')'");
+		throw ProgGenError(asmToken.pos, "Missing ')'!");
 	return result;
 }
 
@@ -213,13 +213,10 @@ void increaseIndent(ProgGenInfo::Indent& indent)
 
 bool parseIndent(ProgGenInfo& info)
 {
-	if (info.indent.lvl == 0)
-		return true;
-
-	if (info.indent.chStr.empty())
+	if (info.indent.chStr.empty() && info.indent.lvl > 0)
 	{
 		if (info.indent.lvl != 1)
-			throw ProgGenError(peekToken(info).pos, "Indentation level must be 1 for the first used indentation");
+			throw ProgGenError(peekToken(info).pos, "Indentation level must be 1 for the first used indentation!");
 
 		auto& firstToken = peekToken(info);
 		if (!isWhitespace(firstToken))
@@ -234,7 +231,7 @@ bool parseIndent(ProgGenInfo& info)
 		while (isWhitespace(*pIndentToken))
 		{
 			if (pIndentToken->value != info.indent.chStr)
-				throw ProgGenError(pIndentToken->pos, "Unconsistent indentation");
+				throw ProgGenError(pIndentToken->pos, "Inconsistent indentation!");
 			nextToken(info);
 			++info.indent.nPerLvl;
 			pIndentToken = &peekToken(info);
@@ -243,20 +240,24 @@ bool parseIndent(ProgGenInfo& info)
 		return true;
 	}
 
-	for (int i = 0; i < info.indent.nPerLvl; ++i)
+	for (int i = 0; i < info.indent.nPerLvl * info.indent.lvl; ++i)
 	{
 		auto& token = peekToken(info);
 		if (!isWhitespace(token) || token.value != info.indent.chStr)
 			return false;
 		nextToken(info);
 	}
+
+	if (peekToken(info).type == Token::Type::Whitespace)
+			throw ProgGenError(peekToken(info).pos, "Inconsistent indentation!");
+
 	return true;
 }
 
 void decreaseIndent(ProgGenInfo::Indent& indent)
 {
 	if (indent.lvl == 0)
-		throw ProgGenError(Token::Position(), "Indent level already 0");
+		throw ProgGenError(Token::Position(), "Indent level already 0!");
 	--indent.lvl;
 }
 
@@ -419,7 +420,7 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 			exp->left->datatype.name +
 			"*" + std::to_string(exp->left->datatype.ptrDepth) + " and " +
 			exp->right->datatype.name +
-			"*" + std::to_string(exp->right->datatype.ptrDepth));
+			"*" + std::to_string(exp->right->datatype.ptrDepth) + "!");
 	
 	if (newDatatype != exp->left->datatype)
 		exp->left = genConvertExpression(exp->left, newDatatype);
@@ -550,7 +551,7 @@ bool parseSinglelineAssembly(ProgGenInfo& info)
 	parseExpectedNewline(info);
 
 	info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-	info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken.value));
+	info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
 
 
 	return true;
@@ -577,9 +578,9 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 			throw ProgGenError(strToken.pos, "Expected assembly string!");
 
 		parseExpectedNewline(info);
-		
+
 		info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-		info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken.value));
+		info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
 	}
 
 	decreaseIndent(info.indent);
@@ -593,6 +594,8 @@ ProgramRef generateProgram(const TokenList& tokens)
 
 	while (info.currToken < tokens.size())
 	{
+		if (!parseIndent(info))
+			throw ProgGenError(peekToken(info).pos, "Inconsistent indentation!");
 		auto token = info.tokens[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		if (parseDeclDef(info)) continue;
@@ -600,7 +603,7 @@ ProgramRef generateProgram(const TokenList& tokens)
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
-		throw ProgGenError(token.pos, "Unexpected token: " + token.value);
+		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
 	}
 
 	return info.program;

@@ -5,8 +5,8 @@ u64 var4 = var3 + 10
 u64 var5 = 2
 var5 = (var5 << 2) + var4
 
-\\asm: "mov rax, 100"
-\\asm: "mov [$(var5)], rax"
+asm: "mov rax, 100"
+asm: "mov [$(var5)], rax"
 \\ ^^^ is the same as vvv
 assembly:
 	"mov rax, 100"
