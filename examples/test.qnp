@@ -11,5 +11,6 @@ asm: "mov [$(var5)], rax"
 assembly:
 	"mov rax, 255"
 	"mov [$(var5)], rax"
+var5 = '9' - '0'
 
 exit var5

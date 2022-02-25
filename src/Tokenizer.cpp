@@ -246,6 +246,7 @@ TokenList tokenize(const std::string& code, const std::string& name)
 			{
 				if ('\'' != c)
 					throw TokenizerError(token.pos, "A char literal cannot contain more than one character!");
+				token.value = std::to_string((int)token.value[0]);
 				state = State::EndToken;
 				break;
 			}
