@@ -15,7 +15,7 @@ struct ProgGenInfo
 	{
 		int lvl = 0;
 		int nPerLvl = 0;
-		char ch = 0;
+		std::string chStr = "";
 	} indent;
 
 	int globOffset = 0;
@@ -129,6 +129,11 @@ bool isString(const Token& token)
 	return token.type == Token::Type::String;
 }
 
+bool isWhitespace(const Token& token)
+{
+	return token.type == Token::Type::Whitespace;
+}
+
 const Token& peekToken(ProgGenInfo& info, int offset = 0)
 {
 	static const Token emptyToken = { { "", 0, 0 }, Token::Type::EndOfCode, "" };
@@ -199,6 +204,60 @@ std::string preprocessAsmCode(ProgGenInfo& info, const std::string& asmCode)
 	if (parseVar)
 		throw ProgGenError(peekToken(info).pos, "Missing ')'");
 	return result;
+}
+
+void increaseIndent(ProgGenInfo::Indent& indent)
+{
+	++indent.lvl;
+}
+
+bool parseIndent(ProgGenInfo& info)
+{
+	if (info.indent.lvl == 0)
+		return true;
+
+	if (info.indent.chStr.empty())
+	{
+		if (info.indent.lvl != 1)
+			throw ProgGenError(peekToken(info).pos, "Indentation level must be 1 for the first used indentation");
+
+		auto& firstToken = peekToken(info);
+		if (!isWhitespace(firstToken))
+			return false;
+
+		nextToken(info);
+		info.indent.chStr = firstToken.value;
+		info.indent.nPerLvl = 1;
+
+		auto pIndentToken = &peekToken(info);
+
+		while (isWhitespace(*pIndentToken))
+		{
+			if (pIndentToken->value != info.indent.chStr)
+				throw ProgGenError(pIndentToken->pos, "Unconsistent indentation");
+			nextToken(info);
+			++info.indent.nPerLvl;
+			pIndentToken = &peekToken(info);
+		}
+
+		return true;
+	}
+
+	for (int i = 0; i < info.indent.nPerLvl; ++i)
+	{
+		auto& token = peekToken(info);
+		if (!isWhitespace(token) || token.value != info.indent.chStr)
+			return false;
+		nextToken(info);
+	}
+	return true;
+}
+
+void decreaseIndent(ProgGenInfo::Indent& indent)
+{
+	if (indent.lvl == 0)
+		throw ProgGenError(Token::Position(), "Indent level already 0");
+	--indent.lvl;
 }
 
 bool parseEmptyLine(ProgGenInfo& info)
@@ -488,10 +547,11 @@ bool parseSinglelineAssembly(ProgGenInfo& info)
 	if (!isString(strToken))
 		throw ProgGenError(strToken.pos, "Expected assembly string!");
 
+	parseExpectedNewline(info);
+
 	info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
 	info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken.value));
 
-	parseExpectedNewline(info);
 
 	return true;
 }
@@ -506,7 +566,23 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
 
-	// Parse the assembly code
+	increaseIndent(info.indent);
+
+	while (true)
+	{
+		if (!parseIndent(info))
+			break;
+		auto& strToken = nextToken(info);
+		if (!isString(strToken))
+			throw ProgGenError(strToken.pos, "Expected assembly string!");
+
+		parseExpectedNewline(info);
+		
+		info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+		info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken.value));
+	}
+
+	decreaseIndent(info.indent);
 
 	return true;
 }
