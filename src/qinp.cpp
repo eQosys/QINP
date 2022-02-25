@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <sys/wait.h>
 
 #include "Errors/QinpError.h"
 #include "Tokenizer.h"
@@ -25,9 +26,29 @@ std::string readTextFile(const std::string& filename)
 
 int execCmd(const std::string& command)
 {
-	auto pipe = popen(command.c_str(), "r");
-	if (!pipe) throw QinpError("popen() failed!");
-	return pclose(pipe);
+	pid_t p = fork();
+
+	if (p == -1)
+		throw QinpError("Fork failed!");
+	
+	if (p == 0)
+	{
+		execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
+		throw QinpError("Exec failed!");
+	}
+
+	int status;
+	if (waitpid(p, &status, 0) == -1)
+		throw QinpError("Waitpid failed!");
+
+	if (WIFEXITED(status))
+		return WEXITSTATUS(status);
+	else
+		return -1;
+
+	//auto pipe = popen(command.c_str(), "r");
+	//if (!pipe) throw QinpError("popen() failed!");
+	//return pclose(pipe);
 }
 
 void writeTextFileOverwrite(const std::string& filename, const std::string& text)
@@ -103,7 +124,7 @@ int main(int argc, char** argv, char** environ)
 		auto runCmd = "./" + outFilename;
 		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
 		int runRet = execCmd(runCmd);
-		std::cout << "Exit code: " << runRet / 256 << std::endl;
+		std::cout << "Exit code: " << runRet << std::endl;
 	}
 	catch (const QinpError& e)
 	{
