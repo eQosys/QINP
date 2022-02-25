@@ -42,6 +42,7 @@ bool isKeyword(const std::string& name)
 	static const std::set<std::string> keywords =
 	{
 		"exit",
+		"asm", "assembly",
 		// "const", "void", "bool",
 		// "i8", "i16", "i32", "i64",
 		// "u8", "u16", "u32", "u64",

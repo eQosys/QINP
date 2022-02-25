@@ -26,6 +26,7 @@ struct Statement
 	{
 		None,
 		Exit,
+		Assembly,
 		Expression,
 	};
 
@@ -35,6 +36,8 @@ struct Statement
 
 	Type type;
 	Token::Position pos;
+
+	std::vector<std::string> asmLines; // Single-/multi-line assembly code
 };
 typedef std::shared_ptr<Statement> StatementRef;
 

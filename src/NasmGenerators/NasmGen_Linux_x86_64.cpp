@@ -160,7 +160,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		primRegLToRVal(ngi);
 
-		switch (oldSize)
+		switch (oldSize) // Maybe wrong conversion?
 		{
 		case 1: ss << "  cbw\n"; if (dtSize == 2) break;
 		case 2: ss << "  cwd\n"; if (dtSize == 4) break;
@@ -291,6 +291,10 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 			ss << "  mov rdi, " << primRegUsage(ngi) << "\n";
 			ss << "  mov rax, 60\n";
 			ss << "  syscall\n";
+			break;
+		case Statement::Type::Assembly:
+			for (auto& line : statement->asmLines)
+				ss << line << "\n";
 			break;
 		case Statement::Type::Expression:
 			generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());

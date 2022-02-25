@@ -3,5 +3,13 @@ u64 var2 = 100 + var1
 u8 var3 = var2
 u64 var4 = var3 + 10
 u64 var5 = 2
-var5 = var5 << 2
+var5 = (var5 << 2) + var4
+
+asm: "mov rax, 100"
+asm: "mov [$(var5)], rax"
+\\ ^^^ is the same as vvv
+\\assembly:
+\\	"mov rax, 100"
+\\	"add [$(var5)], rax"
+
 exit var5

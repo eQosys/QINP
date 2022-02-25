@@ -124,6 +124,11 @@ bool isIdentifier(const Token& token)
 	return token.type == Token::Type::Identifier;
 }
 
+bool isString(const Token& token)
+{
+	return token.type == Token::Type::String;
+}
+
 const Token& peekToken(ProgGenInfo& info, int offset = 0)
 {
 	static const Token emptyToken = { { "", 0, 0 }, Token::Type::EndOfCode, "" };
@@ -148,6 +153,54 @@ const Variable& getVariable(ProgGenInfo& info, const std::string& name)
 	return it->second;
 }
 
+std::string preprocessAsmCode(ProgGenInfo& info, const std::string& asmCode)
+{
+	std::string result;
+	bool parseVar = false;
+	bool parsedParen = false;
+	std::string varName = "";
+	for (int i = 0; i < asmCode.size(); ++i)
+	{
+		char c = asmCode[i];
+
+		if (parseVar)
+		{
+			if (!parsedParen)
+			{
+				if (c != '(')
+					throw ProgGenError(peekToken(info).pos, "Expected '(' after '$'");
+				parsedParen = true;
+				continue;
+			}
+
+			if (c != ')')
+			{
+				varName.push_back(c);
+				continue;
+			}
+
+			auto& var = getVariable(info, varName);
+			if (var.isLocal)
+				throw ProgGenError(peekToken(info).pos, "Local variable cannot be used in asm code: " + varName);
+				
+			result += varName;
+			parseVar = false;
+			parsedParen = false;
+			varName = "";
+			continue;
+		}
+
+		if (c == '$')
+			parseVar = true;
+		else
+			result.push_back(c);
+	}
+
+	if (parseVar)
+		throw ProgGenError(peekToken(info).pos, "Missing ')'");
+	return result;
+}
+
 bool parseEmptyLine(ProgGenInfo& info)
 {
 	if (peekToken(info).type != Token::Type::Newline)
@@ -161,6 +214,13 @@ void parseExpectedNewline(ProgGenInfo& info)
 	auto& token = nextToken(info);
 	if (!isNewline(token) && !isEndOfCode(token))
 		throw ProgGenError(token.pos, "Expected newline!");
+}
+
+void parseExpectedColon(ProgGenInfo& info)
+{
+	auto& token = nextToken(info);
+	if (!isSeparator(token, ":"))
+		throw ProgGenError(token.pos, "Expected colon!");
 }
 
 Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right)
@@ -414,6 +474,43 @@ bool parseStatementExit(ProgGenInfo& info)
 	return true;
 }
 
+bool parseSinglelineAssembly(ProgGenInfo& info)
+{
+	auto& asmToken = peekToken(info);
+	if (!isKeyword(asmToken, "asm"))
+		return false;
+	nextToken(info);
+	
+	parseExpectedColon(info);
+	
+	auto& strToken = nextToken(info);
+
+	if (!isString(strToken))
+		throw ProgGenError(strToken.pos, "Expected assembly string!");
+
+	info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+	info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken.value));
+
+	parseExpectedNewline(info);
+
+	return true;
+}
+
+bool parseMultilineAssembly(ProgGenInfo& info)
+{
+	auto& asmToken = peekToken(info);
+	if (!isKeyword(asmToken, "assembly"))
+		return false;
+	nextToken(info);
+	
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	// Parse the assembly code
+
+	return true;
+}
+
 ProgramRef generateProgram(const TokenList& tokens)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()) };
@@ -424,6 +521,8 @@ ProgramRef generateProgram(const TokenList& tokens)
 		if (parseEmptyLine(info)) continue;
 		if (parseDeclDef(info)) continue;
 		if (parseStatementExit(info)) continue;
+		if (parseSinglelineAssembly(info)) continue;
+		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
 		throw ProgGenError(token.pos, "Unexpected token: " + token.value);
 	}
