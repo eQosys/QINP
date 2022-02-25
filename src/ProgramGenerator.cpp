@@ -148,13 +148,13 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	return temp;
 }
 
-const Variable& getVariable(ProgGenInfo& info, const std::string& name)
+const Variable& getVariable(ProgGenInfo& info, const std::string& name, const Token::Position& tokenPos)
 {
 	auto& program = info.program;
 	auto& variables = program->globals;
 	auto it = variables.find(name);
 	if (it == variables.end())
-		throw ProgGenError(peekToken(info).pos, "Unknown variable: " + name + "!");
+		throw ProgGenError(tokenPos, "Unknown variable: " + name + "!");
 	return it->second;
 }
 
@@ -184,7 +184,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				continue;
 			}
 
-			auto& var = getVariable(info, varName);
+			auto& var = getVariable(info, varName, asmToken.pos);
 			if (var.isLocal)
 				throw ProgGenError(asmToken.pos, "Local variable cannot be used in asm code: " + varName + "!");
 				
@@ -331,7 +331,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	nextToken(info);
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
-	auto& var = getVariable(info, litToken.value);
+	auto& var = getVariable(info, litToken.value, litToken.pos);
 	exp->eType = Expression::ExprType::GlobalVariable; // exp->eType = var.isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->isLValue = true;
 	exp->offset = var.offset;
