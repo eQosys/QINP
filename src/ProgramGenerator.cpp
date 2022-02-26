@@ -133,7 +133,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 	},
 	{
 		{
-			//{ "[", Expression::ExprType::Subscript },
+			{ "[", Expression::ExprType::Subscript },
 			//{ "(", Expression::ExprType::FunctionCall },
 			{ "++", Expression::ExprType::Suffix_Increment },
 			{ "--", Expression::ExprType::Suffix_Decrement },
@@ -583,6 +583,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	{
 	case Expression::ExprType::AddressOf:
 		++exp->datatype.ptrDepth;
+		exp->isLValue = false;
 		break;
 	case Expression::ExprType::Dereference:
 		if (exp->datatype.ptrDepth == 0)

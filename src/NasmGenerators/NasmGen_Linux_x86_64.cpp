@@ -353,7 +353,18 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegRToLVal(ngi, true);
 		break;
 	case Expression::ExprType::Subscript:
-		throw NasmGenError(expr->pos, "Subscript not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		if (ngi.primReg.datatype.ptrDepth == 0)
+			throw NasmGenError(expr->pos, "Cannot subscript non-pointer!");
+		primRegLToRVal(ngi);
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		ss << "  mov " << secRegName(8) << ", " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
+		ss << "  mul " << secRegName(8) << "\n";
+		popSecReg(ngi);
+		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		ngi.primReg.state = CellState::lValue;
+		break;
 	case Expression::ExprType::FunctionCall:
 		throw NasmGenError(expr->pos, "FunctionCall not supported!");
 	case Expression::ExprType::Suffix_Increment:
