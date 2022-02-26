@@ -298,11 +298,33 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Dereference:
-		throw NasmGenError(expr->pos, "Dereference not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		if (ngi.primReg.datatype.ptrDepth == 0)
+			throw NasmGenError(expr->pos, "Cannot dereference non-pointer!");
+		--ngi.primReg.datatype.ptrDepth;
+		
+		switch (ngi.primReg.state)
+		{
+		case CellState::lValue:
+			ss << "  mov " << primRegName(8) << ", " << primRegUsage(ngi) << "\n";
+			break;
+		case CellState::rValue:
+			ngi.primReg.state = CellState::lValue;
+			break;
+		default:
+			throw NasmGenError(expr->pos, "Invalid CellState!");
+		}
+		break;
 	case Expression::ExprType::Logical_NOT:
 		throw NasmGenError(expr->pos, "Logical NOT not supported!");
 	case Expression::ExprType::Bitwise_NOT:
-		throw NasmGenError(expr->pos, "Bitwise NOT not supported!");
+	{
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		bool converted = primRegLToRVal(ngi, true);
+		ss << "  not " << primRegUsage(ngi) << "\n";
+		primRegRToLVal(ngi, converted);
+	}
+		break;
 	case Expression::ExprType::Prefix_Plus:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		break;

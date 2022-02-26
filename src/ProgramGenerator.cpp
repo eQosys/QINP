@@ -592,7 +592,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	case Expression::ExprType::Logical_NOT:
 		throw ProgGenError(opToken.pos, "Logical NOT is not supported!");
 	case Expression::ExprType::Bitwise_NOT:
-		throw ProgGenError(opToken.pos, "Bitwise NOT is not supported!");
+		break;
 	case Expression::ExprType::Prefix_Plus:
 		break;
 	case Expression::ExprType::Prefix_Minus:
