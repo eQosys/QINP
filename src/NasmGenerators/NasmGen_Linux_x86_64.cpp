@@ -59,6 +59,31 @@ std::string secRegName(NasmGenInfo& ngi)
 	return secRegName(ngi.secReg.size);
 }
 
+std::string primRegUsage(NasmGenInfo& ngi)
+{
+	switch (ngi.primReg.state)
+	{
+	case CellState::Unused:
+	case CellState::rValue:
+		return primRegName(ngi);
+	case CellState::lValue:
+		return "[" + primRegName(8) + "]";
+	}
+	throw NasmGenError(Token::Position(), "Invalid primReg state!");
+}
+std::string secRegUsage(NasmGenInfo& ngi)
+{
+	switch (ngi.secReg.state)
+	{
+	case CellState::Unused:
+	case CellState::rValue:
+		return secRegName(ngi);
+	case CellState::lValue:
+		return "[" + secRegName(ngi) + "]";
+	}
+	throw NasmGenError(Token::Position(), "Invalid secReg state!");
+}
+
 void pushPrimReg(NasmGenInfo& ngi)
 {
 	ngi.ss << "  push " << primRegName(8) << "\n";
@@ -120,8 +145,7 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
 
-	ngi.ss << "  mov [" << primRegName(8) << "], " << secRegName(ngi.primReg.size) << "\n";
-	ngi.primReg.state = CellState::lValue;
+	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(ngi.primReg.size) << "\n";
 
 	popSecReg(ngi);
 }
@@ -136,31 +160,6 @@ bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 	ngi.ss << "  mov " << secRegName(ngi) << ", [" << secRegName(8) << "]\n";
 	ngi.secReg.state = CellState::rValue;
 	return true;
-}
-
-std::string primRegUsage(NasmGenInfo& ngi)
-{
-	switch (ngi.primReg.state)
-	{
-	case CellState::Unused:
-	case CellState::rValue:
-		return primRegName(ngi);
-	case CellState::lValue:
-		return "[" + primRegName(8) + "]";
-	}
-	throw NasmGenError(Token::Position(), "Invalid primReg state!");
-}
-std::string secRegUsage(NasmGenInfo& ngi)
-{
-	switch (ngi.secReg.state)
-	{
-	case CellState::Unused:
-	case CellState::rValue:
-		return secRegName(ngi);
-	case CellState::lValue:
-		return "[" + secRegName(ngi) + "]";
-	}
-	throw NasmGenError(Token::Position(), "Invalid secReg state!");
 }
 
 void generateArithmeticBase(NasmGenInfo& ngi, const Expression* expr)
@@ -301,9 +300,16 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Bitwise_NOT:
 		throw NasmGenError(expr->pos, "Bitwise NOT not supported!");
 	case Expression::ExprType::Prefix_Plus:
-		throw NasmGenError(expr->pos, "Prefix Plus not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		break;
 	case Expression::ExprType::Prefix_Minus:
-		throw NasmGenError(expr->pos, "Prefix Minus not supported!");
+	{
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		bool converted = primRegLToRVal(ngi, true);
+		ss << "  neg " << primRegUsage(ngi) << "\n";
+		primRegRToLVal(ngi, converted);
+	}
+		break;
 	case Expression::ExprType::Prefix_Increment:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		if (ngi.primReg.state != CellState::lValue)
