@@ -73,13 +73,13 @@ struct Expression : public Statement
 		
 		Bitwise_AND,
 
-		Equality_Equal,
-		Equality_NotEqual,
+		Comparison_Equal,
+		Comparison_NotEqual,
 
-		Relational_Less,
-		Relational_LessEqual,
-		Relational_Greater,
-		Relational_GreaterEqual,
+		Comparison_Less,
+		Comparison_LessEqual,
+		Comparison_Greater,
+		Comparison_GreaterEqual,
 
 		Shift_Left,
 		Shift_Right,

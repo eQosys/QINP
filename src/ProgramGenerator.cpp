@@ -82,17 +82,17 @@ std::vector<OpPrecLvl> opPrecLvls =
 	},
 	{
 		{
-			{ "==", Expression::ExprType::Equality_Equal },
-			{ "!=", Expression::ExprType::Equality_NotEqual },
+			{ "==", Expression::ExprType::Comparison_Equal },
+			{ "!=", Expression::ExprType::Comparison_NotEqual },
 		},
 		OpPrecLvl::Type::Binary,
 	},
 	{
 		{
-			{ "<", Expression::ExprType::Relational_Less },
-			{ "<=", Expression::ExprType::Relational_LessEqual },
-			{ ">", Expression::ExprType::Relational_Greater },
-			{ ">=", Expression::ExprType::Relational_GreaterEqual },
+			{ "<", Expression::ExprType::Comparison_Less },
+			{ "<=", Expression::ExprType::Comparison_LessEqual },
+			{ ">", Expression::ExprType::Comparison_Greater },
+			{ ">=", Expression::ExprType::Comparison_GreaterEqual },
 		},
 		OpPrecLvl::Type::Binary,
 	},

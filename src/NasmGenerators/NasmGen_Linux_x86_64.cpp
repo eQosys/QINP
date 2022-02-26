@@ -260,17 +260,17 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		secRegLToRVal(ngi);
 		ss << "  and " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
 		break;
-	case Expression::ExprType::Equality_Equal:
+	case Expression::ExprType::Comparison_Equal:
 		throw NasmGenError(expr->pos, "Equality Equal not supported!");
-	case Expression::ExprType::Equality_NotEqual:
+	case Expression::ExprType::Comparison_NotEqual:
 		throw NasmGenError(expr->pos, "Equality Not Equal not supported!");
-	case Expression::ExprType::Relational_Less:
+	case Expression::ExprType::Comparison_Less:
 		throw NasmGenError(expr->pos, "Relational Less not supported!");
-	case Expression::ExprType::Relational_LessEqual:
+	case Expression::ExprType::Comparison_LessEqual:
 		throw NasmGenError(expr->pos, "Relational Less Equal not supported!");
-	case Expression::ExprType::Relational_Greater:
+	case Expression::ExprType::Comparison_Greater:
 		throw NasmGenError(expr->pos, "Relational Greater not supported!");
-	case Expression::ExprType::Relational_GreaterEqual:
+	case Expression::ExprType::Comparison_GreaterEqual:
 		throw NasmGenError(expr->pos, "Relational Greater Equal not supported!");
 	case Expression::ExprType::Shift_Left:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
