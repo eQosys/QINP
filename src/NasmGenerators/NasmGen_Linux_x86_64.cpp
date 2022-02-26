@@ -13,7 +13,7 @@ struct CellInfo
 		lValue,
 		rValue,
 	} state = State::Unused;
-	int size = 0;
+	Datatype datatype;
 };
 
 typedef CellInfo::State CellState;
@@ -48,7 +48,7 @@ std::string primRegName(int size)
 }
 std::string primRegName(NasmGenInfo& ngi)
 {
-	return primRegName(ngi.primReg.size);
+	return primRegName(getDatatypeSize(ngi.primReg.datatype));
 }
 std::string secRegName(int size)
 {
@@ -56,7 +56,7 @@ std::string secRegName(int size)
 }
 std::string secRegName(NasmGenInfo& ngi)
 {
-	return secRegName(ngi.secReg.size);
+	return secRegName(getDatatypeSize(ngi.secReg.datatype));
 }
 
 std::string primRegUsage(NasmGenInfo& ngi)
@@ -110,14 +110,14 @@ void popSecReg(NasmGenInfo& ngi)
 }
 void movePrimToSec(NasmGenInfo& ngi, bool markUnused = true)
 {
-	ngi.ss << "  mov " << secRegName(ngi.primReg.size) << ", " << primRegName(ngi) << "\n";
+	ngi.ss << "  mov " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << ", " << primRegName(ngi) << "\n";
 	ngi.secReg = ngi.primReg;
 	if (markUnused)
 		ngi.primReg.state = CellState::Unused;
 }
 void moveSecToPrim(NasmGenInfo& ngi, bool markUnused = true)
 {
-	ngi.ss << "  mov " << primRegName(ngi.secReg.size) << ", " << secRegName(ngi) << "\n";
+	ngi.ss << "  mov " << primRegName(getDatatypeSize(ngi.secReg.datatype)) << ", " << secRegName(ngi) << "\n";
 	ngi.primReg = ngi.secReg;
 	if (markUnused)
 		ngi.secReg.state = CellState::Unused;
@@ -145,7 +145,7 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
 
-	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(ngi.primReg.size) << "\n";
+	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << "\n";
 
 	popSecReg(ngi);
 }
@@ -174,28 +174,27 @@ void generateArithmeticBase(NasmGenInfo& ngi, const Expression* expr)
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
 	auto& ss = ngi.ss;
-	int dtSize = getDatatypeSize(expr->datatype);
 	switch (expr->eType)
 	{
 	case Expression::ExprType::Conversion:
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		
+		int newSize = getDatatypeSize(expr->datatype);
 		int oldSize = getDatatypeSize(expr->left->datatype);
-		if (oldSize >= dtSize)
+		if (oldSize >= newSize)
 			break;
 
 		primRegLToRVal(ngi);
 
 		switch (oldSize) // Maybe wrong conversion?
 		{
-		case 1: ss << "  cbw\n"; if (dtSize == 2) break;
-		case 2: ss << "  cwd\n"; if (dtSize == 4) break;
+		case 1: ss << "  cbw\n"; if (newSize == 2) break;
+		case 2: ss << "  cwd\n"; if (newSize == 4) break;
 		case 4: ss << "  cdq\n"; break;
 		}
 
-		ngi.primReg.state = CellState::rValue;
-		ngi.primReg.size = dtSize;
+		ngi.primReg.datatype = expr->datatype;
 	}
 		break;
 	case Expression::ExprType::Assign:
@@ -292,7 +291,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		moveSecToPrim(ngi);
 		break;
 	case Expression::ExprType::AddressOf:
-		throw NasmGenError(expr->pos, "AddressOf not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		if (ngi.primReg.state != CellState::lValue)
+			throw NasmGenError(expr->pos, "Cannot take address of non-lvalue!");
+		++ngi.primReg.datatype.ptrDepth;
+		ngi.primReg.state = CellState::rValue;
+		break;
 	case Expression::ExprType::Dereference:
 		throw NasmGenError(expr->pos, "Dereference not supported!");
 	case Expression::ExprType::Logical_NOT:
@@ -350,14 +354,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Literal:
-		ss << "  mov " << primRegName(dtSize) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
+		ss << "  mov " << primRegName(getDatatypeSize(expr->datatype)) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		ngi.primReg.state = CellState::rValue;
-		ngi.primReg.size = dtSize;
+		ngi.primReg.datatype = expr->datatype;
 		break;
 	case Expression::ExprType::GlobalVariable:
 		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
 		ngi.primReg.state = CellState::lValue;
-		ngi.primReg.size = dtSize;
+		ngi.primReg.datatype = expr->datatype;
 		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");
