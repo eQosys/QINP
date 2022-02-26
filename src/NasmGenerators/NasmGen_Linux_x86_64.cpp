@@ -98,6 +98,18 @@ bool primRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 	return true;
 }
 
+void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
+{
+	if (!wasPushed)
+		return;
+	
+	movePrimToSec(ngi);
+	popPrimReg(ngi);
+
+	ngi.ss << "  mov [" << primRegName(8) << "], " << secRegName(ngi.primReg.size) << "\n";
+	ngi.primReg.state = CellState::lValue;
+}
+
 bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 {
 	if (ngi.secReg.state != CellState::lValue)
@@ -264,6 +276,46 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		moveSecToPrim(ngi);
 		break;
+	case Expression::ExprType::AddressOf:
+		throw NasmGenError(expr->pos, "AddressOf not supported!");
+	case Expression::ExprType::Dereference:
+		throw NasmGenError(expr->pos, "Dereference not supported!");
+	case Expression::ExprType::Logical_NOT:
+		throw NasmGenError(expr->pos, "Logical NOT not supported!");
+	case Expression::ExprType::Bitwise_NOT:
+		throw NasmGenError(expr->pos, "Bitwise NOT not supported!");
+	case Expression::ExprType::Prefix_Plus:
+		throw NasmGenError(expr->pos, "Prefix Plus not supported!");
+	case Expression::ExprType::Prefix_Minus:
+		throw NasmGenError(expr->pos, "Prefix Minus not supported!");
+	case Expression::ExprType::Prefix_Increment:
+	{
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		if (!expr->left->isLValue)
+			throw NasmGenError(expr->pos, "Cannot increment non-lvalue!");
+		bool converted = primRegLToRVal(ngi, true);
+		ss << "  inc " << primRegUsage(ngi) << "\n";
+		primRegRToLVal(ngi, converted);
+	}
+		break;
+	case Expression::ExprType::Prefix_Decrement:
+	{
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		if (!expr->left->isLValue)
+			throw NasmGenError(expr->pos, "Cannot decrement non-lvalue!");
+		bool converted = primRegLToRVal(ngi, true);
+		ss << "  dec " << primRegUsage(ngi) << "\n";
+		primRegRToLVal(ngi, converted);
+	}
+		break;
+	case Expression::ExprType::Subscript:
+		throw NasmGenError(expr->pos, "Subscript not supported!");
+	case Expression::ExprType::FunctionCall:
+		throw NasmGenError(expr->pos, "FunctionCall not supported!");
+	case Expression::ExprType::Suffix_Increment:
+		throw NasmGenError(expr->pos, "Suffix Increment not supported!");
+	case Expression::ExprType::Suffix_Decrement:
+		throw NasmGenError(expr->pos, "Suffix Decrement not supported!");
 	case Expression::ExprType::Literal:
 		ss << "  mov " << primRegName(dtSize) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		ngi.primReg.state = CellState::rValue;

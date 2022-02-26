@@ -91,6 +91,20 @@ struct Expression : public Statement
 		Quotient,
 		Remainder,
 
+		AddressOf,
+		Dereference,
+		Logical_NOT,
+		Bitwise_NOT,
+		Prefix_Plus,
+		Prefix_Minus,
+		Prefix_Increment,
+		Prefix_Decrement,
+
+		Subscript,
+		FunctionCall,
+		Suffix_Increment,
+		Suffix_Decrement,
+
 		Literal,
 		GlobalVariable,
 	};
