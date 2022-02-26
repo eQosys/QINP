@@ -234,11 +234,32 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Logical_AND:
 		throw NasmGenError(expr->pos, "Logical AND not supported!");
 	case Expression::ExprType::Bitwise_OR:
-		throw NasmGenError(expr->pos, "Bitwise OR not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		popSecReg(ngi);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
+		ss << "  or " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		break;
 	case Expression::ExprType::Bitwise_XOR:
-		throw NasmGenError(expr->pos, "Bitwise XOR not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		popSecReg(ngi);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
+		ss << "  xor " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		break;
 	case Expression::ExprType::Bitwise_AND:
-		throw NasmGenError(expr->pos, "Bitwise AND not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		popSecReg(ngi);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
+		ss << "  and " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		break;
 	case Expression::ExprType::Equality_Equal:
 		throw NasmGenError(expr->pos, "Equality Equal not supported!");
 	case Expression::ExprType::Equality_NotEqual:
