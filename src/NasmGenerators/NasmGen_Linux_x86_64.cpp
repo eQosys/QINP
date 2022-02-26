@@ -83,17 +83,19 @@ void popSecReg(NasmGenInfo& ngi)
 	ngi.stackCells.pop();
 	ngi.ss << "  pop " << secRegName(8) << "\n";
 }
-void movePrimToSec(NasmGenInfo& ngi)
+void movePrimToSec(NasmGenInfo& ngi, bool markUnused = true)
 {
 	ngi.ss << "  mov " << secRegName(ngi.primReg.size) << ", " << primRegName(ngi) << "\n";
 	ngi.secReg = ngi.primReg;
-	ngi.primReg.state = CellState::Unused;
+	if (markUnused)
+		ngi.primReg.state = CellState::Unused;
 }
-void moveSecToPrim(NasmGenInfo& ngi)
+void moveSecToPrim(NasmGenInfo& ngi, bool markUnused = true)
 {
 	ngi.ss << "  mov " << primRegName(ngi.secReg.size) << ", " << secRegName(ngi) << "\n";
 	ngi.primReg = ngi.secReg;
-	ngi.secReg.state = CellState::Unused;
+	if (markUnused)
+		ngi.secReg.state = CellState::Unused;
 }
 
 bool primRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
@@ -326,22 +328,20 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		if (ngi.primReg.state != CellState::lValue)
 			throw NasmGenError(expr->pos, "Cannot increment non-lvalue!");
-		ss << "  mov " << secRegName(ngi.primReg.size) << ", " << primRegUsage(ngi) << "\n";
-		ss << "  inc " << secRegName(ngi.primReg.size) << "\n";
-		ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(ngi.primReg.size) << "\n";
-		ss << "  dec " << secRegName(ngi.primReg.size) << "\n";
-		ss << "  mov " << primRegName(ngi) << ", " << secRegName(ngi.primReg.size) << "\n";
-		ngi.primReg.state = CellState::rValue;
+		movePrimToSec(ngi, false);
+		primRegLToRVal(ngi);
+		ss << "  inc " << primRegUsage(ngi) << "\n";
+		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
+		ss << "  dec " << primRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Suffix_Decrement:generateNasm_Linux_x86_64(ngi, expr->left.get());
 		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot increment non-lvalue!");
-		ss << "  mov " << secRegName(ngi.primReg.size) << ", " << primRegUsage(ngi) << "\n";
-		ss << "  dec " << secRegName(ngi.primReg.size) << "\n";
-		ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(ngi.primReg.size) << "\n";
-		ss << "  inc " << secRegName(ngi.primReg.size) << "\n";
-		ss << "  mov " << primRegName(ngi) << ", " << secRegName(ngi.primReg.size) << "\n";
-		ngi.primReg.state = CellState::rValue;
+			throw NasmGenError(expr->pos, "Cannot decrement non-lvalue!");
+		movePrimToSec(ngi, false);
+		primRegLToRVal(ngi);
+		ss << "  dec " << primRegUsage(ngi) << "\n";
+		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
+		ss << "  inc " << primRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Literal:
 		ss << "  mov " << primRegName(dtSize) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
