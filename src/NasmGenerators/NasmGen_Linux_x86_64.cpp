@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <sstream>
+#include <cassert>
 
 #include "Errors/NasmGenError.h"
 
@@ -210,11 +211,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		assert(ngi.primReg.state == CellState::lValue && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
-		
-		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot assign to non-lvalue!");
 
 		ss << "  mov " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
@@ -239,9 +238,19 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Bw_OR:
 		throw NasmGenError(expr->pos, "Assignment by Bitwise OR not supported!");
 	case Expression::ExprType::Logical_OR:
-		throw NasmGenError(expr->pos, "Logical OR not supported!");
+		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
+		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		break;
 	case Expression::ExprType::Logical_AND:
-		throw NasmGenError(expr->pos, "Logical AND not supported!");
+		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
+		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		break;
 	case Expression::ExprType::Bitwise_OR:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
@@ -317,15 +326,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::AddressOf:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot take address of non-lvalue!");
+		assert(ngi.primReg.state == CellState::lValue && "Cannot take address of non-lvalue!");
 		++ngi.primReg.datatype.ptrDepth;
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Dereference:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.datatype.ptrDepth == 0)
-			throw NasmGenError(expr->pos, "Cannot dereference non-pointer!");
+		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot dereference non-pointer!");
 		--ngi.primReg.datatype.ptrDepth;
 		
 		switch (ngi.primReg.state)
@@ -341,7 +348,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		}
 		break;
 	case Expression::ExprType::Logical_NOT:
-		throw NasmGenError(expr->pos, "Logical NOT not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->left.get());\
+		primRegLToRVal(ngi);
+		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+		ss << "  sete al\n";
+		break;
 	case Expression::ExprType::Bitwise_NOT:
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
@@ -363,24 +374,21 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Prefix_Increment:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot increment non-lvalue!");
+		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
 		primRegLToRVal(ngi, true);
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
 		break;
 	case Expression::ExprType::Prefix_Decrement:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot decrement non-lvalue!");
+		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
 		primRegLToRVal(ngi, true);
 		ss << "  dec " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
 		break;
 	case Expression::ExprType::Subscript:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.datatype.ptrDepth == 0)
-			throw NasmGenError(expr->pos, "Cannot subscript non-pointer!");
+		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot subscript non-pointer!");
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
@@ -394,17 +402,16 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		throw NasmGenError(expr->pos, "FunctionCall not supported!");
 	case Expression::ExprType::Suffix_Increment:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot increment non-lvalue!");
+		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 		ss << "  dec " << primRegUsage(ngi) << "\n";
 		break;
-	case Expression::ExprType::Suffix_Decrement:generateNasm_Linux_x86_64(ngi, expr->left.get());
-		if (ngi.primReg.state != CellState::lValue)
-			throw NasmGenError(expr->pos, "Cannot decrement non-lvalue!");
+	case Expression::ExprType::Suffix_Decrement:
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
 		ss << "  dec " << primRegUsage(ngi) << "\n";

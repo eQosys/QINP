@@ -13,10 +13,10 @@ assembly:
 	"mov [$(var5)], rax"
 var5 = '9' - '0' + 10
 
-var4 = (&var5)[0] ^ 2
+(&var4)[0] = (&var5)[0] ^ 2
 
 \\var5 = var4
 
-bool b = var4 <= var5
+bool b = ~!(!var4 && !var5)
 
-exit var4
+exit b

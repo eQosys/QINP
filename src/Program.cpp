@@ -37,8 +37,8 @@ int getDatatypeSize(const Datatype& datatype)
 		return sizeof(void*);
 
 	int size = getBuiltinTypeSize(datatype.name);
-	for (int s : datatype.arraySizes)
-		size *= s;
+	//for (int s : datatype.arraySizes)
+	//	size *= s;
 
 	return size;
 }

@@ -512,14 +512,14 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 	std::map<std::string, Expression::ExprType>::iterator it;
 	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end())
 	{
-		auto temp = std::make_shared<Expression>(pOpToken->pos);
-		temp->left = exp;
-		temp->eType = it->second;
+		{
+			auto temp = std::make_shared<Expression>(pOpToken->pos);
+			temp->left = exp;
+			exp = temp;
+		}
+		exp->eType = it->second;
 		nextToken(info);
-		temp->right = getParseExpression(info, precLvl + 1);
-		autoFixDatatypeMismatch(temp);
-		temp->datatype = temp->left->datatype;
-		exp = temp;
+		exp->right = getParseExpression(info, precLvl + 1);
 
 		switch (exp->eType)
 		{
@@ -534,14 +534,25 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_AND:
 		case Expression::ExprType::Assign_Bw_XOR:
 		case Expression::ExprType::Assign_Bw_OR:
+			autoFixDatatypeMismatch(exp);
+			if (!exp->left->isLValue)
+				throw ProgGenError(exp->left->pos, "Cannot assign to non-lvalue!");
+			exp->datatype = exp->left->datatype;
+			exp->isLValue = true;
 			break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
+			exp->left = genConvertExpression(exp->left, { 0, "bool" });
+			exp->right = genConvertExpression(exp->right, { 0, "bool" });
 			exp->datatype = { 0, "bool" };
+			exp->isLValue = false;
 			break;
 		case Expression::ExprType::Bitwise_OR:
 		case Expression::ExprType::Bitwise_XOR:
 		case Expression::ExprType::Bitwise_AND:
+			autoFixDatatypeMismatch(exp);
+			exp->datatype = exp->left->datatype;
+			exp->isLValue = false;
 			break;
 		case Expression::ExprType::Comparison_Equal:
 		case Expression::ExprType::Comparison_NotEqual:
@@ -549,7 +560,10 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_LessEqual:
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
+			exp->left = genConvertExpression(exp->left, { 0, "bool" });
+			exp->right = genConvertExpression(exp->right, { 0, "bool" });
 			exp->datatype = { 0, "bool" };
+			exp->isLValue = false;
 			break;
 		case Expression::ExprType::Shift_Left:
 		case Expression::ExprType::Shift_Right:
@@ -558,6 +572,9 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Product:
 		case Expression::ExprType::Quotient:
 		case Expression::ExprType::Remainder:
+			autoFixDatatypeMismatch(exp);
+			exp->datatype = exp->left->datatype;
+			exp->isLValue = false;
 			break;
 		default:
 			throw ProgGenError(exp->pos, "Invalid binary operator!");
@@ -577,16 +594,19 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 	std::map<std::string, Expression::ExprType>::iterator it;
 	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end())
 	{
-		auto temp = std::make_shared<Expression>(pOpToken->pos);
-		temp->left = exp;
-		temp->eType = it->second;
+		{
+			auto temp = std::make_shared<Expression>(pOpToken->pos);
+			temp->left = exp;
+			exp = temp;
+		}
+		exp->eType = it->second;
 		nextToken(info);
-		temp->datatype = exp->datatype;
-		exp = temp;
 
 		switch (exp->eType)
 		{
 		case Expression::ExprType::Subscript:
+			exp->datatype = exp->left->datatype;
+			exp->isLValue = true;
 			if (exp->datatype.ptrDepth == 0)
 				throw ProgGenError(exp->pos, "Cannot subscript non-pointer type!");
 			--exp->datatype.ptrDepth;
@@ -596,9 +616,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::FunctionCall:
 			throw ProgGenError(exp->pos, "Function call not supported!");
 		case Expression::ExprType::Suffix_Increment:
-			break;
 		case Expression::ExprType::Suffix_Decrement:
-			break;
+			exp->datatype = exp->left->datatype;
+			exp->isLValue = false;
 		}
 	}
 
@@ -619,30 +639,33 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	nextToken(info);
 	exp->left = getParseExpression(info, precLvl);
 
-	exp->datatype = exp->left->datatype;
-
 	switch (exp->eType)
 	{
 	case Expression::ExprType::AddressOf:
+		exp->datatype = exp->left->datatype;
 		++exp->datatype.ptrDepth;
 		exp->isLValue = false;
 		break;
 	case Expression::ExprType::Dereference:
+		exp->datatype = exp->left->datatype;
 		if (exp->datatype.ptrDepth == 0)
 			throw ProgGenError(opToken.pos, "Cannot dereference a non-pointer!");
 		--exp->datatype.ptrDepth;
+		exp->isLValue = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
-		throw ProgGenError(opToken.pos, "Logical NOT is not supported!");
+		exp->datatype = { 0, "bool" };
+		exp->isLValue = false;
 	case Expression::ExprType::Bitwise_NOT:
+		exp->datatype = exp->left->datatype;
+		exp->isLValue = false;
 		break;
 	case Expression::ExprType::Prefix_Plus:
-		break;
 	case Expression::ExprType::Prefix_Minus:
-		break;
 	case Expression::ExprType::Prefix_Increment:
-		break;
 	case Expression::ExprType::Prefix_Decrement:
+		exp->datatype = exp->left->datatype;
+		exp->isLValue = false;
 		break;
 	default:
 		throw ProgGenError(opToken.pos, "Unknown unary prefix expression!");

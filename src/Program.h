@@ -11,7 +11,6 @@ struct Datatype
 {
 	int ptrDepth = 0;
 	std::string name;
-	std::vector<int> arraySizes;
 };
 
 bool operator==(const Datatype& left, const Datatype& right);
