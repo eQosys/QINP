@@ -216,7 +216,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		if (ngi.primReg.state != CellState::lValue)
 			throw NasmGenError(expr->pos, "Cannot assign to non-lvalue!");
 
-		ss << "  mov [" << primRegName(8) << "], " << secRegName(ngi) << "\n";
+		ss << "  mov " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Assign_Sum:
 		throw NasmGenError(expr->pos, "Assignment by Sum not supported!");
@@ -243,31 +243,22 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Logical_AND:
 		throw NasmGenError(expr->pos, "Logical AND not supported!");
 	case Expression::ExprType::Bitwise_OR:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		popSecReg(ngi);
+		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
-		ss << "  or " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Bitwise_XOR:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		popSecReg(ngi);
+		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
-		ss << "  xor " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		ss << "  xor " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Bitwise_AND:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		popSecReg(ngi);
+		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
-		ss << "  and " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
+		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Comparison_Equal:
 		generateComparison(ngi, expr);
@@ -294,20 +285,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  setge al\n";
 		break;
 	case Expression::ExprType::Shift_Left:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 		break;
 	case Expression::ExprType::Shift_Right:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
-		movePrimToSec(ngi);
-		popPrimReg(ngi);
+		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 		break;
