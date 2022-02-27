@@ -45,10 +45,6 @@ int execCmd(const std::string& command)
 		return WEXITSTATUS(status);
 	else
 		return -1;
-
-	//auto pipe = popen(command.c_str(), "r");
-	//if (!pipe) throw QinpError("popen() failed!");
-	//return pclose(pipe);
 }
 
 void writeTextFileOverwrite(const std::string& filename, const std::string& text)

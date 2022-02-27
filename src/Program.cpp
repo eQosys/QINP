@@ -10,6 +10,11 @@ bool operator!=(const Datatype& left, const Datatype& right)
 	return !(left == right);
 }
 
+bool operator!(const Datatype& datatype)
+{
+	return datatype.name.empty();
+}
+
 int getBuiltinTypeSize(const std::string& name)
 {
 	static const std::map<std::string, int> sizes =

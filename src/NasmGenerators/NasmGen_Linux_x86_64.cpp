@@ -419,14 +419,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Literal:
-		ss << "  mov " << primRegName(getDatatypeSize(expr->datatype)) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
-		ngi.primReg.state = CellState::rValue;
 		ngi.primReg.datatype = expr->datatype;
+		ngi.primReg.state = CellState::rValue;
+		ss << "  mov " << primRegUsage(ngi) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		break;
 	case Expression::ExprType::GlobalVariable:
 		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
 		ngi.primReg.state = CellState::lValue;
-		ngi.primReg.datatype = expr->datatype;
 		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");

@@ -17,8 +17,6 @@ struct ProgGenInfo
 		int nPerLvl = 0;
 		std::string chStr = "";
 	} indent;
-
-	int globOffset = 0;
 };
 
 struct OpPrecLvl
@@ -711,41 +709,77 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 	return true;
 }
 
-bool parseDeclDef(ProgGenInfo& info)
+ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+{
+	Variable var;
+	var.datatype = datatype;
+	var.isLocal = false;
+
+	info.program->globals.insert({ name, var });
+
+	ExpressionRef initExpr = nullptr;
+
+	if (isOperator(peekToken(info), "="))
+	{
+		nextToken(info, -1);
+		initExpr = getParseExpression(info);
+	}
+
+	parseExpectedNewline(info);
+
+	return initExpr;
+}
+
+void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+{
+	auto initExpr = getParseDeclDefVariable(info, datatype, name);
+	if (initExpr)
+		info.program->body.push_back(initExpr);
+}
+
+void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+{
+	throw ProgGenError(peekToken(info).pos, "Function declarations/definitions not supported!");
+}
+
+Datatype getParseDatatype(ProgGenInfo& info)
 {
 	auto& typeToken = peekToken(info);
 	if (!isBuiltinType(typeToken))
-		return false;
+		return Datatype();
 	nextToken(info);
 
-	Variable var;
-	var.datatype.name = typeToken.value;
+	Datatype datatype;
+	datatype.name = typeToken.value;
 
 	while (isOperator(peekToken(info), "*"))
 	{
 		nextToken(info);
-		++var.datatype.ptrDepth;
+		++datatype.ptrDepth;
 	}
+
+	return datatype;
+}
+
+bool parseDeclDef(ProgGenInfo& info)
+{
+	auto& typeToken = peekToken(info);
+
+	auto datatype = getParseDatatype(info);
+	if (!datatype)
+		return false;
 
 	auto& nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		throw ProgGenError(nameToken.pos, "Expected identifier!");
 
-	var.offset = info.globOffset;
-	int varSize = getDatatypeSize(var.datatype);
-	if (varSize < 0)
+	if (getDatatypeSize(datatype) < 0)
 		throw ProgGenError(typeToken.pos, "Invalid datatype!");
-	info.globOffset += varSize;
-
-	info.program->globals.insert({ nameToken.value, var });
-
-	if (isOperator(peekToken(info), "="))
-	{
-		nextToken(info, -1);
-		parseExpression(info);
-	}
-
-	parseExpectedNewline(info);
+\
+	if (isSeparator(peekToken(info), "("))
+		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
+	else
+		parseExpectedDeclDefVariable(info, datatype, nameToken.value);
 
 	return true;
 }

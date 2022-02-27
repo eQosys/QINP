@@ -15,6 +15,7 @@ struct Datatype
 
 bool operator==(const Datatype& left, const Datatype& right);
 bool operator!=(const Datatype& left, const Datatype& right);
+bool operator!(const Datatype& datatype);
 
 int getBuiltinTypeSize(const std::string& name);
 
