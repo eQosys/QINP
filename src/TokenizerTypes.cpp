@@ -43,10 +43,7 @@ bool isKeyword(const std::string& name)
 	{
 		"exit",
 		"asm", "assembly",
-		// "const", "void", "bool",
-		// "i8", "i16", "i32", "i64",
-		// "u8", "u16", "u32", "u64",
-		// "f32", "f64",
+		// "const", "void"
 		// "indent", "tab", "space",
 		// "import", "default",
 		// "return", "exit", "self",
@@ -70,6 +67,7 @@ bool isBuiltinType(const std::string& name)
 {
 	static const std::set<std::string> builtinTypes =
 	{
+		"bool",
 		//"i8", "i16", "i32", "i64",
 		"u8", "u16", "u32", "u64",
 		//"f32", "f64",

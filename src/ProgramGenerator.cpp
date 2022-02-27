@@ -369,7 +369,7 @@ Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right
 	
 	static const std::vector<std::string> typeOrder = 
 	{
-		"u8", "u16", "u32", "u64",
+		"bool", "u8", "u16", "u32", "u64",
 	};
 	
 	auto leftIt = std::find(typeOrder.begin(), typeOrder.end(), left->datatype.name);
@@ -520,6 +520,48 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		autoFixDatatypeMismatch(temp);
 		temp->datatype = temp->left->datatype;
 		exp = temp;
+
+		switch (exp->eType)
+		{
+		case Expression::ExprType::Assign:
+		case Expression::ExprType::Assign_Sum:
+		case Expression::ExprType::Assign_Difference:
+		case Expression::ExprType::Assign_Product:
+		case Expression::ExprType::Assign_Quotient:
+		case Expression::ExprType::Assign_Remainder:
+		case Expression::ExprType::Assign_Bw_LeftShift:
+		case Expression::ExprType::Assign_Bw_RightShift:
+		case Expression::ExprType::Assign_Bw_AND:
+		case Expression::ExprType::Assign_Bw_XOR:
+		case Expression::ExprType::Assign_Bw_OR:
+			break;
+		case Expression::ExprType::Logical_OR:
+		case Expression::ExprType::Logical_AND:
+			exp->datatype = { 0, "bool" };
+			break;
+		case Expression::ExprType::Bitwise_OR:
+		case Expression::ExprType::Bitwise_XOR:
+		case Expression::ExprType::Bitwise_AND:
+			break;
+		case Expression::ExprType::Comparison_Equal:
+		case Expression::ExprType::Comparison_NotEqual:
+		case Expression::ExprType::Comparison_Less:
+		case Expression::ExprType::Comparison_LessEqual:
+		case Expression::ExprType::Comparison_Greater:
+		case Expression::ExprType::Comparison_GreaterEqual:
+			exp->datatype = { 0, "bool" };
+			break;
+		case Expression::ExprType::Shift_Left:
+		case Expression::ExprType::Shift_Right:
+		case Expression::ExprType::Sum:
+		case Expression::ExprType::Difference:
+		case Expression::ExprType::Product:
+		case Expression::ExprType::Quotient:
+		case Expression::ExprType::Remainder:
+			break;
+		default:
+			throw ProgGenError(exp->pos, "Invalid binary operator!");
+		}
 	}
 
 	return exp;

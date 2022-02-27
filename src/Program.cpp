@@ -14,6 +14,7 @@ int getBuiltinTypeSize(const std::string& name)
 {
 	static const std::map<std::string, int> sizes =
 	{
+		{ "bool", 1 },
 		//{ "i8", 1 },
 		//{ "i16", 2 },
 		//{ "i32", 4 },
@@ -34,5 +35,10 @@ int getDatatypeSize(const Datatype& datatype)
 {
 	if (datatype.ptrDepth > 0)
 		return sizeof(void*);
-	return getBuiltinTypeSize(datatype.name);
+
+	int size = getBuiltinTypeSize(datatype.name);
+	for (int s : datatype.arraySizes)
+		size *= s;
+
+	return size;
 }

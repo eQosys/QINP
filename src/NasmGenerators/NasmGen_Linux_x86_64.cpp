@@ -162,13 +162,22 @@ bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 	return true;
 }
 
-void generateArithmeticBase(NasmGenInfo& ngi, const Expression* expr)
+void generateBinaryEvaluation(NasmGenInfo& ngi, const Expression* expr)
 {
 	generateNasm_Linux_x86_64(ngi, expr->left.get());
 	pushPrimReg(ngi);
 	generateNasm_Linux_x86_64(ngi, expr->right.get());
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
+}
+
+void generateComparison(NasmGenInfo& ngi, const Expression* expr)
+{
+	generateBinaryEvaluation(ngi, expr);
+	primRegLToRVal(ngi);
+	secRegLToRVal(ngi);
+	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << "\n";
+	ngi.primReg.datatype = { 0, "bool" };
 }
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
@@ -261,17 +270,29 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  and " << primRegName(ngi) << ", " << secRegName(ngi) << "\n";
 		break;
 	case Expression::ExprType::Comparison_Equal:
-		throw NasmGenError(expr->pos, "Equality Equal not supported!");
+		generateComparison(ngi, expr);
+		ss << "  sete al\n";
+		break;
 	case Expression::ExprType::Comparison_NotEqual:
-		throw NasmGenError(expr->pos, "Equality Not Equal not supported!");
+		generateComparison(ngi, expr);
+		ss << "  setne al\n";
+		break;
 	case Expression::ExprType::Comparison_Less:
-		throw NasmGenError(expr->pos, "Relational Less not supported!");
+		generateComparison(ngi, expr);
+		ss << "  setl al\n";
+		break;
 	case Expression::ExprType::Comparison_LessEqual:
-		throw NasmGenError(expr->pos, "Relational Less Equal not supported!");
+		generateComparison(ngi, expr);
+		ss << "  setle al\n";
+		break;
 	case Expression::ExprType::Comparison_Greater:
-		throw NasmGenError(expr->pos, "Relational Greater not supported!");
+		generateComparison(ngi, expr);
+		ss << "  setg al\n";
+		break;
 	case Expression::ExprType::Comparison_GreaterEqual:
-		throw NasmGenError(expr->pos, "Relational Greater Equal not supported!");
+		generateComparison(ngi, expr);
+		ss << "  setge al\n";
+		break;
 	case Expression::ExprType::Shift_Left:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		pushPrimReg(ngi);
@@ -291,23 +312,23 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 		break;
 	case Expression::ExprType::Sum:
-		generateArithmeticBase(ngi, expr);
+		generateBinaryEvaluation(ngi, expr);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Difference:
-		generateArithmeticBase(ngi, expr);
+		generateBinaryEvaluation(ngi, expr);
 		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Product:
-		generateArithmeticBase(ngi, expr);
+		generateBinaryEvaluation(ngi, expr);
 		ss << "  mul " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Quotient:
-		generateArithmeticBase(ngi, expr);
+		generateBinaryEvaluation(ngi, expr);
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Remainder:
-		generateArithmeticBase(ngi, expr);
+		generateBinaryEvaluation(ngi, expr);
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		moveSecToPrim(ngi);
 		break;
