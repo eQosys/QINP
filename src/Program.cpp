@@ -47,3 +47,61 @@ int getDatatypeSize(const Datatype& datatype)
 
 	return size;
 }
+
+std::string getMangledDatatype(const Datatype& datatype)
+{
+	return datatype.name + "~" + std::to_string(datatype.ptrDepth);
+}
+
+std::string getMangledSignature(const std::vector<ExpressionRef>& paramExpr)
+{
+	std::string signature;
+	for (auto& expr : paramExpr)
+		signature += "." + getMangledDatatype(expr->datatype);
+	return signature;
+}
+
+std::string getMangledType(const Datatype& retType, const std::vector<Datatype>& paramTypes)
+{
+	std::string mangledType = getMangledDatatype(retType) + "#";
+
+	for (auto& paramType : paramTypes)
+		mangledType += "." + getMangledDatatype(paramType);
+
+	return mangledType;
+}
+
+std::string getMangledType(const Datatype& retType, const std::vector<ExpressionRef>& paramExpr)
+{
+	return getMangledDatatype(retType) + "#" + getMangledSignature(paramExpr);
+}
+
+std::string getMangledType(const Datatype& retType, const std::vector<Variable>& params)
+{
+	std::string mangledType = getMangledDatatype(retType) + "#";
+
+	for (auto& param : params)
+		mangledType += "." + getMangledDatatype(param.datatype);
+
+	return mangledType;
+}
+
+std::string getMangledType(const FunctionRef func)
+{
+	return getMangledType(func->retType, func->params);
+}
+
+std::string getSignatureFromMangledType(const std::string& mangledType)
+{
+	auto it = mangledType.find('#');
+	return mangledType.substr(it + 1);
+}
+
+Datatype getDatatypeFromMangledType(std::string mangledType)
+{
+	mangledType = mangledType.substr(0, mangledType.find('#'));
+	Datatype datatype;
+	datatype.name = mangledType.substr(0, mangledType.find('~'));
+	datatype.ptrDepth = std::stoi(mangledType.substr(mangledType.find('~') + 1));
+	return datatype;
+}

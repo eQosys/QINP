@@ -17,6 +17,7 @@ struct ProgGenInfo
 		int nPerLvl = 0;
 		std::string chStr = "";
 	} indent;
+	std::string lastLoadedFunctionName = "";
 };
 
 struct OpPrecLvl
@@ -132,7 +133,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 	{
 		{
 			{ "[", Expression::ExprType::Subscript },
-			//{ "(", Expression::ExprType::FunctionCall },
+			{ "(", Expression::ExprType::FunctionCall },
 			{ "++", Expression::ExprType::Suffix_Increment },
 			{ "--", Expression::ExprType::Suffix_Decrement },
 		},
@@ -220,6 +221,16 @@ const Variable& getVariable(ProgGenInfo& info, const std::string& name, const To
 	return it->second;
 }
 
+const FunctionRef getFunction(ProgGenInfo& info, const std::string& name, const Token::Position& tokenPos)
+{
+	auto& program = info.program;
+	auto& functions = program->functions;
+	auto it = functions.find(name);
+	if (it == functions.end())
+		return nullptr;
+	return it->second;
+}
+
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 {
 	std::string result;
@@ -275,8 +286,15 @@ void increaseIndent(ProgGenInfo::Indent& indent)
 
 bool parseIndent(ProgGenInfo& info)
 {
-	if (info.indent.chStr.empty() && info.indent.lvl > 0)
+	if (info.indent.chStr.empty())
 	{
+		if (info.indent.lvl == 0)
+		{
+			if (isWhitespace(peekToken(info)))
+				throw ProgGenError(peekToken(info).pos, "Unexpected indentation!");
+			return true;
+		}
+
 		if (info.indent.lvl != 1)
 			throw ProgGenError(peekToken(info).pos, "Indentation level must be 1 for the first used indentation!");
 
@@ -302,13 +320,16 @@ bool parseIndent(ProgGenInfo& info)
 		return true;
 	}
 
+	int indentCount = 0;
 	for (int i = 0; i < info.indent.nPerLvl * info.indent.lvl; ++i)
 	{
-		auto& token = peekToken(info);
+		auto& token = peekToken(info, indentCount);
 		if (!isWhitespace(token) || token.value != info.indent.chStr)
 			return false;
-		nextToken(info);
+		++indentCount;
 	}
+
+	nextToken(info, indentCount);
 
 	if (peekToken(info).type == Token::Type::Whitespace)
 			throw ProgGenError(peekToken(info).pos, "Inconsistent indentation!");
@@ -355,6 +376,24 @@ void parseExpectedNewline(ProgGenInfo& info)
 void parseExpectedColon(ProgGenInfo& info)
 {
 	parseExpected(info, Token::Type::Separator, ":");
+}
+
+void setTempBody(ProgGenInfo& info, BodyRef body)
+{
+	if (info.program->__mainBodyBackup)
+		throw ProgGenError(peekToken(info).pos, "Cannot set temp body when a temp body is already set!");
+
+	info.program->__mainBodyBackup = info.program->body;
+	info.program->body = body;
+}
+
+void unsetTempBody(ProgGenInfo& info)
+{
+	if (!info.program->__mainBodyBackup)
+		throw ProgGenError(peekToken(info).pos, "Cannot unset temp body when no temp body is set!");
+
+	info.program->body = info.program->__mainBodyBackup;
+	info.program->__mainBodyBackup = nullptr;
 }
 
 Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right)
@@ -459,8 +498,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	auto& litToken = peekToken(info);
 	if (!isIdentifier(litToken))
 		return nullptr;
-	
-	nextToken(info);
+
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
 	auto& var = getVariable(info, litToken.value, litToken.pos);
@@ -470,12 +508,39 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	exp->datatype = var.datatype;
 	exp->globName = litToken.value;
 
+	nextToken(info);
+
+	return exp;
+}
+
+ExpressionRef getParseFunctionAddress(ProgGenInfo& info)
+{
+	auto& litToken = peekToken(info);
+	if (!isIdentifier(litToken))
+		return nullptr;
+
+	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
+
+	auto func = getFunction(info, litToken.value, litToken.pos);
+	if (!func)
+		return nullptr;
+	
+	exp->eType = Expression::ExprType::FunctionAddress;
+	exp->isLValue = false;
+	exp->datatype = { 1, getMangledType(func)};
+	exp->funcName = litToken.value;
+
+	nextToken(info);
+
 	return exp;
 }
 
 ExpressionRef getParseValue(ProgGenInfo& info)
 {
 	auto exp = getParseLiteral(info);
+	if (exp) return exp;
+
+	exp = getParseFunctionAddress(info);
 	if (exp) return exp;
 
 	exp = getParseVariable(info);
@@ -612,11 +677,32 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
 		case Expression::ExprType::FunctionCall:
-			throw ProgGenError(exp->pos, "Function call not supported!");
+		{
+			exp->datatype; // Set return type from exp->left->datatype (first 'value')
+			exp->isLValue = false;
+			if (exp->left->datatype.ptrDepth == 0)
+				throw ProgGenError(exp->pos, "Cannot call non-function!");
+			exp->paramSizeSum = 0;
+			while (!isSeparator(peekToken(info), ")"))
+			{
+				exp->paramExpr.push_back(getParseExpression(info));
+				exp->paramSizeSum += getDatatypeSize(exp->paramExpr.back()->datatype);
+				if (!isSeparator(peekToken(info), ")"))
+					parseExpected(info, Token::Type::Separator, ",");
+			}
+			std::string signature = getMangledSignature(exp->paramExpr);
+			if (getSignatureFromMangledType(exp->left->datatype.name) != signature)
+				throw ProgGenError(exp->pos, "Function call signature mismatch!");
+			exp->datatype = getDatatypeFromMangledType(exp->left->datatype.name);
+
+			parseExpected(info, Token::Type::Separator, ")");
+		}
+			break;
 		case Expression::ExprType::Suffix_Increment:
 		case Expression::ExprType::Suffix_Decrement:
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
+			break;
 		}
 	}
 
@@ -692,7 +778,7 @@ bool parseExpression(ProgGenInfo& info)
 {
 	auto exp = getParseExpression(info);
 	if (exp)
-		info.program->body.push_back(exp);
+		info.program->body->push_back(exp);
 	return !!exp;
 }
 
@@ -704,7 +790,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 
 	if (expr->datatype != targetType)
 		expr = genConvertExpression(expr, targetType);
-	info.program->body.push_back(expr);
+	info.program->body->push_back(expr);
 
 	return true;
 }
@@ -712,6 +798,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
 	Variable var;
+	var.name = name;
 	var.datatype = datatype;
 	var.isLocal = false;
 
@@ -734,12 +821,7 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, c
 {
 	auto initExpr = getParseDeclDefVariable(info, datatype, name);
 	if (initExpr)
-		info.program->body.push_back(initExpr);
-}
-
-void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
-{
-	throw ProgGenError(peekToken(info).pos, "Function declarations/definitions not supported!");
+		info.program->body->push_back(initExpr);
 }
 
 Datatype getParseDatatype(ProgGenInfo& info)
@@ -761,6 +843,57 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	return datatype;
 }
 
+void parseFunctionBody(ProgGenInfo& info);
+
+void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+{
+	FunctionRef func = std::make_shared<Function>();
+	func->body = std::make_shared<Body>();
+	func->name = name;
+	func->retType = datatype;
+
+	parseExpected(info, Token::Type::Separator, "(");
+
+	while (!isSeparator(peekToken(info), ")"))
+	{
+		Variable param;
+		param.isLocal = true;
+
+		param.datatype = getParseDatatype(info);
+		if (!param.datatype)
+			throw ProgGenError(peekToken(info).pos, "Expected datatype!");
+		
+		func->retOffset += getDatatypeSize(param.datatype);
+		param.offset = func->retOffset;
+
+		if (!isIdentifier(peekToken(info)))
+			throw ProgGenError(peekToken(info).pos, "Expected identifier!");
+
+		param.name = nextToken(info).value;
+
+		if (!isSeparator(peekToken(info), ",") && !isSeparator(peekToken(info), ")"))
+			throw ProgGenError(peekToken(info).pos, "Expected ',' or ')'!");
+
+		func->params.push_back(param);
+	}
+
+	parseExpected(info, Token::Type::Separator, ")");
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	increaseIndent(info.indent);
+
+	setTempBody(info, func->body);
+
+	parseFunctionBody(info);
+
+	unsetTempBody(info);
+
+	decreaseIndent(info.indent);
+
+	info.program->functions.insert({ name, func });
+}
+
 bool parseDeclDef(ProgGenInfo& info)
 {
 	auto& typeToken = peekToken(info);
@@ -775,7 +908,7 @@ bool parseDeclDef(ProgGenInfo& info)
 
 	if (getDatatypeSize(datatype) < 0)
 		throw ProgGenError(typeToken.pos, "Invalid datatype!");
-\
+
 	if (isSeparator(peekToken(info), "("))
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
 	else
@@ -797,7 +930,7 @@ bool parseStatementExit(ProgGenInfo& info)
 
 	parseExpectedNewline(info);
 
-	info.program->body.push_back(std::make_shared<Statement>(exitToken.pos, Statement::Type::Exit));
+	info.program->body->push_back(std::make_shared<Statement>(exitToken.pos, Statement::Type::Exit));
 
 	return true;
 }
@@ -818,8 +951,8 @@ bool parseSinglelineAssembly(ProgGenInfo& info)
 
 	parseExpectedNewline(info);
 
-	info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-	info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
+	info.program->body->push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+	info.program->body->back()->asmLines.push_back(preprocessAsmCode(info, strToken));
 
 
 	return true;
@@ -847,8 +980,8 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 
 		parseExpectedNewline(info);
 
-		info.program->body.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-		info.program->body.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
+		info.program->body->push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+		info.program->body->back()->asmLines.push_back(preprocessAsmCode(info, strToken));
 	}
 
 	decreaseIndent(info.indent);
@@ -856,14 +989,30 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 	return true;
 }
 
+void parseFunctionBody(ProgGenInfo& info)
+{
+	while (parseIndent(info))
+	{
+		auto token = info.tokens[info.currToken];
+		if (parseEmptyLine(info)) continue;
+		//if (parseDeclDef(info)) continue;
+		if (parseStatementExit(info)) continue;
+		if (parseSinglelineAssembly(info)) continue;
+		if (parseMultilineAssembly(info)) continue;
+		if (parseExpression(info)) continue;
+		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
+	}
+}
+
 ProgramRef generateProgram(const TokenList& tokens)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()) };
+	info.program->body = std::make_shared<Body>();
 
-	while (info.currToken < tokens.size())
+	while (info.currToken < info.tokens.size())
 	{
 		if (!parseIndent(info))
-			throw ProgGenError(peekToken(info).pos, "Inconsistent indentation!");
+			throw ProgGenError(peekToken(info).pos, "Expected indent!");
 		auto token = info.tokens[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		if (parseDeclDef(info)) continue;

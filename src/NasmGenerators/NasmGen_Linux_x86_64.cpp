@@ -399,7 +399,22 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::lValue;
 		break;
 	case Expression::ExprType::FunctionCall:
-		throw NasmGenError(expr->pos, "FunctionCall not supported!");
+	{
+		ss << "  sub rsp, " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
+		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
+		{
+			generateNasm_Linux_x86_64(ngi, expr->paramExpr[i].get());
+			primRegLToRVal(ngi);
+			ss << "  push " << primRegName(8) << "\n";
+		}
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		bool typesMatch = ngi.primReg.datatype == Datatype{ 1, getMangledType(expr->datatype, expr->paramExpr) };
+		assert(typesMatch && "Cannot call non-function!");
+		ss << "  call " << primRegUsage(ngi) << "\n";
+		ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
+		ss << "  pop " << primRegName(8) << "\n";
+	}
+		break;
 	case Expression::ExprType::Suffix_Increment:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
@@ -427,20 +442,21 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
 		ngi.primReg.state = CellState::lValue;
 		break;
+	case Expression::ExprType::FunctionAddress:
+		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
+		ngi.primReg.state = CellState::rValue;
+		ngi.primReg.datatype = expr->datatype;
+		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");
 	}
 }
 
-std::string generateNasm_Linux_x86_64(ProgramRef program)
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 {
-	NasmGenInfo ngi;
 	auto& ss = ngi.ss;
 
-	ss << "SECTION .text\n";
-	ss << "  global _start\n";
-	ss << "_start:\n";
-	for (auto& statement : program->body)
+	for (auto& statement : *body)
 	{
 		switch (statement->type)
 		{
@@ -460,6 +476,36 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 			throw NasmGenError(statement->pos, "Unsupported statement type!");
 		}
 	}
+}
+
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, FunctionRef func)
+{
+	auto& ss = ngi.ss;
+	ss << name << ":\n";
+
+	ss << "  push rbp\n";
+	ss << "  mov rbp, rsp\n";
+
+	generateNasm_Linux_x86_64(ngi, func->body);
+
+	ss << "  mov rsp, rbp\n";
+	ss << "  pop rbp\n";
+	ss << "  ret\n";
+}
+
+std::string generateNasm_Linux_x86_64(ProgramRef program)
+{
+	NasmGenInfo ngi;
+	auto& ss = ngi.ss;
+
+	ss << "SECTION .text\n";
+	ss << "  global _start\n";
+	ss << "_start:\n";
+	
+	generateNasm_Linux_x86_64(ngi, program->body);
+
+	for (auto& func : program->functions)
+		generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	ss << "SECTION .bss\n";
 	for (auto& glob : program->globals)

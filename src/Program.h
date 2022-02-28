@@ -108,6 +108,7 @@ struct Expression : public Statement
 
 		Literal,
 		GlobalVariable,
+		FunctionAddress,
 	};
 
 	Expression(const Token::Position& pos)
@@ -125,20 +126,48 @@ struct Expression : public Statement
 	double valFloat; // Floating point literal
 	int offset; // Local variable
 	std::string globName; // Global variable
+	std::string funcName; // Function call
+	std::vector<ExpressionRef> paramExpr;
+	int paramSizeSum;
 };
 
 typedef std::vector<StatementRef> Body;
+typedef std::shared_ptr<Body> BodyRef;
 
 struct Variable
 {
+	std::string name;
 	bool isLocal = false;
 	int offset = -1;
 	Datatype datatype;
 };
 
+struct Function
+{
+	std::string name;
+	Datatype retType;
+	int retOffset = 8;
+	std::vector<Variable> params;
+	BodyRef body;
+};
+
+typedef std::shared_ptr<Function> FunctionRef;
+
+std::string getMangledSignature(const std::vector<ExpressionRef>& paramExpr);
+
+std::string getMangledType(const Datatype& retType, const std::vector<Datatype>& paramTypes);
+std::string getMangledType(const Datatype& retType, const std::vector<ExpressionRef>& paramExpr);
+std::string getMangledType(const FunctionRef func);
+
+std::string getSignatureFromMangledType(const std::string& mangledType);
+
+Datatype getDatatypeFromMangledType(std::string mangledType);
+
 struct Program
 {
 	std::map<std::string, Variable> globals;
-	Body body;
+	std::map<std::string, FunctionRef> functions;
+	BodyRef body;
+	BodyRef __mainBodyBackup;
 };
 typedef std::shared_ptr<Program> ProgramRef;

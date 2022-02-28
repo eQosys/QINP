@@ -17,7 +17,9 @@ var5 = '9' - '0' + 10
 
 bool b = ~!(!var4 && !var5)
 
-\\u32 square(u32 x):
-\\	return x * x
+u32 foo():
+	exit 5
 
-exit b \\square(var4)
+foo()
+
+exit b
