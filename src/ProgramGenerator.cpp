@@ -272,10 +272,17 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 			}
 
 			auto& var = getVariable(info, varName, asmToken.pos);
-			if (var.isLocal)
-				throw ProgGenError(asmToken.pos, "Local variable cannot be used in asm code: " + varName + "!");
 				
-			result += varName;
+			if (var.isLocal)
+			{
+				int offset = var.offset;
+				result += (offset < 0) ? "- " : "+ ";
+				result += std::to_string(std::abs(offset));
+			}
+			else
+			{
+				result += varName;
+			}
 			parseVar = false;
 			parsedParen = false;
 			varName = "";

@@ -23,6 +23,15 @@ u32 foo():
 u64 square(u64 x):
 	return x * x
 
+u64 exitFunc(u64 code):
+	assembly:
+		"mov rdi, [rbp $(code)]"
+		"mov rax, 60"
+		"syscall"
+	return 0
+
 \\foo()
 
-exit square(8)
+\\exit square(5)
+
+exitFunc(square(4))
