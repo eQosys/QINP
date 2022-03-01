@@ -21,12 +21,16 @@ int getBuiltinTypeSize(const std::string& name);
 
 int getDatatypeSize(const Datatype& datatype);
 
+struct Expression;
+typedef std::shared_ptr<Expression> ExpressionRef;
+
 struct Statement
 {
 	enum class Type
 	{
 		None,
 		Exit,
+		Return,
 		Assembly,
 		Expression,
 	};
@@ -39,11 +43,12 @@ struct Statement
 	Token::Position pos;
 
 	std::vector<std::string> asmLines; // Single-/multi-line assembly code
+
+	ExpressionRef subExpr; // Exit/Return
+	int funcRetOffset; // Return
 };
 typedef std::shared_ptr<Statement> StatementRef;
 
-struct Expression;
-typedef std::shared_ptr<Expression> ExpressionRef;
 struct Expression : public Statement
 {
 	enum class ExprType
@@ -108,6 +113,7 @@ struct Expression : public Statement
 
 		Literal,
 		GlobalVariable,
+		LocalVariable,
 		FunctionAddress,
 	};
 
@@ -124,7 +130,7 @@ struct Expression : public Statement
 	long long valIntSigned; // Signed integer literal
 	unsigned long long valIntUnsigned; // Unsigned integer literal
 	double valFloat; // Floating point literal
-	int offset; // Local variable
+	int localOffset; // Local variable
 	std::string globName; // Global variable
 	std::string funcName; // Function call
 	std::vector<ExpressionRef> paramExpr;
@@ -168,6 +174,5 @@ struct Program
 	std::map<std::string, Variable> globals;
 	std::map<std::string, FunctionRef> functions;
 	BodyRef body;
-	BodyRef __mainBodyBackup;
 };
 typedef std::shared_ptr<Program> ProgramRef;

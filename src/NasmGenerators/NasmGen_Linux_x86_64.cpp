@@ -29,6 +29,13 @@ struct NasmGenInfo
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
 
+std::string basePtrOffset(int offset)
+{
+	bool isNeg = offset < 0;
+	if (isNeg) offset = -offset;
+	return std::string("[rbp") + (isNeg ? "-" : "+") + std::to_string(offset) + "]";
+}
+
 std::string regName(char baseChar, int size)
 {
 	std::stringstream ss;
@@ -305,22 +312,30 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Sum:
 		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Difference:
 		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
 		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Product:
 		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
 		ss << "  mul " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Quotient:
 		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		break;
 	case Expression::ExprType::Remainder:
 		generateBinaryEvaluation(ngi, expr);
+		primRegLToRVal(ngi);
+		secRegLToRVal(ngi);
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		moveSecToPrim(ngi);
 		break;
@@ -442,6 +457,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
 		ngi.primReg.state = CellState::lValue;
 		break;
+	case Expression::ExprType::LocalVariable:
+		ss << "  mov " << primRegName(8) << ", rbp\n";
+		ss << "  add " << primRegName(8) << ", " << std::to_string(expr->localOffset) << "\n";
+		ngi.primReg.state = CellState::lValue;
+		break;
 	case Expression::ExprType::FunctionAddress:
 		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
 		ngi.primReg.state = CellState::rValue;
@@ -461,9 +481,18 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 		switch (statement->type)
 		{
 		case Statement::Type::Exit:
+			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
 			ss << "  mov rdi, " << primRegUsage(ngi) << "\n";
 			ss << "  mov rax, 60\n";
 			ss << "  syscall\n";
+			break;
+		case Statement::Type::Return:
+			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
+			primRegLToRVal(ngi);
+			ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+			ss << "  mov rsp, rbp\n";
+			ss << "  pop rbp\n";
+			ss << "  ret\n";
 			break;
 		case Statement::Type::Assembly:
 			for (auto& line : statement->asmLines)
@@ -488,9 +517,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, Functi
 
 	generateNasm_Linux_x86_64(ngi, func->body);
 
-	ss << "  mov rsp, rbp\n";
-	ss << "  pop rbp\n";
-	ss << "  ret\n";
+	if (func->body->back()->type != Statement::Type::Return)
+	{
+		ss << "  mov rsp, rbp\n";
+		ss << "  pop rbp\n";
+		ss << "  ret\n";
+	}
 }
 
 std::string generateNasm_Linux_x86_64(ProgramRef program)

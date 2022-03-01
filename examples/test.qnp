@@ -20,6 +20,9 @@ bool b = ~!(!var4 && !var5)
 u32 foo():
 	exit 5
 
-foo()
+u64 square(u64 x):
+	return x * x
 
-exit b
+\\foo()
+
+exit square(8)

@@ -43,10 +43,11 @@ bool isKeyword(const std::string& name)
 	{
 		"exit",
 		"asm", "assembly",
+		"return",
 		// "const", "void"
 		// "indent", "tab", "space",
 		// "import", "default",
-		// "return", "exit", "self",
+		// "self",
 		// "sizeof", "offsetof",
 		// "true", "false",
 		// "if", "elif", "else",

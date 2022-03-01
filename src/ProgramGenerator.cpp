@@ -18,6 +18,12 @@ struct ProgGenInfo
 		std::string chStr = "";
 	} indent;
 	std::string lastLoadedFunctionName = "";
+
+	std::vector<std::map<std::string, Variable>> localStack;
+
+	BodyRef __mainBodyBackup;
+	int funcRetOffset;
+	Datatype funcRetType;
 };
 
 struct OpPrecLvl
@@ -213,12 +219,19 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 
 const Variable& getVariable(ProgGenInfo& info, const std::string& name, const Token::Position& tokenPos)
 {
-	auto& program = info.program;
-	auto& variables = program->globals;
-	auto it = variables.find(name);
-	if (it == variables.end())
-		throw ProgGenError(tokenPos, "Unknown variable: " + name + "!");
-	return it->second;
+	auto& globals = info.program->globals;
+	auto globIt = globals.find(name);
+	if (globIt != globals.end())
+		return globIt->second;
+
+	for (auto it = info.localStack.rbegin(); it != info.localStack.rend(); ++it)
+	{
+		auto locIt = it->find(name);
+		if (locIt != it->end())
+			return locIt->second;
+	}
+
+	throw ProgGenError(tokenPos, "Unknown variable: " + name + "!");
 }
 
 const FunctionRef getFunction(ProgGenInfo& info, const std::string& name, const Token::Position& tokenPos)
@@ -226,9 +239,10 @@ const FunctionRef getFunction(ProgGenInfo& info, const std::string& name, const 
 	auto& program = info.program;
 	auto& functions = program->functions;
 	auto it = functions.find(name);
-	if (it == functions.end())
-		return nullptr;
-	return it->second;
+	if (it != functions.end())
+		return it->second;
+
+	return nullptr;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -380,20 +394,20 @@ void parseExpectedColon(ProgGenInfo& info)
 
 void setTempBody(ProgGenInfo& info, BodyRef body)
 {
-	if (info.program->__mainBodyBackup)
+	if (info.__mainBodyBackup)
 		throw ProgGenError(peekToken(info).pos, "Cannot set temp body when a temp body is already set!");
 
-	info.program->__mainBodyBackup = info.program->body;
+	info.__mainBodyBackup = info.program->body;
 	info.program->body = body;
 }
 
 void unsetTempBody(ProgGenInfo& info)
 {
-	if (!info.program->__mainBodyBackup)
+	if (!info.__mainBodyBackup)
 		throw ProgGenError(peekToken(info).pos, "Cannot unset temp body when no temp body is set!");
 
-	info.program->body = info.program->__mainBodyBackup;
-	info.program->__mainBodyBackup = nullptr;
+	info.program->body = info.__mainBodyBackup;
+	info.__mainBodyBackup = nullptr;
 }
 
 Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right)
@@ -502,9 +516,9 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
 	auto& var = getVariable(info, litToken.value, litToken.pos);
-	exp->eType = Expression::ExprType::GlobalVariable; // exp->eType = var.isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
+	exp->eType = var.isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->isLValue = true;
-	exp->offset = var.offset;
+	exp->localOffset = var.offset;
 	exp->datatype = var.datatype;
 	exp->globName = litToken.value;
 
@@ -885,7 +899,17 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	setTempBody(info, func->body);
 
+	func->retOffset += getDatatypeSize(func->retType);
+	info.funcRetOffset = func->retOffset;
+	info.funcRetType = func->retType;
+
+	info.localStack.push_back({});
+	for (auto& param : func->params)
+		info.localStack.back().insert({ param.name, param });
+
 	parseFunctionBody(info);
+
+	info.localStack.pop_back();
 
 	unsetTempBody(info);
 
@@ -926,11 +950,32 @@ bool parseStatementExit(ProgGenInfo& info)
 	nextToken(info);
 	auto& exprBegin = peekToken(info);
 
-	parseExpression(info, { 0, "u64" });
+	auto subExpr = genConvertExpression(getParseExpression(info), { 0, "u64" });
 
 	parseExpectedNewline(info);
 
 	info.program->body->push_back(std::make_shared<Statement>(exitToken.pos, Statement::Type::Exit));
+	info.program->body->back()->subExpr = subExpr;
+
+	return true;
+}
+
+bool parseStatementReturn(ProgGenInfo& info)
+{
+	auto& retToken = peekToken(info);
+	if (!isKeyword(retToken, "return"))
+		return false;
+
+	nextToken(info);
+	auto& exprBegin = peekToken(info);
+
+	auto subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
+
+	parseExpectedNewline(info);
+
+	info.program->body->push_back(std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
+	info.program->body->back()->funcRetOffset = info.funcRetOffset;
+	info.program->body->back()->subExpr = subExpr;
 
 	return true;
 }
@@ -997,6 +1042,7 @@ void parseFunctionBody(ProgGenInfo& info)
 		if (parseEmptyLine(info)) continue;
 		//if (parseDeclDef(info)) continue;
 		if (parseStatementExit(info)) continue;
+		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
