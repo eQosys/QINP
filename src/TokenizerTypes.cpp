@@ -80,3 +80,8 @@ bool isBooleanValue(const std::string& value)
 {
 	return value == "true" || value == "false";
 }
+
+std::string getPosStr(const Token::Position& pos)
+{
+	return pos.file + ":" + std::to_string(pos.line) + ":" + std::to_string(pos.column);
+}

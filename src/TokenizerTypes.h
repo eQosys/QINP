@@ -48,3 +48,5 @@ bool isKeyword(const std::string& name);
 bool isBuiltinType(const std::string& name);
 
 bool isBooleanValue(const std::string& value);
+
+std::string getPosStr(const Token::Position& pos);

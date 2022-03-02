@@ -29,6 +29,21 @@ struct NasmGenInfo
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
 
+void generateStatementLabel(NasmGenInfo& ngi, const Statement* statement)
+{
+	ngi.ss << "label_" << statement->sID << ":\t\t ; " << getPosStr(statement->pos) << ": ";
+
+	if (statement->type == Statement::Type::Expression)
+		ngi.ss << ExpressionTypeToString(((Expression*)statement)->eType) << "\n";
+	else
+		ngi.ss << StatementTypeToString(statement->type) << "\n";
+}
+
+void generateStatementLabel(NasmGenInfo& ngi, const StatementRef statement)
+{
+	generateStatementLabel(ngi, statement.get());
+}
+
 std::string basePtrOffset(int offset)
 {
 	bool isNeg = offset < 0;
@@ -189,6 +204,8 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
+	generateStatementLabel(ngi, expr);
+
 	auto& ss = ngi.ss;
 	switch (expr->eType)
 	{
@@ -540,6 +557,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 	switch (statement->type)
 	{
 	case Statement::Type::Return:
+		generateStatementLabel(ngi, statement);
 		if (statement->subExpr)
 		{
 			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
@@ -551,8 +569,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		ss << "  ret\n";
 		break;
 	case Statement::Type::Assembly:
+		generateStatementLabel(ngi, statement);
 		for (auto& line : statement->asmLines)
-			ss << line << "\n";
+			ss << "  " << line << "\n";
 		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());

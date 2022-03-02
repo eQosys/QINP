@@ -35,16 +35,20 @@ struct Statement
 	};
 
 	Statement(const Token::Position& pos, Type type)
-		: type(type), pos(pos)
+		: type(type), pos(pos), sID(sIDCounter++)
 	{}
 
 	Type type;
 	Token::Position pos;
+	int sID;
 
 	std::vector<std::string> asmLines; // Single-/multi-line assembly code
 
 	ExpressionRef subExpr; // Exit/Return
 	int funcRetOffset; // Return
+
+private:
+	static inline int sIDCounter = 0;
 };
 typedef std::shared_ptr<Statement> StatementRef;
 
@@ -176,3 +180,7 @@ struct Program
 	BodyRef body;
 };
 typedef std::shared_ptr<Program> ProgramRef;
+
+std::string StatementTypeToString(Statement::Type type);
+
+std::string ExpressionTypeToString(Expression::ExprType type);
