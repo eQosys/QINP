@@ -17,21 +17,20 @@ var5 = '9' - '0' + 10
 
 bool b = ~!(!var4 && !var5)
 
-u32 foo():
-	exit 5
-
-u64 square(u64 x):
-	return x * x
-
-u64 exitFunc(u64 code):
+void exit(u64 code):
 	assembly:
 		"mov rdi, [rbp $(code)]"
 		"mov rax, 60"
 		"syscall"
-	return 0
+
+void foo():
+	exit(5)
+
+u64 square(u64 x):
+	return x * x
 
 \\foo()
 
 \\exit square(5)
 
-exitFunc(square(4))
+exit(square(4))

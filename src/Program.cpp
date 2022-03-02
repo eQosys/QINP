@@ -19,6 +19,7 @@ int getBuiltinTypeSize(const std::string& name)
 {
 	static const std::map<std::string, int> sizes =
 	{
+		{ "void", 0 },
 		{ "bool", 1 },
 		//{ "i8", 1 },
 		//{ "i16", 2 },

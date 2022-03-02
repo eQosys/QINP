@@ -693,6 +693,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = true;
 			if (exp->datatype.ptrDepth == 0)
 				throw ProgGenError(exp->pos, "Cannot subscript non-pointer type!");
+			if (exp->datatype == Datatype{ 1, "void" })
+				throw ProgGenError(exp->pos, "Cannot subscript pointer to void type!");
 			--exp->datatype.ptrDepth;
 			exp->right = genConvertExpression(getParseExpression(info), { 0, "u64" });
 			parseExpected(info, Token::Type::Separator, "]");
@@ -755,6 +757,8 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->datatype = exp->left->datatype;
 		if (exp->datatype.ptrDepth == 0)
 			throw ProgGenError(opToken.pos, "Cannot dereference a non-pointer!");
+		if (exp->datatype == Datatype{ 1, "void" })
+			throw ProgGenError(opToken.pos, "Cannot dereference pointer to void!");
 		--exp->datatype.ptrDepth;
 		exp->isLValue = true;
 		break;
@@ -948,25 +952,6 @@ bool parseDeclDef(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementExit(ProgGenInfo& info)
-{
-	auto& exitToken = peekToken(info);
-	if (!isKeyword(exitToken, "exit"))
-		return false;
-
-	nextToken(info);
-	auto& exprBegin = peekToken(info);
-
-	auto subExpr = genConvertExpression(getParseExpression(info), { 0, "u64" });
-
-	parseExpectedNewline(info);
-
-	info.program->body->push_back(std::make_shared<Statement>(exitToken.pos, Statement::Type::Exit));
-	info.program->body->back()->subExpr = subExpr;
-
-	return true;
-}
-
 bool parseStatementReturn(ProgGenInfo& info)
 {
 	auto& retToken = peekToken(info);
@@ -976,13 +961,13 @@ bool parseStatementReturn(ProgGenInfo& info)
 	nextToken(info);
 	auto& exprBegin = peekToken(info);
 
-	auto subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
-
-	parseExpectedNewline(info);
-
 	info.program->body->push_back(std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
 	info.program->body->back()->funcRetOffset = info.funcRetOffset;
-	info.program->body->back()->subExpr = subExpr;
+
+	if (info.funcRetType != Datatype{ 0, "void" })
+		info.program->body->back()->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
+
+	parseExpectedNewline(info);
 
 	return true;
 }
@@ -1048,12 +1033,19 @@ void parseFunctionBody(ProgGenInfo& info)
 		auto token = info.tokens[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		//if (parseDeclDef(info)) continue;
-		if (parseStatementExit(info)) continue;
 		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
 		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
+	}
+
+	if (info.program->body->back()->type != Statement::Type::Return)
+	{
+		if (info.funcRetType == Datatype{ 0, "void" })
+			info.program->body->push_back(std::make_shared<Statement>(info.program->body->back()->pos, Statement::Type::Return));
+		else
+			throw ProgGenError(info.program->body->back()->pos, "Missing return statement!");
 	}
 }
 
@@ -1069,7 +1061,6 @@ ProgramRef generateProgram(const TokenList& tokens)
 		auto token = info.tokens[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		if (parseDeclDef(info)) continue;
-		if (parseStatementExit(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;

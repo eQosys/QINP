@@ -29,7 +29,6 @@ struct Statement
 	enum class Type
 	{
 		None,
-		Exit,
 		Return,
 		Assembly,
 		Expression,

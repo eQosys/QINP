@@ -480,16 +480,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 	{
 		switch (statement->type)
 		{
-		case Statement::Type::Exit:
-			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
-			ss << "  mov rdi, " << primRegUsage(ngi) << "\n";
-			ss << "  mov rax, 60\n";
-			ss << "  syscall\n";
-			break;
 		case Statement::Type::Return:
-			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
-			primRegLToRVal(ngi);
-			ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+			if (statement->subExpr)
+			{
+				generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
+				primRegLToRVal(ngi);
+				ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+			}
 			ss << "  mov rsp, rbp\n";
 			ss << "  pop rbp\n";
 			ss << "  ret\n";
