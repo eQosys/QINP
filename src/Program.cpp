@@ -49,6 +49,18 @@ int getDatatypeSize(const Datatype& datatype)
 	return size;
 }
 
+int getDatatypePushSize(const Datatype& datatype)
+{
+	if (datatype.ptrDepth > 0)
+		return sizeof(void*);
+	
+	if (getBuiltinTypeSize(datatype.name) > 0)
+		return 8;
+
+	// Return size for custom datatypes (packs)
+	return -1;
+}
+
 std::string getMangledDatatype(const Datatype& datatype)
 {
 	return datatype.name + "~" + std::to_string(datatype.ptrDepth);

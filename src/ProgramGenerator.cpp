@@ -709,7 +709,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			while (!isSeparator(peekToken(info), ")"))
 			{
 				exp->paramExpr.push_back(getParseExpression(info));
-				exp->paramSizeSum += getDatatypeSize(exp->paramExpr.back()->datatype);
+				exp->paramSizeSum += getDatatypePushSize(exp->paramExpr.back()->datatype);
 				if (!isSeparator(peekToken(info), ")"))
 					parseExpected(info, Token::Type::Separator, ",");
 			}
@@ -888,7 +888,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		if (!param.datatype)
 			throw ProgGenError(peekToken(info).pos, "Expected datatype!");
 		
-		func->retOffset += getDatatypeSize(param.datatype);
+		func->retOffset += getDatatypePushSize(param.datatype);
 		param.offset = func->retOffset;
 
 		if (!isIdentifier(peekToken(info)))
@@ -910,7 +910,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	setTempBody(info, func->body);
 
-	func->retOffset += getDatatypeSize(func->retType);
+	func->retOffset += getDatatypePushSize(func->retType);
 	info.funcRetOffset = func->retOffset;
 	info.funcRetType = func->retType;
 

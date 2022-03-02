@@ -185,7 +185,6 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 	primRegLToRVal(ngi);
 	secRegLToRVal(ngi);
 	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << "\n";
-	ngi.primReg.datatype = { 0, "bool" };
 }
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
@@ -212,17 +211,21 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		}
 
 		ngi.primReg.datatype = expr->datatype;
+		// State already modified
 	}
 		break;
 	case Expression::ExprType::Assign:
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		assert(ngi.primReg.datatype == expr->right->datatype && "Assign: datatype mismatch!");
 		assert(ngi.primReg.state == CellState::lValue && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
 
 		ss << "  mov " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Assign_Sum:
 		throw NasmGenError(expr->pos, "Assignment by Sum not supported!");
@@ -250,6 +253,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		secRegLToRVal(ngi);
 		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = { 0, "bool" };
+		// State already modified
 		break;
 	case Expression::ExprType::Logical_AND:
 		generateBinaryEvaluation(ngi, expr);
@@ -257,80 +261,111 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		secRegLToRVal(ngi);
 		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = { 0, "bool" };
+		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_OR:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_XOR:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  xor " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_AND:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Comparison_Equal:
 		generateComparison(ngi, expr);
 		ss << "  sete al\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_NotEqual:
 		generateComparison(ngi, expr);
 		ss << "  setne al\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_Less:
 		generateComparison(ngi, expr);
 		ss << "  setl al\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_LessEqual:
 		generateComparison(ngi, expr);
 		ss << "  setle al\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_Greater:
 		generateComparison(ngi, expr);
 		ss << "  setg al\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_GreaterEqual:
 		generateComparison(ngi, expr);
 		ss << "  setge al\n";
+		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Shift_Left:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Shift_Right:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Sum:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Difference:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Product:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  mul " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Quotient:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  div " << secRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Remainder:
 		generateBinaryEvaluation(ngi, expr);
@@ -338,6 +373,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		secRegLToRVal(ngi);
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		moveSecToPrim(ngi);
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::AddressOf:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
@@ -361,30 +398,36 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		default:
 			throw NasmGenError(expr->pos, "Invalid CellState!");
 		}
+		// Datatype & state already modified
 		break;
 	case Expression::ExprType::Logical_NOT:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());\
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  sete al\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_NOT:
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		bool converted = primRegLToRVal(ngi, true);
+		primRegLToRVal(ngi);
 		ss << "  not " << primRegUsage(ngi) << "\n";
-		primRegRToLVal(ngi, converted);
+		// Datatype doesn't change
+		// State already modified
 	}
 		break;
 	case Expression::ExprType::Prefix_Plus:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		// Nothing else to do
 		break;
 	case Expression::ExprType::Prefix_Minus:
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		bool converted = primRegLToRVal(ngi, true);
+		primRegLToRVal(ngi);
 		ss << "  neg " << primRegUsage(ngi) << "\n";
-		primRegRToLVal(ngi, converted);
+		// Datatype doesn't change
+		// State already modified
 	}
 		break;
 	case Expression::ExprType::Prefix_Increment:
@@ -393,6 +436,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi, true);
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
+		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Prefix_Decrement:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
@@ -400,6 +444,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi, true);
 		ss << "  dec " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
+		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Subscript:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
@@ -411,23 +456,33 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  mul " << secRegName(8) << "\n";
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::lValue;
 		break;
 	case Expression::ExprType::FunctionCall:
 	{
-		ss << "  sub rsp, " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
+		bool isVoidFunc = expr->datatype == Datatype{ 0, "void" };
+		if (!isVoidFunc)
+			ss << "  sub rsp, " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
+
 		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
 		{
 			generateNasm_Linux_x86_64(ngi, expr->paramExpr[i].get());
 			primRegLToRVal(ngi);
 			ss << "  push " << primRegName(8) << "\n";
 		}
+
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		bool typesMatch = ngi.primReg.datatype == Datatype{ 1, getMangledType(expr->datatype, expr->paramExpr) };
 		assert(typesMatch && "Cannot call non-function!");
 		ss << "  call " << primRegUsage(ngi) << "\n";
 		ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
-		ss << "  pop " << primRegName(8) << "\n";
+
+		ngi.primReg.datatype = expr->datatype;
+		ngi.primReg.state = CellState::rValue;
+
+		if (!isVoidFunc)
+			ss << "  pop " << primRegUsage(ngi) << "\n";
 	}
 		break;
 	case Expression::ExprType::Suffix_Increment:
@@ -438,6 +493,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 		ss << "  dec " << primRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Suffix_Decrement:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
@@ -447,95 +504,110 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  dec " << primRegUsage(ngi) << "\n";
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 		ss << "  inc " << primRegUsage(ngi) << "\n";
+		// Datatype doesn't change
+		// State already modified
 		break;
 	case Expression::ExprType::Literal:
 		ngi.primReg.datatype = expr->datatype;
+		ss << "  mov " << primRegName(ngi) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		ngi.primReg.state = CellState::rValue;
-		ss << "  mov " << primRegUsage(ngi) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		break;
 	case Expression::ExprType::GlobalVariable:
 		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
+		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::lValue;
 		break;
 	case Expression::ExprType::LocalVariable:
 		ss << "  mov " << primRegName(8) << ", rbp\n";
 		ss << "  add " << primRegName(8) << ", " << std::to_string(expr->localOffset) << "\n";
+		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::lValue;
 		break;
 	case Expression::ExprType::FunctionAddress:
 		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
-		ngi.primReg.state = CellState::rValue;
 		ngi.primReg.datatype = expr->datatype;
+		ngi.primReg.state = CellState::rValue;
 		break;
 	default:
 		throw NasmGenError(expr->pos, "Unsupported expression type!");
 	}
 }
 
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
+{
+	auto& ss = ngi.ss;
+
+	switch (statement->type)
+	{
+	case Statement::Type::Return:
+		if (statement->subExpr)
+		{
+			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
+			primRegLToRVal(ngi);
+			ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+		}
+		ss << "  mov rsp, rbp\n";
+		ss << "  pop rbp\n";
+		ss << "  ret\n";
+		break;
+	case Statement::Type::Assembly:
+		for (auto& line : statement->asmLines)
+			ss << line << "\n";
+		break;
+	case Statement::Type::Expression:
+		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
+		break;
+	default:
+		throw NasmGenError(statement->pos, "Unsupported statement type!");
+	}
+}
+
+// Generates code for any code 'body'
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 {
 	auto& ss = ngi.ss;
 
 	for (auto& statement : *body)
-	{
-		switch (statement->type)
-		{
-		case Statement::Type::Return:
-			if (statement->subExpr)
-			{
-				generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
-				primRegLToRVal(ngi);
-				ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
-			}
-			ss << "  mov rsp, rbp\n";
-			ss << "  pop rbp\n";
-			ss << "  ret\n";
-			break;
-		case Statement::Type::Assembly:
-			for (auto& line : statement->asmLines)
-				ss << line << "\n";
-			break;
-		case Statement::Type::Expression:
-			generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
-			break;
-		default:
-			throw NasmGenError(statement->pos, "Unsupported statement type!");
-		}
-	}
+		generateNasm_Linux_x86_64(ngi, statement);
 }
 
+// Generates Nasm code for a function
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, FunctionRef func)
 {
-	auto& ss = ngi.ss;
-	ss << name << ":\n";
+	assert(func->body->back()->type == Statement::Type::Return && "Function must end with return statement!");
 
-	ss << "  push rbp\n";
-	ss << "  mov rbp, rsp\n";
+	// Function prologue
+	ngi.ss << name << ":\n";
+	ngi.ss << "  push rbp\n";
+	ngi.ss << "  mov rbp, rsp\n";
 
 	generateNasm_Linux_x86_64(ngi, func->body);
-
-	if (func->body->back()->type != Statement::Type::Return)
-	{
-		ss << "  mov rsp, rbp\n";
-		ss << "  pop rbp\n";
-		ss << "  ret\n";
-	}
 }
 
+// Generates Nasm code for the entire program
 std::string generateNasm_Linux_x86_64(ProgramRef program)
 {
 	NasmGenInfo ngi;
 	auto& ss = ngi.ss;
 
+	// Prologue
 	ss << "SECTION .text\n";
 	ss << "  global _start\n";
 	ss << "_start:\n";
 	
+	// Global code
 	generateNasm_Linux_x86_64(ngi, program->body);
 
+	// Gloval code epilogue
+	ss << "  mov rdi, 0\n";
+	ss << "  mov rax, 60\n";
+	ss << "  syscall\n";
+
+	// Functions
 	for (auto& func : program->functions)
 		generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
+	// Global variables
 	ss << "SECTION .bss\n";
 	for (auto& glob : program->globals)
 	{
