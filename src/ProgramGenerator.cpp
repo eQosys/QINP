@@ -864,6 +864,9 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 
 void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
+	if (datatype == Datatype{0, "void" })
+		throw ProgGenError(peekToken(info).pos, "Cannot declare variable of type void!");
+
 	auto initExpr = getParseDeclDefVariable(info, datatype, name);
 	if (initExpr)
 		info.program->body->push_back(initExpr);
@@ -897,6 +900,8 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	func->name = name;
 	func->retType = datatype;
 
+	auto& funcParamBeginToken = peekToken(info);
+
 	parseExpected(info, Token::Type::Separator, "(");
 
 	while (!isSeparator(peekToken(info), ")"))
@@ -922,31 +927,63 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		func->params.push_back(param);
 	}
 
-	parseExpected(info, Token::Type::Separator, ")");
-	parseExpectedColon(info);
-	parseExpectedNewline(info);
-
-	increaseIndent(info.indent);
-
-	setTempBody(info, func->body);
-
 	func->retOffset += getDatatypePushSize(func->retType);
-	info.funcRetOffset = func->retOffset;
-	info.funcRetType = func->retType;
 
-	info.localStack.push_back({});
-	for (auto& param : func->params)
-		info.localStack.back().insert({ param.name, param });
+	parseExpected(info, Token::Type::Separator, ")");
 
-	parseFunctionBody(info);
+	if (isSeparator(peekToken(info), "..."))
+	{
+		func->isDefined = false;
 
-	info.localStack.pop_back();
+		nextToken(info);
+		parseExpectedNewline(info);
+	}
+	else
+	{
+		func->isDefined = true;
 
-	unsetTempBody(info);
+		parseExpectedColon(info);
+		parseExpectedNewline(info);
 
-	decreaseIndent(info.indent);
+		increaseIndent(info.indent);
+		setTempBody(info, func->body);
 
-	info.program->functions.insert({ name, func });
+		info.funcRetOffset = func->retOffset;
+		info.funcRetType = func->retType;
+
+		info.localStack.push_back({});
+		for (auto& param : func->params)
+			info.localStack.back().insert({ param.name, param });
+
+		parseFunctionBody(info);
+		info.localStack.pop_back();
+		unsetTempBody(info);
+		decreaseIndent(info.indent);
+	}
+
+	auto it = info.program->functions.find(name);
+	if (it != info.program->functions.end())
+	{
+		if (it->second->isDefined)
+			throw ProgGenError(funcParamBeginToken.pos, "Function already defined!");
+
+		if (it->second->retType != func->retType)
+			throw ProgGenError(funcParamBeginToken.pos, "Function signature mismatch!");
+
+		if (it->second->params.size() != func->params.size())
+			throw ProgGenError(funcParamBeginToken.pos, "Function signature mismatch!");
+
+		for (size_t i = 0; i < it->second->params.size(); ++i)
+			if (it->second->params[i].datatype != func->params[i].datatype)
+				throw ProgGenError(funcParamBeginToken.pos, "Function signature mismatch!");
+
+		it->second = func;
+	}
+	else
+	{
+		info.program->functions.insert({ name, func });
+	}
+
 }
 
 bool parseDeclDef(ProgGenInfo& info)
@@ -962,7 +999,7 @@ bool parseDeclDef(ProgGenInfo& info)
 		throw ProgGenError(nameToken.pos, "Expected identifier!");
 
 	if (getDatatypeSize(datatype) < 0)
-		throw ProgGenError(typeToken.pos, "Invalid datatype!");
+		throw ProgGenError(typeToken.pos, "Unknown datatype!");
 
 	if (isSeparator(peekToken(info), "("))
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
@@ -1060,10 +1097,10 @@ void parseFunctionBody(ProgGenInfo& info)
 		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
 	}
 
-	if (info.program->body->back()->type != Statement::Type::Return)
+	if (info.program->body->empty() || info.program->body->back()->type != Statement::Type::Return)
 	{
 		if (info.funcRetType == Datatype{ 0, "void" })
-			info.program->body->push_back(std::make_shared<Statement>(info.program->body->back()->pos, Statement::Type::Return));
+			info.program->body->push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
 			throw ProgGenError(info.program->body->back()->pos, "Missing return statement!");
 	}

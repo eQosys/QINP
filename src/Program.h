@@ -154,6 +154,7 @@ struct Function
 	int retOffset = 8;
 	std::vector<Variable> params;
 	BodyRef body;
+	bool isDefined;
 };
 
 typedef std::shared_ptr<Function> FunctionRef;

@@ -26,7 +26,13 @@ static const std::set<std::string> operators =
 
 static const std::set<std::string> separators =
 {
-	"(", ")", "[", "]", "{", "}", ":", "::", ",", ".", "..."
+	"(", ")",
+	"[", "]",
+	"{", "}",
+	":", "::",
+	",", ".",
+	".."/* not really a separator*/,
+	"..."
 };
 
 bool isOperatorBegin(const std::string& str)
@@ -239,6 +245,8 @@ TokenList tokenize(const std::string& code, const std::string& name)
 				token.value.push_back(c);
 				break;
 			}
+			if (token.value == "..")
+				throw TokenizerError(token.pos, "Illegal character sequence '..'!");
 			--index;
 			state = State::EndToken;
 			break;

@@ -15,16 +15,12 @@ var5 = '9' - '0' + 10
 
 (&var4)[0] = (&var5)[0] ^ 2
 
+void exit(u64 code)...
+
 bool b = ~!(!var4 && !var5)
 b = true
 b = false
 b = true || false
-
-void exit(u64 code):
-	assembly:
-		"mov rdi, [rbp $(code)]"
-		"mov rax, 60"
-		"syscall"
 
 void foo():
 	exit(5)
@@ -32,8 +28,10 @@ void foo():
 u64 square(u64 x):
 	return x * x
 
-\\foo()
-
-\\exit square(5)
-
 exit(square(4))
+
+void exit(u64 code):
+	assembly:
+		"mov rdi, [rbp $(code)]"
+		"mov rax, 60"
+		"syscall"
