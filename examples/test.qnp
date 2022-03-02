@@ -1,4 +1,4 @@
-import "stdlib/std.qnp"
+import "std.qnp"
 
 u32 var1 = 5 * 3
 u64 var2 = 100 + var1

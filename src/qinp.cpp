@@ -63,6 +63,7 @@ std::map<std::string, std::string> argNames =
 {
 	{ "h", "help" },
 	{ "v", "verbose" },
+	{ "i", "import" }
 };
 
 int main(int argc, char** argv, char** environ)
@@ -73,6 +74,11 @@ int main(int argc, char** argv, char** environ)
 		auto env = getEnv(environ);
 
 		auto inFilename = args.values[0];
+
+		std::set<std::string> importDirs;
+		if (args.hasOption("import"))
+			for (auto& dir : args.getOption("import"))
+				importDirs.insert(dir);
 	
 		auto code = readTextFile(inFilename);
 
@@ -85,7 +91,7 @@ int main(int argc, char** argv, char** environ)
 			std::cout << token << std::endl;
 		std::cout << "------------------\n" << std::endl;
 
-		auto program = generateProgram(tokens);
+		auto program = generateProgram(tokens, importDirs);
 
 		std::string output = generateNasm_Linux_x86_64(program);
 

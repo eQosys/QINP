@@ -2,6 +2,16 @@
 
 #include "Errors/QinpError.h"
 
+
+bool Args::hasOption(const std::string option)
+{
+	return options.find(option) != options.end();
+}
+const std::vector<std::string>& Args::getOption(const std::string option)
+{
+	return options.at(option);
+}
+
 std::vector<std::string> getArgs(int argc, char** argv)
 {
 	std::vector<std::string> args;
@@ -38,7 +48,7 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			auto pos = arg.find("=");
 			auto key = arg.substr(0, pos);
 			if (pos == std::string::npos)
-				args.options[key].push_back("true");
+				args.options[key].push_back("");
 			else
 				args.options[key].push_back(arg.substr(pos + 1));
 			continue;

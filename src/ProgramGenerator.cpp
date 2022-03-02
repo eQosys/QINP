@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <filesystem>
 
 #include "Errors/ProgGenError.h"
 
@@ -12,6 +13,7 @@ struct ProgGenInfo
 {
 	TokenListRef tokens;
 	ProgramRef program;
+	std::set<std::string> importDirs;
 	int currToken = 0;
 	struct Indent
 	{
@@ -26,6 +28,8 @@ struct ProgGenInfo
 	BodyRef __mainBodyBackup;
 	int funcRetOffset;
 	Datatype funcRetType;
+
+	std::set<std::string> imports;
 };
 
 struct ProgGenInfoBackup
@@ -1180,11 +1184,39 @@ bool parseStatementImport(ProgGenInfo& info)
 	if (!isString(fileToken))
 		throw ProgGenError(fileToken.pos, "Expected file path!");
 
-	std::string code = readTextFile(fileToken.value);
+	std::string path;
+	for (auto& dir : info.importDirs)
+	{
+		path = (std::filesystem::path(dir) / fileToken.value).string();
+		std::string absPath;
+		try
+		{
+			absPath = std::filesystem::canonical(path);
+		}
+		catch (std::filesystem::filesystem_error&)
+		{
+			continue;
+		}
+
+		if (info.imports.find(absPath) != info.imports.end())
+			return true;
+
+		if (std::filesystem::is_regular_file(path))
+		{
+			info.imports.insert(absPath);
+			break;
+		}
+		path = "";
+	}
+
+	if (path.empty())
+		throw ProgGenError(fileToken.pos, "Import file not found: '" + fileToken.value + "'!");
+
+	std::string code = readTextFile(path);
 
 	auto backup = makeProgGenInfoBackup(info);
 
-	info.tokens = tokenize(code, fileToken.value);
+	info.tokens = tokenize(code, path);
 	info.currToken = 0;
 	parseGlobalCode(info);
 
@@ -1193,9 +1225,9 @@ bool parseStatementImport(ProgGenInfo& info)
 	return true;
 }
 
-ProgramRef generateProgram(const TokenListRef tokens)
+ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs)
 {
-	ProgGenInfo info = { tokens, ProgramRef(new Program()) };
+	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
 	info.program->body = std::make_shared<Body>();
 
 	parseGlobalCode(info);
