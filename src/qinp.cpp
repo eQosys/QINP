@@ -2,9 +2,8 @@
 
 #include <map>
 #include <vector>
-#include <fstream>
-#include <sstream>
 #include <filesystem>
+#include <fstream>
 #include <sys/wait.h>
 
 #include "Errors/QinpError.h"
@@ -13,16 +12,6 @@
 #include "ProgramGenerator.h"
 
 #include "NasmGenerators/NasmGen_Linux_x86_64.h"
-
-std::string readTextFile(const std::string& filename)
-{
-	std::ifstream file(filename);
-	if (!file.is_open())
-		throw QinpError("Unable to open file!");
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	return buffer.str();
-}
 
 int execCmd(const std::string& command)
 {
@@ -92,7 +81,7 @@ int main(int argc, char** argv, char** environ)
 		auto tokens = tokenize(code, inFilename);
 
 		std::cout << "------ TOKENS ------\n";
-		for (auto& token : tokens)
+		for (auto& token : *tokens)
 			std::cout << token << std::endl;
 		std::cout << "------------------\n" << std::endl;
 

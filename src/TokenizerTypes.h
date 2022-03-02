@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 struct Token
 {
@@ -32,6 +33,7 @@ struct Token
 };
 
 typedef std::vector<Token> TokenList;
+typedef std::shared_ptr<TokenList> TokenListRef;
 
 std::string TokenTypeToString(Token::Type type);
 

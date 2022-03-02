@@ -1,3 +1,5 @@
+import "stdlib/std.qnp"
+
 u32 var1 = 5 * 3
 u64 var2 = 100 + var1
 u8 var3 = var2
@@ -15,8 +17,6 @@ var5 = '9' - '0' + 10
 
 (&var4)[0] = (&var5)[0] ^ 2
 
-void exit(u64 code)...
-
 bool b = ~!(!var4 && !var5)
 b = true
 b = false
@@ -29,9 +29,3 @@ u64 square(u64 x):
 	return x * x
 
 exit(square(4))
-
-void exit(u64 code):
-	assembly:
-		"mov rdi, [rbp $(code)]"
-		"mov rax, 60"
-		"syscall"

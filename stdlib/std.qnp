@@ -1,0 +1,7 @@
+\\ QINP Standard library main header
+
+void exit(u64 code):
+	assembly:
+		"mov rdi, [rbp $(code)]"
+		"mov rax, 60"
+		"syscall"

@@ -43,10 +43,11 @@ bool isKeyword(const std::string& name)
 {
 	static const std::set<std::string> keywords =
 	{
+		"import",
 		"asm", "assembly",
-		"return",
+		"return", "pass"
 		// "const"
-		// "import", "default",
+		// "default",
 		// "sizeof", "offsetof",
 		// "if", "elif", "else",
 		// "for", "while", "do",
@@ -55,7 +56,6 @@ bool isKeyword(const std::string& name)
 		// "goto", "operator",
 		// "enum", "union", "pack",
 		// "blueprint",
-		// "pass",
 		// "switch", "case"
 	};
 

@@ -4,9 +4,21 @@
 #include <set>
 #include <stdexcept>
 #include <set>
+#include <fstream>
+#include <sstream>
 
 #include "Errors/QinpError.h"
 #include "Errors/TokenizerError.h"
+
+std::string readTextFile(const std::string& filename)
+{
+	std::ifstream file(filename);
+	if (!file.is_open())
+		throw QinpError("Unable to open file '" + filename + "'!");
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
+}
 
 bool isAlpha(char c) { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'); }
 bool isNum(char c) { return '0' <= c && c <= '9'; }
@@ -64,7 +76,7 @@ char getEscapeChar(char c)
 	}
 }
 
-TokenList tokenize(const std::string& code, const std::string& name)
+TokenListRef tokenize(const std::string& code, const std::string& name)
 {
 	enum class State
 	{
@@ -80,7 +92,7 @@ TokenList tokenize(const std::string& code, const std::string& name)
 		TokenizeChar,
 	} state = State::BeginToken;
 
-	TokenList tokens;
+	TokenListRef tokens = std::make_shared<TokenList>();
 	Token token;
 
 	int index = -1;
@@ -95,25 +107,25 @@ TokenList tokenize(const std::string& code, const std::string& name)
 		state = State::BeginToken;
 		if (token.type == Token::Type::Newline)
 		{
-			for (int i = tokens.size() - 1; i >= 0; --i)
+			for (int i = tokens->size() - 1; i >= 0; --i)
 			{
-				if (tokens[i].type != Token::Type::Whitespace)
+				if ((*tokens)[i].type != Token::Type::Whitespace)
 					break;
-				tokens.pop_back();
+				tokens->pop_back();
 			}
-			if (tokens.back().type == Token::Type::Newline)
+			if (tokens->empty() || tokens->back().type == Token::Type::Newline)
 				return;
 		}
 		if (token.type == Token::Type::Whitespace &&
 			(
-				tokens.back().type != Token::Type::Newline &&
-				tokens.back().type != Token::Type::Whitespace
+				tokens->back().type != Token::Type::Newline &&
+				tokens->back().type != Token::Type::Whitespace
 			))
 			return;
 		if (token.type == Token::Type::Comment)
 			return;
 		
-		tokens.push_back(token);
+		tokens->push_back(token);
 	};
 
 	while (++index < code.size() + 1)

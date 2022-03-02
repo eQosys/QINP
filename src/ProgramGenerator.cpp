@@ -6,9 +6,11 @@
 
 #include "Errors/ProgGenError.h"
 
+#include "Tokenizer.h"
+
 struct ProgGenInfo
 {
-	const TokenList& tokens;
+	TokenListRef tokens;
 	ProgramRef program;
 	int currToken = 0;
 	struct Indent
@@ -25,6 +27,26 @@ struct ProgGenInfo
 	int funcRetOffset;
 	Datatype funcRetType;
 };
+
+struct ProgGenInfoBackup
+{
+	TokenListRef tokens;
+	int currToken;
+};
+
+ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
+{
+	ProgGenInfoBackup backup;
+	backup.tokens = info.tokens;
+	backup.currToken = info.currToken;
+	return backup;
+}
+
+void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
+{
+	info.tokens = backup.tokens;
+	info.currToken = backup.currToken;
+}
 
 struct OpPrecLvl
 {
@@ -210,7 +232,7 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0)
 {
 	static const Token emptyToken = { { "", 0, 0 }, Token::Type::EndOfCode, "" };
 	int index = info.currToken + offset;
-	return (index < info.tokens.size()) ? info.tokens[index] : emptyToken;
+	return (index < info.tokens->size()) ? (*info.tokens)[index] : emptyToken;
 }
 
 const Token& nextToken(ProgGenInfo& info, int offset = 1)
@@ -1083,12 +1105,30 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 	return true;
 }
 
+bool parseStatementPass(ProgGenInfo& info)
+{
+	auto& passToken = peekToken(info);
+	if (!isKeyword(passToken, "pass"))
+		return false;
+
+	nextToken(info);
+	parseExpectedNewline(info);
+
+	return true;
+}
+
 void parseFunctionBody(ProgGenInfo& info)
 {
+	int numStatements = 0;
+
+	auto& bodyBeginToken = peekToken(info, -1);
+
 	while (parseIndent(info))
 	{
-		auto token = info.tokens[info.currToken];
+		++numStatements;
+		auto token = (*info.tokens)[info.currToken];
 		if (parseEmptyLine(info)) continue;
+		if (parseStatementPass(info)) continue;
 		//if (parseDeclDef(info)) continue;
 		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
@@ -1096,6 +1136,9 @@ void parseFunctionBody(ProgGenInfo& info)
 		if (parseExpression(info)) continue;
 		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
 	}
+
+	if (numStatements == 0)
+		throw ProgGenError(bodyBeginToken.pos, "Expected function body!");
 
 	if (info.program->body->empty() || info.program->body->back()->type != Statement::Type::Return)
 	{
@@ -1106,23 +1149,56 @@ void parseFunctionBody(ProgGenInfo& info)
 	}
 }
 
-ProgramRef generateProgram(const TokenList& tokens)
-{
-	ProgGenInfo info = { tokens, ProgramRef(new Program()) };
-	info.program->body = std::make_shared<Body>();
+bool parseStatementImport(ProgGenInfo& info);
 
-	while (info.currToken < info.tokens.size())
+void parseGlobalCode(ProgGenInfo& info)
+{
+	while (info.currToken < info.tokens->size())
 	{
 		if (!parseIndent(info))
 			throw ProgGenError(peekToken(info).pos, "Expected indent!");
-		auto token = info.tokens[info.currToken];
+		auto token = (*info.tokens)[info.currToken];
 		if (parseEmptyLine(info)) continue;
+		if (parseStatementPass(info)) continue;
+		if (parseStatementImport(info)) continue;
 		if (parseDeclDef(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
 		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
 	}
+}
+
+bool parseStatementImport(ProgGenInfo& info)
+{
+	auto& importToken = peekToken(info);
+	if (!isKeyword(importToken, "import"))
+		return false;
+
+	nextToken(info);
+	auto& fileToken = nextToken(info);
+	if (!isString(fileToken))
+		throw ProgGenError(fileToken.pos, "Expected file path!");
+
+	std::string code = readTextFile(fileToken.value);
+
+	auto backup = makeProgGenInfoBackup(info);
+
+	info.tokens = tokenize(code, fileToken.value);
+	info.currToken = 0;
+	parseGlobalCode(info);
+
+	loadProgGenInfoBackup(info, backup);
+
+	return true;
+}
+
+ProgramRef generateProgram(const TokenListRef tokens)
+{
+	ProgGenInfo info = { tokens, ProgramRef(new Program()) };
+	info.program->body = std::make_shared<Body>();
+
+	parseGlobalCode(info);
 
 	return info.program;
 }
