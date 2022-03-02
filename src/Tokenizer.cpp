@@ -131,7 +131,7 @@ TokenList tokenize(const std::string& code, const std::string& name)
 			}
 			else if (isNum(c))
 			{
-				token.type = Token::Type::Literal;
+				token.type = Token::Type::LiteralInteger;
 				token.value.push_back(c);
 				state = State::TokenizeLiteral;
 			}
@@ -170,7 +170,7 @@ TokenList tokenize(const std::string& code, const std::string& name)
 			else if ('\'' == c)
 			{
 				specialChar = false;
-				token.type = Token::Type::Literal;
+				token.type = Token::Type::LiteralChar;
 				state = State::TokenizeChar;
 			}
 			else if ('"' == c)
@@ -195,6 +195,9 @@ TokenList tokenize(const std::string& code, const std::string& name)
 				token.type = Token::Type::Keyword;
 			else if (isBuiltinType(token.value))
 				token.type = Token::Type::BuiltinType;
+			else if (isBooleanValue(token.value))
+				token.type = Token::Type::LiteralBoolean;
+			
 			state = State::EndToken;
 			break;
 		case State::CheckSingleLineComment:
@@ -246,7 +249,6 @@ TokenList tokenize(const std::string& code, const std::string& name)
 			{
 				if ('\'' != c)
 					throw TokenizerError(token.pos, "A char literal cannot contain more than one character!");
-				token.value = std::to_string((int)token.value[0]);
 				state = State::EndToken;
 				break;
 			}

@@ -23,7 +23,9 @@ struct Token
 		Comment,
 		Operator,
 		Separator,
-		Literal,
+		LiteralInteger,
+		LiteralChar,
+		LiteralBoolean,
 		EndOfCode,
 	} type;
 	std::string value;
@@ -42,3 +44,5 @@ std::ostream& operator<<(std::ostream& os, const Token& token);
 bool isKeyword(const std::string& name);
 
 bool isBuiltinType(const std::string& name);
+
+bool isBooleanValue(const std::string& value);

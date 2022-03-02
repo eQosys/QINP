@@ -17,7 +17,9 @@ std::string TokenTypeToString(Token::Type type)
 	case Token::Type::Comment: return "Comment";
 	case Token::Type::Operator: return "Operator";
 	case Token::Type::Separator: return "Separator";
-	case Token::Type::Literal: return "Literal";
+	case Token::Type::LiteralInteger: return "LiteralInteger";
+	case Token::Type::LiteralChar: return "LiteralChar";
+	case Token::Type::LiteralBoolean: return "LiteraBoolean";
 	default: return "Unknown";
 	}
 }
@@ -43,12 +45,9 @@ bool isKeyword(const std::string& name)
 	{
 		"asm", "assembly",
 		"return",
-		// "const", "void"
-		// "indent", "tab", "space",
+		// "const"
 		// "import", "default",
-		// "self",
 		// "sizeof", "offsetof",
-		// "true", "false",
 		// "if", "elif", "else",
 		// "for", "while", "do",
 		// "break", "continue",
@@ -75,4 +74,9 @@ bool isBuiltinType(const std::string& name)
 	};
 
 	return builtinTypes.find(name) != builtinTypes.end();
+}
+
+bool isBooleanValue(const std::string& value)
+{
+	return value == "true" || value == "false";
 }

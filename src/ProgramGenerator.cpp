@@ -170,7 +170,10 @@ bool isOperator(const Token& token, const std::string& name)
 
 bool isLiteral(const Token& token)
 {
-	return token.type == Token::Type::Literal;
+	return
+		token.type == Token::Type::LiteralInteger ||
+		token.type == Token::Type::LiteralChar ||
+		token.type == Token::Type::LiteralBoolean;
 }
 
 bool isNewline(const Token& token)
@@ -508,8 +511,25 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
 	exp->eType = Expression::ExprType::Literal;
-	exp->valIntUnsigned = std::stoull(litToken.value);
-	exp->datatype.name = "u64";
+
+	switch (litToken.type)
+	{
+	case Token::Type::LiteralInteger:
+		exp->valIntUnsigned = std::stoull(litToken.value);
+		exp->datatype.name = "u64";
+		break;
+	case Token::Type::LiteralChar:
+		exp->valIntUnsigned = litToken.value[0];
+		exp->datatype.name = "u8";
+		break;
+	case Token::Type::LiteralBoolean:
+		exp->valIntUnsigned = litToken.value == "true" ? 1 : 0;
+		exp->datatype.name = "bool";
+		break;
+	default:
+		throw ProgGenError(litToken.pos, "Invalid literal type!");
+	}
+
 
 	return exp;
 }
