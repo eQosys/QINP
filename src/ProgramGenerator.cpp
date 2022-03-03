@@ -200,7 +200,8 @@ bool isLiteral(const Token& token)
 	return
 		token.type == Token::Type::LiteralInteger ||
 		token.type == Token::Type::LiteralChar ||
-		token.type == Token::Type::LiteralBoolean;
+		token.type == Token::Type::LiteralBoolean ||
+		token.type == Token::Type::String;
 }
 
 bool isNewline(const Token& token)
@@ -602,16 +603,22 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	switch (litToken.type)
 	{
 	case Token::Type::LiteralInteger:
-		exp->valIntUnsigned = std::stoull(litToken.value);
+		exp->valStr = litToken.value;
 		exp->datatype.name = "u64";
 		break;
 	case Token::Type::LiteralChar:
-		exp->valIntUnsigned = litToken.value[0];
+		exp->valStr = std::to_string(litToken.value[0]);
 		exp->datatype.name = "u8";
 		break;
 	case Token::Type::LiteralBoolean:
-		exp->valIntUnsigned = litToken.value == "true" ? 1 : 0;
+		exp->valStr = std::to_string(litToken.value == "true" ? 1 : 0);
 		exp->datatype.name = "bool";
+		break;
+	case Token::Type::String:
+		exp->valStr = "str_" + std::to_string(info.program->strings.size());
+		info.program->strings.insert({ info.program->strings.size(), litToken.value });
+		exp->datatype.ptrDepth = 1;
+		exp->datatype.name = "u8";
 		break;
 	default:
 		throw ProgGenError(litToken.pos, "Invalid literal type!");

@@ -131,9 +131,7 @@ struct Expression : public Statement
 
 	ExpressionRef left; // Binary operator
 	ExpressionRef right;
-	long long valIntSigned; // Signed integer literal
-	unsigned long long valIntUnsigned; // Unsigned integer literal
-	double valFloat; // Floating point literal
+	std::string valStr; // Literal
 	int localOffset; // Local variable
 	std::string globName; // Global variable
 	std::string funcName; // Function call
@@ -180,6 +178,7 @@ struct Program
 {
 	std::map<std::string, Variable> globals;
 	std::map<std::string, FunctionRef> functions;
+	std::map<int, std::string> strings;
 	BodyRef body;
 };
 typedef std::shared_ptr<Program> ProgramRef;

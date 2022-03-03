@@ -525,8 +525,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Literal:
 		ngi.primReg.datatype = expr->datatype;
-		ss << "  mov " << primRegName(ngi) << ", " << std::to_string(expr->valIntUnsigned) << "\n";
 		ngi.primReg.state = CellState::rValue;
+		ss << "  mov " << primRegUsage(ngi) << ", " << expr->valStr << "\n";
 		break;
 	case Expression::ExprType::GlobalVariable:
 		ss << "  mov " << primRegName(8) << ", " << expr->globName << "\n";
@@ -637,8 +637,13 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 		case 4: sizeStr = "d"; break;
 		case 8: sizeStr = "q"; break;
 		}
-		ss << "  " << glob.first << " res" << sizeStr << " 1\n";
+		ss << "  " << glob.first << " res" << sizeStr << " 1\t\t; " << getPosStr(glob.second.pos) << "\n";
 	}
+
+	// C-Strings
+	ss << "SECTION .data\n";
+	for (auto& str : program->strings)
+		ss << "  str_" << str.first << " db \"" << str.second << "\", 0\n";
 	
 	return ss.str();
 }
