@@ -157,6 +157,7 @@ struct Function
 	std::string name;
 	Datatype retType;
 	int retOffset = 8;
+	int frameSize = 0;
 	std::vector<Variable> params;
 	BodyRef body;
 	bool isDefined;

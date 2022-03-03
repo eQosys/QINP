@@ -9,6 +9,13 @@
 
 #include "Tokenizer.h"
 
+struct LocalStackFrame
+{
+	std::map<std::string, Variable> locals;
+	int totalOffset = 0; // The offset of the last local variable pushed onto the stack.
+	int frameSize = 0; // The size of the stack frame. (Sum of the push sizes of all locals)
+};
+
 struct ProgGenInfo
 {
 	TokenListRef tokens;
@@ -23,10 +30,11 @@ struct ProgGenInfo
 	} indent;
 	std::string lastLoadedFunctionName = "";
 
-	std::vector<std::map<std::string, Variable>> localStack;
+	std::vector<LocalStackFrame> localStack;
 
 	BodyRef __mainBodyBackup;
 	int funcRetOffset;
+	int funcFrameSize;
 	Datatype funcRetType;
 
 	std::set<std::string> imports;
@@ -298,10 +306,10 @@ const Variable* getVariable(ProgGenInfo& info, const std::string& name)
 	if (globIt != globals.end())
 		return &globIt->second;
 
-	for (auto it = info.localStack.rbegin(); it != info.localStack.rend(); ++it)
+	for (auto frameIt = info.localStack.rbegin(); frameIt != info.localStack.rend(); ++frameIt)
 	{
-		auto locIt = it->find(name);
-		if (locIt != it->end())
+		auto locIt = frameIt->locals.find(name);
+		if (locIt != frameIt->locals.end())
 			return &locIt->second;
 	}
 
@@ -318,7 +326,7 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 	return nullptr;
 }
 
-void addVariable(ProgGenInfo& info, const Variable& var)
+void addVariable(ProgGenInfo& info, Variable var)
 {
 	auto pVar = getVariable(info, var.name);
 	if (pVar)
@@ -327,7 +335,26 @@ void addVariable(ProgGenInfo& info, const Variable& var)
 	if (funcs)
 		throw ProgGenError(var.pos, "Function(s) with name '" + var.name + "' already declared!");
 
-	info.program->globals.insert({ var.name, var });
+	if (info.localStack.empty())
+	{
+		var.isLocal = false;
+		info.program->globals.insert({ var.name, var });
+	}
+	else
+	{
+		int varSize = getDatatypePushSize(var.datatype);
+		var.isLocal = true;
+		var.offset = info.funcRetOffset;
+
+		info.localStack.back().frameSize += varSize;
+		if (info.localStack.back().frameSize > info.funcFrameSize)
+			info.funcFrameSize = info.localStack.back().frameSize;
+		info.localStack.back().totalOffset -= varSize;
+		var.offset = info.localStack.back().totalOffset;
+
+		info.program->globals.insert({ var.name, var });
+	}
+	
 }
 
 void addFunction(ProgGenInfo& info, FunctionRef func)
@@ -1026,6 +1053,27 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 	return true;
 }
 
+Datatype getParseDatatype(ProgGenInfo& info)
+{
+	auto& typeToken = peekToken(info);
+	if (!isBuiltinType(typeToken))
+		return Datatype();
+	nextToken(info);
+
+	Datatype datatype;
+	datatype.name = typeToken.value;
+
+	while (isOperator(peekToken(info), "*"))
+	{
+		nextToken(info);
+		++datatype.ptrDepth;
+	}
+
+	return datatype;
+}
+
+void parseFunctionBody(ProgGenInfo& info);
+
 ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
 	Variable var;
@@ -1058,27 +1106,6 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, c
 	if (initExpr)
 		info.program->body->push_back(initExpr);
 }
-
-Datatype getParseDatatype(ProgGenInfo& info)
-{
-	auto& typeToken = peekToken(info);
-	if (!isBuiltinType(typeToken))
-		return Datatype();
-	nextToken(info);
-
-	Datatype datatype;
-	datatype.name = typeToken.value;
-
-	while (isOperator(peekToken(info), "*"))
-	{
-		nextToken(info);
-		++datatype.ptrDepth;
-	}
-
-	return datatype;
-}
-
-void parseFunctionBody(ProgGenInfo& info);
 
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
@@ -1138,12 +1165,14 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		info.funcRetOffset = func->retOffset;
 		info.funcRetType = func->retType;
+		info.funcFrameSize = 0;
 
 		info.localStack.push_back({});
 		for (auto& param : func->params)
-			info.localStack.back().insert({ param.name, param });
+			info.localStack.back().locals.insert({ param.name, param });
 
 		parseFunctionBody(info);
+		func->frameSize = info.funcFrameSize;
 		info.localStack.pop_back();
 		unsetTempBody(info);
 		decreaseIndent(info.indent);
@@ -1152,7 +1181,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	addFunction(info, func);
 }
 
-bool parseDeclDef(ProgGenInfo& info)
+bool parseDeclDef(ProgGenInfo& info, bool allowFunctions)
 {
 	auto& typeToken = peekToken(info);
 
@@ -1168,9 +1197,15 @@ bool parseDeclDef(ProgGenInfo& info)
 		throw ProgGenError(typeToken.pos, "Unknown datatype!");
 
 	if (isSeparator(peekToken(info), "("))
+	{
+		if (!allowFunctions)
+			throw ProgGenError(peekToken(info).pos, "Functions are not allowed here!");
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
+	}
 	else
+	{
 		parseExpectedDeclDefVariable(info, datatype, nameToken.value);
+	}
 
 	return true;
 }
@@ -1273,7 +1308,7 @@ void parseFunctionBody(ProgGenInfo& info)
 		auto token = (*info.tokens)[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
-		//if (parseDeclDef(info)) continue;
+		if (parseDeclDef(info, false)) continue;
 		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
@@ -1289,10 +1324,7 @@ void parseFunctionBody(ProgGenInfo& info)
 		if (info.funcRetType == Datatype{ 0, "void" })
 			info.program->body->push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
-		{
-
 			throw ProgGenError(info.program->body->empty() ? bodyBeginToken.pos : info.program->body->back()->pos, "Missing return statement!");
-		}
 	}
 }
 
@@ -1308,7 +1340,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseStatementImport(info)) continue;
-		if (parseDeclDef(info)) continue;
+		if (parseDeclDef(info, true)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;

@@ -26,7 +26,8 @@ void foo():
 	exit(5)
 
 u64 square(u64 x):
-	return x * x
+	u32 localVar = x
+	return localVar * x
 
 u64 quotient(u64 x, u64 y):
 	return x / y

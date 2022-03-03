@@ -599,6 +599,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, Functi
 	ngi.ss << "  push rbp\n";
 	ngi.ss << "  mov rbp, rsp\n";
 
+	if (func->frameSize > 0)
+		ngi.ss << "  sub rsp, " << std::to_string(func->frameSize) << "\n";
+
 	generateNasm_Linux_x86_64(ngi, func->body);
 }
 
@@ -616,7 +619,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	// Global code
 	generateNasm_Linux_x86_64(ngi, program->body);
 
-	// Gloval code epilogue
+	// Global code epilogue
 	ss << "  mov rdi, 0\n";
 	ss << "  mov rax, 60\n";
 	ss << "  syscall\n";
