@@ -1289,7 +1289,10 @@ void parseFunctionBody(ProgGenInfo& info)
 		if (info.funcRetType == Datatype{ 0, "void" })
 			info.program->body->push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
-			throw ProgGenError(info.program->body->back()->pos, "Missing return statement!");
+		{
+
+			throw ProgGenError(info.program->body->empty() ? bodyBeginToken.pos : info.program->body->back()->pos, "Missing return statement!");
+		}
 	}
 }
 
