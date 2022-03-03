@@ -404,7 +404,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 			}
 			else
 			{
-				result += varName;
+				result += getMangledName(*pVar);
 			}
 			parseVar = false;
 			parsedParen = false;
@@ -671,7 +671,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->datatype.name = "bool";
 		break;
 	case Token::Type::String:
-		exp->valStr = "str_" + std::to_string(info.program->strings.size());
+		exp->valStr = getMangledName(info.program->strings.size());
 		info.program->strings.insert({ info.program->strings.size(), litToken.value });
 		exp->datatype.ptrDepth = 1;
 		exp->datatype.name = "u8";

@@ -34,7 +34,7 @@ u64 quotient(u64 x, u64 y):
 u32 sq(u32 x):
 	return square((u64)x)
 
-u8* strr = "hello"
+u8* str = "hello"
 
 \\exit(quotient(4, 2))
 exit(sq(5))

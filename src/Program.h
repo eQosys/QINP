@@ -167,10 +167,13 @@ typedef std::shared_ptr<Function> FunctionRef;
 std::string getDatatypeStr(const Datatype& datatype);
 std::string getSignatureNoRet(const FunctionRef func);
 std::string getSignature(const FunctionRef func);
-std::string getSignatureNoRet(const Expression* expr);
-std::string getSignature(const Expression* expr);
+std::string getSignatureNoRet(const Expression* callExpr);
+std::string getSignature(const Expression* callExpr);
 std::string getMangledName(const FunctionRef func);
-std::string getMangledName(const std::string& name, const Expression* expr);
+std::string getMangledName(const std::string& funcName, const Expression* callExpr);
+std::string getMangledName(const std::string& varName, const Datatype& datatype);
+std::string getMangledName(const Variable& var);
+std::string getMangledName(int strID);
 
 typedef std::map<std::string, FunctionRef> FunctionOverloads;
 

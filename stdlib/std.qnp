@@ -6,9 +6,6 @@ void exit(u64 code):
 		"mov rdi, [rbp $(code)]"
 		"syscall"
 
-u64 exit(u64 code):
-	return code
-
 \\u64 strlen(u8* str):
 \\	u8* begin = str
 \\	while *str:
