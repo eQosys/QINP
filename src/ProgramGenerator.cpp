@@ -342,7 +342,7 @@ void addVariable(ProgGenInfo& info, Variable var)
 	}
 	else
 	{
-		int varSize = getDatatypePushSize(var.datatype);
+		int varSize = getDatatypeSize(var.datatype);
 		var.isLocal = true;
 		var.offset = info.funcRetOffset;
 

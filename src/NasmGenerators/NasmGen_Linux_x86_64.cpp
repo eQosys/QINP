@@ -214,10 +214,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		
 		int newSize = getDatatypeSize(expr->datatype);
 		int oldSize = getDatatypeSize(expr->left->datatype);
-		if (oldSize >= newSize)
-			break;
 
 		primRegLToRVal(ngi);
+
+		ngi.primReg.datatype = expr->datatype;
+		if (oldSize >= newSize)
+			break;
 
 		switch (oldSize) // Maybe wrong conversion?
 		{
@@ -226,8 +228,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		case 4: ss << "  cdq\n"; break;
 		}
 
-		ngi.primReg.datatype = expr->datatype;
-		// State already modified
+		// Datatype & state already modified
 	}
 		break;
 	case Expression::ExprType::Assign:
