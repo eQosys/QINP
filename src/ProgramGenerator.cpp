@@ -248,6 +248,49 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	return temp;
 }
 
+ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
+
+FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& overloads, std::vector<ExpressionRef>& paramExpr)
+{
+	FunctionRef match = nullptr;
+
+	for (auto& overload : overloads)
+	{
+		auto& func = overload.second;
+
+		if (func->params.size() != paramExpr.size())
+			continue;
+
+		bool matchFound = true;
+		bool isExactMatch = true;
+		for (int i = 0; i < paramExpr.size() && matchFound; ++i)
+		{
+			if (paramExpr[i]->datatype != func->params[i].datatype)
+				isExactMatch = false;
+			matchFound = !!genConvertExpression(paramExpr[i], func->params[i].datatype, false, false);
+		}
+
+		if (isExactMatch)
+			return func;
+		
+		if (matchFound)
+		{
+			if (match)
+				throw ProgGenError(peekToken(info).pos, "Multiple overloads found for function call");
+			else
+				match = func;
+		}
+	}
+
+	if (match)
+	{
+		for (int i = 0; i < paramExpr.size(); ++i)
+			paramExpr[i] = genConvertExpression(paramExpr[i], match->params[i].datatype, false);
+	}
+
+	return match;
+}
+
 const Variable* getVariable(ProgGenInfo& info, const std::string& name)
 {
 	auto& globals = info.program->globals;
@@ -265,13 +308,12 @@ const Variable* getVariable(ProgGenInfo& info, const std::string& name)
 	return nullptr;
 }
 
-const FunctionRef getFunction(ProgGenInfo& info, const std::string& name)
+const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name)
 {
-	auto& program = info.program;
-	auto& functions = program->functions;
+	auto& functions = info.program->functions;
 	auto it = functions.find(name);
 	if (it != functions.end())
-		return it->second;
+		return &it->second;
 
 	return nullptr;
 }
@@ -281,9 +323,9 @@ void addVariable(ProgGenInfo& info, const Variable& var)
 	auto pVar = getVariable(info, var.name);
 	if (pVar)
 		throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared here: " + getPosStr(pVar->pos));
-	auto func = getFunction(info, var.name);
-	if (func)
-		throw ProgGenError(var.pos, "Function with name '" + var.name + "' already declared here: " + getPosStr(func->pos));
+	auto funcs = getFunctions(info, var.name);
+	if (funcs)
+		throw ProgGenError(var.pos, "Function(s) with name '" + var.name + "' already declared!");
 
 	info.program->globals.insert({ var.name, var });
 }
@@ -294,30 +336,34 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	if (pVar)
 		throw ProgGenError(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(pVar->pos));
 
-	auto it = info.program->functions.find(func->name);
-	if (it == info.program->functions.end())
+	auto sig = getSignatureNoRet(func);
+
+
+	auto nameIt = info.program->functions.find(func->name);
+	if (nameIt == info.program->functions.end())
 	{
-		info.program->functions.insert({ func->name, func });
+		info.program->functions[func->name].insert({ sig, func });
 		return;
 	}
 
-	if (it->second->retType != func->retType)
-		throw ProgGenError(func->pos, "Function signature mismatch!");
+	auto sigIt = nameIt->second.find(sig);
 
-	if (it->second->params.size() != func->params.size())
-		throw ProgGenError(func->pos, "Function signature mismatch!");
+	if (sigIt == nameIt->second.end())
+	{
+		nameIt->second.insert({ sig, func });
+		return;
+	}
 
-	for (size_t i = 0; i < it->second->params.size(); ++i)
-		if (it->second->params[i].datatype != func->params[i].datatype)
-			throw ProgGenError(func->pos, "Function signature mismatch!");
+	if (func->retType != sigIt->second->retType)
+		throw ProgGenError(func->pos, "Function with name '" + func->name + "' already declared with different return type: " + getPosStr(sigIt->second->pos));
 
 	if (!func->isDefined)
 		return;
 
-	if (it->second->isDefined && func->isDefined)
-		throw ProgGenError(func->pos, "Function already defined here: " + getPosStr(it->second->pos));
+	if (sigIt->second->isDefined && func->isDefined)
+		throw ProgGenError(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
 
-	it->second = func;
+	sigIt->second = func;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -515,7 +561,7 @@ Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right
 	return (leftIt > rightIt) ? left->datatype : right->datatype;
 }
 
-ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false)
+ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
 {
 	if (expToConvert->datatype == newDatatype)
 		return expToConvert;
@@ -523,12 +569,22 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	if (!isExplicit)
 	{
 		if (expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth > 0)
-			throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointers!");
+		{
+			if (doThrow)
+				throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointer types!");
+			else
+				return nullptr;
+		}
 		if (
 			(expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth == 0) ||
 			(expToConvert->datatype.ptrDepth == 0 && newDatatype.ptrDepth > 0)
 			)
-			throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointers and non-pointers!");
+		{
+			if (doThrow)
+				throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointer and non-pointer types!");
+			else
+				return nullptr;
+		}
 
 		if (expToConvert->datatype.ptrDepth == 0 && newDatatype.ptrDepth == 0)
 			return genConvertExpression(expToConvert, newDatatype, true);
@@ -651,7 +707,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	return exp;
 }
 
-ExpressionRef getParseFunctionAddress(ProgGenInfo& info)
+ExpressionRef getParseFunctionName(ProgGenInfo& info)
 {
 	auto& litToken = peekToken(info);
 	if (!isIdentifier(litToken))
@@ -659,14 +715,15 @@ ExpressionRef getParseFunctionAddress(ProgGenInfo& info)
 
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
-	auto func = getFunction(info, litToken.value);
-	if (!func)
+	auto funcs = getFunctions(info, litToken.value);
+	if (!funcs)
 		return nullptr;
-	
-	exp->eType = Expression::ExprType::FunctionAddress;
+
+	exp->eType = Expression::ExprType::FunctionName;
 	exp->isLValue = false;
-	exp->datatype = { 1, getMangledType(func)};
 	exp->funcName = litToken.value;
+
+	exp->datatype = { 1, "...#" + litToken.value};
 
 	nextToken(info);
 
@@ -678,7 +735,7 @@ ExpressionRef getParseValue(ProgGenInfo& info)
 	auto exp = getParseLiteral(info);
 	if (exp) return exp;
 
-	exp = getParseFunctionAddress(info);
+	exp = getParseFunctionName(info);
 	if (exp) return exp;
 
 	exp = getParseVariable(info);
@@ -818,7 +875,6 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::FunctionCall:
 		{
-			exp->datatype; // Set return type from exp->left->datatype (first 'value')
 			exp->isLValue = false;
 			if (exp->left->datatype.ptrDepth == 0)
 				throw ProgGenError(exp->pos, "Cannot call non-function!");
@@ -830,12 +886,26 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				if (!isSeparator(peekToken(info), ")"))
 					parseExpected(info, Token::Type::Separator, ",");
 			}
-			std::string signature = getMangledSignature(exp->paramExpr);
-			if (getSignatureFromMangledType(exp->left->datatype.name) != signature)
-				throw ProgGenError(exp->pos, "Function call signature mismatch!");
-			exp->datatype = getDatatypeFromMangledType(exp->left->datatype.name);
-
 			parseExpected(info, Token::Type::Separator, ")");
+
+			if (exp->left->eType == Expression::ExprType::FunctionName)
+			{
+				auto overloads = getFunctions(info, exp->left->funcName);
+				if (!overloads)
+					throw ProgGenError(exp->pos, "Function '" + exp->left->funcName + "' not found!");
+				auto func = getMatchingOverload(info, *overloads, exp->paramExpr);
+				if (!func)
+					throw ProgGenError(exp->pos, "No matching overload found for function '" + exp->left->funcName + "'!");
+				exp->datatype = func->retType;
+				exp->left->datatype = { 1, getSignature(func) };
+				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
+			}
+			else
+			{
+				throw ProgGenError(exp->pos, "Not implemented yet!");
+				// TODO: Check if signature matches (possibly through implicit conversions)
+				exp->datatype = {}; // TODO: Get return type from exp->left->datatype
+			}
 		}
 			break;
 		case Expression::ExprType::Suffix_Increment:

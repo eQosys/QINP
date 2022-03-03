@@ -489,7 +489,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		}
 
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		bool typesMatch = ngi.primReg.datatype == Datatype{ 1, getMangledType(expr->datatype, expr->paramExpr) };
+		bool typesMatch = ngi.primReg.datatype == Datatype{ 1, getSignature(expr) };
 		assert(typesMatch && "Cannot call non-function!");
 		ss << "  call " << primRegUsage(ngi) << "\n";
 		ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
@@ -539,7 +539,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::lValue;
 		break;
-	case Expression::ExprType::FunctionAddress:
+	case Expression::ExprType::FunctionName:
 		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::rValue;
@@ -595,7 +595,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, Functi
 	assert(func->body->back()->type == Statement::Type::Return && "Function must end with return statement!");
 
 	// Function prologue
-	ngi.ss << name << ":\n";
+	ngi.ss << getMangledName(func) << ":\n";
 	ngi.ss << "  push rbp\n";
 	ngi.ss << "  mov rbp, rsp\n";
 
@@ -622,8 +622,9 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  syscall\n";
 
 	// Functions
-	for (auto& func : program->functions)
-		generateNasm_Linux_x86_64(ngi, func.first, func.second);
+	for (auto& overloads : program->functions)
+		for (auto& func : overloads.second)
+			generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	// Global variables
 	ss << "SECTION .bss\n";

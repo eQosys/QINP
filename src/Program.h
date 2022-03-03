@@ -118,7 +118,7 @@ struct Expression : public Statement
 		Literal,
 		GlobalVariable,
 		LocalVariable,
-		FunctionAddress,
+		FunctionName,
 	};
 
 	Expression(const Token::Position& pos)
@@ -134,8 +134,8 @@ struct Expression : public Statement
 	std::string valStr; // Literal
 	int localOffset; // Local variable
 	std::string globName; // Global variable
-	std::string funcName; // Function call
-	std::vector<ExpressionRef> paramExpr;
+	std::string funcName; // Function Address
+	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
 };
 
@@ -164,20 +164,20 @@ struct Function
 
 typedef std::shared_ptr<Function> FunctionRef;
 
-std::string getMangledSignature(const std::vector<ExpressionRef>& paramExpr);
+std::string getDatatypeStr(const Datatype& datatype);
+std::string getSignatureNoRet(const FunctionRef func);
+std::string getSignature(const FunctionRef func);
+std::string getSignatureNoRet(const Expression* expr);
+std::string getSignature(const Expression* expr);
+std::string getMangledName(const FunctionRef func);
+std::string getMangledName(const std::string& name, const Expression* expr);
 
-std::string getMangledType(const Datatype& retType, const std::vector<Datatype>& paramTypes);
-std::string getMangledType(const Datatype& retType, const std::vector<ExpressionRef>& paramExpr);
-std::string getMangledType(const FunctionRef func);
-
-std::string getSignatureFromMangledType(const std::string& mangledType);
-
-Datatype getDatatypeFromMangledType(std::string mangledType);
+typedef std::map<std::string, FunctionRef> FunctionOverloads;
 
 struct Program
 {
 	std::map<std::string, Variable> globals;
-	std::map<std::string, FunctionRef> functions;
+	std::map<std::string, FunctionOverloads> functions;
 	std::map<int, std::string> strings;
 	BodyRef body;
 };
