@@ -145,6 +145,7 @@ typedef std::shared_ptr<Body> BodyRef;
 
 struct Variable
 {
+	Token::Position pos;
 	std::string name;
 	bool isLocal = false;
 	int offset = -1;
@@ -153,6 +154,7 @@ struct Variable
 
 struct Function
 {
+	Token::Position pos;
 	std::string name;
 	Datatype retType;
 	int retOffset = 8;

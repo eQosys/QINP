@@ -246,24 +246,24 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	return temp;
 }
 
-const Variable& getVariable(ProgGenInfo& info, const std::string& name, const Token::Position& tokenPos)
+const Variable* getVariable(ProgGenInfo& info, const std::string& name)
 {
 	auto& globals = info.program->globals;
 	auto globIt = globals.find(name);
 	if (globIt != globals.end())
-		return globIt->second;
+		return &globIt->second;
 
 	for (auto it = info.localStack.rbegin(); it != info.localStack.rend(); ++it)
 	{
 		auto locIt = it->find(name);
 		if (locIt != it->end())
-			return locIt->second;
+			return &locIt->second;
 	}
 
-	throw ProgGenError(tokenPos, "Unknown variable: " + name + "!");
+	return nullptr;
 }
 
-const FunctionRef getFunction(ProgGenInfo& info, const std::string& name, const Token::Position& tokenPos)
+const FunctionRef getFunction(ProgGenInfo& info, const std::string& name)
 {
 	auto& program = info.program;
 	auto& functions = program->functions;
@@ -272,6 +272,50 @@ const FunctionRef getFunction(ProgGenInfo& info, const std::string& name, const 
 		return it->second;
 
 	return nullptr;
+}
+
+void addVariable(ProgGenInfo& info, const Variable& var)
+{
+	auto pVar = getVariable(info, var.name);
+	if (pVar)
+		throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared here: " + getPosStr(pVar->pos));
+	auto func = getFunction(info, var.name);
+	if (func)
+		throw ProgGenError(var.pos, "Function with name '" + var.name + "' already declared here: " + getPosStr(func->pos));
+
+	info.program->globals.insert({ var.name, var });
+}
+
+void addFunction(ProgGenInfo& info, FunctionRef func)
+{
+	auto pVar = getVariable(info, func->name);
+	if (pVar)
+		throw ProgGenError(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(pVar->pos));
+
+	auto it = info.program->functions.find(func->name);
+	if (it == info.program->functions.end())
+	{
+		info.program->functions.insert({ func->name, func });
+		return;
+	}
+
+	if (it->second->retType != func->retType)
+		throw ProgGenError(func->pos, "Function signature mismatch!");
+
+	if (it->second->params.size() != func->params.size())
+		throw ProgGenError(func->pos, "Function signature mismatch!");
+
+	for (size_t i = 0; i < it->second->params.size(); ++i)
+		if (it->second->params[i].datatype != func->params[i].datatype)
+			throw ProgGenError(func->pos, "Function signature mismatch!");
+
+	if (!func->isDefined)
+		return;
+
+	if (it->second->isDefined && func->isDefined)
+		throw ProgGenError(func->pos, "Function already defined here: " + getPosStr(it->second->pos));
+
+	it->second = func;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -300,11 +344,13 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				continue;
 			}
 
-			auto& var = getVariable(info, varName, asmToken.pos);
+			auto pVar = getVariable(info, varName);
+			if (!pVar)
+				throw ProgGenError(asmToken.pos, "Unknown variable '" + varName + "'!");
 				
-			if (var.isLocal)
+			if (pVar->isLocal)
 			{
-				int offset = var.offset;
+				int offset = pVar->offset;
 				result += (offset < 0) ? "- " : "+ ";
 				result += std::to_string(std::abs(offset));
 			}
@@ -568,11 +614,14 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
-	auto& var = getVariable(info, litToken.value, litToken.pos);
-	exp->eType = var.isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
+	auto pVar = getVariable(info, litToken.value);
+	if (!pVar)
+		throw ProgGenError(litToken.pos, "Variable " + litToken.value + " not found!");
+
+	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->isLValue = true;
-	exp->localOffset = var.offset;
-	exp->datatype = var.datatype;
+	exp->localOffset = pVar->offset;
+	exp->datatype = pVar->datatype;
 	exp->globName = litToken.value;
 
 	nextToken(info);
@@ -588,7 +637,7 @@ ExpressionRef getParseFunctionAddress(ProgGenInfo& info)
 
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
-	auto func = getFunction(info, litToken.value, litToken.pos);
+	auto func = getFunction(info, litToken.value);
 	if (!func)
 		return nullptr;
 	
@@ -869,11 +918,12 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
 	Variable var;
+	var.pos = peekToken(info).pos;
 	var.name = name;
 	var.datatype = datatype;
 	var.isLocal = false;
 
-	info.program->globals.insert({ name, var });
+	addVariable(info, var);
 
 	ExpressionRef initExpr = nullptr;
 
@@ -922,11 +972,10 @@ void parseFunctionBody(ProgGenInfo& info);
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
 	FunctionRef func = std::make_shared<Function>();
+	func->pos = peekToken(info).pos;
 	func->body = std::make_shared<Body>();
 	func->name = name;
 	func->retType = datatype;
-
-	auto& funcParamBeginToken = peekToken(info);
 
 	parseExpected(info, Token::Type::Separator, "(");
 
@@ -987,29 +1036,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		decreaseIndent(info.indent);
 	}
 
-	auto it = info.program->functions.find(name);
-	if (it != info.program->functions.end())
-	{
-		if (it->second->isDefined)
-			throw ProgGenError(funcParamBeginToken.pos, "Function already defined!");
-
-		if (it->second->retType != func->retType)
-			throw ProgGenError(funcParamBeginToken.pos, "Function signature mismatch!");
-
-		if (it->second->params.size() != func->params.size())
-			throw ProgGenError(funcParamBeginToken.pos, "Function signature mismatch!");
-
-		for (size_t i = 0; i < it->second->params.size(); ++i)
-			if (it->second->params[i].datatype != func->params[i].datatype)
-				throw ProgGenError(funcParamBeginToken.pos, "Function signature mismatch!");
-
-		it->second = func;
-	}
-	else
-	{
-		info.program->functions.insert({ name, func });
-	}
-
+	addFunction(info, func);
 }
 
 bool parseDeclDef(ProgGenInfo& info)

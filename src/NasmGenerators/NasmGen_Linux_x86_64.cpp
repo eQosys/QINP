@@ -204,9 +204,8 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
-	generateStatementLabel(ngi, expr);
-
 	auto& ss = ngi.ss;
+
 	switch (expr->eType)
 	{
 	case Expression::ExprType::Conversion:
@@ -554,10 +553,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 {
 	auto& ss = ngi.ss;
 
+	generateStatementLabel(ngi, statement);
+
 	switch (statement->type)
 	{
 	case Statement::Type::Return:
-		generateStatementLabel(ngi, statement);
 		if (statement->subExpr)
 		{
 			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
@@ -569,7 +569,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		ss << "  ret\n";
 		break;
 	case Statement::Type::Assembly:
-		generateStatementLabel(ngi, statement);
 		for (auto& line : statement->asmLines)
 			ss << "  " << line << "\n";
 		break;

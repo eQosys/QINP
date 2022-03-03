@@ -94,8 +94,6 @@ int main(int argc, char** argv, char** environ)
 		auto program = generateProgram(tokens, importDirs);
 
 		std::string output = generateNasm_Linux_x86_64(program);
-
-		std::cout << "------ OUTPUT ------\n" << output << "------------------\n" << std::endl;
 	
 		std::string asmFilename = std::filesystem::path(inFilename).replace_extension(".asm").string();
 		writeTextFileOverwrite(asmFilename, output);
