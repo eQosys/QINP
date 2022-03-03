@@ -498,7 +498,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 
 		if (!isVoidFunc)
-			ss << "  pop " << primRegUsage(ngi) << "\n";
+			ss << "  pop " << primRegName(8) << "\n";
 	}
 		break;
 	case Expression::ExprType::Suffix_Increment:
@@ -580,7 +580,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 	}
 }
 
-// Generates code for any code 'body'
+// Generates Nasm code for any code 'body'
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 {
 	auto& ss = ngi.ss;

@@ -2,6 +2,21 @@
 
 void exit(u64 code):
 	assembly:
-		"mov rdi, [rbp $(code)]"
 		"mov rax, 60"
+		"mov rdi, [rbp $(code)]"
 		"syscall"
+
+\\u64 strlen(u8* str):
+\\	u8* begin = str
+\\	while *str:
+\\		++str
+\\	return str - begin
+\\
+\\void print(u8* str):
+\\	u64 len = strlen(str)
+\\	assembly:
+\\		"mov rax, 1"
+\\		"mov rdi, 1"
+\\		"mov rsi, [rbp $(str)]"
+\\		"mov rdx, [rbp $(len)]"
+\\		syscall

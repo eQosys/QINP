@@ -159,6 +159,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "-", Expression::ExprType::Prefix_Minus },
 			{ "++", Expression::ExprType::Prefix_Increment },
 			{ "--", Expression::ExprType::Prefix_Decrement },
+			{ "(", Expression::ExprType::Explicit_Cast }
 		},
 		OpPrecLvl::Type::Unary_Prefix,
 	},
@@ -513,10 +514,24 @@ Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right
 	return (leftIt > rightIt) ? left->datatype : right->datatype;
 }
 
-ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype)
+ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false)
 {
 	if (expToConvert->datatype == newDatatype)
 		return expToConvert;
+
+	if (!isExplicit)
+	{
+		if (expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth > 0)
+			throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointers!");
+		if (
+			(expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth == 0) ||
+			(expToConvert->datatype.ptrDepth == 0 && newDatatype.ptrDepth > 0)
+			)
+			throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointers and non-pointers!");
+
+		if (expToConvert->datatype.ptrDepth == 0 && newDatatype.ptrDepth == 0)
+			return genConvertExpression(expToConvert, newDatatype, true);
+	}
 
 	auto exp = std::make_shared<Expression>(expToConvert->pos);
 	exp->eType = Expression::ExprType::Conversion;
@@ -559,7 +574,7 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 	else
 		newDatatype = getBestConvDatatype(exp->left, exp->right);
 
-	if (newDatatype.name.empty())
+	if (!newDatatype)
 		throw ProgGenError(
 			exp->pos, "Cannot convert between " +
 			exp->left->datatype.name +
@@ -765,7 +780,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 
 ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 {
-	auto exp = getParseParenthesized(info);
+	auto exp = getParseExpression(info, precLvl + 1);
 	
 	auto& opsLvl = opPrecLvls[precLvl];
 
@@ -827,6 +842,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 	return exp;
 }
 
+Datatype getParseDatatype(ProgGenInfo& info);
+
 ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 {
 	auto& opsLvl = opPrecLvls[precLvl];
@@ -835,20 +852,21 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	auto it = opsLvl.ops.find(opToken.value);
 	if (it == opsLvl.ops.end())
 		return getParseExpression(info, precLvl + 1);
-	
+
 	auto exp = std::make_shared<Expression>(opToken.pos);
 	exp->eType = it->second;
 	nextToken(info);
-	exp->left = getParseExpression(info, precLvl);
 
 	switch (exp->eType)
 	{
 	case Expression::ExprType::AddressOf:
+		exp->left = getParseExpression(info, precLvl);
 		exp->datatype = exp->left->datatype;
 		++exp->datatype.ptrDepth;
 		exp->isLValue = false;
 		break;
 	case Expression::ExprType::Dereference:
+		exp->left = getParseExpression(info, precLvl);
 		exp->datatype = exp->left->datatype;
 		if (exp->datatype.ptrDepth == 0)
 			throw ProgGenError(opToken.pos, "Cannot dereference a non-pointer!");
@@ -858,9 +876,12 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->isLValue = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
+		exp->left = getParseExpression(info, precLvl);
 		exp->datatype = { 0, "bool" };
 		exp->isLValue = false;
+		break;
 	case Expression::ExprType::Bitwise_NOT:
+		exp->left = getParseExpression(info, precLvl);
 		exp->datatype = exp->left->datatype;
 		exp->isLValue = false;
 		break;
@@ -868,8 +889,21 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	case Expression::ExprType::Prefix_Minus:
 	case Expression::ExprType::Prefix_Increment:
 	case Expression::ExprType::Prefix_Decrement:
+		exp->left = getParseExpression(info, precLvl);
 		exp->datatype = exp->left->datatype;
 		exp->isLValue = false;
+		break;
+	case Expression::ExprType::Explicit_Cast:
+	{
+		Datatype newDatatype = getParseDatatype(info);
+		if (!newDatatype)
+		{
+			nextToken(info, -1);
+			return getParseExpression(info, precLvl + 1);
+		}
+		parseExpected(info, Token::Type::Separator, ")");
+		exp = genConvertExpression(getParseExpression(info, precLvl), newDatatype, true);
+	}
 		break;
 	default:
 		throw ProgGenError(opToken.pos, "Unknown unary prefix expression!");
@@ -1224,6 +1258,7 @@ bool parseStatementImport(ProgGenInfo& info)
 		}
 		catch (std::filesystem::filesystem_error&)
 		{
+			path = "";
 			continue;
 		}
 

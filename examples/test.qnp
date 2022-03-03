@@ -31,5 +31,8 @@ u64 square(u64 x):
 u64 quotient(u64 x, u64 y):
 	return x / y
 
-exit(quotient(4, 2))
-exit(square(4))
+u32 sq(u32 x):
+	return square((u64)x)
+
+\\exit(quotient(4, 2))
+exit((u64)sq((u32)5))
