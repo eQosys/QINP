@@ -28,4 +28,8 @@ void foo():
 u64 square(u64 x):
 	return x * x
 
+u64 quotient(u64 x, u64 y):
+	return x / y
+
+exit(quotient(4, 2))
 exit(square(4))

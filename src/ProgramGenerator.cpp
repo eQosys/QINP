@@ -996,10 +996,12 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		param.name = nextToken(info).value;
 
-		if (!isSeparator(peekToken(info), ",") && !isSeparator(peekToken(info), ")"))
-			throw ProgGenError(peekToken(info).pos, "Expected ',' or ')'!");
-
 		func->params.push_back(param);
+
+		if (isSeparator(peekToken(info), ")"))
+			continue;
+
+		parseExpected(info, Token::Type::Separator, ",");
 	}
 
 	func->retOffset += getDatatypePushSize(func->retType);
