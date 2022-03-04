@@ -1,4 +1,4 @@
-# QINP Builtin Types
+# Builtin Types
 
 This page lists the builtin types in the QINP language.
 

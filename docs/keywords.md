@@ -1,4 +1,4 @@
-# QINP Keywords
+# Keywords
 
 This page lists the keywords in the QINP language.
 Keywords are special identifiers in the QINP language and cannot be used for any other purpose. The [builtin types](./builtin-types.md) are also treated as keywords.
@@ -78,6 +78,39 @@ import "std.qnp"
 
 ### Pass
 
+The `pass` keyword is a no-op statement.
+It's primary purpose is to be used as a placeholder for empty bodies (e.g. function body).
+
+#### Example
+
+```qinp
+void foo():
+	pass
+```
+
 ---
 
 ### Return
+
+The `return` statement is used to return (a value) from a function.
+
+When the function it is used in has a return type other than `void`, the statement must be followed by an expression specifying the value to return.
+
+In functions with a return type of `void`, the `return` statement is optional, otherwise the last statement in the function body must be a `return` statement.
+
+#### Usage
+```qinp
+return [expression*]
+```
+
+#### Examples
+```qinp
+u64 square(u64 x):
+	return x * x
+```
+
+```qinp
+void say_hello():
+	print("Hello, world!")
+	return		\\ This is optional
+```
