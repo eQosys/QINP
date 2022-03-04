@@ -301,17 +301,18 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 
 const Variable* getVariable(ProgGenInfo& info, const std::string& name)
 {
-	auto& globals = info.program->globals;
-	auto globIt = globals.find(name);
-	if (globIt != globals.end())
-		return &globIt->second;
-
+	// First check for locals, then for globals (shadowing)
 	for (auto frameIt = info.localStack.rbegin(); frameIt != info.localStack.rend(); ++frameIt)
 	{
 		auto locIt = frameIt->locals.find(name);
 		if (locIt != frameIt->locals.end())
 			return &locIt->second;
 	}
+
+	auto& globals = info.program->globals;
+	auto globIt = globals.find(name);
+	if (globIt != globals.end())
+		return &globIt->second;
 
 	return nullptr;
 }
@@ -328,20 +329,24 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 
 void addVariable(ProgGenInfo& info, Variable var)
 {
-	auto pVar = getVariable(info, var.name);
-	if (pVar)
-		throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared here: " + getPosStr(pVar->pos));
-	auto funcs = getFunctions(info, var.name);
-	if (funcs)
-		throw ProgGenError(var.pos, "Function(s) with name '" + var.name + "' already declared!");
-
 	if (info.localStack.empty())
 	{
+		auto varIt = info.program->globals.find(var.name);
+		if (varIt != info.program->globals.end())
+			throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
+		auto funcs = getFunctions(info, var.name);
+		if (funcs)
+			throw ProgGenError(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
+
 		var.isLocal = false;
 		info.program->globals.insert({ var.name, var });
 	}
 	else
 	{
+		auto varIt = info.localStack.back().locals.find(var.name);
+		if (varIt != info.localStack.back().locals.end())
+			throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
+
 		int varSize = getDatatypeSize(var.datatype);
 		var.isLocal = true;
 		var.offset = info.funcRetOffset;
@@ -352,19 +357,17 @@ void addVariable(ProgGenInfo& info, Variable var)
 		info.localStack.back().totalOffset -= varSize;
 		var.offset = info.localStack.back().totalOffset;
 
-		info.program->globals.insert({ var.name, var });
+		info.localStack.back().locals.insert({ var.name, var });
 	}
-	
 }
 
 void addFunction(ProgGenInfo& info, FunctionRef func)
 {
-	auto pVar = getVariable(info, func->name);
-	if (pVar)
-		throw ProgGenError(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(pVar->pos));
+	auto varIt = info.program->globals.find(func->name);
+	if (varIt != info.program->globals.end())
+		throw ProgGenError(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(varIt->second.pos));
 
 	auto sig = getSignatureNoRet(func);
-
 
 	auto nameIt = info.program->functions.find(func->name);
 	if (nameIt == info.program->functions.end())
@@ -1080,7 +1083,6 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	var.pos = peekToken(info).pos;
 	var.name = name;
 	var.datatype = datatype;
-	var.isLocal = false;
 
 	addVariable(info, var);
 
