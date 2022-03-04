@@ -25,7 +25,7 @@ Comments are ignored by the compiler and therefore do not affect the generated a
 At the moment there are no multi-line comments.
 Single-line comments are preceded by a double backslash ('\\\\').
 
-#Example
+#### Example
 ```qinp
 u32 a = 3 * 5	\\ This is a comment
 ```
