@@ -25,6 +25,12 @@ b = true || false
 void foo():
 	exit(5)
 
+\\u8 arr[10][5]
+
+\\ sizeof(arr) -> sizeof(u8) * 10 * 5
+\\ sizeof(arr[0]) -> sizeof(u8) * 10
+\\ sizeof(arr[0][0]) -> sizeof(u8)
+
 u64 square(u64 x):
 	u32 localVar = x
 	return localVar * x
