@@ -1,11 +1,9 @@
 import "std.qnp"
 
-print(0)
-print("\n")
-
-u64 x = 0
-while ++x < 10:
-	print(x)
+u32 i = 0
+do:
+	print(i)	\\ Prints the numbers 0 to 9
 	print("\n")
+while ++i < 10
 
 exit(0)

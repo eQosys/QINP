@@ -3,6 +3,7 @@
 ## Overview
  - [if-elif-else](#if-elif-else)
  - [while loop](#while-loop)
+ - [do-while loop](#do-while-loop)
 
 ---
 
@@ -46,6 +47,29 @@ while [condition]:
 
 #### Example
 ```qinp
-while true:
-	print("Hello")
+u32 i = 0
+while ++i < 10:
+	print(i)	\\ Prints the numbers 1 to 9
+	print("\n")
 ```
+
+---
+
+### do-while loop
+
+Do-while loops are used to execute a block of code at least once, and then repeat the loop as long as the condition evaluates to true.
+
+#### Usage
+```qinp
+do:
+	[body]
+while [condition]
+```
+
+#### Example
+```qinp
+u32 i = 0
+do:
+	print(i)	\\ Prints the numbers 0 to 9
+	print("\n")
+while ++i < 10

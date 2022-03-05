@@ -26,6 +26,7 @@ struct Statement
 		Expression,
 		If_Clause,
 		While_Loop,
+		Do_While_Loop,
 	};
 
 	Statement(const Token::Position& pos, Type type)
@@ -44,6 +45,7 @@ struct Statement
 	BodyRef elseBody; // If-Clause
 
 	ConditionalBody whileConditionalBody; // While-Loop
+	ConditionalBody doWhileConditionalBody; // Do-While-Loop
 };
 
 struct Expression : public Statement

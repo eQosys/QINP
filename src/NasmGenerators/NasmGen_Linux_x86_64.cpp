@@ -689,6 +689,20 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		popLabel(ngi);
 	}
 		break;
+	case Statement::Type::Do_While_Loop:
+	{
+		pushLabel(ngi, "DO_WHILE_BEGIN");
+		placeLabel(ngi, 0);
+
+		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.body);
+
+		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.condition.get());
+		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+		ss << "  jne " << getLabel(ngi, 0) << "\n";
+
+		popLabel(ngi);
+	}
+		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
 		break;

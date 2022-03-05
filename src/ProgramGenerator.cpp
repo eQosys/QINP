@@ -1253,9 +1253,9 @@ bool parseStatementWhile(ProgGenInfo& info)
 	nextToken(info);
 
 	auto statement = std::make_shared<Statement>(whileToken.pos, Statement::Type::While_Loop);
+	statement->whileConditionalBody.body = std::make_shared<Body>();
 
 	statement->whileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
-	statement->whileConditionalBody.body = std::make_shared<Body>();
 
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
@@ -1267,10 +1267,35 @@ bool parseStatementWhile(ProgGenInfo& info)
 	return true;
 }
 
+bool parseStatementDoWhile(ProgGenInfo& info)
+{
+	auto& doToken = peekToken(info);
+	if (!isKeyword(doToken, "do"))
+		return false;
+	nextToken(info);
+
+	auto statement = std::make_shared<Statement>(doToken.pos, Statement::Type::Do_While_Loop);
+	statement->doWhileConditionalBody.body = std::make_shared<Body>();
+
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	parseBodyEx(info, statement->doWhileConditionalBody.body);
+
+	parseExpected(info, Token::Type::Keyword, "while");
+	
+	statement->doWhileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+
+	info.program->body->push_back(statement);
+
+	return true;
+}
+
 bool parseControlFlow(ProgGenInfo& info)
 {
 	if (parseStatementIf(info)) return true;
 	if (parseStatementWhile(info)) return true;
+	if (parseStatementDoWhile(info)) return true;
 
 	return false;
 }
