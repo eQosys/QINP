@@ -544,10 +544,10 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(litToken.pos, "Variable '" + litToken.value + "' not found!");
 
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
-	exp->isLValue = true;
 	exp->localOffset = pVar->offset;
 	exp->datatype = pVar->datatype;
 	exp->globName = litToken.value;
+	exp->isLValue = isArray(exp->datatype) ? false : true;
 
 	nextToken(info);
 
@@ -711,12 +711,12 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		{
 		case Expression::ExprType::Subscript:
 			exp->datatype = exp->left->datatype;
-			exp->isLValue = true;
 			if (exp->datatype.ptrDepth == 0)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
 			if (exp->datatype == Datatype{ "void", 1 })
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			dereferenceDatatype(exp->datatype);
+			exp->isLValue = isArray(exp->datatype) ? false : true;
 			exp->right = genConvertExpression(getParseExpression(info), { "u64" });
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
@@ -785,6 +785,8 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	{
 	case Expression::ExprType::AddressOf:
 		exp->left = getParseExpression(info, precLvl);
+		if (!exp->left->isLValue)
+			THROW_PROG_GEN_ERROR(exp->pos, "Cannot take address of non-lvalue!");
 		exp->datatype = exp->left->datatype;
 		++exp->datatype.ptrDepth;
 		exp->isLValue = false;
@@ -797,7 +799,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		if (exp->datatype == Datatype{ "void", 1 })
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference pointer to void!");
 		dereferenceDatatype(exp->datatype);
-		exp->isLValue = true;
+		exp->isLValue = isArray(exp->datatype) ? false : true;
 		break;
 	case Expression::ExprType::Logical_NOT:
 		exp->left = getParseExpression(info, precLvl);
@@ -913,6 +915,8 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 		parseExpected(info, Token::Type::LiteralInteger);
 		++var.datatype.ptrDepth;
 		var.datatype.arraySizes.push_back(std::stoi(peekToken(info, -1).value));
+		if (var.datatype.arraySizes.back() <= 0)
+			THROW_PROG_GEN_ERROR(peekToken(info, -1).pos, "Array size must be greater than zero!");
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 

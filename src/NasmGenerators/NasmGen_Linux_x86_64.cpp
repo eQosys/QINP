@@ -415,7 +415,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ss << "  mov " << primRegName(8) << ", " << primRegUsage(ngi) << "\n";
 			break;
 		case CellState::rValue:
-			ngi.primReg.state = CellState::lValue;
+			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 			break;
 		default:
 			THROW_NASM_GEN_ERROR(expr->pos, "Invalid CellState!");
