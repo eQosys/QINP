@@ -27,6 +27,11 @@ struct NasmGenInfo
 	CellInfo secReg;
 };
 
+CellInfo::State getRValueIfArray(const Datatype& datatype)
+{
+	return isArray(datatype) ? CellState::rValue : CellState::lValue;
+}
+
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
 
 void generateStatementLabel(NasmGenInfo& ngi, const Statement* statement)
@@ -71,7 +76,7 @@ std::string primRegName(int size)
 }
 std::string primRegName(NasmGenInfo& ngi)
 {
-	return primRegName(getDatatypeSize(ngi.primReg.datatype));
+	return primRegName(getDatatypeSize(ngi.primReg.datatype, true));
 }
 std::string secRegName(int size)
 {
@@ -79,7 +84,7 @@ std::string secRegName(int size)
 }
 std::string secRegName(NasmGenInfo& ngi)
 {
-	return secRegName(getDatatypeSize(ngi.secReg.datatype));
+	return secRegName(getDatatypeSize(ngi.secReg.datatype, true));
 }
 
 std::string primRegUsage(NasmGenInfo& ngi)
@@ -396,13 +401,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::AddressOf:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.state == CellState::lValue && "Cannot take address of non-lvalue!");
-		++ngi.primReg.datatype.ptrDepth;
+		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Dereference:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot dereference non-pointer!");
-		--ngi.primReg.datatype.ptrDepth;
+		ngi.primReg.datatype = expr->datatype;
 		
 		switch (ngi.primReg.state)
 		{
@@ -474,7 +479,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::lValue;
+		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionCall:
 	{
@@ -532,13 +537,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::GlobalVariable:
 		ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
 		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::lValue;
+		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::LocalVariable:
 		ss << "  mov " << primRegName(8) << ", rbp\n";
 		ss << "  add " << primRegName(8) << ", " << std::to_string(expr->localOffset) << "\n";
 		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::lValue;
+		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionName:
 		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
@@ -635,14 +640,22 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	for (auto& glob : program->globals)
 	{
 		std::string sizeStr;
-		switch (getDatatypeSize(glob.second.datatype))
+
+		int nElements = getDatatypeNumElements(glob.second.datatype);
+		int baseSize;
+		if (isArray(glob.second.datatype))
+			baseSize = getDatatypeSize({ glob.second.datatype.name, 0 });
+		else
+			baseSize = getDatatypeSize(glob.second.datatype);
+
+		switch (baseSize)
 		{
 		case 1: sizeStr = "b"; break;
 		case 2: sizeStr = "w"; break;
 		case 4: sizeStr = "d"; break;
 		case 8: sizeStr = "q"; break;
 		}
-		ss << "  " << getMangledName(glob.second) << ": res" << sizeStr << " 1\t\t; " << getPosStr(glob.second.pos) << "\n";
+		ss << "  " << getMangledName(glob.second) << ": res" << sizeStr << " " << nElements << "\t\t; " << getPosStr(glob.second.pos) << "\n";
 	}
 
 	// C-Strings

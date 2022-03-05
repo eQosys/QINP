@@ -25,8 +25,6 @@ b = true || false
 void foo():
 	exit(5)
 
-\\u8 arr[10][5]
-
 \\ sizeof(arr) -> sizeof(u8) * 10 * 5
 \\ sizeof(arr[0]) -> sizeof(u8) * 10
 \\ sizeof(arr[0][0]) -> sizeof(u8)
@@ -42,6 +40,13 @@ u64 quotient(u64 x, u64 y):
 
 u32 sq(u32 x):
 	return square((u64)x)
+
+u32 arrayTest():
+	u32 arr[10][10]
+	arr[0][0] = 5
+	return arr[0][0]
+
+exit(arrayTest())
 
 u8* str = "hello"
 

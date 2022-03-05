@@ -541,7 +541,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 
 	auto pVar = getVariable(info, litToken.value);
 	if (!pVar)
-		THROW_PROG_GEN_ERROR(litToken.pos, "Variable " + litToken.value + " not found!");
+		THROW_PROG_GEN_ERROR(litToken.pos, "Variable '" + litToken.value + "' not found!");
 
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->isLValue = true;
@@ -716,7 +716,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
 			if (exp->datatype == Datatype{ "void", 1 })
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
-			--exp->datatype.ptrDepth;
+			dereferenceDatatype(exp->datatype);
 			exp->right = genConvertExpression(getParseExpression(info), { "u64" });
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
@@ -796,7 +796,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference a non-pointer!");
 		if (exp->datatype == Datatype{ "void", 1 })
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference pointer to void!");
-		--exp->datatype.ptrDepth;
+		dereferenceDatatype(exp->datatype);
 		exp->isLValue = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
@@ -862,6 +862,7 @@ bool parseExpression(ProgGenInfo& info)
 	auto exp = getParseExpression(info);
 	if (exp)
 		info.program->body->push_back(exp);
+	parseExpectedNewline(info);
 	return !!exp;
 }
 
@@ -905,6 +906,15 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	var.pos = peekToken(info).pos;
 	var.name = name;
 	var.datatype = datatype;
+
+	while (isSeparator(peekToken(info), "["))
+	{
+		nextToken(info);
+		parseExpected(info, Token::Type::LiteralInteger);
+		++var.datatype.ptrDepth;
+		var.datatype.arraySizes.push_back(std::stoi(peekToken(info, -1).value));
+		parseExpected(info, Token::Type::Separator, "]");
+	}
 
 	addVariable(info, var);
 

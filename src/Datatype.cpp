@@ -2,6 +2,8 @@
 
 #include <map>
 
+#include "Errors/QinpError.h"
+
 bool operator==(const Datatype& left, const Datatype& right)
 {
 	return left.ptrDepth == right.ptrDepth && left.name == right.name;
@@ -15,6 +17,45 @@ bool operator!=(const Datatype& left, const Datatype& right)
 bool operator!(const Datatype& datatype)
 {
 	return datatype.name.empty();
+}
+
+bool isPointer(const Datatype& datatype)
+{
+	return datatype.ptrDepth > datatype.arraySizes.size();
+}
+
+bool isArray(const Datatype& datatype)
+{
+	return !datatype.arraySizes.empty() && !isPointer(datatype);
+}
+
+void dereferenceDatatype(Datatype& datatype)
+{
+	if (isPointer(datatype))
+	{
+		--datatype.ptrDepth;
+	}
+	else if (isArray(datatype))
+	{
+		--datatype.ptrDepth;
+		datatype.arraySizes.erase(datatype.arraySizes.begin());
+	}
+	else
+	{
+		THROW_QINP_ERROR("Cannot dereference non-pointer or non-array datatype");
+	}
+}
+
+int getDatatypeNumElements(const Datatype& datatype)
+{
+	if (!isArray(datatype))
+		return 1;
+	
+	int numElements = 1;
+	for (int arraySize : datatype.arraySizes)
+		numElements *= arraySize;
+
+	return numElements;
 }
 
 int getBuiltinTypeSize(const std::string& name)
@@ -39,28 +80,25 @@ int getBuiltinTypeSize(const std::string& name)
 	return (it != sizes.end()) ? it->second : -1;
 }
 
-int getDatatypeSize(const Datatype& datatype)
+int getDatatypeSize(const Datatype& datatype, bool treatArrayAsPointer)
 {
-	if (datatype.ptrDepth > 0)
+	if (isPointer(datatype) || (treatArrayAsPointer && isArray(datatype)))
 		return sizeof(void*);
+	
+	if (isArray(datatype))
+	{
+		int elemSize = getDatatypeSize({ datatype.name, 0 });
+		return elemSize * getDatatypeNumElements(datatype);
+	}
 
 	int size = getBuiltinTypeSize(datatype.name);
-	//for (int s : datatype.arraySizes)
-	//	size *= s;
 
 	return size;
 }
 
 int getDatatypePushSize(const Datatype& datatype)
 {
-	if (datatype.ptrDepth > 0)
-		return sizeof(void*);
-	
-	if (getBuiltinTypeSize(datatype.name) > 0)
-		return 8;
-
-	// Return size for custom datatypes (packs)
-	return -1;
+	return std::max(8, getDatatypeSize(datatype));
 }
 
 std::string getDatatypeStr(const Datatype& datatype)
