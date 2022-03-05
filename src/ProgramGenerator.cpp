@@ -45,6 +45,7 @@ struct ProgGenInfoBackup
 {
 	TokenListRef tokens;
 	int currToken;
+	ProgGenInfo::Indent indent;
 };
 
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
@@ -52,6 +53,7 @@ ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
 	ProgGenInfoBackup backup;
 	backup.tokens = info.tokens;
 	backup.currToken = info.currToken;
+	backup.indent = info.indent;
 	return backup;
 }
 
@@ -59,6 +61,7 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 {
 	info.tokens = backup.tokens;
 	info.currToken = backup.currToken;
+	info.indent = backup.indent;
 }
 
 const Token& peekToken(ProgGenInfo& info, int offset = 0)

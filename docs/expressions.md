@@ -53,7 +53,7 @@ They may occure in two forms:
 
 ### Literals
 
-Literals are are tokens in the source code that represent a value that can be determined at compile time.
+Literals are tokens in the source code that represent a value that can be determined at compile time.
 
 There are different types of literals:
  - Integer literals
