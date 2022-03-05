@@ -18,17 +18,17 @@ int execCmd(const std::string& command)
 	pid_t p = fork();
 
 	if (p == -1)
-		throw QinpError("Fork failed!");
+		THROW_QINP_ERROR("Fork failed!");
 	
 	if (p == 0)
 	{
 		execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
-		throw QinpError("Exec failed!");
+		THROW_QINP_ERROR("Exec failed!");
 	}
 
 	int status;
 	if (waitpid(p, &status, 0) == -1)
-		throw QinpError("Waitpid failed!");
+		THROW_QINP_ERROR("Waitpid failed!");
 
 	if (WIFEXITED(status))
 		return WEXITSTATUS(status);
@@ -40,7 +40,7 @@ void writeTextFileOverwrite(const std::string& filename, const std::string& text
 {
 	std::ofstream file(filename, std::ios::trunc);
 	if (!file.is_open())
-		throw QinpError("Unable to open file!");
+		THROW_QINP_ERROR("Unable to open file!");
 	file << text;
 }
 
@@ -68,10 +68,13 @@ std::map<std::string, std::string> argNames =
 
 int main(int argc, char** argv, char** environ)
 {
+	bool verbose = true;
 	try
 	{
 		auto args = parseArgs(getArgs(argc, argv), argNames);
 		auto env = getEnv(environ);
+
+		verbose = args.hasOption("verbose");
 
 		auto inFilename = args.values[0];
 
@@ -102,13 +105,13 @@ int main(int argc, char** argv, char** environ)
 		auto nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
 		std::cout << "Executing: '" << nasmCmd << "'..." << std::endl;
 		if (execCmd(nasmCmd))
-			throw QinpError("Assembler Error!");
+			THROW_QINP_ERROR("Assembler Error!");
 
 		auto outFilename = std::filesystem::path(inFilename).replace_extension(".out").string();
 		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
 		std::cout << "Executing: '" << ldCmd << "'..." << std::endl;
 		if (execCmd(ldCmd))
-			throw QinpError("Linker Error!");
+			THROW_QINP_ERROR("Linker Error!");
 
 		auto runCmd = "./" + outFilename;
 		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
@@ -118,6 +121,8 @@ int main(int argc, char** argv, char** environ)
 	catch (const QinpError& e)
 	{
 		std::cout << "ERROR: " << e.what() << std::endl;
+		if (verbose)
+			std::cout << "WHERE: " << e.where() << std::endl;
 		return 1;
 	}
 

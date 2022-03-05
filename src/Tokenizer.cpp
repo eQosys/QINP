@@ -14,7 +14,7 @@ std::string readTextFile(const std::string& filename)
 {
 	std::ifstream file(filename);
 	if (!file.is_open())
-		throw QinpError("Unable to open file '" + filename + "'!");
+		THROW_QINP_ERROR("Unable to open file '" + filename + "'!");
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	return buffer.str();
@@ -110,8 +110,10 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 
 	int index = -1;
 	int lastIndex = index;
-	int line = 1;
-	int column = 0;
+	Token::Position pos;
+	pos.file = name;
+	pos.line = 1;
+	pos.column = 0;
 
 	bool specialChar = false;
 
@@ -143,14 +145,14 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 
 	while (++index < code.size() + 1)
 	{
-		column += index - lastIndex;
+		pos.column += index - lastIndex;
 		lastIndex = index;
 		char c = (index == code.size()) ? '\n' : code[index];
 
 		switch (state)
 		{
 		case State::BeginToken:
-			token.pos = { name, line, column };
+			token.pos = pos;
 			token.type = Token::Type::None;
 			token.value.clear();
 
@@ -176,8 +178,8 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			{
 				token.value.push_back(c);
 				token.type = Token::Type::Newline;
-				++line;
-				column = 0;
+				++pos.line;
+				pos.column = 0;
 				state = State::EndToken;
 			}
 			else if ('\\' == c)
@@ -212,7 +214,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			}
 			else
 			{
-				throw TokenizerError(name, line, column, std::string("Illegal character '") + c + "' while beginning a token!");
+				THROW_TOKENIZER_ERROR(pos, std::string("Illegal character '") + c + "' while beginning a token!");
 			}
 			break;
 		case State::TokenizeIdentifier:
@@ -233,7 +235,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			break;
 		case State::CheckSingleLineComment:
 			if ('\\' != c)
-				throw TokenizerError(token.pos, "Expected '\\' after '\\'!");
+				THROW_TOKENIZER_ERROR(token.pos, "Expected '\\' after '\\'!");
 			token.value.push_back(c);
 			state = State::TokenizeSingleLineComment;
 			break;
@@ -271,17 +273,17 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 				break;
 			}
 			if (token.value == "..")
-				throw TokenizerError(token.pos, "Illegal character sequence '..'!");
+				THROW_TOKENIZER_ERROR(token.pos, "Illegal character sequence '..'!");
 			--index;
 			state = State::EndToken;
 			break;
 		case State::TokenizeChar:
 			if ('\n' == c)
-				throw TokenizerError(token.pos, "Unexpected newline!");
+				THROW_TOKENIZER_ERROR(token.pos, "Unexpected newline!");
 			if (!token.value.empty())
 			{
 				if ('\'' != c)
-					throw TokenizerError(token.pos, "A char literal cannot contain more than one character!");
+					THROW_TOKENIZER_ERROR(token.pos, "A char literal cannot contain more than one character!");
 				state = State::EndToken;
 				break;
 			}
@@ -294,7 +296,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			}
 			
 			if ('\'' == c)
-				throw TokenizerError(token.pos, "A char literal cannot be empty!");
+				THROW_TOKENIZER_ERROR(token.pos, "A char literal cannot be empty!");
 			if ('\\' == c)
 				specialChar = true;
 			else
@@ -302,7 +304,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			break;
 		case State::TokenizeString:
 			if ('\n' == c)
-				throw TokenizerError(token.pos, "Unexpected newline!");
+				THROW_TOKENIZER_ERROR(token.pos, "Unexpected newline!");
 			if (specialChar)
 			{
 				specialChar = false;
@@ -323,12 +325,12 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			--index;
 			break;
 		default:
-			throw TokenizerError(name, line, column, std::string("Illegal character '") + c + "!");
+			THROW_TOKENIZER_ERROR(pos, std::string("Illegal character '") + c + "!");
 		}
 	}
 
 	if (token.value != "\n")
-		throw TokenizerError(name, line, column, std::string("Unexpected End-Of-File while tokenizing '" + token.value + "'!"));
+		THROW_TOKENIZER_ERROR(pos, std::string("Unexpected End-Of-File while tokenizing '" + token.value + "'!"));
 
 	return tokens;
 }

@@ -84,7 +84,7 @@ std::string getSignature(const FunctionRef func)
 std::string getSignatureNoRet(const Expression* callExpr)
 {
 	if (callExpr->eType != Expression::ExprType::FunctionCall)
-		throw QinpError("Expected function call expression!");
+		THROW_QINP_ERROR("Expected function call expression!");
 
 	std::string signature;
 	for (const auto& param : callExpr->paramExpr)
@@ -130,7 +130,7 @@ std::string StatementTypeToString(Statement::Type type)
 	case Statement::Type::Return: return "Return";
 	case Statement::Type::Assembly: return "Assembly";
 	case Statement::Type::Expression: return "Expression";
-	default: throw QinpError("Unknown statement type!");
+	default: THROW_QINP_ERROR("Unknown statement type!");
 	}
 }
 
@@ -185,6 +185,6 @@ std::string ExpressionTypeToString(Expression::ExprType type)
 	case Expression::ExprType::GlobalVariable: return "GlobalVariable";
 	case Expression::ExprType::LocalVariable: return "LocalVariable";
 	case Expression::ExprType::FunctionName: return "FunctionName";
-	default: throw QinpError("Unknown expression type!");
+	default: THROW_QINP_ERROR("Unknown expression type!");
 	}
 }

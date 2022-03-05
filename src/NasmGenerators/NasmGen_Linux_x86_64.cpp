@@ -60,7 +60,7 @@ std::string regName(char baseChar, int size)
 	case 2: ss << baseChar << "x"; break;
 	case 4: ss << "e" << baseChar << "x"; break;
 	case 8: ss << "r" << baseChar << "x"; break;
-	default: throw NasmGenError(Token::Position(), "Invalid register size!");
+	default: THROW_NASM_GEN_ERROR(Token::Position(), "Invalid register size!");
 	}
 	return ss.str();
 }
@@ -92,7 +92,7 @@ std::string primRegUsage(NasmGenInfo& ngi)
 	case CellState::lValue:
 		return "[" + primRegName(8) + "]";
 	}
-	throw NasmGenError(Token::Position(), "Invalid primReg state!");
+	THROW_NASM_GEN_ERROR(Token::Position(), "Invalid primReg state!");
 }
 std::string secRegUsage(NasmGenInfo& ngi)
 {
@@ -104,7 +104,7 @@ std::string secRegUsage(NasmGenInfo& ngi)
 	case CellState::lValue:
 		return "[" + secRegName(ngi) + "]";
 	}
-	throw NasmGenError(Token::Position(), "Invalid secReg state!");
+	THROW_NASM_GEN_ERROR(Token::Position(), "Invalid secReg state!");
 }
 
 void pushPrimReg(NasmGenInfo& ngi)
@@ -245,25 +245,25 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Assign_Sum:
-		throw NasmGenError(expr->pos, "Assignment by Sum not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Sum not supported!");
 	case Expression::ExprType::Assign_Difference:
-		throw NasmGenError(expr->pos, "Assignment by Difference not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Difference not supported!");
 	case Expression::ExprType::Assign_Product:
-		throw NasmGenError(expr->pos, "Assignment by Product not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Product not supported!");
 	case Expression::ExprType::Assign_Quotient:
-		throw NasmGenError(expr->pos, "Assignment by Quotient not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Quotient not supported!");
 	case Expression::ExprType::Assign_Remainder:
-		throw NasmGenError(expr->pos, "Assignment by Remainder not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Remainder not supported!");
 	case Expression::ExprType::Assign_Bw_LeftShift:
-		throw NasmGenError(expr->pos, "Assignment by Left Shift not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Left Shift not supported!");
 	case Expression::ExprType::Assign_Bw_RightShift:
-		throw NasmGenError(expr->pos, "Assignment by Right Shift not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Right Shift not supported!");
 	case Expression::ExprType::Assign_Bw_AND:
-		throw NasmGenError(expr->pos, "Assignment by Bitwise AND not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise AND not supported!");
 	case Expression::ExprType::Assign_Bw_XOR:
-		throw NasmGenError(expr->pos, "Assignment by Bitwise XOR not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise XOR not supported!");
 	case Expression::ExprType::Assign_Bw_OR:
-		throw NasmGenError(expr->pos, "Assignment by Bitwise OR not supported!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise OR not supported!");
 	case Expression::ExprType::Logical_OR:
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
@@ -413,7 +413,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ngi.primReg.state = CellState::lValue;
 			break;
 		default:
-			throw NasmGenError(expr->pos, "Invalid CellState!");
+			THROW_NASM_GEN_ERROR(expr->pos, "Invalid CellState!");
 		}
 		// Datatype & state already modified
 		break;
@@ -546,7 +546,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 		break;
 	default:
-		throw NasmGenError(expr->pos, "Unsupported expression type!");
+		THROW_NASM_GEN_ERROR(expr->pos, "Unsupported expression type!");
 	}
 }
 
@@ -577,7 +577,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
 		break;
 	default:
-		throw NasmGenError(statement->pos, "Unsupported statement type!");
+		THROW_NASM_GEN_ERROR(statement->pos, "Unsupported statement type!");
 	}
 }
 

@@ -285,7 +285,7 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 		if (matchFound)
 		{
 			if (match)
-				throw ProgGenError(peekToken(info).pos, "Multiple overloads found for function call");
+				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Multiple overloads found for function call");
 			else
 				match = func;
 		}
@@ -334,10 +334,10 @@ void addVariable(ProgGenInfo& info, Variable var)
 	{
 		auto varIt = info.program->globals.find(var.name);
 		if (varIt != info.program->globals.end())
-			throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
+			THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
 		auto funcs = getFunctions(info, var.name);
 		if (funcs)
-			throw ProgGenError(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
+			THROW_PROG_GEN_ERROR(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
 
 		var.isLocal = false;
 		info.program->globals.insert({ var.name, var });
@@ -346,7 +346,7 @@ void addVariable(ProgGenInfo& info, Variable var)
 	{
 		auto varIt = info.localStack.back().locals.find(var.name);
 		if (varIt != info.localStack.back().locals.end())
-			throw ProgGenError(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
+			THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
 
 		int varSize = getDatatypeSize(var.datatype);
 		var.isLocal = true;
@@ -366,7 +366,7 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 {
 	auto varIt = info.program->globals.find(func->name);
 	if (varIt != info.program->globals.end())
-		throw ProgGenError(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(varIt->second.pos));
+		THROW_PROG_GEN_ERROR(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(varIt->second.pos));
 
 	auto sig = getSignatureNoRet(func);
 
@@ -386,13 +386,13 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	}
 
 	if (func->retType != sigIt->second->retType)
-		throw ProgGenError(func->pos, "Function with name '" + func->name + "' already declared with different return type: " + getPosStr(sigIt->second->pos));
+		THROW_PROG_GEN_ERROR(func->pos, "Function with name '" + func->name + "' already declared with different return type: " + getPosStr(sigIt->second->pos));
 
 	if (!func->isDefined)
 		return;
 
 	if (sigIt->second->isDefined && func->isDefined)
-		throw ProgGenError(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
+		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
 
 	sigIt->second = func;
 }
@@ -412,7 +412,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 			if (!parsedParen)
 			{
 				if (c != '(')
-					throw ProgGenError(asmToken.pos, "Expected '(' after '$'!");
+					THROW_PROG_GEN_ERROR(asmToken.pos, "Expected '(' after '$'!");
 				parsedParen = true;
 				continue;
 			}
@@ -425,7 +425,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 
 			auto pVar = getVariable(info, varName);
 			if (!pVar)
-				throw ProgGenError(asmToken.pos, "Unknown variable '" + varName + "'!");
+				THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
 				
 			if (pVar->isLocal)
 			{
@@ -450,7 +450,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 	}
 
 	if (parseVar)
-		throw ProgGenError(asmToken.pos, "Missing ')'!");
+		THROW_PROG_GEN_ERROR(asmToken.pos, "Missing ')'!");
 	return result;
 }
 
@@ -466,12 +466,12 @@ bool parseIndent(ProgGenInfo& info)
 		if (info.indent.lvl == 0)
 		{
 			if (isWhitespace(peekToken(info)))
-				throw ProgGenError(peekToken(info).pos, "Unexpected indentation!");
+				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Unexpected indentation!");
 			return true;
 		}
 
 		if (info.indent.lvl != 1)
-			throw ProgGenError(peekToken(info).pos, "Indentation level must be 1 for the first used indentation!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Indentation level must be 1 for the first used indentation!");
 
 		auto& firstToken = peekToken(info);
 		if (!isWhitespace(firstToken))
@@ -486,7 +486,7 @@ bool parseIndent(ProgGenInfo& info)
 		while (isWhitespace(*pIndentToken))
 		{
 			if (pIndentToken->value != info.indent.chStr)
-				throw ProgGenError(pIndentToken->pos, "Inconsistent indentation!");
+				THROW_PROG_GEN_ERROR(pIndentToken->pos, "Inconsistent indentation!");
 			nextToken(info);
 			++info.indent.nPerLvl;
 			pIndentToken = &peekToken(info);
@@ -507,7 +507,7 @@ bool parseIndent(ProgGenInfo& info)
 	nextToken(info, indentCount);
 
 	if (peekToken(info).type == Token::Type::Whitespace)
-			throw ProgGenError(peekToken(info).pos, "Inconsistent indentation!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Inconsistent indentation!");
 
 	return true;
 }
@@ -515,7 +515,7 @@ bool parseIndent(ProgGenInfo& info)
 void decreaseIndent(ProgGenInfo::Indent& indent)
 {
 	if (indent.lvl == 0)
-		throw ProgGenError(Token::Position(), "Indent level already 0!");
+		THROW_PROG_GEN_ERROR(Token::Position(), "Indent level already 0!");
 	--indent.lvl;
 }
 
@@ -531,21 +531,21 @@ void parseExpected(ProgGenInfo& info, Token::Type type)
 {
 	auto& token = nextToken(info);
 	if (token.type != type)
-		throw ProgGenError(token.pos, "Unexpected token '" + token.value + "'!");
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
 }
 
 void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
 {
 	auto& token = nextToken(info);
 	if (token.type != type || token.value != value)
-		throw ProgGenError(token.pos, "Unexpected token '" + token.value + "'!");
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
 }
 
 void parseExpectedNewline(ProgGenInfo& info)
 {
 	auto& token = nextToken(info);
 	if (!isNewline(token) && !isEndOfCode(token))
-		throw ProgGenError(token.pos, "Expected newline!");
+		THROW_PROG_GEN_ERROR(token.pos, "Expected newline!");
 }
 
 void parseExpectedColon(ProgGenInfo& info)
@@ -556,7 +556,7 @@ void parseExpectedColon(ProgGenInfo& info)
 void setTempBody(ProgGenInfo& info, BodyRef body)
 {
 	if (info.__mainBodyBackup)
-		throw ProgGenError(peekToken(info).pos, "Cannot set temp body when a temp body is already set!");
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot set temp body when a temp body is already set!");
 
 	info.__mainBodyBackup = info.program->body;
 	info.program->body = body;
@@ -565,7 +565,7 @@ void setTempBody(ProgGenInfo& info, BodyRef body)
 void unsetTempBody(ProgGenInfo& info)
 {
 	if (!info.__mainBodyBackup)
-		throw ProgGenError(peekToken(info).pos, "Cannot unset temp body when no temp body is set!");
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot unset temp body when no temp body is set!");
 
 	info.program->body = info.__mainBodyBackup;
 	info.__mainBodyBackup = nullptr;
@@ -602,7 +602,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 		if (expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth > 0)
 		{
 			if (doThrow)
-				throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointer types!");
+				THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert between pointer types!");
 			else
 				return nullptr;
 		}
@@ -612,7 +612,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 			)
 		{
 			if (doThrow)
-				throw ProgGenError(expToConvert->pos, "Cannot implicitly convert between pointer and non-pointer types!");
+				THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert between pointer and non-pointer types!");
 			else
 				return nullptr;
 		}
@@ -663,7 +663,7 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 		newDatatype = getBestConvDatatype(exp->left, exp->right);
 
 	if (!newDatatype)
-		throw ProgGenError(
+		THROW_PROG_GEN_ERROR(
 			exp->pos, "Cannot convert between " + 
 			getDatatypeStr(exp->left->datatype) + " and " +
 			getDatatypeStr(exp->right->datatype) + "!");
@@ -706,7 +706,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->datatype.name = "u8";
 		break;
 	default:
-		throw ProgGenError(litToken.pos, "Invalid literal type!");
+		THROW_PROG_GEN_ERROR(litToken.pos, "Invalid literal type!");
 	}
 
 
@@ -723,7 +723,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 
 	auto pVar = getVariable(info, litToken.value);
 	if (!pVar)
-		throw ProgGenError(litToken.pos, "Variable " + litToken.value + " not found!");
+		THROW_PROG_GEN_ERROR(litToken.pos, "Variable " + litToken.value + " not found!");
 
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->isLValue = true;
@@ -770,7 +770,7 @@ ExpressionRef getParseValue(ProgGenInfo& info)
 	exp = getParseVariable(info);
 	if (exp) return exp;
 
-	throw ProgGenError(peekToken(info).pos, "Expected variable name or literal value!");
+	THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected variable name or literal value!");
 }
 
 ExpressionRef getParseParenthesized(ProgGenInfo& info)
@@ -784,7 +784,7 @@ ExpressionRef getParseParenthesized(ProgGenInfo& info)
 
 	auto& parenClose = nextToken(info);
 	if (!isSeparator(parenClose, ")"))
-		throw ProgGenError(parenClose.pos, "Expected ')'!");
+		THROW_PROG_GEN_ERROR(parenClose.pos, "Expected ')'!");
 
 	return exp;
 }
@@ -823,7 +823,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_OR:
 			autoFixDatatypeMismatch(exp);
 			if (!exp->left->isLValue)
-				throw ProgGenError(exp->left->pos, "Cannot assign to non-lvalue!");
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot assign to non-lvalue!");
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = true;
 			break;
@@ -864,7 +864,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = false;
 			break;
 		default:
-			throw ProgGenError(exp->pos, "Invalid binary operator!");
+			THROW_PROG_GEN_ERROR(exp->pos, "Invalid binary operator!");
 		}
 	}
 
@@ -895,9 +895,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = true;
 			if (exp->datatype.ptrDepth == 0)
-				throw ProgGenError(exp->pos, "Cannot subscript non-pointer type!");
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
 			if (exp->datatype == Datatype{ 1, "void" })
-				throw ProgGenError(exp->pos, "Cannot subscript pointer to void type!");
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			--exp->datatype.ptrDepth;
 			exp->right = genConvertExpression(getParseExpression(info), { 0, "u64" });
 			parseExpected(info, Token::Type::Separator, "]");
@@ -906,7 +906,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		{
 			exp->isLValue = false;
 			if (exp->left->datatype.ptrDepth == 0)
-				throw ProgGenError(exp->pos, "Cannot call non-function!");
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot call non-function!");
 			exp->paramSizeSum = 0;
 			while (!isSeparator(peekToken(info), ")"))
 			{
@@ -921,17 +921,17 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			{
 				auto overloads = getFunctions(info, exp->left->funcName);
 				if (!overloads)
-					throw ProgGenError(exp->pos, "Function '" + exp->left->funcName + "' not found!");
+					THROW_PROG_GEN_ERROR(exp->pos, "Function '" + exp->left->funcName + "' not found!");
 				auto func = getMatchingOverload(info, *overloads, exp->paramExpr);
 				if (!func)
-					throw ProgGenError(exp->pos, "No matching overload found for function '" + exp->left->funcName + "'!");
+					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + exp->left->funcName + "'!");
 				exp->datatype = func->retType;
 				exp->left->datatype = { 1, getSignature(func) };
 				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
 			}
 			else
 			{
-				throw ProgGenError(exp->pos, "Not implemented yet!");
+				THROW_PROG_GEN_ERROR(exp->pos, "Not implemented yet!");
 				// TODO: Check if signature matches (possibly through implicit conversions)
 				exp->datatype = {}; // TODO: Get return type from exp->left->datatype
 			}
@@ -975,9 +975,9 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->left = getParseExpression(info, precLvl);
 		exp->datatype = exp->left->datatype;
 		if (exp->datatype.ptrDepth == 0)
-			throw ProgGenError(opToken.pos, "Cannot dereference a non-pointer!");
+			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference a non-pointer!");
 		if (exp->datatype == Datatype{ 1, "void" })
-			throw ProgGenError(opToken.pos, "Cannot dereference pointer to void!");
+			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference pointer to void!");
 		--exp->datatype.ptrDepth;
 		exp->isLValue = true;
 		break;
@@ -1017,7 +1017,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->datatype = { 0, "u64" };
 		break;
 	default:
-		throw ProgGenError(opToken.pos, "Unknown unary prefix expression!");
+		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");
 	}
 
 	return exp;
@@ -1035,7 +1035,7 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
 	case OpPrecLvl::Type::Binary: return getParseBinaryExpression(info, precLvl);
 	case OpPrecLvl::Type::Unary_Suffix: return getParseUnarySuffixExpression(info, precLvl);
 	case OpPrecLvl::Type::Unary_Prefix: return getParseUnaryPrefixExpression(info, precLvl);
-	default: throw ProgGenError(peekToken(info).pos, "Unknown operator precedence level type!");
+	default: THROW_PROG_GEN_ERROR(peekToken(info).pos, "Unknown operator precedence level type!");
 	}
 }
 
@@ -1106,7 +1106,7 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
 	if (datatype == Datatype{0, "void" })
-		throw ProgGenError(peekToken(info).pos, "Cannot declare variable of type void!");
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot declare variable of type void!");
 
 	auto initExpr = getParseDeclDefVariable(info, datatype, name);
 	if (initExpr)
@@ -1130,13 +1130,13 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		param.datatype = getParseDatatype(info);
 		if (!param.datatype)
-			throw ProgGenError(peekToken(info).pos, "Expected datatype!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
 		
 		func->retOffset += getDatatypePushSize(param.datatype);
 		param.offset = func->retOffset;
 
 		if (!isIdentifier(peekToken(info)))
-			throw ProgGenError(peekToken(info).pos, "Expected identifier!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
 
 		param.name = nextToken(info).value;
 
@@ -1197,15 +1197,15 @@ bool parseDeclDef(ProgGenInfo& info, bool allowFunctions)
 
 	auto& nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
-		throw ProgGenError(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 
 	if (getDatatypeSize(datatype) < 0)
-		throw ProgGenError(typeToken.pos, "Unknown datatype!");
+		THROW_PROG_GEN_ERROR(typeToken.pos, "Unknown datatype!");
 
 	if (isSeparator(peekToken(info), "("))
 	{
 		if (!allowFunctions)
-			throw ProgGenError(peekToken(info).pos, "Functions are not allowed here!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Functions are not allowed here!");
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
 	}
 	else
@@ -1248,7 +1248,7 @@ bool parseSinglelineAssembly(ProgGenInfo& info)
 	auto& strToken = nextToken(info);
 
 	if (!isString(strToken))
-		throw ProgGenError(strToken.pos, "Expected assembly string!");
+		THROW_PROG_GEN_ERROR(strToken.pos, "Expected assembly string!");
 
 	parseExpectedNewline(info);
 
@@ -1277,7 +1277,7 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 			break;
 		auto& strToken = nextToken(info);
 		if (!isString(strToken))
-			throw ProgGenError(strToken.pos, "Expected assembly string!");
+			THROW_PROG_GEN_ERROR(strToken.pos, "Expected assembly string!");
 
 		parseExpectedNewline(info);
 
@@ -1319,18 +1319,18 @@ void parseFunctionBody(ProgGenInfo& info)
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
-		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
 	}
 
 	if (numStatements == 0)
-		throw ProgGenError(bodyBeginToken.pos, "Expected function body!");
+		THROW_PROG_GEN_ERROR(bodyBeginToken.pos, "Expected function body!");
 
 	if (info.program->body->empty() || info.program->body->back()->type != Statement::Type::Return)
 	{
 		if (info.funcRetType == Datatype{ 0, "void" })
 			info.program->body->push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
-			throw ProgGenError(info.program->body->empty() ? bodyBeginToken.pos : info.program->body->back()->pos, "Missing return statement!");
+			THROW_PROG_GEN_ERROR(info.program->body->empty() ? bodyBeginToken.pos : info.program->body->back()->pos, "Missing return statement!");
 	}
 }
 
@@ -1341,7 +1341,7 @@ void parseGlobalCode(ProgGenInfo& info)
 	while (info.currToken < info.tokens->size())
 	{
 		if (!parseIndent(info))
-			throw ProgGenError(peekToken(info).pos, "Expected indent!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected indent!");
 		auto token = (*info.tokens)[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
@@ -1350,7 +1350,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
-		throw ProgGenError(token.pos, "Unexpected token: " + token.value + "!");
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
 	}
 }
 
@@ -1363,7 +1363,7 @@ bool parseStatementImport(ProgGenInfo& info)
 	nextToken(info);
 	auto& fileToken = nextToken(info);
 	if (!isString(fileToken))
-		throw ProgGenError(fileToken.pos, "Expected file path!");
+		THROW_PROG_GEN_ERROR(fileToken.pos, "Expected file path!");
 
 	std::string path;
 	for (auto& dir : info.importDirs)
@@ -1392,7 +1392,7 @@ bool parseStatementImport(ProgGenInfo& info)
 	}
 
 	if (path.empty())
-		throw ProgGenError(fileToken.pos, "Import file not found: '" + fileToken.value + "'!");
+		THROW_PROG_GEN_ERROR(fileToken.pos, "Import file not found: '" + fileToken.value + "'!");
 
 	std::string code = readTextFile(path);
 

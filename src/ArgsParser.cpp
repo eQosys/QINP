@@ -61,7 +61,7 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			auto key = arg.substr(0, pos);
 			auto it = shortToLongNames.find(key);
 			if (it == shortToLongNames.end())
-				throw QinpError("Unknown option: " + key);
+				THROW_QINP_ERROR("Unknown option: " + key);
 			key = it->second;
 
 			if (pos == std::string::npos)
@@ -80,7 +80,7 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 
 	for (auto& opt : args.options)
 		if (longNames.find(opt.first) == longNames.end())
-			throw QinpError("Unknown option: " + opt.first);
+			THROW_QINP_ERROR("Unknown option: " + opt.first);
 
 	return args;
 }
