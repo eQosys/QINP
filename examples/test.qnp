@@ -31,6 +31,8 @@ void foo():
 \\ sizeof(arr[0]) -> sizeof(u8) * 10
 \\ sizeof(arr[0][0]) -> sizeof(u8)
 
+u32 sq(u32 x)...
+
 u64 square(u64 x):
 	u32 localVar = x
 	return localVar * x
@@ -42,6 +44,8 @@ u32 sq(u32 x):
 	return square((u64)x)
 
 u8* str = "hello"
+
+exit(sizeof(sq(1)))
 
 \\exit(quotient(4, 2))
 exit(sq(5))

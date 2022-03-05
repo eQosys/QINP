@@ -109,6 +109,7 @@ struct Expression : public Statement
 		Prefix_Increment,
 		Prefix_Decrement,
 		Explicit_Cast,
+		SizeOf,
 
 		Subscript,
 		FunctionCall,

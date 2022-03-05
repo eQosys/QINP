@@ -33,7 +33,7 @@ bool isIDMid(char c) { return isAlphaNum(c) || isIDSpecial(c); }
 static const std::set<std::string> operators =
 {
 	"+",  "-",  "*",  "/",  "%",  "^",  "&",  "|",  "!",  "=",  "<<",  ">>",  "<",  ">",  "&&",  "||",  "++",  "--",  "~",
-	"+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "!=", "==", "<<=", ">>=", "<=", ">="
+	"+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "!=", "==", "<<=", ">>=", "<=", ">=", "sizeof"
 };
 
 static const std::set<std::string> separators =
@@ -43,18 +43,31 @@ static const std::set<std::string> separators =
 	"{", "}",
 	":", "::",
 	",", ".",
-	".."/* not really a separator*/,
 	"..."
 };
 
 bool isOperatorBegin(const std::string& str)
 {
-	return operators.find(str) != operators.end();
+	for (auto& op : operators)
+	{
+		if (op.find(str) == 0)
+			return true;
+		if (op > str)
+			break;
+	}
+	return false;
 }
 
 bool isSeparatorBegin(const std::string& str)
 {
-	return separators.find(str) != separators.end();
+	for (auto& sep : separators)
+	{
+		if (sep.find(str) == 0)
+			return true;
+		if (sep > str)
+			break;
+	}
+	return false;
 }
 
 char getEscapeChar(char c)

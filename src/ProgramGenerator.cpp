@@ -167,7 +167,8 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "-", Expression::ExprType::Prefix_Minus },
 			{ "++", Expression::ExprType::Prefix_Increment },
 			{ "--", Expression::ExprType::Prefix_Decrement },
-			{ "(", Expression::ExprType::Explicit_Cast }
+			{ "(", Expression::ExprType::Explicit_Cast },
+			{ "sizeof", Expression::ExprType::SizeOf },
 		},
 		OpPrecLvl::Type::Unary_Prefix,
 	},
@@ -663,11 +664,9 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 
 	if (!newDatatype)
 		throw ProgGenError(
-			exp->pos, "Cannot convert between " +
-			exp->left->datatype.name +
-			"*" + std::to_string(exp->left->datatype.ptrDepth) + " and " +
-			exp->right->datatype.name +
-			"*" + std::to_string(exp->right->datatype.ptrDepth) + "!");
+			exp->pos, "Cannot convert between " + 
+			getDatatypeStr(exp->left->datatype) + " and " +
+			getDatatypeStr(exp->right->datatype) + "!");
 	
 	exp->left = genConvertExpression(exp->left, newDatatype);
 	exp->right = genConvertExpression(exp->right, newDatatype);
@@ -1011,6 +1010,11 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		parseExpected(info, Token::Type::Separator, ")");
 		exp = genConvertExpression(getParseExpression(info, precLvl), newDatatype, true);
 	}
+		break;
+	case Expression::ExprType::SizeOf:
+		exp->valStr = std::to_string(getDatatypeSize(getParseParenthesized(info)->datatype));
+		exp->eType = Expression::ExprType::Literal;
+		exp->datatype = { 0, "u64" };
 		break;
 	default:
 		throw ProgGenError(opToken.pos, "Unknown unary prefix expression!");

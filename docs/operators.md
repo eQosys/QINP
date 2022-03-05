@@ -11,6 +11,7 @@
  - [Member Access](#member-access)
  - [Function Call](#function-call)
  - [C-Style Cast](#c-style-cast)
+ - [size-of](#size-of)
 
 ---
 
@@ -20,7 +21,7 @@
 | ---------- | ------------- | ---------- | -------  | ---------- | ------------- | -----
 | a = b      | ++a           | +a         | !a       | a == b     | a[b]          | a(...)
 | a += b     | --a           | -a         | a && b   | a != b     | *a            | (a)b
-| a -= b     | a++           | a + b      | a \|\| b | a < b      | &a            |
+| a -= b     | a++           | a + b      | a \|\| b | a < b      | &a            | sizeof(a)
 | a *= b     | a--           | a - b      |          | a > b      |               |
 | a /= b     |               | a * b      |          | a <= b     |               |
 | a %= b     |               | a / b      |          | a >= b     |               |
@@ -120,3 +121,12 @@ If the function is overloaded, and multiple overloads are applicable with implic
 The C-style cast operator can be used to convert a value to another type.
 The value is converted to the target type and the result is returned as an rvalue.
 It can convert between any pointer types.
+
+---
+
+### Size-Of
+
+The `sizeof` operator returns the size of the resulting value of an expression as a literal of type `u64`.
+The expression inside the `sizeof` operator is not evaluated.
+When using a function call, the size of the return value is used.
+For function addresses, the size of the function pointer is returned (usually 8 bytes)
