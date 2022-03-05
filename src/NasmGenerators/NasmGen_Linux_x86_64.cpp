@@ -411,21 +411,34 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Quotient:
+	{
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
+
+		auto remainderName = regName('d', getDatatypeSize(ngi.primReg.datatype));
+		ss << "  xor " << remainderName << ", " << remainderName << "\n";
+
 		ss << "  div " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
+	}
 		break;
 	case Expression::ExprType::Remainder:
+	{
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
+
+		auto remainderName = regName('d', getDatatypeSize(ngi.primReg.datatype));
+
+		ss << "  xor " << remainderName << ", " << remainderName << "\n";
+
 		ss << "  div " << secRegUsage(ngi) << "\n";
-		moveSecToPrim(ngi);
+		ss << "  mov " << primRegUsage(ngi) << ", " << remainderName << "\n";
 		// Datatype doesn't change
 		// State already modified
+	}
 		break;
 	case Expression::ExprType::AddressOf:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());

@@ -1,66 +1,8 @@
 import "std.qnp"
 
-u32 var1 = 5 * 3
-u64 var2 = 100 + var1
-u8 var3 = var2
-u64 var4 = var3 + 10
-u64 var5 = 2
-var5 = (var5 << 2) + var4
+u8 buff[22]
 
-asm: "mov rax, 100"
-asm: "mov [$(var5)], rax"
-\\ ^^^ is the same as vvv
-assembly:
-	"mov rax, 255"
-	"mov [$(var5)], rax"
-var5 = '9' - '0' + 10
+print(1234567)
+print("\n")
 
-(&var4)[0] = (&var5)[0] ^ 2
-
-bool b = ~!(!var4 && !var5)
-b = true
-b = false
-b = true || false
-
-void foo():
-	exit(5)
-
-\\ sizeof(arr) -> sizeof(u8) * 10 * 5
-\\ sizeof(arr[0]) -> sizeof(u8) * 10
-\\ sizeof(arr[0][0]) -> sizeof(u8)
-
-u32 sq(u32 x)...
-
-u64 square(u64 x):
-	u32 localVar = x
-	return localVar * x
-
-u64 quotient(u64 x, u64 y):
-	return x / y
-
-u32 sq(u32 x):
-	return square((u64)x)
-
-u32 arrayTest():
-	u32 arr[10][10]
-	arr[0][0] = 5
-	return arr[0][0]
-
-\\if 1 == 1:
-\\	exit(1)
-\\elif sq(3):
-\\	exit(2)
-\\else:
-\\	exit(3)
-\\
-\\
-\\exit(arrayTest())
-
-u32 arr[10]
-
-u8* str = "hello"
-
-print("Hello world!\n")
-
-\\exit(quotient(4, 2))
-exit(str[0])
+exit(0)

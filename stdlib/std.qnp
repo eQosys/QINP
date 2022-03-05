@@ -1,17 +1,20 @@
 \\ QINP Standard library main header
 
-void exit(u64 code):
+\\ Terminate the calling process and return the specified exit status.
+void exit(u64 status):
 	assembly:
 		"mov rax, 60"
-		"mov rdi, [rbp $(code)]"
+		"mov rdi, [rbp $(status)]"
 		"syscall"
 
+\\ Determine the length of a string (without the null terminator)
 u64 strlen(u8* str):
 	u8* begin = str
 	while *str:
 		++str
 	return (u64)(str - begin)
 
+\\ Print a string of specified length to stdout
 void print(u8* str, u64 len):
 	assembly:
 		"mov rax, 1"
@@ -20,5 +23,41 @@ void print(u8* str, u64 len):
 		"mov rdx, [rbp $(len)]"
 		"syscall"
 
+\\ Print a Null-terminated string to stdout
 void print(u8* str):
 	print(str, strlen(str))
+
+\\ Reverse a string of specified length
+u8* strrev(u8* str, u64 len):
+	u8* begin
+	u8* end = str + (u8*)len
+	u8 temp
+
+	while (u64)begin < (u64)end:
+		--end
+		temp = *begin
+		*begin = *end
+		*end = temp
+		++begin
+
+	return str
+
+\\ Reverse a Null-terminated string
+u8* strrev(u8* str):
+	return strrev(str, strlen(str))
+
+\\ Convert a base-10 integer to a string
+u8* itos(u64 num, u8* str):
+	u8* begin = str
+
+	while num:
+		*str = '0' + (u8)(num % 10)
+		++str
+		num = num / 10
+
+	return strrev(begin)
+
+\\ Print a base-10 integer to stdout
+void print(u64 num):
+	u8 str[32]
+	print(itos(num, &*str))
