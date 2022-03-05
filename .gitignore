@@ -5,3 +5,5 @@ bin/
 *.o
 *.out
 *.asm
+
+/settings.json
