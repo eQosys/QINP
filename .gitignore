@@ -6,4 +6,4 @@ bin/
 *.out
 *.asm
 
-/settings.json
+.vscode/settings.json
