@@ -33,4 +33,5 @@ The QINP language is a work in progress. It is not yet stable and may be subject
 ---
 
 ### Standard Library
-TODO
+
+The Standard Library is a collection of functions that are available to all QINP programs and are essential to the language.

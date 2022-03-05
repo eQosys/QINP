@@ -1,8 +1,11 @@
 import "std.qnp"
 
-u8 buff[22]
-
-print(1234567)
+print(0)
 print("\n")
+
+u64 x = 0
+while ++x < 10:
+	print(x)
+	print("\n")
 
 exit(0)
