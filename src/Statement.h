@@ -6,6 +6,16 @@
 struct Expression;
 typedef std::shared_ptr<Expression> ExpressionRef;
 
+typedef std::shared_ptr<class Statement> StatementRef;
+typedef std::vector<StatementRef> Body;
+typedef std::shared_ptr<Body> BodyRef;
+
+struct ConditionalBody
+{
+	ExpressionRef condition;
+	BodyRef body;
+};
+
 struct Statement
 {
 	enum class Type
@@ -14,25 +24,24 @@ struct Statement
 		Return,
 		Assembly,
 		Expression,
+		If_Clause,
 	};
 
 	Statement(const Token::Position& pos, Type type)
-		: type(type), pos(pos), sID(sIDCounter++)
+		: type(type), pos(pos)
 	{}
 
 	Type type;
 	Token::Position pos;
-	int sID;
 
 	std::vector<std::string> asmLines; // Single-/multi-line assembly code
 
 	ExpressionRef subExpr; // Exit/Return
 	int funcRetOffset; // Return
 
-private:
-	static inline int sIDCounter = 0;
+	std::vector<ConditionalBody> ifConditionalBodies; // If-Clause
+	BodyRef elseBody; // If-Clause
 };
-typedef std::shared_ptr<Statement> StatementRef;
 
 struct Expression : public Statement
 {

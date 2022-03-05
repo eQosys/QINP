@@ -2,6 +2,7 @@
 
 #include <map>
 #include <set>
+#include <stack>
 #include <algorithm>
 #include <filesystem>
 
@@ -31,9 +32,9 @@ struct ProgGenInfo
 	} indent;
 	std::string lastLoadedFunctionName = "";
 
-	std::vector<LocalStackFrame> localStack;
+	std::vector<LocalStackFrame> localStack; // The stack of local variables, mostly one frame per indentation level.
 
-	BodyRef __mainBodyBackup;
+	std::stack<BodyRef> mainBodyBackups;
 	int funcRetOffset;
 	int funcFrameSize;
 	Datatype funcRetType;
@@ -76,6 +77,18 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	auto& temp = peekToken(info, offset - 1);
 	info.currToken += offset;
 	return temp;
+}
+
+void pushLocalFrame(ProgGenInfo& info)
+{
+	info.localStack.push_back({});
+	if (info.localStack.size() > 1)
+		info.localStack.back().totalOffset = info.localStack[info.localStack.size() - 2].totalOffset;
+}
+
+void popLocalFrame(ProgGenInfo& info)
+{
+	info.localStack.pop_back();
 }
 
 bool leftConversionIsProhibited(Expression::ExprType eType)
@@ -355,6 +368,11 @@ bool parseIndent(ProgGenInfo& info)
 	return true;
 }
 
+void unparseIndent(ProgGenInfo& info)
+{
+	nextToken(info, -info.indent.nPerLvl * info.indent.lvl);
+}
+
 void decreaseIndent(ProgGenInfo::Indent& indent)
 {
 	if (indent.lvl == 0)
@@ -396,22 +414,19 @@ void parseExpectedColon(ProgGenInfo& info)
 	parseExpected(info, Token::Type::Separator, ":");
 }
 
-void setTempBody(ProgGenInfo& info, BodyRef body)
+void pushTempBody(ProgGenInfo& info, BodyRef body)
 {
-	if (info.__mainBodyBackup)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot set temp body when a temp body is already set!");
-
-	info.__mainBodyBackup = info.program->body;
+	info.mainBodyBackups.push(info.program->body);
 	info.program->body = body;
 }
 
-void unsetTempBody(ProgGenInfo& info)
+void popTempBody(ProgGenInfo& info)
 {
-	if (!info.__mainBodyBackup)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot unset temp body when no temp body is set!");
+	if (info.mainBodyBackups.empty())
+		THROW_PROG_GEN_ERROR(Token::Position(), "No backup body to pop!");
 
-	info.program->body = info.__mainBodyBackup;
-	info.__mainBodyBackup = nullptr;
+	info.program->body = info.mainBodyBackups.top();
+	info.mainBodyBackups.pop();
 }
 
 Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right)
@@ -1002,20 +1017,21 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		parseExpectedNewline(info);
 
 		increaseIndent(info.indent);
-		setTempBody(info, func->body);
+		pushTempBody(info, func->body);
+		pushLocalFrame(info);
 
 		info.funcRetOffset = func->retOffset;
 		info.funcRetType = func->retType;
 		info.funcFrameSize = 0;
 
-		info.localStack.push_back({});
 		for (auto& param : func->params)
 			info.localStack.back().locals.insert({ param.name, param });
 
 		parseFunctionBody(info);
 		func->frameSize = info.funcFrameSize;
-		info.localStack.pop_back();
-		unsetTempBody(info);
+		
+		popLocalFrame(info);
+		popTempBody(info);
 		decreaseIndent(info.indent);
 	}
 
@@ -1137,7 +1153,9 @@ bool parseStatementPass(ProgGenInfo& info)
 	return true;
 }
 
-void parseFunctionBody(ProgGenInfo& info)
+bool parseControlFlow(ProgGenInfo& info);
+
+void parseBody(ProgGenInfo& info)
 {
 	int numStatements = 0;
 
@@ -1149,6 +1167,7 @@ void parseFunctionBody(ProgGenInfo& info)
 		auto token = (*info.tokens)[info.currToken];
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
+		if (parseControlFlow(info)) continue;
 		if (parseDeclDef(info, false)) continue;
 		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
@@ -1158,7 +1177,88 @@ void parseFunctionBody(ProgGenInfo& info)
 	}
 
 	if (numStatements == 0)
-		THROW_PROG_GEN_ERROR(bodyBeginToken.pos, "Expected function body!");
+		THROW_PROG_GEN_ERROR(bodyBeginToken.pos, "Expected non-empty body!");
+}
+
+bool parseStatementIf(ProgGenInfo& info)
+{
+	auto& ifToken = peekToken(info);
+	if (!isKeyword(ifToken, "if"))
+		return false;
+
+	auto statement = std::make_shared<Statement>(ifToken.pos, Statement::Type::If_Clause);
+
+	bool parsedIndent = true;
+
+	do
+	{
+		nextToken(info);
+
+		statement->ifConditionalBodies.push_back({});
+		auto& condBody = statement->ifConditionalBodies.back();
+		condBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+		condBody.body = std::make_shared<Body>();
+
+		parseExpectedColon(info);
+		parseExpectedNewline(info);
+
+		increaseIndent(info.indent);
+		pushTempBody(info, condBody.body);
+
+		parseBody(info);
+
+		popTempBody(info);
+		decreaseIndent(info.indent);
+
+		parsedIndent = parseIndent(info);
+		if (!parsedIndent)
+			break;
+
+	} while (isKeyword(peekToken(info), "elif"));
+
+	if (parsedIndent)
+	{
+		auto& elseToken = peekToken(info);
+		if (isKeyword(elseToken, "else"))
+		{
+			statement->elseBody = std::make_shared<Body>();
+
+			nextToken(info);
+			parseExpectedColon(info);
+			parseExpectedNewline(info);
+
+			increaseIndent(info.indent);
+			pushTempBody(info, statement->elseBody);
+
+			parseBody(info);
+
+			popTempBody(info);
+			decreaseIndent(info.indent);
+		}
+		else
+		{
+			unparseIndent(info);
+		}
+	}
+
+	info.program->body->push_back(statement);
+	
+	return true;
+}
+
+bool parseControlFlow(ProgGenInfo& info)
+{
+	if (parseStatementIf(info))
+		return true;
+
+	return false;
+}
+
+void parseFunctionBody(ProgGenInfo& info)
+{
+	auto& bodyBeginToken = peekToken(info, -1);
+	
+	parseBody(info);
 
 	if (info.program->body->empty() || info.program->body->back()->type != Statement::Type::Return)
 	{
@@ -1181,6 +1281,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseStatementImport(info)) continue;
+		if (parseControlFlow(info)) continue;
 		if (parseDeclDef(info, true)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;

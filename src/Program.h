@@ -8,9 +8,6 @@
 #include "Token.h"
 #include "Statement.h"
 
-typedef std::vector<StatementRef> Body;
-typedef std::shared_ptr<Body> BodyRef;
-
 struct Variable
 {
 	Token::Position pos;

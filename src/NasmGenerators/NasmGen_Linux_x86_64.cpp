@@ -25,7 +25,51 @@ struct NasmGenInfo
 	std::stack<CellInfo> stackCells;
 	CellInfo primReg;
 	CellInfo secReg;
+	
+	std::vector<std::string> labelStack; // Used for control flow statements
 };
+
+std::string makeUniqueLabel(const std::string& name)
+{
+	static int labelID = 0;
+	return name + "__" + std::to_string(labelID++);
+}
+
+void pushLabel(NasmGenInfo& ngi, const std::string& name)
+{
+	ngi.labelStack.push_back(makeUniqueLabel(name));
+}
+
+const std::string& getLabel(NasmGenInfo& ngi, int index)
+{
+	if (index >= ngi.labelStack.size())
+		THROW_NASM_GEN_ERROR(Token::Position(), "Get label index out of range!");
+	return ngi.labelStack[ngi.labelStack.size() - index - 1];
+}
+
+void popLabel(NasmGenInfo& ngi)
+{
+	if (ngi.labelStack.empty())
+		THROW_NASM_GEN_ERROR(Token::Position(), "Trying to pop label from empty label stack!");
+
+	ngi.labelStack.pop_back();
+}
+
+void replaceLabel(NasmGenInfo& ngi, const std::string& name, int index)
+{
+	if (index >= ngi.labelStack.size())
+		THROW_NASM_GEN_ERROR(Token::Position(), "Replace label index out of range!");
+
+	ngi.labelStack[ngi.labelStack.size() - 1 - index] = makeUniqueLabel(name);
+}
+
+void placeLabel(NasmGenInfo& ngi, int index)
+{
+	if (index >= ngi.labelStack.size())
+		THROW_NASM_GEN_ERROR(Token::Position(), "Place label index out of range!");
+
+	ngi.ss << ngi.labelStack[ngi.labelStack.size() - 1 - index] << ":\n";
+}
 
 CellInfo::State getRValueIfArray(const Datatype& datatype)
 {
@@ -33,21 +77,6 @@ CellInfo::State getRValueIfArray(const Datatype& datatype)
 }
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
-
-void generateStatementLabel(NasmGenInfo& ngi, const Statement* statement)
-{
-	ngi.ss << "label_" << statement->sID << ":\t\t ; " << getPosStr(statement->pos) << ": ";
-
-	if (statement->type == Statement::Type::Expression)
-		ngi.ss << ExpressionTypeToString(((Expression*)statement)->eType) << "\n";
-	else
-		ngi.ss << StatementTypeToString(statement->type) << "\n";
-}
-
-void generateStatementLabel(NasmGenInfo& ngi, const StatementRef statement)
-{
-	generateStatementLabel(ngi, statement.get());
-}
 
 std::string basePtrOffset(int offset)
 {
@@ -555,11 +584,20 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 }
 
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement);
+
+// Generates Nasm code for any code 'body'
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 {
 	auto& ss = ngi.ss;
 
-	generateStatementLabel(ngi, statement);
+	for (auto& statement : *body)
+		generateNasm_Linux_x86_64(ngi, statement);
+}
+
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
+{
+	auto& ss = ngi.ss;
 
 	switch (statement->type)
 	{
@@ -578,21 +616,52 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		for (auto& line : statement->asmLines)
 			ss << "  " << line << "\n";
 		break;
+	case Statement::Type::If_Clause:
+	{
+		pushLabel(ngi, "IF_END");
+		pushLabel(ngi, "IF_NEXT");
+
+		for (int i = 0; i < statement->ifConditionalBodies.size(); ++i)
+		{
+			auto& condBody = statement->ifConditionalBodies[i];
+
+			if (i != 0)
+			{
+				ss << "  jmp " << getLabel(ngi, 1) << "\n";
+
+				placeLabel(ngi, 0);
+				replaceLabel(ngi, "IF_NEXT", 0);
+			}
+
+			generateNasm_Linux_x86_64(ngi, condBody.condition.get());
+
+			ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+			ss << "  je " << getLabel(ngi, 0) << "\n";
+
+			generateNasm_Linux_x86_64(ngi, condBody.body);
+		}
+
+		if (statement->elseBody)
+		{
+			ss << "  jmp " << getLabel(ngi, 1) << "\n";
+			placeLabel(ngi, 0);
+			replaceLabel(ngi, "IF_NEXT", 0);
+
+			generateNasm_Linux_x86_64(ngi, statement->elseBody);
+		}
+
+		placeLabel(ngi, 0);
+		placeLabel(ngi, 1);
+		popLabel(ngi);
+		popLabel(ngi);
+	}
+		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
 		break;
 	default:
 		THROW_NASM_GEN_ERROR(statement->pos, "Unsupported statement type!");
 	}
-}
-
-// Generates Nasm code for any code 'body'
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
-{
-	auto& ss = ngi.ss;
-
-	for (auto& statement : *body)
-		generateNasm_Linux_x86_64(ngi, statement);
 }
 
 // Generates Nasm code for a function

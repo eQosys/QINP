@@ -1,10 +1,10 @@
 \\ QINP Standard library main header
 
 void exit(u64 code):
- assembly:
-  "mov rax, 60"
-  "mov rdi, [rbp $(code)]"
-  "syscall"
+	assembly:
+		"mov rax, 60"
+		"mov rdi, [rbp $(code)]"
+		"syscall"
 
 \\u64 strlen(u8* str):
 \\	u8* begin = str

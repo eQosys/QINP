@@ -46,7 +46,17 @@ u32 arrayTest():
 	arr[0][0] = 5
 	return arr[0][0]
 
+if 1 == 1:
+	exit(1)
+elif sq(3):
+	exit(2)
+else:
+	exit(3)
+
+
 exit(arrayTest())
+
+u32 arr[10]
 
 u8* str = "hello"
 
