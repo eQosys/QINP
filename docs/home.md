@@ -20,6 +20,7 @@ The QINP language is a work in progress. It is not yet stable and may be subject
  - [Expressions](./expressions.md)
  - [Declarations](./declarations.md)
  - [Overloading](./overloading.md)
+ - [Control Flow](./control-flow.md)
  - [Packs - noimpl]()
  - [Blueprints - noimpl]()
  - [Exceptions - noimpl]()

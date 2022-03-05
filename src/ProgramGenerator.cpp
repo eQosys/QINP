@@ -1180,6 +1180,17 @@ void parseBody(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(bodyBeginToken.pos, "Expected non-empty body!");
 }
 
+void parseBodyEx(ProgGenInfo& info, BodyRef body)
+{
+	increaseIndent(info.indent);
+	pushTempBody(info, body);
+
+	parseBody(info);
+
+	popTempBody(info);
+	decreaseIndent(info.indent);
+}
+
 bool parseStatementIf(ProgGenInfo& info)
 {
 	auto& ifToken = peekToken(info);
@@ -1202,13 +1213,7 @@ bool parseStatementIf(ProgGenInfo& info)
 		parseExpectedColon(info);
 		parseExpectedNewline(info);
 
-		increaseIndent(info.indent);
-		pushTempBody(info, condBody.body);
-
-		parseBody(info);
-
-		popTempBody(info);
-		decreaseIndent(info.indent);
+		parseBodyEx(info, condBody.body);
 
 		parsedIndent = parseIndent(info);
 		if (!parsedIndent)
@@ -1227,13 +1232,7 @@ bool parseStatementIf(ProgGenInfo& info)
 			parseExpectedColon(info);
 			parseExpectedNewline(info);
 
-			increaseIndent(info.indent);
-			pushTempBody(info, statement->elseBody);
-
-			parseBody(info);
-
-			popTempBody(info);
-			decreaseIndent(info.indent);
+			parseBodyEx(info, statement->elseBody);
 		}
 		else
 		{
