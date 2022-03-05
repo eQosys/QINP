@@ -1,4 +1,4 @@
-#include "TokenizerTypes.h"
+#include "Token.h"
 
 #include <iostream>
 #include <set>
@@ -79,6 +79,66 @@ bool isBuiltinType(const std::string& name)
 bool isBooleanValue(const std::string& value)
 {
 	return value == "true" || value == "false";
+}
+
+bool isKeyword(const Token& token, const std::string& name)
+{
+	return
+		token.type == Token::Type::Keyword &&
+		token.value == name;
+}
+
+bool isSeparator(const Token& token, const std::string& name)
+{
+	return
+		token.type == Token::Type::Separator &&
+		token.value == name;
+}
+
+bool isOperator(const Token& token, const std::string& name)
+{
+	return
+		token.type == Token::Type::Operator &&
+		token.value == name;
+}
+
+bool isLiteral(const Token& token)
+{
+	return
+		token.type == Token::Type::LiteralInteger ||
+		token.type == Token::Type::LiteralChar ||
+		token.type == Token::Type::LiteralBoolean ||
+		token.type == Token::Type::String;
+}
+
+bool isNewline(const Token& token)
+{
+	return token.type == Token::Type::Newline;
+}
+
+bool isEndOfCode(const Token& token)
+{
+	return token.type == Token::Type::EndOfCode;
+}
+
+bool isBuiltinType(const Token& token)
+{
+	return token.type == Token::Type::BuiltinType;
+}
+
+bool isIdentifier(const Token& token)
+{
+	return token.type == Token::Type::Identifier;
+}
+
+bool isString(const Token& token)
+{
+	return token.type == Token::Type::String;
+}
+
+bool isWhitespace(const Token& token)
+{
+	return token.type == Token::Type::Whitespace;
 }
 
 std::string getPosStr(const Token::Position& pos)

@@ -269,7 +269,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		// State already modified
 		break;
 	case Expression::ExprType::Logical_AND:
@@ -277,7 +277,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_OR:
@@ -307,37 +307,37 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Comparison_Equal:
 		generateComparison(ngi, expr);
 		ss << "  sete al\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_NotEqual:
 		generateComparison(ngi, expr);
 		ss << "  setne al\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_Less:
 		generateComparison(ngi, expr);
 		ss << "  setl al\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_LessEqual:
 		generateComparison(ngi, expr);
 		ss << "  setle al\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_Greater:
 		generateComparison(ngi, expr);
 		ss << "  setg al\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_GreaterEqual:
 		generateComparison(ngi, expr);
 		ss << "  setge al\n";
-		ngi.primReg.datatype = { 0, "bool" };
+		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Shift_Left:
@@ -478,7 +478,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::FunctionCall:
 	{
-		bool isVoidFunc = expr->datatype == Datatype{ 0, "void" };
+		bool isVoidFunc = expr->datatype == Datatype{ "void" };
 		if (!isVoidFunc)
 			ss << "  sub rsp, " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
 
@@ -490,7 +490,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		}
 
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		bool typesMatch = ngi.primReg.datatype == Datatype{ 1, getSignature(expr) };
+		bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
 		assert(typesMatch && "Cannot call non-function!");
 		ss << "  call " << primRegUsage(ngi) << "\n";
 		ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";

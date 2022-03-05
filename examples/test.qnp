@@ -45,9 +45,5 @@ u32 sq(u32 x):
 
 u8* str = "hello"
 
-u8 str
-
-exit(sizeof(sq(1)))
-
 \\exit(quotient(4, 2))
-exit(sq(5))
+exit(str[4])

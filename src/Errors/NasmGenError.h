@@ -2,7 +2,7 @@
 
 #include "QinpError.h"
 
-#include "TokenizerTypes.h"
+#include "Token.h"
 
 class NasmGenError : public QinpError
 {

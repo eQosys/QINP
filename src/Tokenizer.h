@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "TokenizerTypes.h"
+#include "Token.h"
 
 std::string readTextFile(const std::string& filename);
 

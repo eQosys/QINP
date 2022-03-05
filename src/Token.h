@@ -49,4 +49,24 @@ bool isBuiltinType(const std::string& name);
 
 bool isBooleanValue(const std::string& value);
 
+bool isKeyword(const Token& token, const std::string& name);
+
+bool isSeparator(const Token& token, const std::string& name);
+
+bool isOperator(const Token& token, const std::string& name);
+
+bool isLiteral(const Token& token);
+
+bool isNewline(const Token& token);
+
+bool isEndOfCode(const Token& token);
+
+bool isBuiltinType(const Token& token);
+
+bool isIdentifier(const Token& token);
+
+bool isString(const Token& token);
+
+bool isWhitespace(const Token& token);
+
 std::string getPosStr(const Token::Position& pos);

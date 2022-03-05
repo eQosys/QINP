@@ -13,11 +13,14 @@ endif()
 add_executable(
     QINP
     "src/qinp.cpp"
+    "src/Token.cpp"
     "src/Program.cpp"
+    "src/Datatype.cpp"
     "src/Tokenizer.cpp"
+    "src/Statement.cpp"
     "src/ArgsParser.cpp"
-    "src/TokenizerTypes.cpp"
     "src/ProgramGenerator.cpp"
+    "src/OperatorPrecedence.cpp"
     "src/NasmGenerators/NasmGen_Linux_x86_64.cpp"
 )
 

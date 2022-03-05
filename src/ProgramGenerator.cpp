@@ -8,6 +8,7 @@
 #include "Errors/ProgGenError.h"
 
 #include "Tokenizer.h"
+#include "OperatorPrecedence.h"
 
 struct LocalStackFrame
 {
@@ -60,189 +61,6 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 	info.currToken = backup.currToken;
 }
 
-struct OpPrecLvl
-{
-	std::map<std::string, Expression::ExprType> ops;
-	enum class Type
-	{
-		Unary_Prefix,
-		Unary_Suffix,
-		Binary,
-	} type;
-};
-
-std::vector<OpPrecLvl> opPrecLvls = 
-{
-	{
-		{
-			{ "=", Expression::ExprType::Assign },
-			{ "+=", Expression::ExprType::Assign_Sum },
-			{ "-=", Expression::ExprType::Assign_Difference },
-			{ "*=", Expression::ExprType::Assign_Product },
-			{ "/=", Expression::ExprType::Assign_Quotient },
-			{ "%=", Expression::ExprType::Assign_Remainder },
-			{ "<<=", Expression::ExprType::Assign_Bw_LeftShift },
-			{ ">>=", Expression::ExprType::Assign_Bw_RightShift },
-			{ "&=", Expression::ExprType::Assign_Bw_AND },
-			{ "^=", Expression::ExprType::Assign_Bw_XOR },
-			{ "|=", Expression::ExprType::Assign_Bw_OR },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "||", Expression::ExprType::Logical_OR },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "&&", Expression::ExprType::Logical_AND },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "|", Expression::ExprType::Bitwise_OR },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "^", Expression::ExprType::Bitwise_XOR },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "&", Expression::ExprType::Bitwise_AND },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "==", Expression::ExprType::Comparison_Equal },
-			{ "!=", Expression::ExprType::Comparison_NotEqual },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "<", Expression::ExprType::Comparison_Less },
-			{ "<=", Expression::ExprType::Comparison_LessEqual },
-			{ ">", Expression::ExprType::Comparison_Greater },
-			{ ">=", Expression::ExprType::Comparison_GreaterEqual },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "<<", Expression::ExprType::Shift_Left },
-			{ ">>", Expression::ExprType::Shift_Right },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "+", Expression::ExprType::Sum },
-			{ "-", Expression::ExprType::Difference },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "*", Expression::ExprType::Product },
-			{ "/", Expression::ExprType::Quotient },
-			{ "%", Expression::ExprType::Remainder },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
-			{ "&", Expression::ExprType::AddressOf },
-			{ "*", Expression::ExprType::Dereference },
-			{ "!", Expression::ExprType::Logical_NOT },
-			{ "~", Expression::ExprType::Bitwise_NOT },
-			{ "+", Expression::ExprType::Prefix_Plus },
-			{ "-", Expression::ExprType::Prefix_Minus },
-			{ "++", Expression::ExprType::Prefix_Increment },
-			{ "--", Expression::ExprType::Prefix_Decrement },
-			{ "(", Expression::ExprType::Explicit_Cast },
-			{ "sizeof", Expression::ExprType::SizeOf },
-		},
-		OpPrecLvl::Type::Unary_Prefix,
-	},
-	{
-		{
-			{ "[", Expression::ExprType::Subscript },
-			{ "(", Expression::ExprType::FunctionCall },
-			{ "++", Expression::ExprType::Suffix_Increment },
-			{ "--", Expression::ExprType::Suffix_Decrement },
-		},
-		OpPrecLvl::Type::Unary_Suffix,
-	},
-};
-
-bool isKeyword(const Token& token, const std::string& name)
-{
-	return
-		token.type == Token::Type::Keyword &&
-		token.value == name;
-}
-
-bool isSeparator(const Token& token, const std::string& name)
-{
-	return
-		token.type == Token::Type::Separator &&
-		token.value == name;
-}
-
-bool isOperator(const Token& token, const std::string& name)
-{
-	return
-		token.type == Token::Type::Operator &&
-		token.value == name;
-}
-
-bool isLiteral(const Token& token)
-{
-	return
-		token.type == Token::Type::LiteralInteger ||
-		token.type == Token::Type::LiteralChar ||
-		token.type == Token::Type::LiteralBoolean ||
-		token.type == Token::Type::String;
-}
-
-bool isNewline(const Token& token)
-{
-	return token.type == Token::Type::Newline;
-}
-
-bool isEndOfCode(const Token& token)
-{
-	return token.type == Token::Type::EndOfCode;
-}
-
-bool isBuiltinType(const Token& token)
-{
-	return token.type == Token::Type::BuiltinType;
-}
-
-bool isIdentifier(const Token& token)
-{
-	return token.type == Token::Type::Identifier;
-}
-
-bool isString(const Token& token)
-{
-	return token.type == Token::Type::String;
-}
-
-bool isWhitespace(const Token& token)
-{
-	return token.type == Token::Type::Whitespace;
-}
-
 const Token& peekToken(ProgGenInfo& info, int offset = 0)
 {
 	static const Token emptyToken = { { "", 0, 0 }, Token::Type::EndOfCode, "" };
@@ -255,6 +73,28 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	auto& temp = peekToken(info, offset - 1);
 	info.currToken += offset;
 	return temp;
+}
+
+bool leftConversionIsProhibited(Expression::ExprType eType)
+{
+	static const std::set<Expression::ExprType> prohibitedTypes = 
+	{
+		Expression::ExprType::Assign,
+		Expression::ExprType::Assign_Sum,
+		Expression::ExprType::Assign_Difference,
+		Expression::ExprType::Assign_Product,
+		Expression::ExprType::Assign_Quotient,
+		Expression::ExprType::Assign_Remainder,
+		Expression::ExprType::Assign_Bw_LeftShift,
+		Expression::ExprType::Assign_Bw_RightShift,
+		Expression::ExprType::Assign_Bw_AND,
+		Expression::ExprType::Assign_Bw_XOR,
+		Expression::ExprType::Assign_Bw_OR,
+		Expression::ExprType::Shift_Left,
+		Expression::ExprType::Shift_Right,
+	};
+
+	return prohibitedTypes.find(eType) != prohibitedTypes.end();
 }
 
 ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
@@ -629,28 +469,6 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	return exp;
 }
 
-bool leftConversionIsProhibited(Expression::ExprType eType)
-{
-	static const std::set<Expression::ExprType> prohibitedTypes = 
-	{
-		Expression::ExprType::Assign,
-		Expression::ExprType::Assign_Sum,
-		Expression::ExprType::Assign_Difference,
-		Expression::ExprType::Assign_Product,
-		Expression::ExprType::Assign_Quotient,
-		Expression::ExprType::Assign_Remainder,
-		Expression::ExprType::Assign_Bw_LeftShift,
-		Expression::ExprType::Assign_Bw_RightShift,
-		Expression::ExprType::Assign_Bw_AND,
-		Expression::ExprType::Assign_Bw_XOR,
-		Expression::ExprType::Assign_Bw_OR,
-		Expression::ExprType::Shift_Left,
-		Expression::ExprType::Shift_Right,
-	};
-
-	return prohibitedTypes.find(eType) != prohibitedTypes.end();
-}
-
 void autoFixDatatypeMismatch(ExpressionRef exp)
 {
 	if (exp->left->datatype == exp->right->datatype)
@@ -752,7 +570,7 @@ ExpressionRef getParseFunctionName(ProgGenInfo& info)
 	exp->isLValue = false;
 	exp->funcName = litToken.value;
 
-	exp->datatype = { 1, "...#" + litToken.value};
+	exp->datatype = { "...#" + litToken.value, 1 };
 
 	nextToken(info);
 
@@ -829,9 +647,9 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
-			exp->left = genConvertExpression(exp->left, { 0, "bool" });
-			exp->right = genConvertExpression(exp->right, { 0, "bool" });
-			exp->datatype = { 0, "bool" };
+			exp->left = genConvertExpression(exp->left, { "bool" });
+			exp->right = genConvertExpression(exp->right, { "bool" });
+			exp->datatype = { "bool" };
 			exp->isLValue = false;
 			break;
 		case Expression::ExprType::Bitwise_OR:
@@ -847,9 +665,9 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_LessEqual:
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
-			exp->left = genConvertExpression(exp->left, { 0, "bool" });
-			exp->right = genConvertExpression(exp->right, { 0, "bool" });
-			exp->datatype = { 0, "bool" };
+			exp->left = genConvertExpression(exp->left, { "bool" });
+			exp->right = genConvertExpression(exp->right, { "bool" });
+			exp->datatype = { "bool" };
 			exp->isLValue = false;
 			break;
 		case Expression::ExprType::Shift_Left:
@@ -896,10 +714,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = true;
 			if (exp->datatype.ptrDepth == 0)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
-			if (exp->datatype == Datatype{ 1, "void" })
+			if (exp->datatype == Datatype{ "void", 1 })
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			--exp->datatype.ptrDepth;
-			exp->right = genConvertExpression(getParseExpression(info), { 0, "u64" });
+			exp->right = genConvertExpression(getParseExpression(info), { "u64" });
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
 		case Expression::ExprType::FunctionCall:
@@ -926,7 +744,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				if (!func)
 					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + exp->left->funcName + "'!");
 				exp->datatype = func->retType;
-				exp->left->datatype = { 1, getSignature(func) };
+				exp->left->datatype = { getSignature(func), 1 };
 				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
 			}
 			else
@@ -976,14 +794,14 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->datatype = exp->left->datatype;
 		if (exp->datatype.ptrDepth == 0)
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference a non-pointer!");
-		if (exp->datatype == Datatype{ 1, "void" })
+		if (exp->datatype == Datatype{ "void", 1 })
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference pointer to void!");
 		--exp->datatype.ptrDepth;
 		exp->isLValue = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
 		exp->left = getParseExpression(info, precLvl);
-		exp->datatype = { 0, "bool" };
+		exp->datatype = { "bool" };
 		exp->isLValue = false;
 		break;
 	case Expression::ExprType::Bitwise_NOT:
@@ -1014,7 +832,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	case Expression::ExprType::SizeOf:
 		exp->valStr = std::to_string(getDatatypeSize(getParseParenthesized(info)->datatype));
 		exp->eType = Expression::ExprType::Literal;
-		exp->datatype = { 0, "u64" };
+		exp->datatype = { "u64" };
 		break;
 	default:
 		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");
@@ -1105,7 +923,7 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 
 void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
-	if (datatype == Datatype{0, "void" })
+	if (datatype == Datatype{ "void" })
 		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot declare variable of type void!");
 
 	auto initExpr = getParseDeclDefVariable(info, datatype, name);
@@ -1228,7 +1046,7 @@ bool parseStatementReturn(ProgGenInfo& info)
 	info.program->body->push_back(std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
 	info.program->body->back()->funcRetOffset = info.funcRetOffset;
 
-	if (info.funcRetType != Datatype{ 0, "void" })
+	if (info.funcRetType != Datatype{ "void" })
 		info.program->body->back()->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
 
 	parseExpectedNewline(info);
@@ -1327,7 +1145,7 @@ void parseFunctionBody(ProgGenInfo& info)
 
 	if (info.program->body->empty() || info.program->body->back()->type != Statement::Type::Return)
 	{
-		if (info.funcRetType == Datatype{ 0, "void" })
+		if (info.funcRetType == Datatype{ "void" })
 			info.program->body->push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
 			THROW_PROG_GEN_ERROR(info.program->body->empty() ? bodyBeginToken.pos : info.program->body->back()->pos, "Missing return statement!");
