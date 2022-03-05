@@ -1245,10 +1245,32 @@ bool parseStatementIf(ProgGenInfo& info)
 	return true;
 }
 
+bool parseStatementWhile(ProgGenInfo& info)
+{
+	auto& whileToken = peekToken(info);
+	if (!isKeyword(whileToken, "while"))
+		return false;
+	nextToken(info);
+
+	auto statement = std::make_shared<Statement>(whileToken.pos, Statement::Type::While_Loop);
+
+	statement->whileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+	statement->whileConditionalBody.body = std::make_shared<Body>();
+
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	parseBodyEx(info, statement->whileConditionalBody.body);
+
+	info.program->body->push_back(statement);
+
+	return true;
+}
+
 bool parseControlFlow(ProgGenInfo& info)
 {
-	if (parseStatementIf(info))
-		return true;
+	if (parseStatementIf(info)) return true;
+	if (parseStatementWhile(info)) return true;
 
 	return false;
 }

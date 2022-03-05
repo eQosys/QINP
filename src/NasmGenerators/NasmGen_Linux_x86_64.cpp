@@ -197,14 +197,14 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 	if (!wasPushed)
 		return;
 	
-	pushSecReg(ngi);
+	//pushSecReg(ngi); // Does not preserve the state of the secondary register
 
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
 
 	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << "\n";
 
-	popSecReg(ngi);
+	//popSecReg(ngi);
 }
 
 bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
@@ -656,6 +656,26 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		popLabel(ngi);
 	}
 		break;
+	case Statement::Type::While_Loop:
+	{
+		pushLabel(ngi, "WHILE_BEGIN");
+		pushLabel(ngi, "WHILE_END");
+
+		placeLabel(ngi, 1);
+
+		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.condition.get());
+		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+		ss << "  je " << getLabel(ngi, 0) << "\n";
+
+		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.body);
+
+		ss << "  jmp " << getLabel(ngi, 1) << "\n";
+
+		placeLabel(ngi, 0);
+		popLabel(ngi);
+		popLabel(ngi);
+	}
+		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
 		break;
@@ -678,6 +698,43 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, Functi
 		ngi.ss << "  sub rsp, " << std::to_string(func->frameSize) << "\n";
 
 	generateNasm_Linux_x86_64(ngi, func->body);
+}
+
+void writeEscapedString(std::stringstream& ss, const std::string& str)
+{
+	bool isInString = false;
+	for (int i = 0; i < str.size(); ++i)
+	{
+		char c = str[i];
+		switch (c)
+		{
+		case '\'':
+		case '\"':
+		case '\\':
+		case '\n':
+		case '\r':
+		case '\t':
+		case '\b':
+		case '\f':
+		case '\v':
+		case '\0':
+			if (isInString)
+				ss << '"';
+			isInString = false;
+			if (i != 0)
+				ss << ',';
+			ss << (int)c;
+			break;
+		default:
+			if (!isInString)
+				ss << '"';
+			isInString = true;
+			ss << c;
+		}
+	}
+
+	if (isInString)
+		ss << '"';
 }
 
 // Generates Nasm code for the entire program
@@ -730,7 +787,14 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	// C-Strings
 	ss << "SECTION .data\n";
 	for (auto& str : program->strings)
-		ss << "  " << getMangledName(str.first) << ": db \"" << str.second << "\", 0\n";
+	{
+		ss << "  " << getMangledName(str.first) << ": db ";
+		writeEscapedString(ss, str.second);
+		ss << ", 0\n";
+	}
+
+	if (!ngi.labelStack.empty())
+		THROW_NASM_GEN_ERROR(Token::Position(), "Unused label(s)!");
 	
 	return ss.str();
 }

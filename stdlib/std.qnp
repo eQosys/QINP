@@ -6,17 +6,19 @@ void exit(u64 code):
 		"mov rdi, [rbp $(code)]"
 		"syscall"
 
-\\u64 strlen(u8* str):
-\\	u8* begin = str
-\\	while *str:
-\\		++str
-\\	return str - begin
-\\
-\\void print(u8* str):
-\\	u64 len = strlen(str)
-\\	assembly:
-\\		"mov rax, 1"
-\\		"mov rdi, 1"
-\\		"mov rsi, [rbp $(str)]"
-\\		"mov rdx, [rbp $(len)]"
-\\		syscall
+u64 strlen(u8* str):
+	u8* begin = str
+	while *str:
+		++str
+	return (u64)(str - begin)
+
+void print(u8* str, u64 len):
+	assembly:
+		"mov rax, 1"
+		"mov rdi, 1"
+		"mov rsi, [rbp $(str)]"
+		"mov rdx, [rbp $(len)]"
+		"syscall"
+
+void print(u8* str):
+	print(str, strlen(str))

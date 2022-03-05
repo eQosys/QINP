@@ -2,6 +2,7 @@
 
 ## Overview
  - [if-elif-else](#if-elif-else)
+ - [while loop](#while-loop)
 
 ---
 
@@ -29,4 +30,22 @@ elif false:
 	print("World")
 else:
 	print("!")
+```
+
+---
+
+### while loop
+
+While loops are used to execute a block of code repeatedly as long as a condition evaluates to true.
+
+#### Usage
+```qinp
+while [condition]:
+	[body]
+```
+
+#### Example
+```qinp
+while true:
+	print("Hello")
 ```

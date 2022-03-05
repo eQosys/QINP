@@ -25,6 +25,7 @@ struct Statement
 		Assembly,
 		Expression,
 		If_Clause,
+		While_Loop,
 	};
 
 	Statement(const Token::Position& pos, Type type)
@@ -41,6 +42,8 @@ struct Statement
 
 	std::vector<ConditionalBody> ifConditionalBodies; // If-Clause
 	BodyRef elseBody; // If-Clause
+
+	ConditionalBody whileConditionalBody; // While-Loop
 };
 
 struct Expression : public Statement
