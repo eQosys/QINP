@@ -2,12 +2,19 @@ import "std.qnp"
 
 u64 argc
 u8** argv
+u8** env
 
 argc = getargs(&argv)
+env = getenv()
 
 u64 i = 0
 while i < argc:
 	print(argv[i++])
 	print("\n")
+
+while (u64)*env != 0:
+	print(*env)
+	print("\n")
+	++env
 
 exit(0)

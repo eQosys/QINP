@@ -498,7 +498,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
 		primRegLToRVal(ngi, true);
-		ss << "  inc " << primRegUsage(ngi) << "\n";
+		if (isPointer(ngi.primReg.datatype))
+			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+		else
+			ss << "  inc " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
 		// Datatype & state don't change
 		break;
@@ -506,7 +509,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
 		primRegLToRVal(ngi, true);
-		ss << "  dec " << primRegUsage(ngi) << "\n";
+		if (isPointer(ngi.primReg.datatype))
+			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+		else
+			ss << "  dec " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
 		// Datatype & state don't change
 		break;
@@ -555,7 +561,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
-		ss << "  inc " << primRegUsage(ngi) << "\n";
+		if (isPointer(ngi.primReg.datatype))
+			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+		else
+			ss << "  inc " << primRegUsage(ngi) << "\n";
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 		ss << "  dec " << primRegUsage(ngi) << "\n";
 		// Datatype doesn't change
@@ -566,7 +575,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
-		ss << "  dec " << primRegUsage(ngi) << "\n";
+		if (isPointer(ngi.primReg.datatype))
+			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+		else
+			ss << "  dec " << primRegUsage(ngi) << "\n";
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 		ss << "  inc " << primRegUsage(ngi) << "\n";
 		// Datatype doesn't change
@@ -784,9 +796,11 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  pop rax\n";
 	ss << "  mov [__##__argc], rax\n";
 	ss << "  mov [__##__argv], rsp\n";
-	ss << "  sub rsp, 8\n";
 	ss << "  inc rax\n";
-	ss << "  mov rcx, [rsp + rax*4]\n";
+	ss << "  mov rcx, 8\n";
+	ss << "  mul rcx\n";
+	ss << "  mov rcx, rsp\n";
+	ss << "  add rcx, rax\n";
 	ss << "  mov [__##__envp], rcx\n";
 	
 	// Global code

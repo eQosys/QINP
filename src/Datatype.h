@@ -26,4 +26,6 @@ int getBuiltinTypeSize(const std::string& name);
 int getDatatypeSize(const Datatype& datatype, bool treatArrayAsPointer = false);
 int getDatatypePushSize(const Datatype& datatype);
 
+int getDatatypePointedToSize(Datatype& datatype);
+
 std::string getDatatypeStr(const Datatype& datatype);

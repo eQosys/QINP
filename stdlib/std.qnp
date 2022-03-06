@@ -48,6 +48,9 @@ u8* itos(u64 num, u8* str)...
 \\ @return The number of arguments passed to the program
 u64 getargs(u8*** pargv)...
 
+\\ Get the environment variables passed to the program
+\\ @return The pointer to an array of environment variables
+u8** getenv()...
 
 
 void exit(u64 status):
@@ -126,3 +129,11 @@ u64 getargs(u8*** pargv):
 	*pargv = argv
 
 	return argc
+
+u8** getenv():
+	u8** env
+	assembly:
+		"mov rcx, [__##__envp]"
+		"mov [rbp $(env)], rcx"
+
+	return env
