@@ -565,8 +565,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
 		else
 			ss << "  inc " << primRegUsage(ngi) << "\n";
+		
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
-		ss << "  dec " << primRegUsage(ngi) << "\n";
+		
+		if (isPointer(ngi.primReg.datatype))
+			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+		else
+			ss << "  dec " << primRegUsage(ngi) << "\n";
+
 		// Datatype doesn't change
 		// State already modified
 		break;
@@ -579,8 +585,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
 		else
 			ss << "  dec " << primRegUsage(ngi) << "\n";
+
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
-		ss << "  inc " << primRegUsage(ngi) << "\n";
+
+		if (isPointer(ngi.primReg.datatype))
+			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+		else
+			ss << "  inc " << primRegUsage(ngi) << "\n";
+
 		// Datatype doesn't change
 		// State already modified
 		break;

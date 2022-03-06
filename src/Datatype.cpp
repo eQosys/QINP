@@ -101,7 +101,7 @@ int getDatatypePushSize(const Datatype& datatype)
 	return std::max(8, getDatatypeSize(datatype));
 }
 
-int getDatatypePointedToSize(Datatype& datatype)
+int getDatatypePointedToSize(Datatype datatype)
 {
 	if (!isPointer(datatype))
 		THROW_QINP_ERROR("Cannot get size of non-pointer datatype");
