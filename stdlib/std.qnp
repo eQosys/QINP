@@ -5,28 +5,48 @@ import "linux.qnp"
 
 
 \\ Terminate the calling process and return the specified exit status.
+\\ @param status The exit status to return to the parent process.
 void exit(u64 status)...
 
 \\ Determine the length of a string (without the null terminator)
+\\ @param str The null-terminated string to measure
+\\ @return The length of the string
 u64 strlen(u8* str)...
 
 \\ Print a null-terminated string to stdout
+\\ @param str The null-terminated string to print
 void print(u8* str)...
 
 \\ Print a string of specified length to stdout
+\\ @param str The string to print
+\\ @param len The length of the string to print
 void print(u8* str, u64 len)...
 
 \\ Print a base-10 integer to stdout
+\\ @param num The integer to print
 void print(u64 num)...
 
 \\ Reverse a null-terminated string
+\\ @param str The null-terminated string to reverse
+\\ @return The reversed string
 u8* strrev(u8* str)...
 
 \\ Reverse a string of specified length
+\\ @param str The string to reverse
+\\ @param len The length of the string to reverse
+\\ @return The reversed string
 u8* strrev(u8* str, u64 len)...
 
 \\ Convert a base-10 integer to a string
+\\ @param num The integer to convert
+\\ @param str The string to store the converted integer in
+\\ @return The null-terminated string representation of the integer
 u8* itos(u64 num, u8* str)...
+
+\\ Get the arguments passed to the program
+\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
+\\ @return The number of arguments passed to the program
+u64 getargs(u8*** pargv)...
 
 
 
@@ -88,3 +108,21 @@ u8* itos(u64 num, u8* str):
 	*str = '\0'
 
 	return strrev(begin)
+
+u64 getargs(u8*** pargv):
+	u64 argc
+	assembly:
+		"mov rcx, [__##__argc]"
+		"mov [rbp $(argc)], rcx"
+
+	if (u64)pargv == 0:
+		return argc
+
+	u8** argv
+	assembly:
+		"mov rcx, [__##__argv]"
+		"mov [rbp $(argv)], rcx"
+
+	*pargv = argv
+
+	return argc

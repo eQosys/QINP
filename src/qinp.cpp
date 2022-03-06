@@ -113,7 +113,7 @@ int main(int argc, char** argv, char** environ)
 		if (execCmd(ldCmd))
 			THROW_QINP_ERROR("Linker Error!");
 
-		auto runCmd = "./" + outFilename;
+		auto runCmd = "./" + outFilename + " test_arg";
 		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
 		int runRet = execCmd(runCmd);
 		std::cout << "Exit code: " << runRet << std::endl;

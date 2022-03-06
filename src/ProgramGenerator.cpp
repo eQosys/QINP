@@ -612,7 +612,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 
 	auto pVar = getVariable(info, litToken.value);
 	if (!pVar)
-		THROW_PROG_GEN_ERROR(litToken.pos, "Variable '" + litToken.value + "' not found!");
+		return nullptr;
 
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->localOffset = pVar->offset;
@@ -653,10 +653,10 @@ ExpressionRef getParseValue(ProgGenInfo& info)
 	auto exp = getParseLiteral(info);
 	if (exp) return exp;
 
-	exp = getParseFunctionName(info);
+	exp = getParseVariable(info);
 	if (exp) return exp;
 
-	exp = getParseVariable(info);
+	exp = getParseFunctionName(info);
 	if (exp) return exp;
 
 	THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected variable name or literal value!");

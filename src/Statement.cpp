@@ -10,6 +10,9 @@ std::string StatementTypeToString(Statement::Type type)
 	case Statement::Type::Return: return "Return";
 	case Statement::Type::Assembly: return "Assembly";
 	case Statement::Type::Expression: return "Expression";
+	case Statement::Type::If_Clause: return "If_Clause";
+	case Statement::Type::While_Loop: return "While_Loop";
+	case Statement::Type::Do_While_Loop: return "Do_While_Loop";
 	default: THROW_QINP_ERROR("Unknown statement type!");
 	}
 }

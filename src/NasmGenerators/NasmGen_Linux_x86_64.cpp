@@ -516,6 +516,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		primRegLToRVal(ngi);
 		ss << "  mov " << secRegName(8) << ", " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
 		ss << "  mul " << secRegName(8) << "\n";
 		popSecReg(ngi);
@@ -611,6 +612,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 {
 	auto& ss = ngi.ss;
+
+	ss << "; " << getPosStr(statement->pos) << "  ->  ";
+	if (statement->type != Statement::Type::Expression)
+		ss << StatementTypeToString(statement->type) << "\n";
+	else
+		ss << ExpressionTypeToString(((Expression*)statement.get())->eType) << "\n";
 
 	switch (statement->type)
 	{
@@ -774,6 +781,13 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "SECTION .text\n";
 	ss << "  global _start\n";
 	ss << "_start:\n";
+	ss << "  pop rax\n";
+	ss << "  mov [__##__argc], rax\n";
+	ss << "  mov [__##__argv], rsp\n";
+	ss << "  sub rsp, 8\n";
+	ss << "  inc rax\n";
+	ss << "  mov rcx, [rsp + rax*4]\n";
+	ss << "  mov [__##__envp], rcx\n";
 	
 	// Global code
 	generateNasm_Linux_x86_64(ngi, program->body);
@@ -790,6 +804,10 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	
 	// Global variables
 	ss << "SECTION .bss\n";
+	ss << "  __##__argc: resq 1\n";
+	ss << "  __##__argv: resq 1\n";
+	ss << "  __##__envp: resq 1\n";
+
 	for (auto& glob : program->globals)
 	{
 		std::string sizeStr;
