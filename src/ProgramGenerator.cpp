@@ -567,6 +567,8 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 			return makeConvertExpression(expToConvert, newDatatype);
 		else if (expToConvert->datatype.ptrDepth == 1 && isVoidPtr(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
+		else if (newDatatype == Datatype{ "u64" })
+			return makeConvertExpression(expToConvert, newDatatype);
 		
 		else if (isExplicit && isInteger(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);

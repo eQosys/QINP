@@ -63,7 +63,7 @@ u64 strlen(u8* str):
 	u8* begin = str
 	while *str:
 		++str
-	return (u64)(str - begin)
+	return str - begin
 
 void print(u8* str):
 	print(str, strlen(str))
@@ -88,18 +88,17 @@ u8* strrev(u8* begin, u8* end):
 	u8 temp
 
 	while begin < end:
-		--end
 		temp = *begin
-		*begin = *end
+		*begin++ = *--end
 		*end = temp
-		++begin
 
 	return str
 
 u8* itos(u64 num, u8* str):
 	u8* begin = str
+
 	do:
-		*str = '0' + (u8)(num % 10)
+		*str = '0' + num % 10
 		++str
 		num = num / 10
 	while num
@@ -114,7 +113,7 @@ u64 getargs(u8*** pargv):
 		"mov rcx, [__##__argc]"
 		"mov [rbp $(argc)], rcx"
 
-	if (u64)pargv == 0:
+	if !pargv:
 		return argc
 
 	u8** argv
