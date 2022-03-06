@@ -40,6 +40,8 @@ struct ProgGenInfo
 	Datatype funcRetType;
 
 	std::set<std::string> imports;
+
+	std::map<std::string, Token> defSymbols;
 };
 
 struct ProgGenInfoBackup
@@ -65,11 +67,25 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 	info.indent = backup.indent;
 }
 
-const Token& peekToken(ProgGenInfo& info, int offset = 0)
+const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
 {
 	static const Token emptyToken = { { "", 0, 0 }, Token::Type::EndOfCode, "" };
 	int index = info.currToken + offset;
-	return (index < info.tokens->size()) ? (*info.tokens)[index] : emptyToken;
+
+	auto tok = (index < info.tokens->size()) ? &(*info.tokens)[index] : &emptyToken;
+
+	if (ignoreSymDef)
+		return *tok;
+
+	while (isIdentifier(*tok))
+	{
+		auto it = info.defSymbols.find(tok->value);
+		if (it == info.defSymbols.end())
+			break;
+		tok = &it->second;
+	}
+
+	return *tok;
 }
 
 const Token& nextToken(ProgGenInfo& info, int offset = 1)
@@ -279,23 +295,60 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				continue;
 			}
 
-			auto pVar = getVariable(info, varName);
-			if (!pVar)
-				THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
+			bool alreadyPlaced = false;
+			auto defIt = info.defSymbols.find(varName);
+			while (!alreadyPlaced && defIt != info.defSymbols.end())
+			{
+				auto& tok = defIt->second;
+
+				if (isIdentifier(tok))
+				{
+					varName = tok.value;
+					defIt = info.defSymbols.find(varName);
+					continue;
+				}
 				
-			if (pVar->isLocal)
-			{
-				int offset = pVar->offset;
-				result += (offset < 0) ? "- " : "+ ";
-				result += std::to_string(std::abs(offset));
+				if (isString(tok))
+				{
+					result += "\"";
+					result += tok.value;
+					result += "\"";
+					alreadyPlaced = true;
+					break;
+				}
+				
+				if (isLiteral(tok))
+				{
+					result += tok.value;
+					alreadyPlaced = true;
+					break;
+				}
+				
+				THROW_PROG_GEN_ERROR(asmToken.pos, "Illegal use of symbol!");
 			}
-			else
+			
+			if (!alreadyPlaced)
 			{
-				result += getMangledName(*pVar);
+				auto pVar = getVariable(info, varName);
+				if (!pVar)
+					THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
+				
+				if (pVar->isLocal)
+				{
+					int offset = pVar->offset;
+					result += (offset < 0) ? "- " : "+ ";
+					result += std::to_string(std::abs(offset));
+				}
+				else
+				{
+					result += getMangledName(*pVar);
+				}
 			}
+
 			parseVar = false;
 			parsedParen = false;
 			varName = "";
+
 			continue;
 		}
 
@@ -1317,6 +1370,35 @@ void parseFunctionBody(ProgGenInfo& info)
 
 bool parseStatementImport(ProgGenInfo& info);
 
+bool parseStatementDefine(ProgGenInfo& info)
+{
+	auto& defToken = peekToken(info);
+	if (!isKeyword(defToken, "define"))
+		return false;
+	nextToken(info);
+
+	auto& nameToken = peekToken(info, 0, true);
+	nextToken(info);
+
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+
+	auto defIt = info.defSymbols.find(nameToken.value);
+	if (defIt != info.defSymbols.end())
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol: '" + nameToken.value + "' already defined here: '" + getPosStr(defIt->second.pos) + "'!");
+
+	auto& valToken = nextToken(info);
+
+	if (isNewline(valToken))
+		THROW_PROG_GEN_ERROR(valToken.pos, "Unexpected newline!");
+
+	parseExpectedNewline(info);
+
+	info.defSymbols.insert({ nameToken.value, valToken });
+
+	return true;
+}
+
 void parseGlobalCode(ProgGenInfo& info)
 {
 	while (info.currToken < info.tokens->size())
@@ -1327,6 +1409,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseStatementImport(info)) continue;
+		if (parseStatementDefine(info)) continue;
 		if (parseControlFlow(info)) continue;
 		if (parseDeclDef(info, true)) continue;
 		if (parseSinglelineAssembly(info)) continue;

@@ -6,9 +6,15 @@ Keywords are special identifiers in the QINP language and cannot be used for any
 ## Overview
  - [asm](#inline-assembly)
  - [assembly](#inline-assembly)
+ - [define](#define)
+ - [_do_](./control-flow.md#do-while-loop)
+ - [_elif_](./control-flow.md#if-elif-else)
+ - [_else_](./control-flow.md#if-elif-else)
+ - [_if_](./control-flow.md#if-elif-else)
  - [import](#import)
  - [pass](#pass)
  - [return](#return)
+ - [_while_](./control-flow.md#while-loop)
 
 ---
 
@@ -51,6 +57,25 @@ assembly:
 ```
 
 Both examples are equivalent.
+
+---
+
+### Define
+
+The `define` keyword is used to associate a name with a token.
+The name must be an identifier. The token may be any token other than a newline
+Every usage of the name in the program is replaced with the token.
+The token used may also be the identifier of another defined name.
+
+#### Usage
+```qinp
+define [name] [token]
+```
+
+#### Example
+```qinp
+define foo "bar"
+```
 
 ---
 

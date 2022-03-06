@@ -1,5 +1,9 @@
 \\ QINP Standard library main header
 
+
+import "linux.qnp"
+
+
 \\ Terminate the calling process and return the specified exit status.
 void exit(u64 status)...
 
@@ -43,7 +47,7 @@ void print(u8* str):
 
 void print(u8* str, u64 len):
 	assembly:
-		"mov rax, 1"
+		"mov rax, $(SYS_WRITE)"
 		"mov rdi, 1"
 		"mov rsi, [rbp $(str)]"
 		"mov rdx, [rbp $(len)]"

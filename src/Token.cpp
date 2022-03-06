@@ -47,12 +47,12 @@ bool isKeyword(const std::string& name)
 		"asm", "assembly",
 		"return", "pass",
 		"if", "elif", "else",
-		"while", "do"
+		"while", "do",
+		"define",
 		// "const"
 		// "default",
-		// "sizeof", "offsetof",
-		// "if", "elif", "else",
-		// "for", "while", "do",
+		// "offsetof",
+		// "for",
 		// "break", "continue",
 		// "new", "delete",
 		// "goto", "operator",
