@@ -55,7 +55,7 @@ u8** getenv()...
 
 void exit(i32 status):
 	assembly:
-		"mov rax, 60"
+		"mov rax, $(SYS_EXIT)"
 		"mov edi, [rbp $(status)]"
 		"syscall"
 

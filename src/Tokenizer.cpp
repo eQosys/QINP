@@ -84,6 +84,7 @@ char getEscapeChar(char c)
 	case 'f': return '\f';
 	case 'v': return '\v';
 	case '0': return '\0';
+	case 'e': return '\033';
 	default:
 		throw std::runtime_error("Unknown escape sequence!");
 	}

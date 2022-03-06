@@ -819,6 +819,7 @@ void writeEscapedString(std::stringstream& ss, const std::string& str)
 		case '\f':
 		case '\v':
 		case '\0':
+		case '\033':
 			if (isInString)
 				ss << '"';
 			isInString = false;
@@ -828,7 +829,11 @@ void writeEscapedString(std::stringstream& ss, const std::string& str)
 			break;
 		default:
 			if (!isInString)
+			{
+				if (i != 0)
+					ss << ',';
 				ss << '"';
+			}
 			isInString = true;
 			ss << c;
 		}

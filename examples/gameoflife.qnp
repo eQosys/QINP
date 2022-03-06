@@ -1,0 +1,76 @@
+import "std.qnp"
+
+define WIDTH 10
+define HEIGHT 10
+
+bool grid[WIDTH][HEIGHT]
+bool grid2[WIDTH][HEIGHT]
+
+void show():
+	i64 i = 0
+	while i < WIDTH:
+		i64 j = 0
+		while j < HEIGHT:
+			if grid[i][j]:
+				print("#")
+			else:
+				print(" ")
+			++j
+		print("\n")
+		++i
+
+void clear():
+	print("\r")
+	i64 i = 0
+	while i++ < HEIGHT:
+		print("\e[1F")
+
+void update():
+	i64 i = 0
+	while i < WIDTH:
+		i64 j = 0
+		while j < HEIGHT:
+			i64 count = 0
+			i64 k = i-1
+			while k < i+2:
+				i64 l = j-1
+				while l < j+2:
+					if k >= 0 && k < WIDTH && l >= 0 && l < HEIGHT:
+						if (k != i || l != j):
+							if grid[k][l]:
+								++count
+					++l
+				++k
+			if grid[i][j]:
+				if count < 2 || count > 3:
+					grid2[i][j] = false
+				else:
+					grid2[i][j] = true
+			else:
+				if count == 3:
+					grid2[i][j] = true
+				else:
+					grid2[i][j] = false
+			++j
+		++i
+	
+	i = 0
+	while i < WIDTH:
+		j = 0
+		while j < HEIGHT:
+			grid[i][j] = grid2[i][j]
+			++j
+		++i
+
+grid[0][2] = true
+grid[1][0] = true
+grid[1][2] = true
+grid[2][1] = true
+grid[2][2] = true
+
+i64 n = 30
+while --n > 0:
+	show()
+	update()
+	clear()
+show()
