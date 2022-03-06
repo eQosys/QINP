@@ -742,8 +742,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_LessEqual:
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
-			exp->left = genConvertExpression(exp->left, { "bool" });
-			exp->right = genConvertExpression(exp->right, { "bool" });
+			autoFixDatatypeMismatch(exp);
 			exp->datatype = { "bool" };
 			exp->isLValue = false;
 			break;
@@ -1345,9 +1344,13 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 
 	parseBodyEx(info, statement->doWhileConditionalBody.body);
 
+	if (!parseIndent(info))
+		THROW_PROG_GEN_ERROR(doToken.pos, "Expected 'while'!");
 	parseExpected(info, Token::Type::Keyword, "while");
 	
 	statement->doWhileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+
+	parseExpectedNewline(info);
 
 	info.program->body->statements.push_back(statement);
 

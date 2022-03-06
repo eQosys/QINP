@@ -98,16 +98,13 @@ u8* strrev(u8* str, u64 len):
 	return str
 
 u8* itos(u64 num, u8* str):
-	if num == 0:
-		str[0] = '0'
-		str[1] = '\0'
-		return str
-	
 	u8* begin = str
-	while num:
+	do:
 		*str = '0' + (u8)(num % 10)
 		++str
 		num = num / 10
+	while num
+	
 	*str = '\0'
 
 	return strrev(begin)
