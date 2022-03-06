@@ -16,6 +16,11 @@ bool operator!(const Datatype& datatype);
 
 bool isPointer(const Datatype& datatype);
 bool isArray(const Datatype& datatype);
+bool isVoidPtr(const Datatype& datatype);
+bool isBool(const Datatype& datatype);
+bool isInteger(const Datatype& datatype);
+bool isUnsignedInt(const Datatype& datatype);
+bool isSignedInt(const Datatype& datatype);
 
 void dereferenceDatatype(Datatype& datatype);
 

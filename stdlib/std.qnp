@@ -32,10 +32,10 @@ void print(u64 num)...
 u8* strrev(u8* str)...
 
 \\ Reverse a string of specified length
-\\ @param str The string to reverse
-\\ @param len The length of the string to reverse
+\\ @param begin Pointer to the first character of the string to reverse
+\\ @param end Pointer to the character after the last character of the string to reverse (usually the null-terminator)
 \\ @return The reversed string
-u8* strrev(u8* str, u64 len)...
+u8* strrev(u8* begin, u8* end)...
 
 \\ Convert a base-10 integer to a string
 \\ @param num The integer to convert
@@ -81,14 +81,13 @@ void print(u64 num):
 	print(itos(num, &*str))
 
 u8* strrev(u8* str):
-	return strrev(str, strlen(str))
+	return strrev(str, str + strlen(str))
 
-u8* strrev(u8* str, u64 len):
-	u8* begin
-	u8* end = str + (u8*)len
+u8* strrev(u8* begin, u8* end):
+	u8* str = begin
 	u8 temp
 
-	while (u64)begin < (u64)end:
+	while begin < end:
 		--end
 		temp = *begin
 		*begin = *end

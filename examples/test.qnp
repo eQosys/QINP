@@ -1,5 +1,7 @@
 import "std.qnp"
 
+void func()...
+
 u64 i = 232
 while i < 240:
 	print(i++)

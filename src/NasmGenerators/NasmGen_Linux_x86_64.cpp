@@ -245,22 +245,48 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Conversion:
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		
-		int newSize = getDatatypeSize(expr->datatype);
-		int oldSize = getDatatypeSize(expr->left->datatype);
+
+		auto& oldType = expr->left->datatype;
+		auto& newType = expr->datatype;
+
+		int oldSize = getDatatypeSize(oldType);
+		int newSize = getDatatypeSize(newType);
 
 		primRegLToRVal(ngi);
 
-		ngi.primReg.datatype = expr->datatype;
-		if (oldSize >= newSize)
-			break;
+		ngi.primReg.datatype = newType;
 
-		switch (oldSize) // Maybe wrong conversion?
+		if (isBool(newType))
 		{
-		case 1: ss << "  cbw\n"; if (newSize == 2) break;
-		case 2: ss << "  cwd\n"; if (newSize == 4) break;
-		case 4: ss << "  cdq\n"; break;
+			if (isInteger(oldType) || isPointer(oldType))
+			{
+				ss << "  cmp " << primRegName(oldSize) << ", 0\n";
+				ss << "  setne " << primRegName(newSize) << "\n";
+				break;
+			}
+			assert("Invalid conversion!" && false);
 		}
+
+		if (isUnsignedInt(oldType) && isInteger(newType))
+		{
+			if (oldSize < newSize)
+				ss << "  movzx " << primRegName(newSize) << ", " << primRegName(oldSize) << "\n";
+			break;
+		}
+
+		if (isSignedInt(oldType) && isInteger(newType))
+		{
+			if (oldSize < newSize)
+				ss << "  movsx " << primRegName(newSize) << ", " << primRegName(oldSize) << "\n";
+			break;
+		}
+
+		if (isPointer(oldType) && (isPointer(newType) || isInteger(newType)))
+		{
+			break;
+		}
+
+		assert("Invalid conversion!" && false);
 
 		// Datatype & state already modified
 	}

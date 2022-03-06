@@ -488,12 +488,12 @@ void popTempBody(ProgGenInfo& info)
 	info.mainBodyBackups.pop();
 }
 
-Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right)
+Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 {
-	if (left->datatype.ptrDepth > 0 || right->datatype.ptrDepth > 0)
+	if (left.ptrDepth > 0 || right.ptrDepth > 0)
 		return Datatype();
 
-	if (!isBuiltinType(left->datatype.name) || !isBuiltinType(right->datatype.name))
+	if (!isBuiltinType(left.name) || !isBuiltinType(right.name))
 		return Datatype();
 	
 	static const std::vector<std::string> typeOrder = 
@@ -501,12 +501,29 @@ Datatype getBestConvDatatype(const ExpressionRef left, const ExpressionRef right
 		"bool", "u8", "u16", "u32", "u64",
 	};
 	
-	auto leftIt = std::find(typeOrder.begin(), typeOrder.end(), left->datatype.name);
-	auto rightIt = std::find(typeOrder.begin(), typeOrder.end(), right->datatype.name);
+	auto leftIt = std::find(typeOrder.begin(), typeOrder.end(), left.name);
+	auto rightIt = std::find(typeOrder.begin(), typeOrder.end(), right.name);
 	if (leftIt == typeOrder.end() || rightIt == typeOrder.end())
 		return Datatype();
 
-	return (leftIt > rightIt) ? left->datatype : right->datatype;
+	return (leftIt > rightIt) ? left : right;
+}
+
+ExpressionRef makeConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype)
+{
+	auto exp = std::make_shared<Expression>(expToConvert->pos);
+	exp->eType = Expression::ExprType::Conversion;
+	exp->left = expToConvert;
+	exp->datatype = newDatatype;
+	return exp;
+}
+
+ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
+{
+	if (!isArray(expToConvert->datatype))
+		return expToConvert;
+
+	return makeConvertExpression(expToConvert, { expToConvert->datatype.name, 1 });
 }
 
 ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
@@ -514,36 +531,57 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	if (expToConvert->datatype == newDatatype)
 		return expToConvert;
 
-	if (!isExplicit)
-	{
-		if (expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth > 0)
-		{
-			if (doThrow)
-				THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert between pointer types!");
-			else
-				return nullptr;
-		}
-		if (
-			(expToConvert->datatype.ptrDepth > 0 && newDatatype.ptrDepth == 0) ||
-			(expToConvert->datatype.ptrDepth == 0 && newDatatype.ptrDepth > 0)
-			)
-		{
-			if (doThrow)
-				THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert between pointer and non-pointer types!");
-			else
-				return nullptr;
-		}
+	expToConvert = genAutoArrayToPtr(expToConvert);
 
-		if (expToConvert->datatype.ptrDepth == 0 && newDatatype.ptrDepth == 0)
-			return genConvertExpression(expToConvert, newDatatype, true);
+	if (isBool(expToConvert->datatype))
+	{
+		if (isInteger(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		
+		else if (isExplicit && isPointer(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+
+		else if (doThrow)
+			THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+		else
+			return nullptr;
+	}
+	if (isInteger(expToConvert->datatype))
+	{
+		if (isBool(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		if (isInteger(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+
+		else if (isExplicit && isPointer(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		
+		else if (doThrow)
+			THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+		else
+			return nullptr;
+	}
+	if (isPointer(expToConvert->datatype))
+	{
+		if (isBool(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		else if (expToConvert->datatype.ptrDepth == 1 && isVoidPtr(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		
+		else if (isExplicit && isInteger(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		else if (isExplicit && isPointer(newDatatype))
+			return makeConvertExpression(expToConvert, newDatatype);
+		
+		else if (doThrow)
+			THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+		else
+			return nullptr;
 	}
 
-	auto exp = std::make_shared<Expression>(expToConvert->pos);
-	exp->eType = Expression::ExprType::Conversion;
-	exp->datatype = newDatatype;
-	exp->left = expToConvert;
-
-	return exp;
+	if (doThrow)
+		THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+	return nullptr;
 }
 
 void autoFixDatatypeMismatch(ExpressionRef exp)
@@ -551,17 +589,30 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 	if (exp->left->datatype == exp->right->datatype)
 		return;
 
+	if (isPointer(exp->left->datatype))
+	{
+		switch (exp->eType)
+		{
+		case Expression::ExprType::Sum:
+		case Expression::ExprType::Difference:
+		case Expression::ExprType::Assign_Sum:
+		case Expression::ExprType::Assign_Difference:
+			exp->right = genConvertExpression(exp->right, { "u64" });
+			return;
+		}
+	}
+
 	Datatype newDatatype;
 	if (leftConversionIsProhibited(exp->eType))
 		newDatatype = exp->left->datatype;
 	else
-		newDatatype = getBestConvDatatype(exp->left, exp->right);
+		newDatatype = getBestConvDatatype(exp->left->datatype, exp->right->datatype);
 
 	if (!newDatatype)
 		THROW_PROG_GEN_ERROR(
-			exp->pos, "Cannot convert between " + 
+			exp->pos, "Cannot convert " + 
 			getDatatypeStr(exp->left->datatype) + " and " +
-			getDatatypeStr(exp->right->datatype) + "!");
+			getDatatypeStr(exp->right->datatype) + " to a common datatype!");
 	
 	exp->left = genConvertExpression(exp->left, newDatatype);
 	exp->right = genConvertExpression(exp->right, newDatatype);
@@ -1497,6 +1548,14 @@ void markReachableFunctions(BodyRef body)
 	}
 }
 
+void detectUndefinedFunctions(const std::map<std::string, FunctionOverloads>& functions)
+{
+	for (auto& overloads : functions)
+		for (auto& func : overloads.second)
+			if (!func.second->isDefined && func.second->isReachable)
+				THROW_PROG_GEN_ERROR(func.second->pos, "Function: '" + func.second->name + "' is referenced but undefined!");
+}
+
 ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
@@ -1505,6 +1564,8 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 	parseGlobalCode(info);
 
 	markReachableFunctions(info.program->body);
+
+	detectUndefinedFunctions(info.program->functions);
 
 	return info.program;
 }

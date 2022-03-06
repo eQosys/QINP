@@ -29,6 +29,45 @@ bool isArray(const Datatype& datatype)
 	return !datatype.arraySizes.empty() && !isPointer(datatype);
 }
 
+bool isVoidPtr(const Datatype& datatype)
+{
+	return datatype == Datatype{ "void", 1 };
+}
+
+bool isBool(const Datatype& datatype)
+{
+	return 
+		datatype.ptrDepth == 0 &&
+		datatype.name == "bool";
+}
+
+bool isInteger(const Datatype& datatype)
+{
+	return isUnsignedInt(datatype) || isSignedInt(datatype);
+}
+
+bool isUnsignedInt(const Datatype& datatype)
+{
+	return datatype.ptrDepth == 0 &&
+		(
+			datatype.name == "u8" ||
+			datatype.name == "u16" ||
+			datatype.name == "u32" ||
+			datatype.name == "u64"
+		);
+}
+
+bool isSignedInt(const Datatype& datatype)
+{
+	return datatype.ptrDepth == 0 &&
+		(
+			datatype.name == "i8" ||
+			datatype.name == "i16" ||
+			datatype.name == "i32" ||
+			datatype.name == "i64"
+		);
+}
+
 void dereferenceDatatype(Datatype& datatype)
 {
 	if (isPointer(datatype))
