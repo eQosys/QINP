@@ -14,7 +14,7 @@ typedef std::shared_ptr<class Statement> StatementRef;
 struct Body
 {
 	std::vector<StatementRef> statements;
-	std::set<FunctionRef> usedFunctions;
+	std::set<std::pair<std::string, std::string>> usedFunctions; // <name, sigNoRet>
 };
 typedef std::shared_ptr<Body> BodyRef;
 

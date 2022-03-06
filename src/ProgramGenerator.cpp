@@ -246,20 +246,20 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	if (varIt != info.program->globals.end())
 		THROW_PROG_GEN_ERROR(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(varIt->second.pos));
 
-	auto sig = getSignatureNoRet(func);
+	auto sigNoRet = getSignatureNoRet(func);
 
 	auto nameIt = info.program->functions.find(func->name);
 	if (nameIt == info.program->functions.end())
 	{
-		info.program->functions[func->name].insert({ sig, func });
+		info.program->functions[func->name].insert({ sigNoRet, func });
 		return;
 	}
 
-	auto sigIt = nameIt->second.find(sig);
+	auto sigIt = nameIt->second.find(sigNoRet);
 
 	if (sigIt == nameIt->second.end())
 	{
-		nameIt->second.insert({ sig, func });
+		nameIt->second.insert({ sigNoRet, func });
 		return;
 	}
 
@@ -272,7 +272,7 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	if (sigIt->second->isDefined && func->isDefined)
 		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
 
-	*sigIt->second = *func;
+	sigIt->second = func;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -498,7 +498,7 @@ Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 	
 	static const std::vector<std::string> typeOrder = 
 	{
-		"bool", "u8", "u16", "u32", "u64",
+		"bool", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64",
 	};
 	
 	auto leftIt = std::find(typeOrder.begin(), typeOrder.end(), left.name);
@@ -745,7 +745,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 
 	const Token* pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
-	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end())
+	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOp(*pOpToken))
 	{
 		{
 			auto temp = std::make_shared<Expression>(pOpToken->pos);
@@ -826,7 +826,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 	const Token* pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
-	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end())
+	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOp(*pOpToken))
 	{
 		{
 			auto temp = std::make_shared<Expression>(pOpToken->pos);
@@ -876,7 +876,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				exp->left->datatype = { getSignature(func), 1 };
 				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
 
-				info.program->body->usedFunctions.insert(func); // Used to determine which functions are actually used in the executable
+				info.program->body->usedFunctions.insert({ func->name, getSignatureNoRet(func) }); // Used to determine which functions are actually used in the executable
 			}
 			else
 			{
@@ -905,7 +905,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 
 	auto opToken = peekToken(info);
 	auto it = opsLvl.ops.find(opToken.value);
-	if (it == opsLvl.ops.end())
+	if (it == opsLvl.ops.end() || !isSepOp(opToken))
 		return getParseExpression(info, precLvl + 1);
 
 	auto exp = std::make_shared<Expression>(opToken.pos);
@@ -1115,6 +1115,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	parseExpected(info, Token::Type::Separator, ")");
 
+	func->isDefined = true;
 	if (isSeparator(peekToken(info), "..."))
 	{
 		func->isDefined = false;
@@ -1122,10 +1123,11 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		nextToken(info);
 		parseExpectedNewline(info);
 	}
-	else
-	{
-		func->isDefined = true;
 
+	addFunction(info, func);
+
+	if (func->isDefined)
+	{
 		parseExpectedColon(info);
 		parseExpectedNewline(info);
 
@@ -1147,8 +1149,6 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		popTempBody(info);
 		decreaseIndent(info.indent);
 	}
-
-	addFunction(info, func);
 }
 
 bool parseDeclDef(ProgGenInfo& info, bool allowFunctions)
@@ -1538,15 +1538,16 @@ bool parseStatementImport(ProgGenInfo& info)
 	return true;
 }
 
-void markReachableFunctions(BodyRef body)
+void markReachableFunctions(ProgGenInfo& info, BodyRef body)
 {
-	for (auto& func : body->usedFunctions)
+	for (auto& funcInfo : body->usedFunctions)
 	{
+		auto func = info.program->functions.find(funcInfo.first)->second.find(funcInfo.second)->second;
 		if (func->isReachable)
 			continue;
 
 		func->isReachable = true;
-		markReachableFunctions(func->body);
+		markReachableFunctions(info, func->body);
 	}
 }
 
@@ -1565,7 +1566,7 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 
 	parseGlobalCode(info);
 
-	markReachableFunctions(info.program->body);
+	markReachableFunctions(info, info.program->body);
 
 	detectUndefinedFunctions(info.program->functions);
 

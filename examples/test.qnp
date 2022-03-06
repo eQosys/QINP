@@ -1,23 +1,15 @@
 import "std.qnp"
 
-void func()...
+i64 x = -1234
+print(x)
+print("\n")
 
-u64 i = 232
-while i < 240:
-	print(i++)
-	print("\n")
+u64 fib(u64 n):
+	if n < 2:
+		return n
+	return fib(n-1) + fib(n-2)
 
-\\u8** argv
-\\u64 argc = getargs(&argv)
-\\u64 argi = 0
-\\while argi < argc:
-\\	print(argv[argi++])
-\\	print("\n")
-\\
-\\u8** env
-\\env = getenv()
-\\while (u64)*env != 0:
-\\	print(*env++)
-\\	print("\n")
+print(fib(10))
+print("\n")
 
 exit(0)

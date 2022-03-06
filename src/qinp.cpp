@@ -85,14 +85,14 @@ int main(int argc, char** argv, char** environ)
 	
 		auto code = readTextFile(inFilename);
 
-		std::cout << "------ CODE ------\n" << code << "\n------------------\n" << std::endl;
+		//std::cout << "------ CODE ------\n" << code << "\n------------------\n" << std::endl;
 
 		auto tokens = tokenize(code, inFilename);
 
-		std::cout << "------ TOKENS ------\n";
-		for (auto& token : *tokens)
-			std::cout << token << std::endl;
-		std::cout << "------------------\n" << std::endl;
+		//std::cout << "------ TOKENS ------\n";
+		//for (auto& token : *tokens)
+		//	std::cout << token << std::endl;
+		//std::cout << "------------------\n" << std::endl;
 
 		auto program = generateProgram(tokens, importDirs);
 
@@ -116,6 +116,7 @@ int main(int argc, char** argv, char** environ)
 		auto runCmd = "./" + outFilename + " test_arg";
 		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
 		int runRet = execCmd(runCmd);
+		std::cout << std::endl;
 		std::cout << "Exit code: " << runRet << std::endl;
 	}
 	catch (const QinpError& e)

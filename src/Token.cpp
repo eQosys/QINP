@@ -70,7 +70,7 @@ bool isBuiltinType(const std::string& name)
 	{
 		"void",
 		"bool",
-		//"i8", "i16", "i32", "i64",
+		"i8", "i16", "i32", "i64",
 		"u8", "u16", "u32", "u64",
 		//"f32", "f64",
 	};
@@ -102,6 +102,13 @@ bool isOperator(const Token& token, const std::string& name)
 	return
 		token.type == Token::Type::Operator &&
 		token.value == name;
+}
+
+bool isSepOp(const Token& token)
+{
+	return
+		token.type == Token::Type::Separator ||
+		token.type == Token::Type::Operator;
 }
 
 bool isLiteral(const Token& token)

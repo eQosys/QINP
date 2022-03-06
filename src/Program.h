@@ -43,7 +43,7 @@ std::string getMangledName(const std::string& varName, const Datatype& datatype)
 std::string getMangledName(const Variable& var);
 std::string getMangledName(int strID);
 
-typedef std::map<std::string, FunctionRef> FunctionOverloads;
+typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (without return type) -> function
 
 struct Program
 {

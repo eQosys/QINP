@@ -42,31 +42,27 @@ void pushLabel(NasmGenInfo& ngi, const std::string& name)
 
 const std::string& getLabel(NasmGenInfo& ngi, int index)
 {
-	if (index >= ngi.labelStack.size())
-		THROW_NASM_GEN_ERROR(Token::Position(), "Get label index out of range!");
+	assert(index < ngi.labelStack.size() && "Get label index out of range!");
 	return ngi.labelStack[ngi.labelStack.size() - index - 1];
 }
 
 void popLabel(NasmGenInfo& ngi)
 {
-	if (ngi.labelStack.empty())
-		THROW_NASM_GEN_ERROR(Token::Position(), "Trying to pop label from empty label stack!");
+	assert(!ngi.labelStack.empty() && "Trying to pop label from empty label stack!");
 
 	ngi.labelStack.pop_back();
 }
 
 void replaceLabel(NasmGenInfo& ngi, const std::string& name, int index)
 {
-	if (index >= ngi.labelStack.size())
-		THROW_NASM_GEN_ERROR(Token::Position(), "Replace label index out of range!");
+	assert(index < ngi.labelStack.size() && "Replace label index out of range!");
 
 	ngi.labelStack[ngi.labelStack.size() - 1 - index] = makeUniqueLabel(name);
 }
 
 void placeLabel(NasmGenInfo& ngi, int index)
 {
-	if (index >= ngi.labelStack.size())
-		THROW_NASM_GEN_ERROR(Token::Position(), "Place label index out of range!");
+	assert(index < ngi.labelStack.size() && "Place label index out of range!");
 
 	ngi.ss << ngi.labelStack[ngi.labelStack.size() - 1 - index] << ":\n";
 }
@@ -94,7 +90,7 @@ std::string regName(char baseChar, int size)
 	case 2: ss << baseChar << "x"; break;
 	case 4: ss << "e" << baseChar << "x"; break;
 	case 8: ss << "r" << baseChar << "x"; break;
-	default: THROW_NASM_GEN_ERROR(Token::Position(), "Invalid register size!");
+		assert("Invalid register size!" && false);
 	}
 	return ss.str();
 }
@@ -126,7 +122,7 @@ std::string primRegUsage(NasmGenInfo& ngi)
 	case CellState::lValue:
 		return "[" + primRegName(8) + "]";
 	}
-	THROW_NASM_GEN_ERROR(Token::Position(), "Invalid primReg state!");
+	assert("Invalid primReg state!" && false);
 }
 std::string secRegUsage(NasmGenInfo& ngi)
 {
@@ -138,7 +134,22 @@ std::string secRegUsage(NasmGenInfo& ngi)
 	case CellState::lValue:
 		return "[" + secRegName(ngi) + "]";
 	}
-	THROW_NASM_GEN_ERROR(Token::Position(), "Invalid secReg state!");
+	assert("Invalid secReg state!" && false);
+}
+
+std::string instrPrefix(const Datatype& datatype)
+{
+	if (isArray(datatype))
+		return "";
+	else if (isSignedInt(datatype))
+		return "s";
+	else if (isUnsignedInt(datatype))
+		return "";
+	else if (isPointer(datatype))
+		return "";
+	else
+		assert("Invalid datatype!" && false);
+	return "";
 }
 
 void pushPrimReg(NasmGenInfo& ngi)
@@ -432,7 +443,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
-		ss << "  mul " << secRegUsage(ngi) << "\n";
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "mul " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
 		break;
@@ -445,7 +456,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		auto remainderName = regName('d', getDatatypeSize(ngi.primReg.datatype));
 		ss << "  xor " << remainderName << ", " << remainderName << "\n";
 
-		ss << "  div " << secRegUsage(ngi) << "\n";
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
 	}
@@ -460,7 +471,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		ss << "  xor " << remainderName << ", " << remainderName << "\n";
 
-		ss << "  div " << secRegUsage(ngi) << "\n";
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
 		ss << "  mov " << primRegUsage(ngi) << ", " << remainderName << "\n";
 		// Datatype doesn't change
 		// State already modified
@@ -516,6 +527,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		ss << "  neg " << primRegUsage(ngi) << "\n";
+		if (isUnsignedInt(ngi.primReg.datatype))
+			ngi.primReg.datatype.name = "i" + ngi.primReg.datatype.name.substr(1);
 		// Datatype doesn't change
 		// State already modified
 	}
@@ -705,6 +718,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 
 			generateNasm_Linux_x86_64(ngi, condBody.condition.get());
 
+			primRegLToRVal(ngi);
 			ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 			ss << "  je " << getLabel(ngi, 0) << "\n";
 
@@ -734,6 +748,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		placeLabel(ngi, 1);
 
 		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.condition.get());
+		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  je " << getLabel(ngi, 0) << "\n";
 
@@ -754,6 +769,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.body);
 
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.condition.get());
+
+		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  jne " << getLabel(ngi, 0) << "\n";
 

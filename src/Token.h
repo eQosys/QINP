@@ -55,6 +55,8 @@ bool isSeparator(const Token& token, const std::string& name);
 
 bool isOperator(const Token& token, const std::string& name);
 
+bool isSepOp(const Token& token);
+
 bool isLiteral(const Token& token);
 
 bool isNewline(const Token& token);
