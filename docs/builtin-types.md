@@ -4,6 +4,7 @@ This page lists the builtin types in the QINP language.
 
 ## Overview
  - [bool](#boolean)
+ - [i8, i16, i32, i64](#signed-integers)
  - [u8, u16, u32, u64](#unsigned-integers)
  - [void](#void)
 
@@ -20,8 +21,20 @@ The size of a `bool` is `1` byte.
 
 ---
 
+### Signed Integers
+All 'i*' types are signed integers. The number in the name stands for the number of bits used to represent the type.
+
+Type | Size (in bytes) | Min  | Max
+---- | --------------- | ---  | ------
+i8   | 1               | 2^7  | 2^7-1
+i16  | 2               | 2^15 | 2^15-1
+i32  | 4               | 2^31 | 2^31-1
+i64  | 8               | 2^63 | 2^63-1
+
+---
+
 ### Unsigned Integers
-All `u*` types are unsigned. The number in the name stands for the number of bits used to store the value.
+All `u*` types are unsigned integers. The number in the name stands for the number of bits used to represent the value.
 
 Type | Size (in bytes) | Min | Max
 ---- | --------------- | --- | ------
