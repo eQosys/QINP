@@ -107,6 +107,12 @@ void popLocalFrame(ProgGenInfo& info)
 	info.localStack.pop_back();
 }
 
+void mergeSubUsages(BodyRef parent, BodyRef child)
+{
+	parent->usedFunctions.merge(child->usedFunctions);
+	child->usedFunctions.clear();
+}
+
 bool leftConversionIsProhibited(Expression::ExprType eType)
 {
 	static const std::set<Expression::ExprType> prohibitedTypes = 
@@ -266,7 +272,7 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	if (sigIt->second->isDefined && func->isDefined)
 		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
 
-	sigIt->second = func;
+	*sigIt->second = *func;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -817,6 +823,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				exp->datatype = func->retType;
 				exp->left->datatype = { getSignature(func), 1 };
 				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
+
+				info.program->body->usedFunctions.insert(func); // Used to determine which functions are actually used in the executable
 			}
 			else
 			{
@@ -934,7 +942,7 @@ bool parseExpression(ProgGenInfo& info)
 {
 	auto exp = getParseExpression(info);
 	if (exp)
-		info.program->body->push_back(exp);
+		info.program->body->statements.push_back(exp);
 	parseExpectedNewline(info);
 	return !!exp;
 }
@@ -947,7 +955,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 
 	if (expr->datatype != targetType)
 		expr = genConvertExpression(expr, targetType);
-	info.program->body->push_back(expr);
+	info.program->body->statements.push_back(expr);
 
 	return true;
 }
@@ -1013,7 +1021,7 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, c
 
 	auto initExpr = getParseDeclDefVariable(info, datatype, name);
 	if (initExpr)
-		info.program->body->push_back(initExpr);
+		info.program->body->statements.push_back(initExpr);
 }
 
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
@@ -1129,11 +1137,11 @@ bool parseStatementReturn(ProgGenInfo& info)
 	nextToken(info);
 	auto& exprBegin = peekToken(info);
 
-	info.program->body->push_back(std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
-	info.program->body->back()->funcRetOffset = info.funcRetOffset;
+	info.program->body->statements.push_back(std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
+	info.program->body->statements.back()->funcRetOffset = info.funcRetOffset;
 
 	if (info.funcRetType != Datatype{ "void" })
-		info.program->body->back()->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
+		info.program->body->statements.back()->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
 
 	parseExpectedNewline(info);
 
@@ -1156,8 +1164,8 @@ bool parseSinglelineAssembly(ProgGenInfo& info)
 
 	parseExpectedNewline(info);
 
-	info.program->body->push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-	info.program->body->back()->asmLines.push_back(preprocessAsmCode(info, strToken));
+	info.program->body->statements.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+	info.program->body->statements.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
 
 
 	return true;
@@ -1185,8 +1193,8 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 
 		parseExpectedNewline(info);
 
-		info.program->body->push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-		info.program->body->back()->asmLines.push_back(preprocessAsmCode(info, strToken));
+		info.program->body->statements.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+		info.program->body->statements.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
 	}
 
 	decreaseIndent(info.indent);
@@ -1242,6 +1250,8 @@ void parseBodyEx(ProgGenInfo& info, BodyRef body)
 
 	popTempBody(info);
 	decreaseIndent(info.indent);
+
+	mergeSubUsages(info.program->body, body);
 }
 
 bool parseStatementIf(ProgGenInfo& info)
@@ -1293,7 +1303,7 @@ bool parseStatementIf(ProgGenInfo& info)
 		}
 	}
 
-	info.program->body->push_back(statement);
+	info.program->body->statements.push_back(statement);
 	
 	return true;
 }
@@ -1315,7 +1325,7 @@ bool parseStatementWhile(ProgGenInfo& info)
 
 	parseBodyEx(info, statement->whileConditionalBody.body);
 
-	info.program->body->push_back(statement);
+	info.program->body->statements.push_back(statement);
 
 	return true;
 }
@@ -1339,7 +1349,7 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 	
 	statement->doWhileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
 
-	info.program->body->push_back(statement);
+	info.program->body->statements.push_back(statement);
 
 	return true;
 }
@@ -1359,12 +1369,12 @@ void parseFunctionBody(ProgGenInfo& info)
 	
 	parseBody(info);
 
-	if (info.program->body->empty() || info.program->body->back()->type != Statement::Type::Return)
+	if (info.program->body->statements.empty() || info.program->body->statements.back()->type != Statement::Type::Return)
 	{
 		if (info.funcRetType == Datatype{ "void" })
-			info.program->body->push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
+			info.program->body->statements.push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
-			THROW_PROG_GEN_ERROR(info.program->body->empty() ? bodyBeginToken.pos : info.program->body->back()->pos, "Missing return statement!");
+			THROW_PROG_GEN_ERROR(info.program->body->statements.empty() ? bodyBeginToken.pos : info.program->body->statements.back()->pos, "Missing return statement!");
 	}
 }
 
@@ -1472,12 +1482,26 @@ bool parseStatementImport(ProgGenInfo& info)
 	return true;
 }
 
+void markReachableFunctions(BodyRef body)
+{
+	for (auto& func : body->usedFunctions)
+	{
+		if (func->isReachable)
+			continue;
+
+		func->isReachable = true;
+		markReachableFunctions(func->body);
+	}
+}
+
 ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
 	info.program->body = std::make_shared<Body>();
 
 	parseGlobalCode(info);
+
+	markReachableFunctions(info.program->body);
 
 	return info.program;
 }

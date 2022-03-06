@@ -27,6 +27,8 @@ struct Function
 	std::vector<Variable> params;
 	BodyRef body;
 	bool isDefined;
+
+	bool isReachable = false;
 };
 
 typedef std::shared_ptr<Function> FunctionRef;

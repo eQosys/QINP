@@ -1,13 +1,21 @@
 #pragma once
 
+#include <set>
+
 #include "Token.h"
 #include "Datatype.h"
 
 struct Expression;
 typedef std::shared_ptr<Expression> ExpressionRef;
+struct Function;
+typedef std::shared_ptr<Function> FunctionRef;
 
 typedef std::shared_ptr<class Statement> StatementRef;
-typedef std::vector<StatementRef> Body;
+struct Body
+{
+	std::vector<StatementRef> statements;
+	std::set<FunctionRef> usedFunctions;
+};
 typedef std::shared_ptr<Body> BodyRef;
 
 struct ConditionalBody
