@@ -33,13 +33,16 @@ void update():
 			i64 count = 0
 			i64 k = i-1
 			while k < i+2:
-				i64 l = j-1
-				while l < j+2:
-					if k >= 0 && k < WIDTH && l >= 0 && l < HEIGHT:
-						if (k != i || l != j):
-							if grid[k][l]:
-								++count
-					++l
+				i64 l = j-2
+				while ++l < j+2:
+					if k < 0 || k >= WIDTH:
+						continue
+					if l < 0 || l >= HEIGHT:
+						continue
+					if k == i && l == j:
+						continue
+					if grid[k][l]:
+						++count
 				++k
 			if grid[i][j]:
 				if count < 2 || count > 3:

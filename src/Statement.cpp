@@ -13,6 +13,8 @@ std::string StatementTypeToString(Statement::Type type)
 	case Statement::Type::If_Clause: return "If_Clause";
 	case Statement::Type::While_Loop: return "While_Loop";
 	case Statement::Type::Do_While_Loop: return "Do_While_Loop";
+	case Statement::Type::Continue: return "Continue";
+	case Statement::Type::Break: return "Break";
 	default: THROW_QINP_ERROR("Unknown statement type!");
 	}
 }

@@ -49,11 +49,11 @@ bool isKeyword(const std::string& name)
 		"if", "elif", "else",
 		"while", "do",
 		"define",
+		"continue", "break",
 		// "const"
 		// "default",
 		// "offsetof",
 		// "for",
-		// "break", "continue",
 		// "new", "delete",
 		// "goto", "operator",
 		// "enum", "union", "pack",

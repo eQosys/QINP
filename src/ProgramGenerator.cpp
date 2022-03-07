@@ -5,6 +5,7 @@
 #include <stack>
 #include <algorithm>
 #include <filesystem>
+#include <cassert>
 
 #include "Errors/ProgGenError.h"
 
@@ -50,6 +51,9 @@ struct ProgGenInfo
 	};
 	
 	std::stack<Context> contextStack;
+
+	int continueEnableCount = 0;
+	int breakEnableCount = 0;
 };
 
 struct ProgGenInfoBackup
@@ -103,6 +107,34 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	return temp;
 }
 
+void enableContinue(ProgGenInfo& info)
+{
+	++info.continueEnableCount;
+}
+void disableContinue(ProgGenInfo& info)
+{
+	assert(info.continueEnableCount > 0 && "Cannot disable continue, continue is not enabled.");
+	--info.continueEnableCount;
+}
+bool isContinueEnabled(const ProgGenInfo& info)
+{
+	return info.continueEnableCount > 0;
+}
+
+void enableBreak(ProgGenInfo& info)
+{
+	++info.breakEnableCount;
+}
+void disableBreak(ProgGenInfo& info)
+{
+	assert(info.breakEnableCount > 0 && "Cannot disable break, break is not enabled.");
+	--info.breakEnableCount;
+}
+bool isBreakEnabled(const ProgGenInfo& info)
+{
+	return info.breakEnableCount > 0;
+}
+
 LocalStackFrame& currLocalFrame(ProgGenInfo& info)
 {
 	return info.localStack.back();
@@ -139,6 +171,16 @@ void mergeSubUsages(BodyRef parent, BodyRef child)
 {
 	parent->usedFunctions.merge(child->usedFunctions);
 	child->usedFunctions.clear();
+}
+
+void pushStatement(ProgGenInfo& info, StatementRef statement)
+{
+	info.program->body->statements.push_back(statement);
+}
+
+StatementRef lastStatement(ProgGenInfo& info)
+{
+	return info.program->body->statements.back();
 }
 
 bool leftConversionIsProhibited(Expression::ExprType eType)
@@ -236,36 +278,6 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 
 void addVariable(ProgGenInfo& info, Variable var)
 {
-	// if (currContext(info) == ProgGenInfo::Context::Global)
-	// {
-	// 	auto varIt = info.program->globals.find(var.name);
-	// 	if (varIt != info.program->globals.end())
-	// 		THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
-	// 	auto funcs = getFunctions(info, var.name);
-	// 	if (funcs)
-	// 		THROW_PROG_GEN_ERROR(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
-
-	// 	var.isLocal = false;
-	// 	info.program->globals.insert({ var.name, var });
-	// }
-	// else
-	// {
-	// 	auto varIt = currLocalFrame(info).locals.find(var.name);
-	// 	if (varIt != currLocalFrame(info).locals.end())
-	// 		THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
-
-	// 	int varSize = getDatatypeSize(var.datatype);
-	// 	var.isLocal = true;
-
-	// 	currLocalFrame(info).frameSize += varSize;
-	// 	currLocalFrame(info).totalOffset -= varSize;
-	// 	var.offset = currLocalFrame(info).totalOffset;
-	// 	if (-currLocalFrame(info).totalOffset > info.funcFrameSize)
-	// 		info.funcFrameSize = -currLocalFrame(info).totalOffset;
-
-	// 	currLocalFrame(info).locals.insert({ var.name, var });
-	// }
-
 	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
 	int varSize = getDatatypeSize(var.datatype);
 
@@ -1071,7 +1083,7 @@ bool parseExpression(ProgGenInfo& info)
 {
 	auto exp = getParseExpression(info);
 	if (exp)
-		info.program->body->statements.push_back(exp);
+		pushStatement(info, exp);
 	parseExpectedNewline(info);
 	return !!exp;
 }
@@ -1084,7 +1096,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 
 	if (expr->datatype != targetType)
 		expr = genConvertExpression(expr, targetType);
-	info.program->body->statements.push_back(expr);
+	pushStatement(info, expr);
 
 	return true;
 }
@@ -1150,7 +1162,7 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, c
 
 	auto initExpr = getParseDeclDefVariable(info, datatype, name);
 	if (initExpr)
-		info.program->body->statements.push_back(initExpr);
+		pushStatement(info, initExpr);
 }
 
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
@@ -1268,11 +1280,11 @@ bool parseStatementReturn(ProgGenInfo& info)
 	nextToken(info);
 	auto& exprBegin = peekToken(info);
 
-	info.program->body->statements.push_back(std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
-	info.program->body->statements.back()->funcRetOffset = info.funcRetOffset;
+	pushStatement(info, std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
+	lastStatement(info)->funcRetOffset = info.funcRetOffset;
 
 	if (info.funcRetType != Datatype{ "void" })
-		info.program->body->statements.back()->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
+		lastStatement(info)->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
 
 	parseExpectedNewline(info);
 
@@ -1295,8 +1307,8 @@ bool parseSinglelineAssembly(ProgGenInfo& info)
 
 	parseExpectedNewline(info);
 
-	info.program->body->statements.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-	info.program->body->statements.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
+	pushStatement(info, std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+	lastStatement(info)->asmLines.push_back(preprocessAsmCode(info, strToken));
 
 
 	return true;
@@ -1324,8 +1336,8 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 
 		parseExpectedNewline(info);
 
-		info.program->body->statements.push_back(std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-		info.program->body->statements.back()->asmLines.push_back(preprocessAsmCode(info, strToken));
+		pushStatement(info, std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
+		lastStatement(info)->asmLines.push_back(preprocessAsmCode(info, strToken));
 	}
 
 	decreaseIndent(info.indent);
@@ -1347,6 +1359,33 @@ bool parseStatementPass(ProgGenInfo& info)
 
 bool parseControlFlow(ProgGenInfo& info);
 
+bool parseStatementContinue(ProgGenInfo& info)
+{
+	auto& contToken = peekToken(info);
+	if (!isKeyword(contToken, "continue"))
+		return false;
+	nextToken(info);
+	parseExpectedNewline(info);
+
+	pushStatement(info, std::make_shared<Statement>(contToken.pos, Statement::Type::Continue));
+
+	return true;
+}
+
+bool parseStatementBreak(ProgGenInfo& info)
+{
+	auto& breakToken = peekToken(info);
+	if (!isKeyword(breakToken, "break"))
+		return false;
+	nextToken(info);
+
+	parseExpectedNewline(info);
+
+	pushStatement(info, std::make_shared<Statement>(breakToken.pos, Statement::Type::Break));
+
+	return true;
+}
+
 void parseBody(ProgGenInfo& info)
 {
 	int numStatements = 0;
@@ -1360,6 +1399,8 @@ void parseBody(ProgGenInfo& info)
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseControlFlow(info)) continue;
+		if (parseStatementContinue(info)) continue;
+		if (parseStatementBreak(info)) continue;
 		if (parseDeclDef(info, false)) continue;
 		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
@@ -1436,7 +1477,7 @@ bool parseStatementIf(ProgGenInfo& info)
 		}
 	}
 
-	info.program->body->statements.push_back(statement);
+	pushStatement(info, statement);
 	
 	return true;
 }
@@ -1458,7 +1499,7 @@ bool parseStatementWhile(ProgGenInfo& info)
 
 	parseBodyEx(info, statement->whileConditionalBody.body);
 
-	info.program->body->statements.push_back(statement);
+	pushStatement(info, statement);
 
 	return true;
 }
@@ -1486,7 +1527,7 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 
 	parseExpectedNewline(info);
 
-	info.program->body->statements.push_back(statement);
+	pushStatement(info, statement);
 
 	return true;
 }
@@ -1506,12 +1547,12 @@ void parseFunctionBody(ProgGenInfo& info)
 	
 	parseBody(info);
 
-	if (info.program->body->statements.empty() || info.program->body->statements.back()->type != Statement::Type::Return)
+	if (info.program->body->statements.empty() || lastStatement(info)->type != Statement::Type::Return)
 	{
 		if (info.funcRetType == Datatype{ "void" })
-			info.program->body->statements.push_back(std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
+			pushStatement(info, std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
-			THROW_PROG_GEN_ERROR(info.program->body->statements.empty() ? bodyBeginToken.pos : info.program->body->statements.back()->pos, "Missing return statement!");
+			THROW_PROG_GEN_ERROR(info.program->body->statements.empty() ? bodyBeginToken.pos : lastStatement(info)->pos, "Missing return statement!");
 	}
 }
 
@@ -1558,6 +1599,8 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseStatementImport(info)) continue;
 		if (parseStatementDefine(info)) continue;
 		if (parseControlFlow(info)) continue;
+		if (parseStatementContinue(info)) continue;
+		if (parseStatementBreak(info)) continue;
 		if (parseDeclDef(info, true)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;

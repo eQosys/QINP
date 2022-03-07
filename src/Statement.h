@@ -35,6 +35,8 @@ struct Statement
 		If_Clause,
 		While_Loop,
 		Do_While_Loop,
+		Continue,
+		Break,
 	};
 
 	Statement(const Token::Position& pos, Type type)

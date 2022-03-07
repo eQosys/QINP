@@ -6,6 +6,17 @@
 
 #include "Errors/NasmGenError.h"
 
+#define LABEL_ID_CONTINUE		0
+#define LABEL_ID_BREAK			1
+
+#define LABEL_ID_DO_WHILE_BEGIN	2
+
+#define LABEL_ID_WHILE_BEGIN	2
+#define LABEL_ID_WHILE_END		3
+
+#define LABEL_ID_IF_END			0
+#define LABEL_ID_IF_NEXT		1
+
 struct CellInfo
 {
 	enum class State
@@ -27,6 +38,8 @@ struct NasmGenInfo
 	CellInfo secReg;
 	
 	std::vector<std::string> labelStack; // Used for control flow statements
+
+	std::stack<int> loopLabelMarks;
 };
 
 std::string makeUniqueLabel(const std::string& name)
@@ -64,7 +77,26 @@ void placeLabel(NasmGenInfo& ngi, int index)
 {
 	assert(index < ngi.labelStack.size() && "Place label index out of range!");
 
-	ngi.ss << ngi.labelStack[ngi.labelStack.size() - 1 - index] << ":\n";
+	ngi.ss << getLabel(ngi, index) << ":\n";
+}
+
+void pushLoopLabels(NasmGenInfo& ngi)
+{
+	pushLabel(ngi, "LOOP_BREAK");
+	pushLabel(ngi, "LOOP_CONTINUE");
+	ngi.loopLabelMarks.push(ngi.labelStack.size());
+}
+
+void popLoopLabels(NasmGenInfo& ngi)
+{
+	ngi.loopLabelMarks.pop();
+	popLabel(ngi);
+	popLabel(ngi);
+}
+
+std::string getLoopLabel(NasmGenInfo& ngi, int index)
+{
+	return ngi.labelStack[ngi.loopLabelMarks.top() - index - 1];
 }
 
 CellInfo::State getRValueIfArray(const Datatype& datatype)
@@ -706,8 +738,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		break;
 	case Statement::Type::If_Clause:
 	{
-		pushLabel(ngi, "IF_END");
 		pushLabel(ngi, "IF_NEXT");
+		pushLabel(ngi, "IF_END");
 
 		for (int i = 0; i < statement->ifConditionalBodies.size(); ++i)
 		{
@@ -715,53 +747,57 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 
 			if (i != 0)
 			{
-				ss << "  jmp " << getLabel(ngi, 1) << "\n";
+				ss << "  jmp " << getLabel(ngi, LABEL_ID_IF_END) << "\n";
 
-				placeLabel(ngi, 0);
-				replaceLabel(ngi, "IF_NEXT", 0);
+				placeLabel(ngi, LABEL_ID_IF_NEXT);
+				replaceLabel(ngi, "IF_NEXT", LABEL_ID_IF_NEXT);
 			}
 
 			generateNasm_Linux_x86_64(ngi, condBody.condition.get());
 
 			primRegLToRVal(ngi);
 			ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
-			ss << "  je " << getLabel(ngi, 0) << "\n";
+			ss << "  je " << getLabel(ngi, LABEL_ID_IF_NEXT) << "\n";
 
 			generateNasm_Linux_x86_64(ngi, condBody.body);
 		}
 
 		if (statement->elseBody)
 		{
-			ss << "  jmp " << getLabel(ngi, 1) << "\n";
-			placeLabel(ngi, 0);
-			replaceLabel(ngi, "IF_NEXT", 0);
+			ss << "  jmp " << getLabel(ngi, LABEL_ID_IF_END) << "\n";
+			placeLabel(ngi, LABEL_ID_IF_NEXT);
+			replaceLabel(ngi, "IF_NEXT", LABEL_ID_IF_NEXT);
 
 			generateNasm_Linux_x86_64(ngi, statement->elseBody);
 		}
 
-		placeLabel(ngi, 0);
-		placeLabel(ngi, 1);
+		placeLabel(ngi, LABEL_ID_IF_NEXT);
+		placeLabel(ngi, LABEL_ID_IF_END);
 		popLabel(ngi);
 		popLabel(ngi);
 	}
 		break;
 	case Statement::Type::While_Loop:
 	{
-		pushLabel(ngi, "WHILE_BEGIN");
 		pushLabel(ngi, "WHILE_END");
+		pushLabel(ngi, "WHILE_BEGIN");
+		pushLoopLabels(ngi);
 
-		placeLabel(ngi, 1);
+		placeLabel(ngi, LABEL_ID_WHILE_BEGIN);
+		placeLabel(ngi, LABEL_ID_CONTINUE);
 
 		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.condition.get());
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
-		ss << "  je " << getLabel(ngi, 0) << "\n";
+		ss << "  je " << getLabel(ngi, LABEL_ID_WHILE_END) << "\n";
 
 		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.body);
 
-		ss << "  jmp " << getLabel(ngi, 1) << "\n";
+		ss << "  jmp " << getLabel(ngi, LABEL_ID_WHILE_BEGIN) << "\n";
 
-		placeLabel(ngi, 0);
+		placeLabel(ngi, LABEL_ID_BREAK);
+		placeLabel(ngi, LABEL_ID_WHILE_END);
+		popLoopLabels(ngi);
 		popLabel(ngi);
 		popLabel(ngi);
 	}
@@ -769,7 +805,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 	case Statement::Type::Do_While_Loop:
 	{
 		pushLabel(ngi, "DO_WHILE_BEGIN");
-		placeLabel(ngi, 0);
+		pushLoopLabels(ngi);
+		placeLabel(ngi, LABEL_ID_DO_WHILE_BEGIN);
+		placeLabel(ngi, LABEL_ID_CONTINUE);
 
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.body);
 
@@ -777,10 +815,18 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
-		ss << "  jne " << getLabel(ngi, 0) << "\n";
+		ss << "  jne " << getLabel(ngi, LABEL_ID_DO_WHILE_BEGIN) << "\n";
 
+		placeLabel(ngi, LABEL_ID_BREAK);
+		popLoopLabels(ngi);
 		popLabel(ngi);
 	}
+		break;
+	case Statement::Type::Continue:
+		ss << "  jmp " << getLoopLabel(ngi, LABEL_ID_CONTINUE) << "\n";
+		break;
+	case Statement::Type::Break:
+		ss << "  jmp " << getLoopLabel(ngi, LABEL_ID_BREAK) << "\n";
 		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
