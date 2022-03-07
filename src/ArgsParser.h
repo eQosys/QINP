@@ -5,6 +5,12 @@
 #include <string>
 #include <vector>
 
+struct OptionInfo
+{
+	std::string longName;
+	enum class Type { NoValue, Multi, Single } type;
+};
+
 struct Args
 {
 	std::vector<std::string> values;
@@ -16,4 +22,4 @@ struct Args
 
 std::vector<std::string> getArgs(int argc, char** argv);
 
-Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::string, std::string>& shortToLongNames);
+Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::string, OptionInfo>& shortNameToOptionInfo);

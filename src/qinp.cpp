@@ -59,11 +59,14 @@ std::map<std::string, std::string> getEnv(char** env)
 	return envMap;
 }
 
-std::map<std::string, std::string> argNames = 
+std::map<std::string, OptionInfo> argNames = 
 {
-	{ "h", "help" },
-	{ "v", "verbose" },
-	{ "i", "import" }
+	{ "h", { "help", OptionInfo::Type::NoValue } },
+	{ "v", { "verbose", OptionInfo::Type::NoValue } },
+	{ "i", { "import", OptionInfo::Type::Multi } },
+	{ "o", { "output", OptionInfo::Type::Single } },
+	{ "k", { "keep", OptionInfo::Type::NoValue } },
+	{ "r", { "run", OptionInfo::Type::NoValue } },
 };
 
 int main(int argc, char** argv, char** environ)
@@ -103,21 +106,29 @@ int main(int argc, char** argv, char** environ)
 
 		auto objFilename = std::filesystem::path(inFilename).replace_extension(".o").string();
 		auto nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
-		std::cout << "Executing: '" << nasmCmd << "'..." << std::endl;
+		if (verbose) std::cout << "Running nasm..." << std::endl;
 		if (execCmd(nasmCmd))
 			THROW_QINP_ERROR("Assembler Error!");
 
-		auto outFilename = std::filesystem::path(inFilename).replace_extension(".out").string();
+		auto outFilename = args.hasOption("output") ? args.getOption("output").front() : std::filesystem::path(inFilename).replace_extension(".out").string();
 		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
-		std::cout << "Executing: '" << ldCmd << "'..." << std::endl;
+		if (verbose) std::cout << "Running the linker..." << std::endl;
 		if (execCmd(ldCmd))
 			THROW_QINP_ERROR("Linker Error!");
 
-		auto runCmd = "./" + outFilename + " test_arg";
-		std::cout << "Executing: '" << runCmd << "'..." << std::endl;
-		int runRet = execCmd(runCmd);
-		std::cout << std::endl;
-		std::cout << "Exit code: " << runRet << std::endl;
+		if (!args.hasOption("keep"))
+		{
+			std::filesystem::remove(asmFilename);
+			std::filesystem::remove(objFilename);
+		}
+
+		if (args.hasOption("run"))
+		{
+			auto runCmd = "./" + outFilename + " test_arg";
+			if (verbose) std::cout << "Running: '" << runCmd << "'..." << std::endl;
+			int runRet = execCmd(runCmd);
+			if (verbose) std::cout << std::endl << "Exit code: " << runRet << std::endl;
+		}
 	}
 	catch (const QinpError& e)
 	{

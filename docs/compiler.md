@@ -18,3 +18,15 @@
  - -i, --import
 
    Specifies a directory to import from.
+  
+ - -o, --output
+
+   Specifies the name of the generated executable.
+
+ - -k, --keep
+
+   Keeps the intermediate files.
+
+ - -r, --run
+
+   Runs the generated executable.

@@ -21,8 +21,16 @@ std::vector<std::string> getArgs(int argc, char** argv)
 	return args;
 }
 
-Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::string, std::string>& shortToLongNames)
+Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::string, OptionInfo>& shortNameToOptionInfo)
 {
+	const std::map<std::string, OptionInfo> longNameToOptionInfo = [&shortNameToOptionInfo]()
+	{
+		std::map<std::string, OptionInfo> longNameToOptionInfo;
+		for (auto& [shortName, optionInfo] : shortNameToOptionInfo)
+			longNameToOptionInfo.insert({ optionInfo.longName, optionInfo });
+		return longNameToOptionInfo;
+	}();
+
 	Args args;
 
 	bool nextIsPlain = false;
@@ -47,10 +55,29 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			arg = arg.substr(2);
 			auto pos = arg.find("=");
 			auto key = arg.substr(0, pos);
-			if (pos == std::string::npos)
-				args.options[key].push_back("");
-			else
-				args.options[key].push_back(arg.substr(pos + 1));
+			auto it = longNameToOptionInfo.find(key);
+			if (it == shortNameToOptionInfo.end())
+				THROW_QINP_ERROR("Unknown option: " + key);
+			switch(it->second.type)
+			{
+			case OptionInfo::Type::NoValue:
+				if (pos != std::string::npos)
+					THROW_QINP_ERROR("Option " + key + " does not take value!");
+				args.options.insert({ key, {} });
+				break;
+			case OptionInfo::Type::Multi:
+				if (pos == std::string::npos)
+					THROW_QINP_ERROR("Option " + key + " requires value!");
+				args.options.insert({ key, { arg.substr(pos + 1) } });
+				break;
+			case OptionInfo::Type::Single:
+				if (pos == std::string::npos)
+					THROW_QINP_ERROR("Option " + key + " requires value!");
+				if(args.hasOption(key))
+					THROW_QINP_ERROR("Option " + key + " already specified!");
+				args.options.insert({ key, { arg.substr(pos + 1) } });
+				break;
+			}
 			continue;
 		}
 
@@ -59,28 +86,35 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			arg = arg.substr(1);
 			auto pos = arg.find("=");
 			auto key = arg.substr(0, pos);
-			auto it = shortToLongNames.find(key);
-			if (it == shortToLongNames.end())
+			auto it = shortNameToOptionInfo.find(key);
+			if (it == shortNameToOptionInfo.end())
 				THROW_QINP_ERROR("Unknown option: " + key);
-			key = it->second;
-
-			if (pos == std::string::npos)
-				args.options[key].push_back("true");
-			else
-				args.options[key].push_back(arg.substr(pos + 1));
+			key = it->second.longName;
+			switch(it->second.type)
+			{
+			case OptionInfo::Type::NoValue:
+				if (pos != std::string::npos)
+					THROW_QINP_ERROR("Option " + key + " does not take value!");
+				args.options.insert({ key, {} });
+				break;
+			case OptionInfo::Type::Multi:
+				if (pos == std::string::npos)
+					THROW_QINP_ERROR("Option " + key + " requires value!");
+				args.options.insert({ key, { arg.substr(pos + 1) } });
+				break;
+			case OptionInfo::Type::Single:
+				if (pos == std::string::npos)
+					THROW_QINP_ERROR("Option " + key + " requires value!");
+				if(args.hasOption(key))
+					THROW_QINP_ERROR("Option " + key + " already specified!");
+				args.options.insert({ key, { arg.substr(pos + 1) } });
+				break;
+			}
 			continue;
 		}
 
 		args.values.push_back(arg);
 	}
-	
-	std::set<std::string> longNames;
-	for (auto& stl : shortToLongNames)
-		longNames.insert(stl.second);
-
-	for (auto& opt : args.options)
-		if (longNames.find(opt.first) == longNames.end())
-			THROW_QINP_ERROR("Unknown option: " + opt.first);
 
 	return args;
 }
