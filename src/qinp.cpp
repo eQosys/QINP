@@ -132,9 +132,19 @@ int main(int argc, char** argv, char** environ)
 	}
 	catch (const QinpError& e)
 	{
-		std::cout << "ERROR: " << e.what() << std::endl;
+		std::cout << "QNP ERROR: " << e.what() << std::endl;
 		if (verbose)
 			std::cout << "WHERE: " << e.where() << std::endl;
+		return 1;
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << "STD ERROR: " << e.what() << std::endl;
+		return 1;
+	}
+	catch (...)
+	{
+		std::cout << "ERROR: Unknown error!" << std::endl;
 		return 1;
 	}
 
