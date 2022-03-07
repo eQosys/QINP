@@ -106,6 +106,8 @@ struct Expression : public Statement
 		Quotient,
 		Remainder,
 
+		MemberAccess,
+
 		AddressOf,
 		Dereference,
 		Logical_NOT,
@@ -144,6 +146,8 @@ struct Expression : public Statement
 	std::string funcName; // Function Address
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
+
+	int memberOffset; // Member access
 };
 
 std::string StatementTypeToString(Statement::Type type);

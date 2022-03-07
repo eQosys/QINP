@@ -45,11 +45,29 @@ std::string getMangledName(int strID);
 
 typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (without return type) -> function
 
+struct Pack
+{
+	Token::Position pos;
+	std::string name;
+	std::map<std::string, Variable> members;
+	int size = 0;
+};
+
 struct Program
 {
 	std::map<std::string, Variable> globals;
 	std::map<std::string, FunctionOverloads> functions;
+	std::map<std::string, Pack> packs;
 	std::map<int, std::string> strings;
 	BodyRef body;
 };
 typedef std::shared_ptr<Program> ProgramRef;
+
+bool isPackType(const ProgramRef program, const std::string& name);
+
+int getPackSize(const ProgramRef program, const std::string& packName);
+
+int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool treatArrayAsPointer = false);
+int getDatatypePushSize(const ProgramRef program, const Datatype& datatype);
+
+int getDatatypePointedToSize(const ProgramRef program, Datatype datatype);

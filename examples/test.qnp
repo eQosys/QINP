@@ -1,13 +1,22 @@
 import "std.qnp"
 
-i64 n = 0
-i64 i = 10
-while true:
-	if i == n:
-		break
-	++n
+pack User:
+	bool likesProgramming
+	u64 age
 
-print(n)
+User tecstylos
+tecstylos.likesProgramming = false
+tecstylos.age = 17
+
+User* pUser = &tecstylos
+
+print("Age: ")
+print((*pUser).age)
 print("\n")
+
+if tecstylos.likesProgramming:
+	print("TecStylos likes programming!\n")
+else:
+	print("TecStylos doesn't like programming!\n")
 
 exit(0)

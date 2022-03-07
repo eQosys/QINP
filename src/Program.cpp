@@ -55,3 +55,53 @@ std::string getMangledName(int strID)
 {
 	return "str_##_" + std::to_string(strID);
 }
+
+bool isPackType(const ProgramRef program, const std::string& name)
+{
+	return program->packs.find(name) != program->packs.end();
+}
+
+int getPackSize(const ProgramRef program, const std::string& packName)
+{
+	auto pack = program->packs.find(packName);
+	if (pack == program->packs.end())
+		return -1;
+
+	return pack->second.size;
+}
+
+int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool treatArrayAsPointer)
+{
+	if (isPointer(datatype) || (treatArrayAsPointer && isArray(datatype)))
+		return sizeof(void*);
+	
+	if (isArray(datatype))
+	{
+		int elemSize = getDatatypeSize(program, { datatype.name, 0 });
+		return elemSize * getDatatypeNumElements(datatype);
+	}
+
+	int size = getBuiltinTypeSize(datatype.name);
+	if (size >= 0)
+		return size;
+
+	size = getPackSize(program, datatype.name);
+	if (size >= 0)
+		return size;
+
+	return -1;
+}
+
+int getDatatypePushSize(const ProgramRef program, const Datatype& datatype)
+{
+	return std::max(8, getDatatypeSize(program, datatype));
+}
+
+int getDatatypePointedToSize(const ProgramRef program, Datatype datatype)
+{
+	if (!isPointer(datatype))
+		THROW_QINP_ERROR("Cannot get size of non-pointer datatype");
+
+	dereferenceDatatype(datatype);
+	return getDatatypeSize(program, datatype);
+}

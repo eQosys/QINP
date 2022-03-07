@@ -88,6 +88,12 @@ std::vector<OpPrecLvl> opPrecLvls =
 	},
 	{
 		{
+			{ ".", Expression::ExprType::MemberAccess },
+		},
+		OpPrecLvl::Type::Binary,
+	},
+	{
+		{
 			{ "&", Expression::ExprType::AddressOf },
 			{ "*", Expression::ExprType::Dereference },
 			{ "!", Expression::ExprType::Logical_NOT },

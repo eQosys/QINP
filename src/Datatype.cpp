@@ -122,36 +122,6 @@ int getBuiltinTypeSize(const std::string& name)
 	return (it != sizes.end()) ? it->second : -1;
 }
 
-int getDatatypeSize(const Datatype& datatype, bool treatArrayAsPointer)
-{
-	if (isPointer(datatype) || (treatArrayAsPointer && isArray(datatype)))
-		return sizeof(void*);
-	
-	if (isArray(datatype))
-	{
-		int elemSize = getDatatypeSize({ datatype.name, 0 });
-		return elemSize * getDatatypeNumElements(datatype);
-	}
-
-	int size = getBuiltinTypeSize(datatype.name);
-
-	return size;
-}
-
-int getDatatypePushSize(const Datatype& datatype)
-{
-	return std::max(8, getDatatypeSize(datatype));
-}
-
-int getDatatypePointedToSize(Datatype datatype)
-{
-	if (!isPointer(datatype))
-		THROW_QINP_ERROR("Cannot get size of non-pointer datatype");
-
-	dereferenceDatatype(datatype);
-	return getDatatypeSize(datatype);
-}
-
 std::string getDatatypeStr(const Datatype& datatype)
 {
 	return datatype.name + "~" + std::to_string(datatype.ptrDepth);

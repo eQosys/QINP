@@ -50,13 +50,14 @@ bool isKeyword(const std::string& name)
 		"while", "do",
 		"define",
 		"continue", "break",
+		"pack",
 		// "const"
 		// "default",
 		// "offsetof",
 		// "for",
 		// "new", "delete",
 		// "goto", "operator",
-		// "enum", "union", "pack",
+		// "enum", "union",
 		// "blueprint",
 		// "switch", "case"
 	};

@@ -32,6 +32,7 @@ typedef CellInfo::State CellState;
 
 struct NasmGenInfo
 {
+	ProgramRef program;
 	std::stringstream ss;
 	std::stack<CellInfo> stackCells;
 	CellInfo primReg;
@@ -133,7 +134,7 @@ std::string primRegName(int size)
 }
 std::string primRegName(NasmGenInfo& ngi)
 {
-	return primRegName(getDatatypeSize(ngi.primReg.datatype, true));
+	return primRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype, true));
 }
 std::string secRegName(int size)
 {
@@ -141,7 +142,7 @@ std::string secRegName(int size)
 }
 std::string secRegName(NasmGenInfo& ngi)
 {
-	return secRegName(getDatatypeSize(ngi.secReg.datatype, true));
+	return secRegName(getDatatypeSize(ngi.program, ngi.secReg.datatype, true));
 }
 
 std::string primRegUsage(NasmGenInfo& ngi)
@@ -212,14 +213,14 @@ void popSecReg(NasmGenInfo& ngi)
 }
 void movePrimToSec(NasmGenInfo& ngi, bool markUnused = true)
 {
-	ngi.ss << "  mov " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << ", " << primRegName(ngi) << "\n";
+	ngi.ss << "  mov " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << ", " << primRegName(ngi) << "\n";
 	ngi.secReg = ngi.primReg;
 	if (markUnused)
 		ngi.primReg.state = CellState::Unused;
 }
 void moveSecToPrim(NasmGenInfo& ngi, bool markUnused = true)
 {
-	ngi.ss << "  mov " << primRegName(getDatatypeSize(ngi.secReg.datatype)) << ", " << secRegName(ngi) << "\n";
+	ngi.ss << "  mov " << primRegName(getDatatypeSize(ngi.program, ngi.secReg.datatype)) << ", " << secRegName(ngi) << "\n";
 	ngi.primReg = ngi.secReg;
 	if (markUnused)
 		ngi.secReg.state = CellState::Unused;
@@ -247,7 +248,7 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
 
-	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << "\n";
+	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
 
 	//popSecReg(ngi);
 }
@@ -278,7 +279,7 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 	generateBinaryEvaluation(ngi, expr);
 	primRegLToRVal(ngi);
 	secRegLToRVal(ngi);
-	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.primReg.datatype)) << "\n";
+	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
 }
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
@@ -294,8 +295,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		auto& oldType = expr->left->datatype;
 		auto& newType = expr->datatype;
 
-		int oldSize = getDatatypeSize(oldType);
-		int newSize = getDatatypeSize(newType);
+		int oldSize = getDatatypeSize(ngi.program, oldType);
+		int newSize = getDatatypeSize(ngi.program, newType);
 
 		primRegLToRVal(ngi);
 
@@ -317,6 +318,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		if (isUnsignedInt(oldType) && isInteger(newType))
 		{
+			if (oldSize == 4 && newSize == 8)
+				break;
 			if (oldSize < newSize)
 				ss << "  movzx " << primRegName(newSize) << ", " << primRegName(oldSize) << "\n";
 			break;
@@ -490,7 +493,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 
-		auto remainderName = regName('d', getDatatypeSize(ngi.primReg.datatype));
+		auto remainderName = regName('d', getDatatypeSize(ngi.program, ngi.primReg.datatype));
 		ss << "  xor " << remainderName << ", " << remainderName << "\n";
 
 		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
@@ -504,7 +507,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
 
-		auto remainderName = regName('d', getDatatypeSize(ngi.primReg.datatype));
+		auto remainderName = regName('d', getDatatypeSize(ngi.program, ngi.primReg.datatype));
 
 		ss << "  xor " << remainderName << ", " << remainderName << "\n";
 
@@ -512,6 +515,16 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  mov " << primRegUsage(ngi) << ", " << remainderName << "\n";
 		// Datatype doesn't change
 		// State already modified
+	}
+		break;
+	case Expression::ExprType::MemberAccess:
+	{
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		assert(ngi.primReg.state == CellState::lValue && "Left operand of member access must be lValue");
+		ss << "  add " << primRegName(8) << ", " << expr->memberOffset << "\n";
+		
+		ngi.primReg.datatype = expr->datatype;
+		ngi.primReg.state = CellState::lValue;
 	}
 		break;
 	case Expression::ExprType::AddressOf:
@@ -575,7 +588,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
 		primRegLToRVal(ngi, true);
 		if (isPointer(ngi.primReg.datatype))
-			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
 		else
 			ss << "  inc " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
@@ -586,7 +599,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
 		primRegLToRVal(ngi, true);
 		if (isPointer(ngi.primReg.datatype))
-			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
 		else
 			ss << "  dec " << primRegUsage(ngi) << "\n";
 		primRegRToLVal(ngi, true);
@@ -599,7 +612,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		primRegLToRVal(ngi);
-		ss << "  mov " << secRegName(8) << ", " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
+		ss << "  mov " << secRegName(8) << ", " << std::to_string(getDatatypeSize(ngi.program, expr->datatype)) << "\n";
 		ss << "  mul " << secRegName(8) << "\n";
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
@@ -610,7 +623,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 		bool isVoidFunc = expr->datatype == Datatype{ "void" };
 		if (!isVoidFunc)
-			ss << "  sub rsp, " << std::to_string(getDatatypeSize(expr->datatype)) << "\n";
+			ss << "  sub rsp, " << std::to_string(getDatatypeSize(ngi.program, expr->datatype)) << "\n";
 
 		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
 		{
@@ -638,14 +651,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
 		if (isPointer(ngi.primReg.datatype))
-			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
 		else
 			ss << "  inc " << primRegUsage(ngi) << "\n";
 		
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 		
 		if (isPointer(ngi.primReg.datatype))
-			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
 		else
 			ss << "  dec " << primRegUsage(ngi) << "\n";
 
@@ -658,14 +671,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
 		if (isPointer(ngi.primReg.datatype))
-			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
 		else
 			ss << "  dec " << primRegUsage(ngi) << "\n";
 
 		ss << "  mov " << secRegUsage(ngi) << ", " << primRegUsage(ngi) << "\n";
 
 		if (isPointer(ngi.primReg.datatype))
-			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.primReg.datatype) << "\n";
+			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
 		else
 			ss << "  inc " << primRegUsage(ngi) << "\n";
 
@@ -898,6 +911,7 @@ void writeEscapedString(std::stringstream& ss, const std::string& str)
 std::string generateNasm_Linux_x86_64(ProgramRef program)
 {
 	NasmGenInfo ngi;
+	ngi.program = program;
 	auto& ss = ngi.ss;
 
 	// Prologue
@@ -940,10 +954,16 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 
 		int nElements = getDatatypeNumElements(glob.second.datatype);
 		int baseSize;
+
 		if (isArray(glob.second.datatype))
-			baseSize = getDatatypeSize({ glob.second.datatype.name, 0 });
+			baseSize = getDatatypeSize(ngi.program, { glob.second.datatype.name, 0 });
+		else if (!isPointer(glob.second.datatype) && isPackType(program, glob.second.datatype.name))
+		{
+			baseSize = 1;
+			nElements = getDatatypeSize(program, glob.second.datatype);
+		}
 		else
-			baseSize = getDatatypeSize(glob.second.datatype);
+			baseSize = getDatatypeSize(ngi.program, glob.second.datatype);
 
 		switch (baseSize)
 		{

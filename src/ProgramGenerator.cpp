@@ -183,6 +183,18 @@ StatementRef lastStatement(ProgGenInfo& info)
 	return info.program->body->statements.back();
 }
 
+bool isPackType(ProgGenInfo& info, const std::string& name)
+{
+	return isPackType(info.program, name);
+}
+
+bool isPackType(ProgGenInfo& info, const Token& token)
+{
+	if (!isIdentifier(token))
+		return false;
+	return isPackType(info, token.value);
+}
+
 bool leftConversionIsProhibited(Expression::ExprType eType)
 {
 	static const std::set<Expression::ExprType> prohibitedTypes = 
@@ -279,7 +291,7 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 void addVariable(ProgGenInfo& info, Variable var)
 {
 	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
-	int varSize = getDatatypeSize(var.datatype);
+	int varSize = getDatatypeSize(info.program, var.datatype);
 
 	if (!info.localStack.empty())
 	{
@@ -308,7 +320,7 @@ void addVariable(ProgGenInfo& info, Variable var)
 
 	if (!isGlobal && !info.localStack.empty())
 	{
-		varSize = getDatatypeSize(var.datatype);
+		varSize = getDatatypeSize(info.program, var.datatype);
 		currLocalFrame(info).frameSize += varSize;
 		currLocalFrame(info).totalOffset -= varSize;
 		var.offset = currLocalFrame(info).totalOffset;
@@ -840,7 +852,6 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		}
 		exp->eType = it->second;
 		nextToken(info);
-		exp->right = getParseExpression(info, precLvl + 1);
 
 		switch (exp->eType)
 		{
@@ -855,6 +866,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_AND:
 		case Expression::ExprType::Assign_Bw_XOR:
 		case Expression::ExprType::Assign_Bw_OR:
+			exp->right = getParseExpression(info, precLvl + 1);
 			autoFixDatatypeMismatch(exp);
 			if (!exp->left->isLValue)
 				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot assign to non-lvalue!");
@@ -863,6 +875,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
+			exp->right = getParseExpression(info, precLvl + 1);
 			exp->left = genConvertExpression(exp->left, { "bool" });
 			exp->right = genConvertExpression(exp->right, { "bool" });
 			exp->datatype = { "bool" };
@@ -871,6 +884,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Bitwise_OR:
 		case Expression::ExprType::Bitwise_XOR:
 		case Expression::ExprType::Bitwise_AND:
+			exp->right = getParseExpression(info, precLvl + 1);
 			autoFixDatatypeMismatch(exp);
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
@@ -881,6 +895,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_LessEqual:
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
+			exp->right = getParseExpression(info, precLvl + 1);
 			autoFixDatatypeMismatch(exp);
 			exp->datatype = { "bool" };
 			exp->isLValue = false;
@@ -892,10 +907,30 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Product:
 		case Expression::ExprType::Quotient:
 		case Expression::ExprType::Remainder:
+			exp->right = getParseExpression(info, precLvl + 1);
 			autoFixDatatypeMismatch(exp);
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
 			break;
+		case Expression::ExprType::MemberAccess:
+		{
+			auto& memberToken = nextToken(info);
+			if (!isIdentifier(memberToken))
+				THROW_PROG_GEN_ERROR(pOpToken->pos, "Expected member name!");
+			if (isPointer(exp->left->datatype) || isArray(exp->left->datatype))
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of pointer or array!");
+			if (!isPackType(info, exp->left->datatype.name))
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack type!");
+
+			auto& pack = info.program->packs.at(exp->left->datatype.name);
+			auto memberIt = pack.members.find(memberToken.value);
+			if (memberIt == pack.members.end())
+				THROW_PROG_GEN_ERROR(memberToken.pos, "Unknown member!");
+			exp->datatype = memberIt->second.datatype;
+			exp->memberOffset = memberIt->second.offset;
+			exp->isLValue = true;
+			break;
+		}
 		default:
 			THROW_PROG_GEN_ERROR(exp->pos, "Invalid binary operator!");
 		}
@@ -971,7 +1006,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 			exp->paramSizeSum = 0;
 			for (auto& param : exp->paramExpr)
-				exp->paramSizeSum += getDatatypePushSize(param->datatype);
+				exp->paramSizeSum += getDatatypePushSize(info.program, param->datatype);
 
 		}
 			break;
@@ -1052,7 +1087,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	}
 		break;
 	case Expression::ExprType::SizeOf:
-		exp->valStr = std::to_string(getDatatypeSize(getParseParenthesized(info)->datatype));
+		exp->valStr = std::to_string(getDatatypeSize(info.program, getParseParenthesized(info)->datatype));
 		exp->eType = Expression::ExprType::Literal;
 		exp->datatype = { "u64" };
 		break;
@@ -1104,7 +1139,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 Datatype getParseDatatype(ProgGenInfo& info)
 {
 	auto& typeToken = peekToken(info);
-	if (!isBuiltinType(typeToken))
+	if (!isBuiltinType(typeToken) && !isPackType(info, typeToken))
 		return Datatype();
 	nextToken(info);
 
@@ -1184,7 +1219,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
 		
-		func->retOffset += getDatatypePushSize(param.datatype);
+		func->retOffset += getDatatypePushSize(info.program, param.datatype);
 		param.offset = func->retOffset;
 
 		if (!isIdentifier(peekToken(info)))
@@ -1200,7 +1235,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		parseExpected(info, Token::Type::Separator, ",");
 	}
 
-	func->retOffset += getDatatypePushSize(func->retType);
+	func->retOffset += getDatatypePushSize(info.program, func->retType);
 
 	parseExpected(info, Token::Type::Separator, ")");
 
@@ -1254,7 +1289,7 @@ bool parseDeclDef(ProgGenInfo& info, bool allowFunctions)
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 
-	if (getDatatypeSize(datatype) < 0)
+	if (getDatatypeSize(info.program, datatype) < 0)
 		THROW_PROG_GEN_ERROR(typeToken.pos, "Unknown datatype!");
 
 	if (isSeparator(peekToken(info), "("))
@@ -1587,6 +1622,53 @@ bool parseStatementDefine(ProgGenInfo& info)
 	return true;
 }
 
+bool parsePack(ProgGenInfo& info)
+{
+	auto& packToken = peekToken(info);
+	if (!isKeyword(packToken, "pack"))
+		return false;
+	nextToken(info);
+
+	auto& nameToken = peekToken(info);
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+	nextToken(info);
+
+	auto packIt = info.program->packs.find(nameToken.value);
+	if (packIt != info.program->packs.end())
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Pack: '" + nameToken.value + "' already defined here: '" + getPosStr(packIt->second.pos) + "'!");
+
+	Pack pack;
+	pack.pos = nameToken.pos;
+	pack.name = nameToken.value;
+
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	increaseIndent(info.indent);
+
+	while (parseIndent(info))
+	{
+		Variable member;
+		member.pos = peekToken(info).pos;
+		member.datatype = getParseDatatype(info);
+		if (!isIdentifier(peekToken(info)))
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
+		member.name = nextToken(info).value;
+		member.offset = pack.size;
+		pack.size += getDatatypeSize(info.program, member.datatype);
+		parseExpectedNewline(info);
+
+		pack.members.insert({member.name, member });
+	}
+
+	decreaseIndent(info.indent);
+
+	info.program->packs.insert({ pack.name, pack });
+
+	return true;
+}
+
 void parseGlobalCode(ProgGenInfo& info)
 {
 	while (info.currToken < info.tokens->size())
@@ -1601,6 +1683,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseControlFlow(info)) continue;
 		if (parseStatementContinue(info)) continue;
 		if (parseStatementBreak(info)) continue;
+		if (parsePack(info)) continue;
 		if (parseDeclDef(info, true)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
