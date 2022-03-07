@@ -4,6 +4,8 @@
  - [if-elif-else](#if-elif-else)
  - [while loop](#while-loop)
  - [do-while loop](#do-while-loop)
+ - [continue](#continue)
+ - [break](#break)
 
 ---
 
@@ -73,3 +75,33 @@ do:
 	print(i)	\\ Prints the numbers 0 to 9
 	print("\n")
 while ++i < 10
+```
+
+---
+
+### continue
+
+The `continue` statement can be used to skip the rest of the current iteration of a loop. This can be useful to ignore the rest of the code in a loop without using conditional statement.
+
+#### Example
+```qinp
+u32 i = 0
+while ++i < 10:
+	if i == 5:
+		continue
+	print(i)
+```
+
+### break
+
+The `break` statement can be used to break out of a loop.
+The remaining code in the loop is not executed.
+
+#### Example
+```qinp
+u32 i = 0
+while ++i < 10:
+	if i == 5:
+		break
+	print(i)
+```
