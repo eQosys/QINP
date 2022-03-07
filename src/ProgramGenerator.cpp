@@ -528,10 +528,11 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
 
 ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
 {
+	expToConvert = genAutoArrayToPtr(expToConvert);
+
 	if (expToConvert->datatype == newDatatype)
 		return expToConvert;
 
-	expToConvert = genAutoArrayToPtr(expToConvert);
 
 	if (isBool(expToConvert->datatype))
 	{
@@ -637,21 +638,20 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	{
 	case Token::Type::LiteralInteger:
 		exp->valStr = litToken.value;
-		exp->datatype.name = "u64";
+		exp->datatype = { (std::stoull(exp->valStr) >> 63) ? "u64" : "i64" };
 		break;
 	case Token::Type::LiteralChar:
 		exp->valStr = std::to_string(litToken.value[0]);
-		exp->datatype.name = "u8";
+		exp->datatype = { "u8" };
 		break;
 	case Token::Type::LiteralBoolean:
 		exp->valStr = std::to_string(litToken.value == "true" ? 1 : 0);
-		exp->datatype.name = "bool";
+		exp->datatype = { "bool" };
 		break;
 	case Token::Type::String:
 		exp->valStr = getMangledName(info.program->strings.size());
 		info.program->strings.insert({ info.program->strings.size(), litToken.value });
-		exp->datatype.ptrDepth = 1;
-		exp->datatype.name = "u8";
+		exp->datatype = { "u8", 1 };
 		break;
 	default:
 		THROW_PROG_GEN_ERROR(litToken.pos, "Invalid literal type!");
@@ -854,11 +854,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = false;
 			if (exp->left->datatype.ptrDepth == 0)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot call non-function!");
-			exp->paramSizeSum = 0;
 			while (!isSeparator(peekToken(info), ")"))
 			{
 				exp->paramExpr.push_back(getParseExpression(info));
-				exp->paramSizeSum += getDatatypePushSize(exp->paramExpr.back()->datatype);
 				if (!isSeparator(peekToken(info), ")"))
 					parseExpected(info, Token::Type::Separator, ",");
 			}
@@ -884,6 +882,11 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				// TODO: Check if signature matches (possibly through implicit conversions)
 				exp->datatype = {}; // TODO: Get return type from exp->left->datatype
 			}
+
+			exp->paramSizeSum = 0;
+			for (auto& param : exp->paramExpr)
+				exp->paramSizeSum += getDatatypePushSize(param->datatype);
+
 		}
 			break;
 		case Expression::ExprType::Suffix_Increment:
@@ -1045,7 +1048,7 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 		nextToken(info);
 		parseExpected(info, Token::Type::LiteralInteger);
 		++var.datatype.ptrDepth;
-		var.datatype.arraySizes.push_back(std::stoi(peekToken(info, -1).value));
+		var.datatype.arraySizes.push_back(std::stoull(peekToken(info, -1).value));
 		if (var.datatype.arraySizes.back() <= 0)
 			THROW_PROG_GEN_ERROR(peekToken(info, -1).pos, "Array size must be greater than zero!");
 		parseExpected(info, Token::Type::Separator, "]");

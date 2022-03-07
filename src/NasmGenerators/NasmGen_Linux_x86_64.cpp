@@ -142,7 +142,7 @@ std::string instrPrefix(const Datatype& datatype)
 	if (isArray(datatype))
 		return "";
 	else if (isSignedInt(datatype))
-		return "s";
+		return "i";
 	else if (isUnsignedInt(datatype))
 		return "";
 	else if (isPointer(datatype))
@@ -266,6 +266,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		primRegLToRVal(ngi);
 
 		ngi.primReg.datatype = newType;
+
+		if (isArray(oldType) && isPointer(newType))
+			break;
 
 		if (isBool(newType))
 		{

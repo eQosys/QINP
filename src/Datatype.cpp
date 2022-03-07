@@ -6,7 +6,10 @@
 
 bool operator==(const Datatype& left, const Datatype& right)
 {
-	return left.ptrDepth == right.ptrDepth && left.name == right.name;
+	return
+		left.ptrDepth == right.ptrDepth &&
+		left.name == right.name &&
+		left.arraySizes == right.arraySizes;
 }
 
 bool operator!=(const Datatype& left, const Datatype& right)

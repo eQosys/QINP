@@ -78,7 +78,7 @@ void print(u8* str, u64 len):
 
 void print(i64 num):
 	u8 str[32]
-	print(itos(num, &*str))
+	print(itos(num, str))
 
 u8* strrev(u8* str):
 	return strrev(str, str + strlen(str))
