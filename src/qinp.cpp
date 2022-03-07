@@ -135,6 +135,13 @@ int main(int argc, char** argv, char** environ)
 			program = generateProgram(tokens, importDirs);
 		}
 
+		if (verbose)
+			for (auto& overloads : program->functions)
+				for (auto& func : overloads.second)
+					if (!func.second->isDefined)
+						std::cout << "WARN: Function '" << func.second->name << "' was declared at '" << getPosStr(func.second->pos) << "' but never defined!" << std::endl;
+
+
 		std::string output = generateNasm_Linux_x86_64(program);
 	
 		std::string asmFilename = std::filesystem::path(inFilename).replace_extension(".asm").string();

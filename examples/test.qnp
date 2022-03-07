@@ -1,11 +1,13 @@
 import "std.qnp"
 
+void func()...
+
 pack User:
 	bool likesProgramming
 	u64 age
 
 User tecstylos
-tecstylos.likesProgramming = false
+tecstylos.likesProgramming = true
 tecstylos.age = 17
 
 User* pUser = &tecstylos
