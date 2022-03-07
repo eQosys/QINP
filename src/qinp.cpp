@@ -69,6 +69,40 @@ std::map<std::string, OptionInfo> argNames =
 	{ "r", { "run", OptionInfo::Type::NoValue } },
 };
 
+#define HELP_TEXT \
+	"Usage: qinp [options] [input files]\n" \
+	"Options:\n" \
+	"  -h, --help\n" \
+	"    Print this help message.\n" \
+	"  -v, --verbose\n" \
+	"    Print verbose output.\n" \
+	"  -i, --import=[path]\n" \
+	"    Specify an import directory.\n" \
+	"  -o, --output=[path]\n" \
+	"    Specify the output path of the generated executable.\n" \
+	"  -k, --keep\n" \
+	"    Keep the generated assembly file.\n" \
+	"  -r, --run\n" \
+	"    Run the generated program.\n"
+
+class Timer
+{
+public:
+	Timer()
+	{
+		start = std::chrono::high_resolution_clock::now();
+	}
+	~Timer()
+	{
+		end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> diff = end - start;
+		std::cout << diff.count() << "s" << std::endl;
+	}
+private:
+	std::chrono::time_point<std::chrono::high_resolution_clock> start;
+	std::chrono::time_point<std::chrono::high_resolution_clock> end;
+};
+
 int main(int argc, char** argv, char** environ)
 {
 	bool verbose = true;
@@ -76,6 +110,12 @@ int main(int argc, char** argv, char** environ)
 	{
 		auto args = parseArgs(getArgs(argc, argv), argNames);
 		auto env = getEnv(environ);
+
+		if (args.hasOption("help"))
+		{
+			std::cout << HELP_TEXT;
+			return 0;
+		}
 
 		verbose = args.hasOption("verbose");
 
@@ -85,19 +125,15 @@ int main(int argc, char** argv, char** environ)
 		if (args.hasOption("import"))
 			for (auto& dir : args.getOption("import"))
 				importDirs.insert(dir);
-	
-		auto code = readTextFile(inFilename);
 
-		//std::cout << "------ CODE ------\n" << code << "\n------------------\n" << std::endl;
-
-		auto tokens = tokenize(code, inFilename);
-
-		//std::cout << "------ TOKENS ------\n";
-		//for (auto& token : *tokens)
-		//	std::cout << token << std::endl;
-		//std::cout << "------------------\n" << std::endl;
-
-		auto program = generateProgram(tokens, importDirs);
+		ProgramRef program;
+		{
+			std::cout << "Code gen: ";
+			Timer timer;
+			auto code = readTextFile(inFilename);
+			auto tokens = tokenize(code, inFilename);
+			program = generateProgram(tokens, importDirs);
+		}
 
 		std::string output = generateNasm_Linux_x86_64(program);
 	
@@ -105,27 +141,31 @@ int main(int argc, char** argv, char** environ)
 		writeTextFileOverwrite(asmFilename, output);
 
 		auto objFilename = std::filesystem::path(inFilename).replace_extension(".o").string();
-		auto nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
-		if (verbose) std::cout << "Running nasm..." << std::endl;
-		if (execCmd(nasmCmd))
-			THROW_QINP_ERROR("Assembler Error!");
-
 		auto outFilename = args.hasOption("output") ? args.getOption("output").front() : std::filesystem::path(inFilename).replace_extension(".out").string();
+		auto nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
 		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
-		if (verbose) std::cout << "Running the linker..." << std::endl;
-		if (execCmd(ldCmd))
-			THROW_QINP_ERROR("Linker Error!");
 
-		if (!args.hasOption("keep"))
 		{
-			std::filesystem::remove(asmFilename);
-			std::filesystem::remove(objFilename);
+			std::cout << "Nasm: ";
+			Timer timer;
+			if (execCmd(nasmCmd))
+				THROW_QINP_ERROR("Assembler Error!");
 		}
+		{
+			std::cout << "Linker: ";
+			Timer timer;
+			if (execCmd(ldCmd))
+				THROW_QINP_ERROR("Linker Error!");
+		}
+
+		std::filesystem::remove(objFilename);
+		if (!args.hasOption("keep"))
+			std::filesystem::remove(asmFilename);
 
 		if (args.hasOption("run"))
 		{
 			auto runCmd = "./" + outFilename + " test_arg";
-			if (verbose) std::cout << "Running: '" << runCmd << "'..." << std::endl;
+			if (verbose) std::cout << "Running generated program..." << std::endl;
 			int runRet = execCmd(runCmd);
 			if (verbose) std::cout << std::endl << "Exit code: " << runRet << std::endl;
 		}

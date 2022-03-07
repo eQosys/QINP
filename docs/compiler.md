@@ -13,20 +13,20 @@
 
  - -v, --verbose
 
-   Shows more information about the compilation process.
+   Print verbose output.
 
- - -i, --import
+ - -i, --import=\[path\]
 
-   Specifies a directory to import from.
+   Specify an import directory.
   
- - -o, --output
+ - -o, --output=\[path\]
 
-   Specifies the name of the generated executable.
+   Specify the output path of the generated program.
 
  - -k, --keep
 
-   Keeps the intermediate files.
+   Keep the generated assembly file.
 
  - -r, --run
 
-   Runs the generated executable.
+   Runs the generated program.

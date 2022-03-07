@@ -123,6 +123,7 @@ std::string primRegUsage(NasmGenInfo& ngi)
 		return "[" + primRegName(8) + "]";
 	}
 	assert("Invalid primReg state!" && false);
+	return "";
 }
 std::string secRegUsage(NasmGenInfo& ngi)
 {
@@ -135,6 +136,7 @@ std::string secRegUsage(NasmGenInfo& ngi)
 		return "[" + secRegName(ngi) + "]";
 	}
 	assert("Invalid secReg state!" && false);
+	return "";
 }
 
 std::string instrPrefix(const Datatype& datatype)

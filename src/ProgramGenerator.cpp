@@ -42,6 +42,14 @@ struct ProgGenInfo
 	std::set<std::string> imports;
 
 	std::map<std::string, Token> defSymbols;
+
+	enum class Context
+	{
+		Global,
+		Function,
+	};
+	
+	std::stack<Context> contextStack;
 };
 
 struct ProgGenInfoBackup
@@ -95,16 +103,36 @@ const Token& nextToken(ProgGenInfo& info, int offset = 1)
 	return temp;
 }
 
+LocalStackFrame& currLocalFrame(ProgGenInfo& info)
+{
+	return info.localStack.back();
+}
+
 void pushLocalFrame(ProgGenInfo& info)
 {
 	info.localStack.push_back({});
 	if (info.localStack.size() > 1)
-		info.localStack.back().totalOffset = info.localStack[info.localStack.size() - 2].totalOffset;
+		currLocalFrame(info).totalOffset = info.localStack[info.localStack.size() - 2].totalOffset;
 }
 
 void popLocalFrame(ProgGenInfo& info)
 {
 	info.localStack.pop_back();
+}
+
+void pushContext(ProgGenInfo& info, ProgGenInfo::Context context)
+{
+	info.contextStack.push(context);
+}
+
+void popContext(ProgGenInfo& info)
+{
+	info.contextStack.pop();
+}
+
+ProgGenInfo::Context currContext(ProgGenInfo& info)
+{
+	return info.contextStack.top();
 }
 
 void mergeSubUsages(BodyRef parent, BodyRef child)
@@ -208,35 +236,81 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 
 void addVariable(ProgGenInfo& info, Variable var)
 {
-	if (info.localStack.empty())
-	{
-		auto varIt = info.program->globals.find(var.name);
-		if (varIt != info.program->globals.end())
-			THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
-		auto funcs = getFunctions(info, var.name);
-		if (funcs)
-			THROW_PROG_GEN_ERROR(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
+	// if (currContext(info) == ProgGenInfo::Context::Global)
+	// {
+	// 	auto varIt = info.program->globals.find(var.name);
+	// 	if (varIt != info.program->globals.end())
+	// 		THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
+	// 	auto funcs = getFunctions(info, var.name);
+	// 	if (funcs)
+	// 		THROW_PROG_GEN_ERROR(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
 
-		var.isLocal = false;
-		info.program->globals.insert({ var.name, var });
+	// 	var.isLocal = false;
+	// 	info.program->globals.insert({ var.name, var });
+	// }
+	// else
+	// {
+	// 	auto varIt = currLocalFrame(info).locals.find(var.name);
+	// 	if (varIt != currLocalFrame(info).locals.end())
+	// 		THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
+
+	// 	int varSize = getDatatypeSize(var.datatype);
+	// 	var.isLocal = true;
+
+	// 	currLocalFrame(info).frameSize += varSize;
+	// 	currLocalFrame(info).totalOffset -= varSize;
+	// 	var.offset = currLocalFrame(info).totalOffset;
+	// 	if (-currLocalFrame(info).totalOffset > info.funcFrameSize)
+	// 		info.funcFrameSize = -currLocalFrame(info).totalOffset;
+
+	// 	currLocalFrame(info).locals.insert({ var.name, var });
+	// }
+
+	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
+	int varSize = getDatatypeSize(var.datatype);
+
+	if (!info.localStack.empty())
+	{
+		auto varIt = currLocalFrame(info).locals.find(var.name);
+		if (varIt != currLocalFrame(info).locals.end())
+			THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
 	}
 	else
 	{
-		auto varIt = info.localStack.back().locals.find(var.name);
-		if (varIt != info.localStack.back().locals.end())
-			THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
+		if (isGlobal)
+		{
+			auto varIt = info.program->globals.find(var.name);
+			if (varIt != info.program->globals.end())
+				THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
+			auto funcs = getFunctions(info, var.name);
+			if (funcs)
+				THROW_PROG_GEN_ERROR(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
+		}
+	}
 
-		int varSize = getDatatypeSize(var.datatype);
-		var.isLocal = true;
-		var.offset = info.funcRetOffset;
+	var.isLocal = !isGlobal;
+	auto varName = var.name;
+	static int globVarID = 0;
+	if (isGlobal && !info.localStack.empty())
+		var.name.append("__" + std::to_string(globVarID++));
 
-		info.localStack.back().frameSize += varSize;
-		if (info.localStack.back().frameSize > info.funcFrameSize)
-			info.funcFrameSize = info.localStack.back().frameSize;
-		info.localStack.back().totalOffset -= varSize;
-		var.offset = info.localStack.back().totalOffset;
+	if (!isGlobal && !info.localStack.empty())
+	{
+		varSize = getDatatypeSize(var.datatype);
+		currLocalFrame(info).frameSize += varSize;
+		currLocalFrame(info).totalOffset -= varSize;
+		var.offset = currLocalFrame(info).totalOffset;
+		if (-currLocalFrame(info).totalOffset > info.funcFrameSize)
+			info.funcFrameSize = -currLocalFrame(info).totalOffset;
+	}
 
-		info.localStack.back().locals.insert({ var.name, var });
+	if (info.localStack.empty())
+		info.program->globals.insert({ varName, var });
+	else
+	{
+		currLocalFrame(info).locals.insert({ varName, var });
+		if (isGlobal)
+			info.program->globals.insert({ var.name, var });
 	}
 }
 
@@ -676,7 +750,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->localOffset = pVar->offset;
 	exp->datatype = pVar->datatype;
-	exp->globName = litToken.value;
+	exp->globName = pVar->name;
 	exp->isLValue = isArray(exp->datatype) ? false : true;
 
 	nextToken(info);
@@ -1136,6 +1210,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		increaseIndent(info.indent);
 		pushTempBody(info, func->body);
+		pushContext(info, ProgGenInfo::Context::Function);
 		pushLocalFrame(info);
 
 		info.funcRetOffset = func->retOffset;
@@ -1143,12 +1218,13 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		info.funcFrameSize = 0;
 
 		for (auto& param : func->params)
-			info.localStack.back().locals.insert({ param.name, param });
+			currLocalFrame(info).locals.insert({ param.name, param });
 
 		parseFunctionBody(info);
 		func->frameSize = info.funcFrameSize;
 		
 		popLocalFrame(info);
+		popContext(info);
 		popTempBody(info);
 		decreaseIndent(info.indent);
 	}
@@ -1300,9 +1376,11 @@ void parseBodyEx(ProgGenInfo& info, BodyRef body)
 {
 	increaseIndent(info.indent);
 	pushTempBody(info, body);
+	pushLocalFrame(info);
 
 	parseBody(info);
 
+	popLocalFrame(info);
 	popTempBody(info);
 	decreaseIndent(info.indent);
 
@@ -1566,6 +1644,7 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
 	info.program->body = std::make_shared<Body>();
+	info.contextStack.push(ProgGenInfo::Context::Global);
 
 	parseGlobalCode(info);
 
