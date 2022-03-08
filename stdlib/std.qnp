@@ -59,6 +59,11 @@ u64 getargs(u8*** pargv)...
 u8** getenv()...
 
 
+\\ Sleep for the specified number of milliseconds
+\\ @param ms The number of milliseconds to sleep
+void sleep(u64 ms)...
+
+
 void exit(i32 status):
 	assembly:
 		"mov rax, $(SYS_EXIT)"
@@ -152,3 +157,18 @@ u8** getenv():
 		"mov [rbp $(env)], rcx"
 
 	return env
+
+pack __timespec:
+	i64 tv_sec
+	i64 tv_nsec
+
+void sleep(u64 ms):
+	__timespec ts
+	ts.tv_sec = ms / 1000
+	ts.tv_nsec = (ms % 1000) * 1000000
+	assembly:
+		"mov rax, $(SYS_NANOSLEEP)"
+		"mov rdi, rbp"
+		"add rdi, $(ts)"
+		"xor rsi, rsi"
+		"syscall"

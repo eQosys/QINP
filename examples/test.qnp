@@ -1,9 +1,14 @@
 import "std.qnp"
 
+pack Location:
+	i64 x
+	i64 y
+
 pack User:
 	u8 name[32]
 	bool likesProgramming
 	u64 age
+	Location loc
 
 void printUser(User* pUser):
 	print("User: \n")
@@ -19,11 +24,18 @@ void printUser(User* pUser):
 	else:
 		print("No")
 	print("\n")
+	print("  Location: ")
+	print(pUser->loc.x)
+	print(", ")
+	print(pUser->loc.y)
+	print("\n")
 
 User tecstylos
 strcpy(tecstylos.name, "Tecstylos")
 tecstylos.likesProgramming = true
 tecstylos.age = 17
+tecstylos.loc.x = 123
+tecstylos.loc.y = 456
 
 User* pUser = &tecstylos
 

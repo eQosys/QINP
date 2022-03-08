@@ -75,5 +75,6 @@ i64 n = 30
 while --n > 0:
 	show()
 	update()
+	sleep(100)
 	clear()
 show()
