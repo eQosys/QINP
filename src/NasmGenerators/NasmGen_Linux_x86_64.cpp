@@ -25,6 +25,7 @@ struct CellInfo
 		lValue,
 		rValue,
 		xValue,
+		__xValueAddress,
 	} state = State::Unused;
 	Datatype datatype;
 };
@@ -229,8 +230,9 @@ void autoPopXValues(NasmGenInfo& ngi)
 }
 void pushPrimReg(NasmGenInfo& ngi)
 {
-	assert(!isXValue(ngi.primReg) && "Pushing xvalues onto the stack is not allowed!");
 	ngi.ss << "  push " << primRegName(8) << "\n";
+	if (isXValue(ngi.primReg))
+		ngi.primReg.state = CellState::__xValueAddress;
 	ngi.stackCells.push(ngi.primReg);
 	ngi.primReg.state = CellState::Unused;
 }
@@ -239,12 +241,15 @@ void popPrimReg(NasmGenInfo& ngi)
 	autoPopXValues(ngi);
 	ngi.primReg = ngi.stackCells.top();
 	ngi.stackCells.pop();
+	if (ngi.primReg.state == CellState::__xValueAddress)
+		ngi.primReg.state = CellState::xValue;
 	ngi.ss << "  pop " << primRegName(8) << "\n";
 }
 void pushSecReg(NasmGenInfo& ngi)
 {
-	assert(!isXValue(ngi.secReg) && "Pushing xvalues onto the stack is not allowed!");
 	ngi.ss << "  push " << secRegName(8) << "\n";
+	if (isXValue(ngi.secReg))
+		ngi.secReg.state = CellState::__xValueAddress;
 	ngi.stackCells.push(ngi.secReg);
 	ngi.secReg.state = CellState::Unused;
 }
@@ -253,6 +258,8 @@ void popSecReg(NasmGenInfo& ngi)
 	autoPopXValues(ngi);
 	ngi.secReg = ngi.stackCells.top();
 	ngi.stackCells.pop();
+	if (ngi.secReg.state == CellState::__xValueAddress)
+		ngi.secReg.state = CellState::xValue;
 	ngi.ss << "  pop " << secRegName(8) << "\n";
 }
 void movePrimToSec(NasmGenInfo& ngi, bool markUnused = true)
@@ -401,7 +408,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Assign:
+	{
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		bool isPack = isPackType(ngi.program, expr->left->datatype);
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.datatype == expr->right->datatype && "Assign: datatype mismatch!");
@@ -420,6 +429,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		}
 
 		// Datatype & state don't change
+	}
 		break;
 	case Expression::ExprType::Assign_Sum:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);

@@ -797,7 +797,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->localOffset = pVar->offset;
 	exp->datatype = pVar->datatype;
-	exp->globName = pVar->name;
+	exp->globName = pVar->modName;
 	exp->isLValue = isArray(exp->datatype) ? false : true;
 
 	nextToken(info);

@@ -1,14 +1,34 @@
 import "std.qnp"
 
-pack Data:
-	u8 data[1024]
+pack User:
+	u8 name[32]
+	i64 age
+	bool isMale
 
-Data makeData():
-	Data data
-	return data
+User makeUser(u8* name, i64 age, bool isMale):
+	User user
+	strcpy(user.name, name)
+	user.age = age
+	user.isMale = isMale
+	return user
 
-u64 i = 1000000
-while i-- > 0:
-	print(10000 - i)
+void printUser(User user):
+	print("User:\n")
+	print("  Name: ")
+	print(user.name)
 	print("\n")
-	makeData()
+	print("  Age: ")
+	print(user.age)
+	print("\n")
+	print("  Sex: ")
+	if user.isMale:
+		print("male")
+	else:
+		print("female")
+	print("\n")
+
+User kavi = makeUser("Kevo", 16, true)
+User lukas = makeUser("LeLxkas", 15, true)
+
+printUser(kavi)
+printUser(lukas)
