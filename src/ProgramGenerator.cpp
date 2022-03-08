@@ -1136,9 +1136,19 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	}
 		break;
 	case Expression::ExprType::SizeOf:
-		exp->valStr = std::to_string(getDatatypeSize(info.program, getParseParenthesized(info)->datatype));
+	{
+		parseExpected(info, Token::Type::Separator, "(");
+		auto datatype = getParseDatatype(info);
+		if (!datatype)
+			datatype = getParseParenthesized(info)->datatype;
+		else
+		{
+			parseExpected(info, Token::Type::Separator, ")");
+		}
+		exp->valStr = std::to_string(getDatatypeSize(info.program, datatype));
 		exp->eType = Expression::ExprType::Literal;
 		exp->datatype = { "u64" };
+	}
 		break;
 	default:
 		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");

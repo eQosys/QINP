@@ -1,74 +1,12 @@
 import "std.qnp"
 
-pack Location:
-	i64 x
-	i64 y
-	i64 z
+pack Data:
+	u8 data[1024]
 
-Location makeLocation(i64 x, i64 y, i64 z):
-	Location loc
-	loc.x = x
-	loc.y = y
-	loc.z = z
-	return loc
+Data makeData():
+	Data data
+	return data
 
-void printLocation(Location loc, i64 locx):
-	print("Location: ")
-	print(loc.x)
-	print(", ")
-	print(loc.y)
-	print(", ")
-	print(loc.z)
-	print("\n")
-	print("LocX: ")
-	print(locx)
-	print("\n")
-
-Location l
-l = makeLocation(1, 2, 3)
-printLocation(l, 111)
-
-\\print("Location: ")
-\\print(l.x)
-\\print(", ")
-\\print(l.y)
-\\print(", ")
-\\print(l.z)
-\\print("\n")
-
-\\pack User:
-\\	u8 name[32]
-\\	bool likesProgramming
-\\	u64 age
-\\	Location loc
-\\
-\\void printUser(User* pUser):
-\\	print("User: \n")
-\\	print("  Name: ")
-\\	print(pUser->name)
-\\	print("\n")
-\\	print("  Age: ")
-\\	print(pUser->age)
-\\	print("\n")
-\\	print("  Likes Programming: ")
-\\	if pUser->likesProgramming:
-\\		print("Yes")
-\\	else:
-\\		print("No")
-\\	print("\n")
-\\	print("  Location: ")
-\\	print(pUser->loc.x)
-\\	print(", ")
-\\	print(pUser->loc.y)
-\\	print("\n")
-\\
-\\User tecstylos
-\\strcpy(tecstylos.name, "Tecstylos")
-\\tecstylos.likesProgramming = true
-\\tecstylos.age = 17
-\\tecstylos.loc.x = 123
-\\tecstylos.loc.y = 456
-\\
-\\User* pUser = &tecstylos
-\\
-\\printUser(pUser)
+u64 i = 10000
+while i-- > 0:
+	makeData()
