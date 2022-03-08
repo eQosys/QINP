@@ -24,6 +24,7 @@ struct CellInfo
 		Unused,
 		lValue,
 		rValue,
+		xValue,
 	} state = State::Unused;
 	Datatype datatype;
 };
@@ -187,6 +188,32 @@ std::string instrPrefix(const Datatype& datatype)
 	return "";
 }
 
+bool isUnused(const CellInfo& cell)
+{
+	return cell.state == CellState::Unused;
+}
+bool isRValue(const CellInfo& cell)
+{
+	return cell.state == CellState::rValue;
+}
+bool isLValue(const CellInfo& cell)
+{
+	return cell.state == CellState::lValue;
+}
+bool isXValue(const CellInfo& cell)
+{
+	return cell.state == CellState::xValue;
+}
+
+CellState getCellState(NasmGenInfo& ngi, const Datatype& datatype)
+{
+	if (isArray(datatype))
+		return CellState::rValue;
+	if (isPackType(ngi.program, datatype))
+		return CellState::xValue;
+	return CellState::lValue;
+}
+
 void pushPrimReg(NasmGenInfo& ngi)
 {
 	ngi.ss << "  push " << primRegName(8) << "\n";
@@ -228,7 +255,7 @@ void moveSecToPrim(NasmGenInfo& ngi, bool markUnused = true)
 
 bool primRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 {
-	if (ngi.primReg.state != CellState::lValue)
+	if (isRValue(ngi.primReg))
 		return false;
 	if (pushAddr)
 		pushPrimReg(ngi);
@@ -242,20 +269,16 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 {
 	if (!wasPushed)
 		return;
-	
-	//pushSecReg(ngi); // Does not preserve the state of the secondary register
 
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
 
 	ngi.ss << "  mov " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
-
-	//popSecReg(ngi);
 }
 
 bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 {
-	if (ngi.secReg.state != CellState::lValue)
+	if (isRValue(ngi.secReg))
 		return false;
 	if (pushAddr)
 		pushSecReg(ngi);
@@ -282,6 +305,10 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
 }
 
+#define DISABLE_EXPR_FOR_PACKS(ngi, expr) \
+	if (isPackType(ngi.program, expr->datatype)) \
+		assert(false && "Invalid expression for pack type!")
+
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
 	auto& ss = ngi.ss;
@@ -290,6 +317,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 	case Expression::ExprType::Conversion:
 	{
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 
 		auto& oldType = expr->left->datatype;
@@ -343,11 +371,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Assign:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.datatype == expr->right->datatype && "Assign: datatype mismatch!");
-		assert(ngi.primReg.state == CellState::lValue && "Cannot assign to non-lvalue!");
+		assert(isLValue(ngi.primReg) && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
 
@@ -356,26 +385,37 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Assign_Sum:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Sum not supported!");
 	case Expression::ExprType::Assign_Difference:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Difference not supported!");
 	case Expression::ExprType::Assign_Product:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Product not supported!");
 	case Expression::ExprType::Assign_Quotient:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Quotient not supported!");
 	case Expression::ExprType::Assign_Remainder:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Remainder not supported!");
 	case Expression::ExprType::Assign_Bw_LeftShift:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Left Shift not supported!");
 	case Expression::ExprType::Assign_Bw_RightShift:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Right Shift not supported!");
 	case Expression::ExprType::Assign_Bw_AND:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise AND not supported!");
 	case Expression::ExprType::Assign_Bw_XOR:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise XOR not supported!");
 	case Expression::ExprType::Assign_Bw_OR:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise OR not supported!");
 	case Expression::ExprType::Logical_OR:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -384,6 +424,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Logical_AND:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -392,6 +433,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_OR:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -400,6 +442,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_XOR:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -408,6 +451,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Bitwise_AND:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -416,42 +460,49 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Comparison_Equal:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateComparison(ngi, expr);
 		ss << "  sete al\n";
 		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_NotEqual:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateComparison(ngi, expr);
 		ss << "  setne al\n";
 		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_Less:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateComparison(ngi, expr);
 		ss << "  setl al\n";
 		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_LessEqual:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateComparison(ngi, expr);
 		ss << "  setle al\n";
 		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_Greater:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateComparison(ngi, expr);
 		ss << "  setg al\n";
 		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Comparison_GreaterEqual:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateComparison(ngi, expr);
 		ss << "  setge al\n";
 		ngi.primReg.datatype = { "bool" };
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Shift_Left:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
@@ -459,6 +510,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Shift_Right:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
@@ -466,6 +518,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Sum:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
@@ -473,6 +526,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Difference:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
@@ -480,6 +534,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Product:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -489,6 +544,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Quotient:
 	{
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -503,6 +559,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Remainder:
 	{
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
 		secRegLToRVal(ngi);
@@ -520,13 +577,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::MemberAccess:
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		assert(ngi.primReg.state == CellState::lValue && "Left operand of member access must be lValue");
-		ss << ";; MEMBER ACCESS\n";
+		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Left operand of member access must be lValue");
 		ss << "  add " << primRegName(8) << ", " << expr->memberOffset << "\n";
 		
 		ngi.primReg.datatype = expr->datatype;
-		//ngi.primReg.state = CellState::lValue;
-		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 	}
 		break;
 	case Expression::ExprType::MemberAccessDereference:
@@ -534,7 +590,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::AddressOf:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		assert(ngi.primReg.state == CellState::lValue && "Cannot take address of non-lvalue!");
+		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Cannot take address of non-lvalue!");
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::rValue;
 		break;
@@ -549,7 +605,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ss << "  mov " << primRegName(8) << ", " << primRegUsage(ngi) << "\n";
 			break;
 		case CellState::rValue:
-			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+			//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+			ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 			break;
 		default:
 			THROW_NASM_GEN_ERROR(expr->pos, "Invalid CellState!");
@@ -557,6 +614,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// Datatype & state already modified
 		break;
 	case Expression::ExprType::Logical_NOT:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());\
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
@@ -566,6 +624,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Bitwise_NOT:
 	{
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		ss << "  not " << primRegUsage(ngi) << "\n";
@@ -574,11 +633,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Prefix_Plus:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		// Nothing else to do
 		break;
 	case Expression::ExprType::Prefix_Minus:
 	{
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		ss << "  neg " << primRegUsage(ngi) << "\n";
@@ -589,8 +650,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Prefix_Increment:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
+		assert(isLValue(ngi.primReg) && "Cannot increment non-lvalue!");
 		primRegLToRVal(ngi, true);
 		if (isPointer(ngi.primReg.datatype))
 			ss << "  add " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
@@ -600,8 +662,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Prefix_Decrement:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
+		assert(isLValue(ngi.primReg) && "Cannot decrement non-lvalue!");
 		primRegLToRVal(ngi, true);
 		if (isPointer(ngi.primReg.datatype))
 			ss << "  sub " << primRegUsage(ngi) << ", " << getDatatypePointedToSize(ngi.program, ngi.primReg.datatype) << "\n";
@@ -623,17 +686,38 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionCall:
 	{
 		bool isVoidFunc = expr->datatype == Datatype{ "void" };
 		if (!isVoidFunc)
-			ss << "  sub rsp, " << std::to_string(getDatatypeSize(ngi.program, expr->datatype)) << "\n";
+			ss << "  sub rsp, " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
 
 		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
 		{
 			generateNasm_Linux_x86_64(ngi, expr->paramExpr[i].get());
+			if (isPackType(ngi.program, ngi.primReg.datatype))
+			{
+				if (isXValue(ngi.primReg)) // xvalues are already on the stack
+					continue;
+
+				auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
+				auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
+				func->isReachable = true;
+
+				int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
+
+				ss << "  sub rsp, " << packSize << "\n";
+				ss << "  mov rcx, rsp\n";
+				ss << "  push " << packSize << "\n";
+				ss << "  push rax\n";
+				ss << "  push rcx\n";
+				ss << "  call " << getMangledName(func) << "\n";
+				ss << "  add rsp, " << 3 * 8 << "\n";
+				continue;
+			}
 			primRegLToRVal(ngi);
 			ss << "  push " << primRegName(8) << "\n";
 		}
@@ -652,8 +736,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Suffix_Increment:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		assert(ngi.primReg.state == CellState::lValue && "Cannot increment non-lvalue!");
+		assert(isLValue(ngi.primReg) && "Cannot increment non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
 		if (isPointer(ngi.primReg.datatype))
@@ -672,8 +757,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// State already modified
 		break;
 	case Expression::ExprType::Suffix_Decrement:
+		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
-		assert(ngi.primReg.state == CellState::lValue && "Cannot decrement non-lvalue!");
+		assert(isLValue(ngi.primReg) && "Cannot decrement non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
 		if (isPointer(ngi.primReg.datatype))
@@ -700,12 +786,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::LocalVariable:
 		ss << "  mov " << primRegName(8) << ", rbp\n";
-		ss << "  add " << primRegName(8) << ", " << std::to_string(expr->localOffset) << "\n";
+		ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionName:
 		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
@@ -963,7 +1051,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 
 		if (isArray(glob.second.datatype))
 			baseSize = getDatatypeSize(ngi.program, { glob.second.datatype.name, 0 });
-		else if (!isPointer(glob.second.datatype) && isPackType(program, glob.second.datatype.name))
+		else if (isPackType(program, glob.second.datatype))
 		{
 			baseSize = 1;
 			nElements = getDatatypeSize(program, glob.second.datatype);

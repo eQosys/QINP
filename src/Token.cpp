@@ -51,6 +51,7 @@ bool isKeyword(const std::string& name)
 		"define",
 		"continue", "break",
 		"pack",
+		"sizeof",
 		// "const"
 		// "default",
 		// "offsetof",
@@ -105,11 +106,12 @@ bool isOperator(const Token& token, const std::string& name)
 		token.value == name;
 }
 
-bool isSepOp(const Token& token)
+bool isSepOpKey(const Token& token)
 {
 	return
 		token.type == Token::Type::Separator ||
-		token.type == Token::Type::Operator;
+		token.type == Token::Type::Operator ||
+		token.type == Token::Type::Keyword;
 }
 
 bool isLiteral(const Token& token)

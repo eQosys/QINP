@@ -49,6 +49,12 @@ u8* strcpy(u8* dest, u8* src)...
 \\ @return The null-terminated string representation of the integer
 u8* itos(i64 num, u8* str)...
 
+\\ Copy data from one buffer to another
+\\ @param dest The destination buffer
+\\ @param src The source buffer
+\\ @param len The number of bytes to copy
+void memcpy(void* dest, void* src, u64 len)...
+
 \\ Get the arguments passed to the program
 \\ @param pargv Address of the pointer where the pointer of the first argument will be stored
 \\ @return The number of arguments passed to the program
@@ -58,10 +64,10 @@ u64 getargs(u8*** pargv)...
 \\ @return The pointer to an array of environment variables
 u8** getenv()...
 
-
 \\ Sleep for the specified number of milliseconds
 \\ @param ms The number of milliseconds to sleep
 void sleep(u64 ms)...
+
 
 
 void exit(i32 status):
@@ -131,6 +137,14 @@ u8* itos(i64 num, u8* str):
 	*str = '\0'
 
 	return strrev(begin)
+
+
+void memcpy(void* dest, void* src, u64 len):
+	u8* d = (u8*)dest
+	u8* s = (u8*)src
+
+	while len--:
+		*d++ = *s++
 
 u64 getargs(u8*** pargv):
 	u64 argc

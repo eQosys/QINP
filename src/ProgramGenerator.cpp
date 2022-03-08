@@ -248,7 +248,7 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 		if (matchFound)
 		{
 			if (match)
-				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Multiple overloads found for function call");
+				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Multiple overloads found for function call!");
 			else
 				match = func;
 		}
@@ -866,7 +866,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 
 	const Token* pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
-	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOp(*pOpToken))
+	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOpKey(*pOpToken))
 	{
 		{
 			auto temp = std::make_shared<Expression>(pOpToken->pos);
@@ -998,7 +998,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 	const Token* pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
-	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOp(*pOpToken))
+	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOpKey(*pOpToken))
 	{
 		{
 			auto temp = std::make_shared<Expression>(pOpToken->pos);
@@ -1078,7 +1078,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 
 	auto opToken = peekToken(info);
 	auto it = opsLvl.ops.find(opToken.value);
-	if (it == opsLvl.ops.end() || !isSepOp(opToken))
+	if (it == opsLvl.ops.end() || !isSepOpKey(opToken))
 		return getParseExpression(info, precLvl + 1);
 
 	auto exp = std::make_shared<Expression>(opToken.pos);
@@ -1270,8 +1270,8 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
 		
-		func->retOffset += getDatatypePushSize(info.program, param.datatype);
 		param.offset = func->retOffset;
+		func->retOffset += getDatatypePushSize(info.program, param.datatype);
 
 		if (!isIdentifier(peekToken(info)))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
@@ -1285,8 +1285,6 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		parseExpected(info, Token::Type::Separator, ",");
 	}
-
-	func->retOffset += getDatatypePushSize(info.program, func->retType);
 
 	parseExpected(info, Token::Type::Separator, ")");
 

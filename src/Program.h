@@ -23,7 +23,7 @@ struct Function
 	Token::Position pos;
 	std::string name;
 	Datatype retType;
-	int retOffset = 8;
+	int retOffset = 16;
 	int frameSize = 0;
 	std::vector<Variable> params;
 	BodyRef body;
@@ -34,10 +34,15 @@ struct Function
 
 typedef std::shared_ptr<Function> FunctionRef;
 
+std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes);
 std::string getSignatureNoRet(const FunctionRef func);
-std::string getSignature(const FunctionRef func);
 std::string getSignatureNoRet(const Expression* callExpr);
+
+std::string getSignature(const Datatype& retType, const std::vector<Datatype>& paramTypes);
+std::string getSignature(const FunctionRef func);
 std::string getSignature(const Expression* callExpr);
+
+std::string getMangledName(const std::string& funcName, const Datatype& retType, const std::vector<Datatype>& paramTypes);
 std::string getMangledName(const FunctionRef func);
 std::string getMangledName(const std::string& funcName, const Expression* callExpr);
 std::string getMangledName(const std::string& varName, const Datatype& datatype);
@@ -67,6 +72,8 @@ struct Program
 typedef std::shared_ptr<Program> ProgramRef;
 
 bool isPackType(const ProgramRef program, const std::string& name);
+
+bool isPackType(const ProgramRef program, const Datatype& datatype);
 
 int getPackSize(const ProgramRef program, const std::string& packName);
 
