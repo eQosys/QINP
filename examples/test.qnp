@@ -7,6 +7,8 @@ Data makeData():
 	Data data
 	return data
 
-u64 i = 10000
+u64 i = 1000000
 while i-- > 0:
+	print(10000 - i)
+	print("\n")
 	makeData()

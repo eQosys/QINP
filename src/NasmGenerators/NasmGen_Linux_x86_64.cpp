@@ -35,7 +35,7 @@ struct NasmGenInfo
 {
 	ProgramRef program;
 	std::stringstream ss;
-	std::stack<CellInfo> stackCells;
+	std::stack<CellInfo> stackCells; // Used to keep track of pushed values and to know when to destroy xvalues
 	CellInfo primReg;
 	CellInfo secReg;
 	
@@ -214,26 +214,43 @@ CellState getCellState(NasmGenInfo& ngi, const Datatype& datatype)
 	return CellState::lValue;
 }
 
+void pushXValue(NasmGenInfo& ngi, const Datatype& datatype)
+{
+	ngi.stackCells.push(CellInfo{ CellState::xValue, datatype });
+	ngi.ss << "  sub rsp, " << getDatatypeSize(ngi.program, datatype) << "\n";
+}
+void autoPopXValues(NasmGenInfo& ngi)
+{
+	while (!ngi.stackCells.empty() && ngi.stackCells.top().state == CellState::xValue)
+	{
+		ngi.ss << "  add rsp, " << getDatatypeSize(ngi.program, ngi.stackCells.top().datatype) << "\n";
+		ngi.stackCells.pop();
+	}
+}
 void pushPrimReg(NasmGenInfo& ngi)
 {
+	assert(!isXValue(ngi.primReg) && "Pushing xvalues onto the stack is not allowed!");
 	ngi.ss << "  push " << primRegName(8) << "\n";
 	ngi.stackCells.push(ngi.primReg);
 	ngi.primReg.state = CellState::Unused;
 }
 void popPrimReg(NasmGenInfo& ngi)
 {
+	autoPopXValues(ngi);
 	ngi.primReg = ngi.stackCells.top();
 	ngi.stackCells.pop();
 	ngi.ss << "  pop " << primRegName(8) << "\n";
 }
 void pushSecReg(NasmGenInfo& ngi)
 {
+	assert(!isXValue(ngi.secReg) && "Pushing xvalues onto the stack is not allowed!");
 	ngi.ss << "  push " << secRegName(8) << "\n";
 	ngi.stackCells.push(ngi.secReg);
 	ngi.secReg.state = CellState::Unused;
 }
 void popSecReg(NasmGenInfo& ngi)
 {
+	autoPopXValues(ngi);
 	ngi.secReg = ngi.stackCells.top();
 	ngi.stackCells.pop();
 	ngi.ss << "  pop " << secRegName(8) << "\n";
@@ -255,7 +272,7 @@ void moveSecToPrim(NasmGenInfo& ngi, bool markUnused = true)
 
 bool primRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 {
-	if (isRValue(ngi.primReg))
+	if (isRValue(ngi.primReg) || isXValue(ngi.primReg))
 		return false;
 	if (pushAddr)
 		pushPrimReg(ngi);
@@ -278,7 +295,7 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 
 bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 {
-	if (isRValue(ngi.secReg))
+	if (isRValue(ngi.secReg) || isXValue(ngi.primReg))
 		return false;
 	if (pushAddr)
 		pushSecReg(ngi);
@@ -303,6 +320,19 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 	primRegLToRVal(ngi);
 	secRegLToRVal(ngi);
 	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
+}
+
+void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& srcReg, int size)
+{
+	auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
+	auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
+	func->isReachable = true;
+
+	ngi.ss << "  push " << size << "\n";
+	ngi.ss << "  push " << srcReg << "\n";
+	ngi.ss << "  push " << destReg << "\n";
+	ngi.ss << "  call " << getMangledName(func) << "\n";
+	ngi.ss << "  add rsp, " << 3 * 8 << "\n";
 }
 
 #define DISABLE_EXPR_FOR_PACKS(ngi, expr) \
@@ -380,17 +410,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		if (isPackType(ngi.program, ngi.secReg.datatype))
 		{
-			auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
-			auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
-			func->isReachable = true;
-
 			int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
-
-			ss << "  push " << packSize << "\n";
-			ss << "  push rcx\n";
-			ss << "  push rax\n";
-			ss << "  call " << getMangledName(func) << "\n";
-			ss << "  add rsp, " << 3 * 8 << "\n";
+			genMemcpy(ngi, "rax", "rcx", packSize);
 		}
 		else
 		{
@@ -709,7 +730,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 		bool isVoidFunc = expr->datatype == Datatype{ "void" };
 		if (!isVoidFunc)
-			ss << "  sub rsp, " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
+		{
+			if (isPackType(ngi.program, expr->datatype))
+				pushXValue(ngi, expr->datatype);
+			else
+				ss << "  sub rsp, " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
+		}
 
 		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
 		{
@@ -719,19 +745,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 				if (isXValue(ngi.primReg)) // xvalues are already on the stack
 					continue;
 
-				auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
-				auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
-				func->isReachable = true;
-
 				int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
-
 				ss << "  sub rsp, " << packSize << "\n";
 				ss << "  mov rcx, rsp\n";
-				ss << "  push " << packSize << "\n";
-				ss << "  push rax\n";
-				ss << "  push rcx\n";
-				ss << "  call " << getMangledName(func) << "\n";
-				ss << "  add rsp, " << 3 * 8 << "\n";
+
+				genMemcpy(ngi, "rcx", "rax", packSize);
 				continue;
 			}
 			primRegLToRVal(ngi);
@@ -860,19 +878,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
 			if (isPackType(ngi.program, ngi.primReg.datatype))
 			{
-				auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
-				auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
-				func->isReachable = true;
-
+				ss << "  mov rcx, rbp\n";
+				ss << "  add rcx, " << statement->funcRetOffset << "\n";
 				int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
-
-				ss << "  push " << packSize << "\n";
-				ss << "  push rax\n";
-				ss << "  mov rax, rbp\n";
-				ss << "  add rax, " << statement->funcRetOffset << "\n";
-				ss << "  push rax\n";
-				ss << "  call " << getMangledName(func) << "\n";
-				ss << "  add rsp, " << 3 * 8 << "\n";
+				genMemcpy(ngi, "rcx", "rax", packSize);
 			}
 			else
 			{
@@ -982,7 +991,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
-		// cleanup xvalue
+		autoPopXValues(ngi);
 		break;
 	default:
 		THROW_NASM_GEN_ERROR(statement->pos, "Unsupported statement type!");
