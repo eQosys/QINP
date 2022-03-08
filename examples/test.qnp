@@ -1,10 +1,20 @@
 import "std.qnp"
 
-void func()...
-
 pack User:
 	bool likesProgramming
 	u64 age
+
+void printUser(User* pUser):
+	print("User: \n")
+	print("  Age: ")
+	print(pUser->age)
+	print("\n")
+	print("  Likes Programming: ")
+	if pUser->likesProgramming:
+		print("Yes")
+	else:
+		print("No")
+	print("\n")
 
 User tecstylos
 tecstylos.likesProgramming = true
@@ -12,13 +22,6 @@ tecstylos.age = 17
 
 User* pUser = &tecstylos
 
-print("Age: ")
-print(pUser->age)
-print("\n")
-
-if tecstylos.likesProgramming:
-	print("TecStylos likes programming!\n")
-else:
-	print("TecStylos doesn't like programming!\n")
+printUser(&tecstylos)
 
 exit(0)
