@@ -371,16 +371,32 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Assign:
-		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.datatype == expr->right->datatype && "Assign: datatype mismatch!");
 		assert(isLValue(ngi.primReg) && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
-		secRegLToRVal(ngi);
 
-		ss << "  mov " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		if (isPackType(ngi.program, ngi.secReg.datatype))
+		{
+			auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
+			auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
+			func->isReachable = true;
+
+			int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
+
+			ss << "  push " << packSize << "\n";
+			ss << "  push rcx\n";
+			ss << "  push rax\n";
+			ss << "  call " << getMangledName(func) << "\n";
+			ss << "  add rsp, " << 3 * 8 << "\n";
+		}
+		else
+		{
+			secRegLToRVal(ngi);
+			ss << "  mov " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		}
 
 		// Datatype & state don't change
 		break;
@@ -732,7 +748,17 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 
 		if (!isVoidFunc)
-			ss << "  pop " << primRegName(8) << "\n";
+		{
+			if (isPackType(ngi.program, ngi.primReg.datatype))
+			{
+				ss << "  mov rax, rsp\n";
+				ngi.primReg.state = CellState::xValue;
+			}
+			else
+			{
+				ss << "  pop " << primRegName(8) << "\n";
+			}
+		}
 	}
 		break;
 	case Expression::ExprType::Suffix_Increment:
@@ -832,8 +858,27 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		if (statement->subExpr)
 		{
 			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
-			primRegLToRVal(ngi);
-			ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+			if (isPackType(ngi.program, ngi.primReg.datatype))
+			{
+				auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
+				auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
+				func->isReachable = true;
+
+				int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
+
+				ss << "  push " << packSize << "\n";
+				ss << "  push rax\n";
+				ss << "  mov rax, rbp\n";
+				ss << "  add rax, " << statement->funcRetOffset << "\n";
+				ss << "  push rax\n";
+				ss << "  call " << getMangledName(func) << "\n";
+				ss << "  add rsp, " << 3 * 8 << "\n";
+			}
+			else
+			{
+				primRegLToRVal(ngi);
+				ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+			}
 		}
 		ss << "  mov rsp, rbp\n";
 		ss << "  pop rbp\n";
@@ -937,6 +982,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		break;
 	case Statement::Type::Expression:
 		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
+		// cleanup xvalue
 		break;
 	default:
 		THROW_NASM_GEN_ERROR(statement->pos, "Unsupported statement type!");

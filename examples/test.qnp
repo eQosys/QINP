@@ -5,6 +5,13 @@ pack Location:
 	i64 y
 	i64 z
 
+Location makeLocation(i64 x, i64 y, i64 z):
+	Location loc
+	loc.x = x
+	loc.y = y
+	loc.z = z
+	return loc
+
 void printLocation(Location loc, i64 locx):
 	print("Location: ")
 	print(loc.x)
@@ -18,18 +25,16 @@ void printLocation(Location loc, i64 locx):
 	print("\n")
 
 Location l
-l.x = 123
-l.y = 456
-l.z = 789
+l = makeLocation(1, 2, 3)
 printLocation(l, 111)
 
-print("Location: ")
-print(l.x)
-print(", ")
-print(l.y)
-print(", ")
-print(l.z)
-print("\n")
+\\print("Location: ")
+\\print(l.x)
+\\print(", ")
+\\print(l.y)
+\\print(", ")
+\\print(l.z)
+\\print("\n")
 
 \\pack User:
 \\	u8 name[32]
