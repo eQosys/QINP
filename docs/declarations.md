@@ -6,6 +6,7 @@ The QINP language follows the ODR (One Definition Rule).
 ## Overview
  - [Variables](#variables)
  - [Functions](#functions)
+ - [Packs](#packs)
 
 ---
 
@@ -69,4 +70,29 @@ A function definition additionally associates a list of statements.
 > ```qinp
 > u64 square(u64 x):
 >    return x * x
+> ```
+
+---
+
+### Packs
+
+A pack is a collection of members. They are similar to structs in C++.
+They can get declared and defined.
+A pack that has only been declared can not be used directly to instantiate a new object, but pointers to it can.
+Before accessing a member of a pack, the pack must be defined.
+Packs can hold pointers to objects of the same pack type.
+
+#### Examples
+
+> Declaration
+> ```qinp
+> pack User...
+> ```
+
+> Definition
+> ```qinp
+> pack User:
+>    u32 age
+>    u8 name[32]
+>    User* friends[10]
 > ```

@@ -980,6 +980,9 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack type!");
 
 			auto& pack = info.program->packs.at(exp->left->datatype.name);
+			if (!pack->isDefined)
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of declared-only pack type!");
+
 			auto memberIt = pack->members.find(memberToken.value);
 			if (memberIt == pack->members.end())
 				THROW_PROG_GEN_ERROR(memberToken.pos, "Unknown member!");
