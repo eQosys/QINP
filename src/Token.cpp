@@ -3,6 +3,68 @@
 #include <iostream>
 #include <set>
 
+const std::map<std::string, Token::Type> specialKeywords = 
+{
+	{ "+",   Token::Type::Operator },
+	{ "-",   Token::Type::Operator },
+	{ "*",   Token::Type::Operator },
+	{ "/",   Token::Type::Operator },
+	{ "%",   Token::Type::Operator },
+	{ "^",   Token::Type::Operator },
+	{ "&",   Token::Type::Operator },
+	{ "|",   Token::Type::Operator },
+	{ "!",   Token::Type::Operator },
+	{ "=",   Token::Type::Operator },
+	{ "<<",  Token::Type::Operator },
+	{ ">>",  Token::Type::Operator },
+	{ "<",   Token::Type::Operator },
+	{ ">",   Token::Type::Operator },
+	{ "&&",  Token::Type::Operator },
+	{ "||",  Token::Type::Operator },
+	{ "++",  Token::Type::Operator },
+	{ "--",  Token::Type::Operator },
+	{ "~",   Token::Type::Operator },
+	{ "+=",  Token::Type::Operator },
+	{ "-=",  Token::Type::Operator },
+	{ "*=",  Token::Type::Operator },
+	{ "/=",  Token::Type::Operator },
+	{ "%=",  Token::Type::Operator },
+	{ "^=",  Token::Type::Operator },
+	{ "&=",  Token::Type::Operator },
+	{ "|=",  Token::Type::Operator },
+	{ "!=",  Token::Type::Operator },
+	{ "==",  Token::Type::Operator },
+	{ "<<=", Token::Type::Operator },
+	{ ">>=", Token::Type::Operator },
+	{ "<=",  Token::Type::Operator },
+	{ ">=",  Token::Type::Operator },
+	{ ".",   Token::Type::Operator },
+	{ "->",  Token::Type::Operator },
+
+	{ "(",   Token::Type::Separator },
+	{ ")",   Token::Type::Separator },
+	{ "[",   Token::Type::Separator },
+	{ "]",   Token::Type::Separator },
+	{ "{",   Token::Type::Separator },
+	{ "}",   Token::Type::Separator },
+	{ ":",   Token::Type::Separator },
+	{ "::",  Token::Type::Separator },
+	{ ",",   Token::Type::Separator },
+	{ "...", Token::Type::Separator },
+};
+
+bool isSpecialKeywordBegin(const std::string& str)
+{
+	for (auto& word : specialKeywords)
+	{
+		if (word.first.find(str) == 0)
+			return true;
+		if (word.first > str)
+			break;
+	}
+	return false;
+}
+
 std::string TokenTypeToString(Token::Type type)
 {
 	switch (type)

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <map>
 
 struct Token
 {
@@ -34,6 +35,10 @@ struct Token
 
 typedef std::vector<Token> TokenList;
 typedef std::shared_ptr<TokenList> TokenListRef;
+
+extern const std::map<std::string, Token::Type> specialKeywords;
+
+bool isSpecialKeywordBegin(const std::string& str);
 
 std::string TokenTypeToString(Token::Type type);
 

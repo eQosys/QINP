@@ -30,46 +30,6 @@ bool isIDSpecial(char c) { return c == '_'; }
 bool isIDBegin(char c) { return isAlpha(c) || isIDSpecial(c); }
 bool isIDMid(char c) { return isAlphaNum(c) || isIDSpecial(c); }
 
-static const std::set<std::string> operators =
-{
-	"+",  "-",  "*",  "/",  "%",  "^",  "&",  "|",  "!",  "=",  "<<",  ">>",  "<",  ">",  "&&",  "||",  "++",  "--",  "~",
-	"+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "!=", "==", "<<=", ">>=", "<=", ">=", "->"
-};
-
-static const std::set<std::string> separators =
-{
-	"(", ")",
-	"[", "]",
-	"{", "}",
-	":", "::",
-	",", ".",
-	"..."
-};
-
-bool isOperatorBegin(const std::string& str)
-{
-	for (auto& op : operators)
-	{
-		if (op.find(str) == 0)
-			return true;
-		if (op > str)
-			break;
-	}
-	return false;
-}
-
-bool isSeparatorBegin(const std::string& str)
-{
-	for (auto& sep : separators)
-	{
-		if (sep.find(str) == 0)
-			return true;
-		if (sep > str)
-			break;
-	}
-	return false;
-}
-
 char getEscapeChar(char c)
 {
 	switch (c)
@@ -100,8 +60,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 		CheckSingleLineComment,
 		TokenizeSingleLineComment,
 		TokenizeLiteral,
-		TokenizeOperator,
-		TokenizeSeparator,
+		TokenizeSpecialKeyword,
 		TokenizeString,
 		TokenizeChar,
 	} state = State::BeginToken;
@@ -189,17 +148,10 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 				token.type = Token::Type::Comment;
 				state = State::CheckSingleLineComment;
 			}
-			else if (isOperatorBegin(std::string(1, c)))
+			else if (isSpecialKeywordBegin(std::string(1, c)))
 			{
 				token.value.push_back(c);
-				token.type = Token::Type::Operator;
-				state = State::TokenizeOperator;
-			}
-			else if (isSeparatorBegin(std::string(1, c)))
-			{
-				token.value.push_back(c);
-				token.type = Token::Type::Separator;
-				state = State::TokenizeSeparator;
+				state = State::TokenizeSpecialKeyword;
 			}
 			else if ('\'' == c)
 			{
@@ -258,24 +210,14 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			--index;
 			state = State::EndToken;
 			break;
-		case State::TokenizeOperator:
-			if (isOperatorBegin(token.value + std::string(1, c)))
+		case State::TokenizeSpecialKeyword:
+			if (isSpecialKeywordBegin(token.value + std::string(1, c)))
 			{
 				token.value.push_back(c);
 				break;
 			}
 			--index;
-			state = State::EndToken;
-			break;
-		case State::TokenizeSeparator:
-			if (isSeparatorBegin(token.value + std::string(1, c)))
-			{
-				token.value.push_back(c);
-				break;
-			}
-			if (token.value == "..")
-				THROW_TOKENIZER_ERROR(token.pos, "Illegal character sequence '..'!");
-			--index;
+			token.type = specialKeywords.at(token.value);
 			state = State::EndToken;
 			break;
 		case State::TokenizeChar:
