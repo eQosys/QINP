@@ -12,6 +12,7 @@ struct Variable
 {
 	Token::Position pos;
 	std::string name;
+	std::string modName;
 	bool isLocal = false;
 	int offset = -1;
 	Datatype datatype;

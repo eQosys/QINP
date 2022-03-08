@@ -159,13 +159,13 @@ u8** getenv():
 	return env
 
 pack __timespec:
-	i64 tv_sec
-	i64 tv_nsec
+	i64 seconds
+	i64 nanoseconds
 
 void sleep(u64 ms):
 	__timespec ts
-	ts.tv_sec = ms / 1000
-	ts.tv_nsec = (ms % 1000) * 1000000
+	ts.seconds = ms / 1000
+	ts.nanoseconds = (ms % 1000) * 1000000
 	assembly:
 		"mov rax, $(SYS_NANOSLEEP)"
 		"mov rdi, rbp"

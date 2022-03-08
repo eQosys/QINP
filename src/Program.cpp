@@ -48,7 +48,7 @@ std::string getMangledName(const std::string& varName, const Datatype& datatype)
 
 std::string getMangledName(const Variable& var)
 {
-	return getMangledName(var.name, var.datatype);
+	return getMangledName(var.modName, var.datatype);
 }
 
 std::string getMangledName(int strID)

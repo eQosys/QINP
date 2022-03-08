@@ -329,6 +329,8 @@ void parseExpectedColon(ProgGenInfo& info)
 
 void addVariable(ProgGenInfo& info, Variable var)
 {
+	var.modName = var.name;
+
 	if (currContext(info) == ProgGenInfo::Context::Pack)
 	{
 		var.offset = info.currPack->size;
@@ -361,10 +363,9 @@ void addVariable(ProgGenInfo& info, Variable var)
 	}
 
 	var.isLocal = !isGlobal;
-	auto varName = var.name;
 	static int globVarID = 0;
 	if (isGlobal && !info.localStack.empty())
-		var.name.append("__" + std::to_string(globVarID++));
+		var.modName.append("__" + std::to_string(globVarID++));
 
 	if (!isGlobal && !info.localStack.empty())
 	{
@@ -377,10 +378,10 @@ void addVariable(ProgGenInfo& info, Variable var)
 	}
 
 	if (info.localStack.empty())
-		info.program->globals.insert({ varName, var });
+		info.program->globals.insert({ var.name, var });
 	else
 	{
-		currLocalFrame(info).locals.insert({ varName, var });
+		currLocalFrame(info).locals.insert({ var.name, var });
 		if (isGlobal)
 			info.program->globals.insert({ var.name, var });
 	}
