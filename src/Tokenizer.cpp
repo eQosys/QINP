@@ -33,7 +33,7 @@ bool isIDMid(char c) { return isAlphaNum(c) || isIDSpecial(c); }
 static const std::set<std::string> operators =
 {
 	"+",  "-",  "*",  "/",  "%",  "^",  "&",  "|",  "!",  "=",  "<<",  ">>",  "<",  ">",  "&&",  "||",  "++",  "--",  "~",
-	"+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "!=", "==", "<<=", ">>=", "<=", ">=", "sizeof"
+	"+=", "-=", "*=", "/=", "%=", "^=", "&=", "|=", "!=", "==", "<<=", ">>=", "<=", ">=", "sizeof", "->"
 };
 
 static const std::set<std::string> separators =

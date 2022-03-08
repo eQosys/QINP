@@ -107,6 +107,7 @@ struct Expression : public Statement
 		Remainder,
 
 		MemberAccess,
+		MemberAccessDereference,
 
 		AddressOf,
 		Dereference,

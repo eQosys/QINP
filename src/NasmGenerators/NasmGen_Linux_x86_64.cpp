@@ -527,6 +527,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::lValue;
 	}
 		break;
+	case Expression::ExprType::MemberAccessDereference:
+		assert("Member access dereference should be converted to member access by the program generator" && false);
+		break;
 	case Expression::ExprType::AddressOf:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.state == CellState::lValue && "Cannot take address of non-lvalue!");

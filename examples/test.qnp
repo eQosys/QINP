@@ -13,7 +13,7 @@ tecstylos.age = 17
 User* pUser = &tecstylos
 
 print("Age: ")
-print((*pUser).age)
+print(pUser->age)
 print("\n")
 
 if tecstylos.likesProgramming:

@@ -54,6 +54,8 @@ std::string ExpressionTypeToString(Expression::ExprType type)
 	case Expression::ExprType::Product: return "Product";
 	case Expression::ExprType::Quotient: return "Quotient";
 	case Expression::ExprType::Remainder: return "Remainder";
+	case Expression::ExprType::MemberAccess: return "MemberAccess";
+	case Expression::ExprType::MemberAccessDereference: return "MemberAccessDereference";
 	case Expression::ExprType::AddressOf: return "AddressOf";
 	case Expression::ExprType::Dereference: return "Dereference";
 	case Expression::ExprType::Logical_NOT: return "Logical_NOT";
