@@ -3,15 +3,26 @@ import "std.qnp"
 define WIDTH 10
 define HEIGHT 10
 
-bool grid[WIDTH][HEIGHT]
-bool grid2[WIDTH][HEIGHT]
+pack Grid:
+	bool cells[WIDTH][HEIGHT]
+
+Grid mainGrid
+Grid backGrid
+
+Grid* pMain = &mainGrid
+Grid* pBack = &backGrid
+
+void flip():
+	Grid* pTemp = pMain
+	pMain = pBack
+	pBack = pTemp
 
 void show():
 	i64 i = 0
 	while i < WIDTH:
 		i64 j = 0
 		while j < HEIGHT:
-			if grid[i][j]:
+			if pMain->cells[i][j]:
 				print("#")
 			else:
 				print(" ")
@@ -41,35 +52,27 @@ void update():
 						continue
 					if k == i && l == j:
 						continue
-					if grid[k][l]:
+					if pMain->cells[k][l]:
 						++count
 				++k
-			if grid[i][j]:
+			if pMain->cells[i][j]:
 				if count < 2 || count > 3:
-					grid2[i][j] = false
+					pBack->cells[i][j] = false
 				else:
-					grid2[i][j] = true
+					pBack->cells[i][j] = true
 			else:
 				if count == 3:
-					grid2[i][j] = true
+					pBack->cells[i][j] = true
 				else:
-					grid2[i][j] = false
-			++j
-		++i
-	
-	i = 0
-	while i < WIDTH:
-		i64 j = 0
-		while j < HEIGHT:
-			grid[i][j] = grid2[i][j]
+					pBack->cells[i][j] = false
 			++j
 		++i
 
-grid[0][2] = true
-grid[1][0] = true
-grid[1][2] = true
-grid[2][1] = true
-grid[2][2] = true
+mainGrid.cells[0][2] = true
+mainGrid.cells[1][0] = true
+mainGrid.cells[1][2] = true
+mainGrid.cells[2][1] = true
+mainGrid.cells[2][2] = true
 
 i64 n = 30
 while --n > 0:
@@ -77,4 +80,5 @@ while --n > 0:
 	update()
 	sleep(100)
 	clear()
+	flip()
 show()
