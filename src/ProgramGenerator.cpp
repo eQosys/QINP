@@ -48,12 +48,15 @@ struct ProgGenInfo
 	{
 		Global,
 		Function,
+		Pack,
 	};
 	
 	std::stack<Context> contextStack;
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
+
+	PackRef currPack = nullptr;
 };
 
 struct ProgGenInfoBackup
@@ -288,8 +291,53 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 	return nullptr;
 }
 
+Datatype getParseDatatype(ProgGenInfo& info);
+
+bool parseEmptyLine(ProgGenInfo& info)
+{
+	if (peekToken(info).type != Token::Type::Newline)
+		return false;
+	nextToken(info);
+	return true;
+}
+
+void parseExpected(ProgGenInfo& info, Token::Type type)
+{
+	auto& token = nextToken(info);
+	if (token.type != type)
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
+}
+
+void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
+{
+	auto& token = nextToken(info);
+	if (token.type != type || token.value != value)
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
+}
+
+void parseExpectedNewline(ProgGenInfo& info)
+{
+	auto& token = nextToken(info);
+	if (!isNewline(token) && !isEndOfCode(token))
+		THROW_PROG_GEN_ERROR(token.pos, "Expected newline!");
+}
+
+void parseExpectedColon(ProgGenInfo& info)
+{
+	parseExpected(info, Token::Type::Separator, ":");
+}
+
 void addVariable(ProgGenInfo& info, Variable var)
 {
+	if (currContext(info) == ProgGenInfo::Context::Pack)
+	{
+		var.offset = info.currPack->size;
+		info.currPack->size += getDatatypeSize(info.program, var.datatype);
+
+		info.currPack->members.insert({ var.name, var });
+		return;
+	}
+
 	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
 	int varSize = getDatatypeSize(info.program, var.datatype);
 
@@ -371,6 +419,14 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
 
 	sigIt->second = func;
+}
+
+void addPack(ProgGenInfo& info, PackRef pack)
+{
+	auto packIt = info.program->packs.find(pack->name);
+	if (packIt != info.program->packs.end())
+		THROW_PROG_GEN_ERROR(pack->pos, "Pack: '" + pack->name + "' already defined here: '" + getPosStr(packIt->second->pos) + "'!");
+	info.program->packs.insert({ pack->name, pack });
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -535,40 +591,6 @@ void decreaseIndent(ProgGenInfo::Indent& indent)
 	if (indent.lvl == 0)
 		THROW_PROG_GEN_ERROR(Token::Position(), "Indent level already 0!");
 	--indent.lvl;
-}
-
-bool parseEmptyLine(ProgGenInfo& info)
-{
-	if (peekToken(info).type != Token::Type::Newline)
-		return false;
-	nextToken(info);
-	return true;
-}
-
-void parseExpected(ProgGenInfo& info, Token::Type type)
-{
-	auto& token = nextToken(info);
-	if (token.type != type)
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
-}
-
-void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
-{
-	auto& token = nextToken(info);
-	if (token.type != type || token.value != value)
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
-}
-
-void parseExpectedNewline(ProgGenInfo& info)
-{
-	auto& token = nextToken(info);
-	if (!isNewline(token) && !isEndOfCode(token))
-		THROW_PROG_GEN_ERROR(token.pos, "Expected newline!");
-}
-
-void parseExpectedColon(ProgGenInfo& info)
-{
-	parseExpected(info, Token::Type::Separator, ":");
 }
 
 void pushTempBody(ProgGenInfo& info, BodyRef body)
@@ -951,8 +973,8 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack type!");
 
 			auto& pack = info.program->packs.at(exp->left->datatype.name);
-			auto memberIt = pack.members.find(memberToken.value);
-			if (memberIt == pack.members.end())
+			auto memberIt = pack->members.find(memberToken.value);
+			if (memberIt == pack->members.end())
 				THROW_PROG_GEN_ERROR(memberToken.pos, "Unknown member!");
 			exp->datatype = memberIt->second.datatype;
 			exp->memberOffset = memberIt->second.offset;
@@ -1048,8 +1070,6 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 	return exp;
 }
-
-Datatype getParseDatatype(ProgGenInfo& info);
 
 ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 {
@@ -1206,13 +1226,15 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	addVariable(info, var);
 
 	ExpressionRef initExpr = nullptr;
-
-	if (isOperator(peekToken(info), "="))
+	if (currContext(info) != ProgGenInfo::Context::Pack)
 	{
-		nextToken(info, -1);
-		initExpr = getParseExpression(info);
+		if (isOperator(peekToken(info), "="))
+		{
+			nextToken(info, -1);
+			initExpr = getParseExpression(info);
+		}
 	}
-
+	
 	parseExpectedNewline(info);
 
 	return initExpr;
@@ -1662,37 +1684,32 @@ bool parsePack(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 	nextToken(info);
 
-	auto packIt = info.program->packs.find(nameToken.value);
-	if (packIt != info.program->packs.end())
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Pack: '" + nameToken.value + "' already defined here: '" + getPosStr(packIt->second.pos) + "'!");
+	PackRef pack = std::make_shared<Pack>();
+	pack->pos = nameToken.pos;
+	pack->name = nameToken.value;
 
-	Pack pack;
-	pack.pos = nameToken.pos;
-	pack.name = nameToken.value;
+	//if (isSeparator(peekToken(info), "..."))
+	//{
+	//	pack->isDefined = false;
+	//}
 
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
 
+	addPack(info, pack);
+
 	increaseIndent(info.indent);
+	pushContext(info, ProgGenInfo::Context::Pack);
+	info.currPack = pack;
 
 	while (parseIndent(info))
 	{
-		Variable member;
-		member.pos = peekToken(info).pos;
-		member.datatype = getParseDatatype(info);
-		if (!isIdentifier(peekToken(info)))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
-		member.name = nextToken(info).value;
-		member.offset = pack.size;
-		pack.size += getDatatypeSize(info.program, member.datatype);
-		parseExpectedNewline(info);
-
-		pack.members.insert({member.name, member });
+		if (!parseDeclDef(info, false))
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected member definition!");
 	}
 
+	popContext(info);
 	decreaseIndent(info.indent);
-
-	info.program->packs.insert({ pack.name, pack });
 
 	return true;
 }

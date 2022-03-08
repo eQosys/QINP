@@ -521,10 +521,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.state == CellState::lValue && "Left operand of member access must be lValue");
+		ss << ";; MEMBER ACCESS\n";
 		ss << "  add " << primRegName(8) << ", " << expr->memberOffset << "\n";
 		
 		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::lValue;
+		//ngi.primReg.state = CellState::lValue;
+		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 	}
 		break;
 	case Expression::ExprType::MemberAccessDereference:
@@ -611,6 +613,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Subscript:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot subscript non-pointer!");
+		ss << ";; SUBSCRIPT\n";
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());

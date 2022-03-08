@@ -88,13 +88,6 @@ std::vector<OpPrecLvl> opPrecLvls =
 	},
 	{
 		{
-			{ ".", Expression::ExprType::MemberAccess },
-			{ "->", Expression::ExprType::MemberAccessDereference },
-		},
-		OpPrecLvl::Type::Binary,
-	},
-	{
-		{
 			{ "&", Expression::ExprType::AddressOf },
 			{ "*", Expression::ExprType::Dereference },
 			{ "!", Expression::ExprType::Logical_NOT },
@@ -116,5 +109,12 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "--", Expression::ExprType::Suffix_Decrement },
 		},
 		OpPrecLvl::Type::Unary_Suffix,
+	},
+	{
+		{
+			{ ".", Expression::ExprType::MemberAccess },
+			{ "->", Expression::ExprType::MemberAccessDereference },
+		},
+		OpPrecLvl::Type::Binary,
 	},
 };

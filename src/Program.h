@@ -53,11 +53,13 @@ struct Pack
 	int size = 0;
 };
 
+typedef std::shared_ptr<Pack> PackRef;
+
 struct Program
 {
 	std::map<std::string, Variable> globals;
 	std::map<std::string, FunctionOverloads> functions;
-	std::map<std::string, Pack> packs;
+	std::map<std::string, PackRef> packs;
 	std::map<int, std::string> strings;
 	BodyRef body;
 };

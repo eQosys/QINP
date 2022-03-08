@@ -67,7 +67,7 @@ int getPackSize(const ProgramRef program, const std::string& packName)
 	if (pack == program->packs.end())
 		return -1;
 
-	return pack->second.size;
+	return pack->second->size;
 }
 
 int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool treatArrayAsPointer)

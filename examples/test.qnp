@@ -1,11 +1,15 @@
 import "std.qnp"
 
 pack User:
+	u8 name[32]
 	bool likesProgramming
 	u64 age
 
 void printUser(User* pUser):
 	print("User: \n")
+	print("  Name: ")
+	print(pUser->name)
+	print("\n")
 	print("  Age: ")
 	print(pUser->age)
 	print("\n")
@@ -17,6 +21,7 @@ void printUser(User* pUser):
 	print("\n")
 
 User tecstylos
+strcpy(tecstylos.name, "Tecstylos")
 tecstylos.likesProgramming = true
 tecstylos.age = 17
 

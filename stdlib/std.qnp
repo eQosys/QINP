@@ -37,6 +37,12 @@ u8* strrev(u8* str)...
 \\ @return The reversed string
 u8* strrev(u8* begin, u8* end)...
 
+\\ Copy a null-terminated string
+\\ @param dest The destination buffer
+\\ @param src The source string
+\\ @return The destination buffer
+u8* strcpy(u8* dest, u8* src)...
+
 \\ Convert a base-10 integer to a string
 \\ @param num The integer to convert
 \\ @param str The string to store the converted integer in
@@ -93,6 +99,13 @@ u8* strrev(u8* begin, u8* end):
 		*end = temp
 
 	return str
+
+u8* strcpy(u8* dest, u8* src):
+	u8* begin = dest
+	while *src:
+		*dest++ = *src++
+	*dest = '\0'
+	return begin
 
 u8* itos(i64 num, u8* str):
 	u8* begin = str
