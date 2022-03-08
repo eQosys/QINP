@@ -422,12 +422,18 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	sigIt->second = func;
 }
 
-void addPack(ProgGenInfo& info, PackRef pack)
+PackRef addPack(ProgGenInfo& info, PackRef pack)
 {
 	auto packIt = info.program->packs.find(pack->name);
 	if (packIt != info.program->packs.end())
-		THROW_PROG_GEN_ERROR(pack->pos, "Pack: '" + pack->name + "' already defined here: '" + getPosStr(packIt->second->pos) + "'!");
-	info.program->packs.insert({ pack->name, pack });
+	{
+		if (packIt->second->isDefined)
+			THROW_PROG_GEN_ERROR(pack->pos, "Pack already defined here: " + getPosStr(packIt->second->pos));
+		if (pack->isDefined)
+			packIt->second->pos = pack->pos;
+		return packIt->second;
+	}
+	return info.program->packs.insert({ pack->name, pack }).first->second;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -1234,6 +1240,10 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 
+	if (isPackType(info.program, var.datatype))
+		if (!info.program->packs.at(var.datatype.name)->isDefined)
+			THROW_PROG_GEN_ERROR(var.pos, "Cannot use declared-only pack type!");
+
 	addVariable(info, var);
 
 	ExpressionRef initExpr = nullptr;
@@ -1697,15 +1707,16 @@ bool parsePack(ProgGenInfo& info)
 	pack->pos = nameToken.pos;
 	pack->name = nameToken.value;
 
-	//if (isSeparator(peekToken(info), "..."))
-	//{
-	//	pack->isDefined = false;
-	//}
-
+	pack = addPack(info, pack);
+	if (isSeparator(peekToken(info), "..."))
+	{
+		nextToken(info);
+		parseExpectedNewline(info);
+		return true;
+	}
+	
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
-
-	addPack(info, pack);
 
 	increaseIndent(info.indent);
 	pushContext(info, ProgGenInfo::Context::Pack);
@@ -1719,6 +1730,8 @@ bool parsePack(ProgGenInfo& info)
 
 	popContext(info);
 	decreaseIndent(info.indent);
+
+	pack->isDefined = true;
 
 	return true;
 }

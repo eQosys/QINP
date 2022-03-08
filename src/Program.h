@@ -57,6 +57,7 @@ struct Pack
 	std::string name;
 	std::map<std::string, Variable> members;
 	int size = 0;
+	bool isDefined = false;
 };
 
 typedef std::shared_ptr<Pack> PackRef;
