@@ -22,8 +22,8 @@
 | a = b      | ++a           | +a         | !a       | a == b     | a[b]          | a(...)
 | a += b     | --a           | -a         | a && b   | a != b     | *a            | (a)b
 | a -= b     | a++           | a + b      | a \|\| b | a < b      | &a            | sizeof(a)
-| a *= b     | a--           | a - b      |          | a > b      |               |
-| a /= b     |               | a * b      |          | a <= b     |               |
+| a *= b     | a--           | a - b      |          | a > b      | a.b           |
+| a /= b     |               | a * b      |          | a <= b     | a->b          |
 | a %= b     |               | a / b      |          | a >= b     |               |
 | a &= b     |               | a % b      |          |            |               |
 | a \|= b    |               | ~a         |          |            |               |
@@ -41,6 +41,7 @@ Operators with a lower precedence are evaluated first.
 
 | Precedence | Operator                                                                       | Associativity
 | ---------- | ------------------------------------------------------------------------------ | -------------
+| 0          | `a.b` `a->b`                                                                   | left-to-right
 | 1          | `a++` `a--` `a()` `a[]`                                                        | left-to-right
 | 2          | `++a` `--a` `+a` `-a` `!a` `~a` `(a)b` `*a` `&a`                               | right-to-left
 | 3          | `a*b` `a/b` `a%b`                                                              | left-to-right
@@ -103,6 +104,9 @@ Similar to arithmetic operators, the operands are converted to the same type (fo
 The subscript and dereference operators can be used on lvalues and rvalues and return an lvalue.
 
 The address-of operator can only be used on lvalues and returns the address of the lvalue.
+
+The `.` operator can be used on lvalues and xvalues. It is used to access the members of a pack. The returned value is an lvalue.
+The `->` operator can be used on lvalues and xvalues. It is used to access the members of a pointer to a pack. The returned value is an lvalue.
 
 ---
 

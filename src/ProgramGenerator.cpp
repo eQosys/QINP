@@ -778,7 +778,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	case Token::Type::String:
 		exp->valStr = getMangledName(info.program->strings.size());
 		info.program->strings.insert({ info.program->strings.size(), litToken.value });
-		exp->datatype = { "u8", 1 };
+		exp->datatype = { "u8", 1, { (int)litToken.value.size() + 1 } };
 		break;
 	default:
 		THROW_PROG_GEN_ERROR(litToken.pos, "Invalid literal type!");
@@ -1148,11 +1148,12 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	{
 		parseExpected(info, Token::Type::Separator, "(");
 		auto datatype = getParseDatatype(info);
-		if (!datatype)
-			datatype = getParseParenthesized(info)->datatype;
+		if (!!datatype)
+			parseExpected(info, Token::Type::Separator, ")");
 		else
 		{
-			parseExpected(info, Token::Type::Separator, ")");
+			nextToken(info, -1);
+			datatype = getParseParenthesized(info)->datatype;
 		}
 		exp->valStr = std::to_string(getDatatypeSize(info.program, datatype));
 		exp->eType = Expression::ExprType::Literal;
