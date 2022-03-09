@@ -32,3 +32,7 @@ User lukas = makeUser("LeLxkas", 15, true)
 
 printUser(kavi)
 printUser(lukas = kavi)
+
+u8 buff[16]
+
+print(scan(buff, sizeof(buff)))

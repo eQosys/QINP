@@ -26,6 +26,15 @@ void print(u8* str, u64 len)...
 \\ @param num The integer to print
 void print(i64 num)...
 
+\\ Reads a character from stdin
+\\ @return The character read from stdin
+u8 getchar()...
+
+\\ Read a null-terminated string from stdin
+\\ @param dest The destination buffer
+\\ @param size The size of the destination buffer
+u8* scan(u8* dest, u64 size)...
+
 \\ Reverse a null-terminated string
 \\ @param str The null-terminated string to reverse
 \\ @return The reversed string
@@ -96,6 +105,30 @@ void print(u8* str, u64 len):
 void print(i64 num):
 	u8 str[32]
 	print(itos(num, str))
+
+u8 getchar():
+	u8 ch
+
+	assembly:
+		"mov rax, $(SYS_READ)"
+		"mov rdi, 0"
+		"mov rsi, rbp"
+		"add rsi, $(ch)"
+		"mov rdx, 1"
+		"syscall"
+
+	return ch
+
+u8* scan(u8* dest, u64 size):
+	if !size:
+		return dest
+	u8* begin = dest
+
+	while --size:
+		*dest++ = getchar()
+	
+	*dest = '\0'
+	return begin
 
 u8* strrev(u8* str):
 	return strrev(str, str + strlen(str))
