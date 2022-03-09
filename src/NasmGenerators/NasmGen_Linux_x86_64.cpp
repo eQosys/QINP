@@ -419,7 +419,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		if (isPackType(ngi.program, ngi.secReg.datatype))
 		{
+			pushPrimReg(ngi);
 			genMemcpy(ngi, "rax", "rcx", getDatatypeSize(ngi.program, ngi.primReg.datatype));
+			popPrimReg(ngi);
 		}
 		else
 		{

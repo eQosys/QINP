@@ -31,4 +31,4 @@ User kavi = makeUser("Kevo", 16, true)
 User lukas = makeUser("LeLxkas", 15, true)
 
 printUser(kavi)
-printUser(lukas)
+printUser(lukas = kavi)
