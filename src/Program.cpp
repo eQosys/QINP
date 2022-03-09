@@ -81,6 +81,9 @@ int getPackSize(const ProgramRef program, const std::string& packName)
 	if (pack == program->packs.end())
 		return -1;
 
+	if (!pack->second->isDefined)
+		return -1;
+
 	return pack->second->size;
 }
 
@@ -108,7 +111,11 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 
 int getDatatypePushSize(const ProgramRef program, const Datatype& datatype)
 {
-	return std::max(8, getDatatypeSize(program, datatype));
+	int size = getDatatypeSize(program, datatype);
+	if (size < 0)
+		return -1;
+	// Round the size to the next multiple of 8
+	return (size + 7) & -8;
 }
 
 int getDatatypePointedToSize(const ProgramRef program, Datatype datatype)

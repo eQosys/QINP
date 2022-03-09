@@ -76,11 +76,12 @@ A function definition additionally associates a list of statements.
 
 ### Packs
 
-A pack is a collection of members. They are similar to structs in C++.
-They can get declared and defined.
-A pack that has only been declared can not be used directly to instantiate a new object, but pointers to it can.
-Before accessing a member of a pack, the pack must be defined.
+A pack is a collection of variables (called members). They are similar to structs in C++.
+They can be declared and defined.
+A pack that has only been declared can not be used directly to instantiate a new object, but pointers to an declared-only pack can be used.
+Before accessing any member of a pack, the pack must be defined.
 Packs can hold pointers to objects of the same pack type.
+The size of a pack is constant and only known after the pack's definition. The [sizeof operator](./operators.md#sizeof) can be used on defined packs, but not on declared-only ones.
 
 #### Examples
 

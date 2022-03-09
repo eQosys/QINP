@@ -218,13 +218,13 @@ CellState getCellState(NasmGenInfo& ngi, const Datatype& datatype)
 void pushXValue(NasmGenInfo& ngi, const Datatype& datatype)
 {
 	ngi.stackCells.push(CellInfo{ CellState::xValue, datatype });
-	ngi.ss << "  sub rsp, " << getDatatypeSize(ngi.program, datatype) << "\n";
+	ngi.ss << "  sub rsp, " << getDatatypePushSize(ngi.program, datatype) << "\n";
 }
 void autoPopXValues(NasmGenInfo& ngi)
 {
 	while (!ngi.stackCells.empty() && ngi.stackCells.top().state == CellState::xValue)
 	{
-		ngi.ss << "  add rsp, " << getDatatypeSize(ngi.program, ngi.stackCells.top().datatype) << "\n";
+		ngi.ss << "  add rsp, " << getDatatypePushSize(ngi.program, ngi.stackCells.top().datatype) << "\n";
 		ngi.stackCells.pop();
 	}
 }
@@ -419,8 +419,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		if (isPackType(ngi.program, ngi.secReg.datatype))
 		{
-			int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
-			genMemcpy(ngi, "rax", "rcx", packSize);
+			genMemcpy(ngi, "rax", "rcx", getDatatypeSize(ngi.program, ngi.primReg.datatype));
 		}
 		else
 		{
@@ -727,7 +726,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
 		primRegLToRVal(ngi);
-		ss << "  mov " << secRegName(8) << ", " << std::to_string(getDatatypeSize(ngi.program, expr->datatype)) << "\n";
+		ss << "  mov " << secRegName(8) << ", " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
 		ss << "  mul " << secRegName(8) << "\n";
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
@@ -743,7 +742,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			if (isPackType(ngi.program, expr->datatype))
 				pushXValue(ngi, expr->datatype);
 			else
-				ss << "  sub rsp, " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
+				ss << "  sub rsp, 8\n"; // All non-pack types (builtins) have a maximum size of 8 bytes
 		}
 
 		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
@@ -754,11 +753,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 				if (isXValue(ngi.primReg)) // xvalues are already on the stack
 					continue;
 
-				int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
-				ss << "  sub rsp, " << packSize << "\n";
+				ss << "  sub rsp, " << getDatatypePushSize(ngi.program, ngi.primReg.datatype) << "\n";
 				ss << "  mov rcx, rsp\n";
 
-				genMemcpy(ngi, "rcx", "rax", packSize);
+				genMemcpy(ngi, "rcx", "rax", getDatatypeSize(ngi.program, ngi.primReg.datatype));
 				continue;
 			}
 			primRegLToRVal(ngi);
@@ -889,8 +887,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 			{
 				ss << "  mov rcx, rbp\n";
 				ss << "  add rcx, " << statement->funcRetOffset << "\n";
-				int packSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
-				genMemcpy(ngi, "rcx", "rax", packSize);
+				genMemcpy(ngi, "rcx", "rax", getDatatypeSize(ngi.program, ngi.primReg.datatype));
 			}
 			else
 			{
