@@ -1300,6 +1300,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
 
 		param.name = nextToken(info).value;
+		param.modName = param.name;
 
 		func->params.push_back(param);
 

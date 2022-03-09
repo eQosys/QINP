@@ -723,7 +723,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Subscript:
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot subscript non-pointer!");
-		ss << ";; SUBSCRIPT\n";
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->right.get());
