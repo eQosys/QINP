@@ -33,6 +33,11 @@ User lukas = makeUser("LeLxkas", 15, true)
 printUser(kavi)
 printUser(lukas = kavi)
 
-u8 buff[16]
+void printInc():
+	static u64 val
+	print(++val)
+	print("\n")
 
-print(scan(buff, sizeof(buff)))
+u64 val = 10
+while --val:
+	printInc()

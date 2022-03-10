@@ -327,7 +327,7 @@ void parseExpectedColon(ProgGenInfo& info)
 	parseExpected(info, Token::Type::Separator, ":");
 }
 
-void addVariable(ProgGenInfo& info, Variable var)
+void addVariable(ProgGenInfo& info, Variable var, bool isStatic)
 {
 	var.modName = var.name;
 
@@ -362,12 +362,15 @@ void addVariable(ProgGenInfo& info, Variable var)
 		}
 	}
 
-	var.isLocal = !isGlobal;
+	var.isLocal = !(isStatic || isGlobal);
+	static int staticID = 0;
+	if (isStatic)
+		var.modName = "static_" + std::to_string(staticID++) + "~" + var.name;
 	static int globVarID = 0;
 	if (isGlobal && !info.localStack.empty())
-		var.modName.append("__" + std::to_string(globVarID++));
+		var.modName.append("~" + std::to_string(globVarID++));
 
-	if (!isGlobal && !info.localStack.empty())
+	if (var.isLocal && !info.localStack.empty())
 	{
 		varSize = getDatatypeSize(info.program, var.datatype);
 		currLocalFrame(info).frameSize += varSize;
@@ -382,8 +385,8 @@ void addVariable(ProgGenInfo& info, Variable var)
 	else
 	{
 		currLocalFrame(info).locals.insert({ var.name, var });
-		if (isGlobal)
-			info.program->globals.insert({ var.name, var });
+		if (!var.isLocal)
+			info.program->globals.insert({ var.modName, var });
 	}
 }
 
@@ -1226,7 +1229,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 
 void parseFunctionBody(ProgGenInfo& info);
 
-ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
 	Variable var;
 	var.pos = peekToken(info).pos;
@@ -1248,7 +1251,7 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 		if (!info.program->packs.at(var.datatype.name)->isDefined)
 			THROW_PROG_GEN_ERROR(var.pos, "Cannot use declared-only pack type!");
 
-	addVariable(info, var);
+	addVariable(info, var, isStatic);
 
 	ExpressionRef initExpr = nullptr;
 	if (currContext(info) != ProgGenInfo::Context::Pack)
@@ -1265,12 +1268,12 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	return initExpr;
 }
 
-void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
 	if (datatype == Datatype{ "void" })
 		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot declare variable of type void!");
 
-	auto initExpr = getParseDeclDefVariable(info, datatype, name);
+	auto initExpr = getParseDeclDefVariable(info, datatype, isStatic, name);
 	if (initExpr)
 		pushStatement(info, initExpr);
 }
@@ -1351,9 +1354,18 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	}
 }
 
-bool parseDeclDef(ProgGenInfo& info, bool allowFunctions)
+bool parseDeclDef(ProgGenInfo& info)
 {
 	auto& typeToken = peekToken(info);
+
+	bool isStatic = false;
+	if (isKeyword(typeToken, "static"))
+	{
+		if (currContext(info) != ProgGenInfo::Context::Function)
+			THROW_PROG_GEN_ERROR(typeToken.pos, "Static keyword can only be used in function definitions!");
+		isStatic = true;
+		nextToken(info);
+	}
 
 	auto datatype = getParseDatatype(info);
 	if (!datatype)
@@ -1368,13 +1380,13 @@ bool parseDeclDef(ProgGenInfo& info, bool allowFunctions)
 
 	if (isSeparator(peekToken(info), "("))
 	{
-		if (!allowFunctions)
+		if (currContext(info) != ProgGenInfo::Context::Global)
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Functions are not allowed here!");
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
 	}
 	else
 	{
-		parseExpectedDeclDefVariable(info, datatype, nameToken.value);
+		parseExpectedDeclDefVariable(info, datatype, isStatic, nameToken.value);
 	}
 
 	return true;
@@ -1510,7 +1522,7 @@ void parseBody(ProgGenInfo& info)
 		if (parseControlFlow(info)) continue;
 		if (parseStatementContinue(info)) continue;
 		if (parseStatementBreak(info)) continue;
-		if (parseDeclDef(info, false)) continue;
+		if (parseDeclDef(info)) continue;
 		if (parseStatementReturn(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
@@ -1729,7 +1741,7 @@ bool parsePack(ProgGenInfo& info)
 
 	while (parseIndent(info))
 	{
-		if (!parseDeclDef(info, false))
+		if (!parseDeclDef(info))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected member definition!");
 	}
 
@@ -1756,7 +1768,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseStatementContinue(info)) continue;
 		if (parseStatementBreak(info)) continue;
 		if (parsePack(info)) continue;
-		if (parseDeclDef(info, true)) continue;
+		if (parseDeclDef(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;
 		if (parseExpression(info)) continue;

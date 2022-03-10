@@ -113,7 +113,7 @@ bool isKeyword(const std::string& name)
 		"define",
 		"continue", "break",
 		"pack",
-		"sizeof",
+		"sizeof", "static",
 		// "const"
 		// "default",
 		// "offsetof",
