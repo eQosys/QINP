@@ -7,6 +7,7 @@ The QINP language follows the ODR (One Definition Rule).
  - [Variables](#variables)
  - [Functions](#functions)
  - [Packs](#packs)
+ - [Static](#static)
 
 ---
 
@@ -97,3 +98,18 @@ The size of a pack is constant and only known after the pack's definition. The [
 >    u8 name[32]
 >    User* friends[10]
 > ```
+
+---
+
+### Static
+
+The `static` keyword can be used to declare a variable in a function as static, which means that its state is preserved between function calls (like a global variable), without being visible outside the function.
+
+At the moment initializers would be called everytime the function is called. Only initializing the variable when the function is called the first time is planned.
+
+#### Example
+```qinp
+void foo():
+	static u32 x
+	print(++x)
+```

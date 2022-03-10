@@ -6,15 +6,20 @@ Keywords are special identifiers in the QINP language and cannot be used for any
 ## Overview
  - [asm](#inline-assembly)
  - [assembly](#inline-assembly)
+ - [_break_](./control-flow.md#break)
+ - [_continue_](./control-flow.md#continue)
  - [define](#define)
  - [_do_](./control-flow.md#do-while-loop)
  - [_elif_](./control-flow.md#if-elif-else)
  - [_else_](./control-flow.md#if-elif-else)
  - [_if_](./control-flow.md#if-elif-else)
  - [import](#import)
+ - [_pack_](./declarations.md#packs)
  - [pass](#pass)
  - [return](#return)
  - [_while_](./control-flow.md#while-loop)
+ - [_sizeof_](./operators.md#size-of)
+ - [_static_](./declarations.md#static)
 
 ---
 
