@@ -60,9 +60,13 @@ std::string getMangledName(const Variable& var)
 {
 	return getMangledName(var.modName, var.datatype);
 }
-std::string getMangledName(int strID)
+std::string getLiteralStringName(int strID)
 {
 	return "str_##_" + std::to_string(strID);
+}
+std::string getStaticLocalInitName(int initID)
+{
+	return "stat_loc_init_##_" + std::to_string(initID);
 }
 
 bool isPackType(const ProgramRef program, const std::string& name)

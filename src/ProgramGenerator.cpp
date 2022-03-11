@@ -181,6 +181,43 @@ void pushStatement(ProgGenInfo& info, StatementRef statement)
 	info.program->body->statements.push_back(statement);
 }
 
+void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
+{
+	auto ifStatement = std::make_shared<Statement>(initExpr->pos, Statement::Type::If_Clause);
+
+	ifStatement->ifConditionalBodies.push_back(ConditionalBody());
+	auto& condBody = ifStatement->ifConditionalBodies.back();
+	
+	condBody.condition = std::make_shared<Expression>(initExpr->pos);
+	condBody.condition->eType = Expression::ExprType::GlobalVariable;
+	condBody.condition->isLValue = true;
+	condBody.condition->datatype = { "bool" };
+	condBody.condition->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
+
+	auto assignExpr = std::make_shared<Expression>(initExpr->pos);
+	assignExpr->eType = Expression::ExprType::Assign;
+	
+	assignExpr->left = std::make_shared<Expression>(initExpr->pos);
+	assignExpr->left->eType = Expression::ExprType::GlobalVariable;
+	assignExpr->left->isLValue = true;
+	assignExpr->left->datatype = { "bool" };
+	assignExpr->left->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
+	
+	assignExpr->right = std::make_shared<Expression>(initExpr->pos);
+	assignExpr->right->eType = Expression::ExprType::Literal;
+	assignExpr->right->isLValue = false;
+	assignExpr->right->datatype = { "bool" };
+	assignExpr->right->valStr = "0";
+
+	condBody.body = std::make_shared<Body>();
+	condBody.body->statements.push_back(assignExpr);
+	condBody.body->statements.push_back(initExpr);
+
+	pushStatement(info, ifStatement);
+
+	++info.program->staticLocalInitCount;
+}
+
 StatementRef lastStatement(ProgGenInfo& info)
 {
 	return info.program->body->statements.back();
@@ -779,7 +816,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->datatype = { "bool" };
 		break;
 	case Token::Type::String:
-		exp->valStr = getMangledName(info.program->strings.size());
+		exp->valStr = getLiteralStringName(info.program->strings.size());
 		info.program->strings.insert({ info.program->strings.size(), litToken.value });
 		exp->datatype = { "u8", 1, { (int)litToken.value.size() + 1 } };
 		break;
@@ -1275,7 +1312,12 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 
 	auto initExpr = getParseDeclDefVariable(info, datatype, isStatic, name);
 	if (initExpr)
-		pushStatement(info, initExpr);
+	{
+		if (isStatic)
+			pushStaticLocalInit(info, initExpr);
+		else
+			pushStatement(info, initExpr);
+	}
 }
 
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)

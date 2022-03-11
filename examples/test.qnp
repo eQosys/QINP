@@ -34,7 +34,7 @@ printUser(kavi)
 printUser(lukas = kavi)
 
 void printInc():
-	static u64 val
+	static u64 val = 10
 	print(++val)
 	print("\n")
 

@@ -47,7 +47,8 @@ std::string getMangledName(const FunctionRef func);
 std::string getMangledName(const std::string& funcName, const Expression* callExpr);
 std::string getMangledName(const std::string& varName, const Datatype& datatype);
 std::string getMangledName(const Variable& var);
-std::string getMangledName(int strID);
+std::string getLiteralStringName(int strID);
+std::string getStaticLocalInitName(int initID);
 
 typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (without return type) -> function
 
@@ -69,6 +70,7 @@ struct Program
 	std::map<std::string, PackRef> packs;
 	std::map<int, std::string> strings;
 	BodyRef body;
+	int staticLocalInitCount = 0;
 };
 typedef std::shared_ptr<Program> ProgramRef;
 

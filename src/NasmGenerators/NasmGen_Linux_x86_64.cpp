@@ -1136,9 +1136,15 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "SECTION .data\n";
 	for (auto& str : program->strings)
 	{
-		ss << "  " << getMangledName(str.first) << ": db ";
+		ss << "  " << getLiteralStringName(str.first) << ": db ";
 		writeEscapedString(ss, str.second);
-		ss << ", 0\n";
+		ss << ",0\n";
+	}
+
+	// Static local initializer test values
+	for (int i = 0; i < program->staticLocalInitCount; ++i)
+	{
+		ss << "  " << getMangledName(getStaticLocalInitName(i), { "bool" }) << ": db 1\n";
 	}
 
 	if (!ngi.labelStack.empty())

@@ -103,9 +103,7 @@ The size of a pack is constant and only known after the pack's definition. The [
 
 ### Static
 
-The `static` keyword can be used to declare a variable in a function as static, which means that its state is preserved between function calls (like a global variable), without being visible outside the function.
-
-At the moment initializers would be called everytime the function is called. Only initializing the variable when the function is called the first time is planned.
+The `static` keyword can be used to declare a variable in a function as static, which means that its state is preserved between function calls (like a global variable), without being visible outside the function. When defining a static variable, the initializer is only run once (with the first call of the function).
 
 #### Example
 ```qinp
