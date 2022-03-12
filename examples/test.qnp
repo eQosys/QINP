@@ -41,3 +41,23 @@ void printInc():
 u64 val = 10
 while --val:
 	printInc()
+
+enum Color:
+	Red = 2, Green,
+	Blue, Yellow = 10,
+	Orange, Cyan,
+
+print("\n")
+
+print(Color::Red)
+print("\n")
+print(Color::Green)
+print("\n")
+print(Color::Blue)
+print("\n")
+print(Color::Yellow)
+print("\n")
+print(Color::Orange)
+print("\n")
+print(Color::Cyan)
+print("\n")

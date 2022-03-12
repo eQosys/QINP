@@ -106,9 +106,6 @@ struct Expression : public Statement
 		Quotient,
 		Remainder,
 
-		MemberAccess,
-		MemberAccessDereference,
-
 		AddressOf,
 		Dereference,
 		Logical_NOT,
@@ -124,6 +121,11 @@ struct Expression : public Statement
 		FunctionCall,
 		Suffix_Increment,
 		Suffix_Decrement,
+
+		MemberAccess,
+		MemberAccessDereference,
+
+		Namespace,
 
 		Literal,
 		GlobalVariable,

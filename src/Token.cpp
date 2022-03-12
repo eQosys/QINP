@@ -113,6 +113,7 @@ bool isKeyword(const std::string& name)
 		"do",
 		"elif",
 		"else",
+		"enum",
 		"if",
 		"import",
 		"pack",
@@ -127,7 +128,7 @@ bool isKeyword(const std::string& name)
 		// "for",
 		// "new", "delete",
 		// "goto", "operator",
-		// "enum", "union",
+		// "union",
 		// "blueprint",
 		// "switch", "case"
 	};

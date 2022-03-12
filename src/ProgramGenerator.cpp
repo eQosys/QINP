@@ -57,6 +57,8 @@ struct ProgGenInfo
 	int breakEnableCount = 0;
 
 	PackRef currPack = nullptr;
+
+	std::map<std::string, std::map<std::string, uint>> enums;
 };
 
 struct ProgGenInfoBackup
@@ -286,8 +288,7 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 		{
 			if (match)
 				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Multiple overloads found for function call!");
-			else
-				match = func;
+			match = func;
 		}
 	}
 
@@ -326,6 +327,30 @@ const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name
 		return &it->second;
 
 	return nullptr;
+}
+
+const std::map<std::string, uint>* getEnum(ProgGenInfo& info, const std::string& name)
+{
+	auto it = info.enums.find(name);
+	if (it != info.enums.end())
+		return &it->second;
+
+	return nullptr;
+}
+
+#define ERR_ENUM_NAME_NOT_FOUND -1
+#define ERR_ENUM_VALUE_NOT_FOUND -2
+uint getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
+{
+	auto pEnum = getEnum(info, enumName);
+	if (!pEnum)
+		return ERR_ENUM_NAME_NOT_FOUND;
+	
+	auto it = pEnum->find(memberName);
+	if (it == pEnum->end())
+		return ERR_ENUM_VALUE_NOT_FOUND;
+	
+	return it->second;
 }
 
 Datatype getParseDatatype(ProgGenInfo& info);
@@ -380,6 +405,11 @@ void addVariable(ProgGenInfo& info, Variable var, bool isStatic)
 	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
 	int varSize = getDatatypeSize(info.program, var.datatype);
 
+	if (getEnum(info, var.name))
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Enum with name '" + var.name + "' already exists!");
+	if (getPackSize(info.program, var.name) >= 0)
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Pack with name '" + var.name + "' already exists!");
+
 	if (!info.localStack.empty())
 	{
 		auto varIt = currLocalFrame(info).locals.find(var.name);
@@ -432,6 +462,11 @@ void addFunction(ProgGenInfo& info, FunctionRef func)
 	auto varIt = info.program->globals.find(func->name);
 	if (varIt != info.program->globals.end())
 		THROW_PROG_GEN_ERROR(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(varIt->second.pos));
+	
+	if (getEnum(info, func->name))
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Enum with name '" + func->name + "' already exists!");
+	if (getPackSize(info.program, func->name) >= 0)
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Pack with name '" + func->name + "' already exists!");
 
 	auto sigNoRet = getSignatureNoRet(func);
 
@@ -790,11 +825,44 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 
 ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl = 0);
 
+ExpressionRef getParseEnumMember(ProgGenInfo& info)
+{
+	auto& enumToken = peekToken(info);
+	if (!isIdentifier(enumToken))
+		return nullptr;
+
+	if (!getEnum(info, enumToken.value))
+		return nullptr;
+
+	nextToken(info);
+	parseExpected(info, Token::Type::Separator, "::");
+
+	auto& memberToken = nextToken(info);
+
+	if (!isIdentifier(memberToken))
+		THROW_PROG_GEN_ERROR(memberToken.pos, "Expected enum member identifier!");
+
+	uint value = getEnumValue(info, enumToken.value, memberToken.value);
+
+	if (value == ERR_ENUM_NAME_NOT_FOUND)
+		THROW_PROG_GEN_ERROR(enumToken.pos, "Enum '" + enumToken.value + "' not found!");
+	if (value == ERR_ENUM_VALUE_NOT_FOUND)
+		THROW_PROG_GEN_ERROR(memberToken.pos, "Enum member '" + memberToken.value + "' not found in enum '" + enumToken.value + "'!");
+
+	auto expr = std::make_shared<Expression>(memberToken.pos);
+	expr->eType = Expression::ExprType::Literal;
+	expr->datatype = { "u32" };
+	expr->valStr = std::to_string(value);
+	expr->isLValue = false;
+
+	return expr;
+}
+
 ExpressionRef getParseLiteral(ProgGenInfo& info)
 {
 	auto& litToken = peekToken(info);
 	if (!isLiteral(litToken))
-		return nullptr;
+		return getParseEnumMember(info);
 
 	nextToken(info);
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
@@ -1031,6 +1099,8 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = true;
 		}
 			break;
+		case Expression::ExprType::Namespace:
+			break; // TODO: Implementation
 		default:
 			THROW_PROG_GEN_ERROR(exp->pos, "Invalid binary operator!");
 		}
@@ -1795,6 +1865,70 @@ bool parsePack(ProgGenInfo& info)
 	return true;
 }
 
+bool parseEnum(ProgGenInfo& info)
+{
+	auto& enumToken = peekToken(info);
+	if (!isKeyword(enumToken, "enum"))
+		return false;
+	nextToken(info);
+
+	auto& nameToken = peekToken(info);
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+	nextToken(info);
+
+	if (getEnum(info, nameToken.value))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Enum with name '" + nameToken.value + "' already exists!");
+
+	if (getVariable(info, nameToken.value))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Variable with name '" + nameToken.value + "' already exists!");
+	
+	if (getFunctions(info, nameToken.value))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Function with name '" + nameToken.value + "' already exists!");
+
+	if (getPackSize(info.program, nameToken.value) >= 0)
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Pack with name '" + nameToken.value + "' already exists!");
+
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	info.enums.insert({ nameToken.value, {} });
+	auto& enumRef = info.enums.find(nameToken.value)->second;
+
+	int currIndex = 0;
+	increaseIndent(info.indent);
+	while (parseIndent(info))
+	{
+		while (isIdentifier(peekToken(info))) {
+			auto& memberToken = nextToken(info);
+
+			if (enumRef.find(memberToken.value) != enumRef.end())
+				THROW_PROG_GEN_ERROR(memberToken.pos, "Enum member '" + memberToken.value + "' already exists!");
+
+			if (isOperator(peekToken(info), "="))
+			{
+				nextToken(info);
+				auto& valToken = nextToken(info);
+				if (valToken.type != Token::Type::LiteralInteger)
+					THROW_PROG_GEN_ERROR(valToken.pos, "Expected integer literal!");
+
+				currIndex = std::stoul(valToken.value);
+			}
+
+			enumRef.insert({ memberToken.value, currIndex++ });
+
+			if (!isSeparator(peekToken(info), ","))
+				break;
+			nextToken(info);
+		}
+
+		parseExpectedNewline(info);
+	}
+	decreaseIndent(info.indent);
+
+	return true;
+}
+
 void parseGlobalCode(ProgGenInfo& info)
 {
 	while (info.currToken < info.tokens->size())
@@ -1810,6 +1944,7 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (parseStatementContinue(info)) continue;
 		if (parseStatementBreak(info)) continue;
 		if (parsePack(info)) continue;
+		if (parseEnum(info)) continue;
 		if (parseDeclDef(info)) continue;
 		if (parseSinglelineAssembly(info)) continue;
 		if (parseMultilineAssembly(info)) continue;

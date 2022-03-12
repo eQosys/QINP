@@ -117,4 +117,10 @@ std::vector<OpPrecLvl> opPrecLvls =
 		},
 		OpPrecLvl::Type::Binary,
 	},
+	//{
+	//	{
+	//		{ "::", Expression::ExprType::Namespace },
+	//	},
+	//	OpPrecLvl::Type::Binary,
+	//},
 };

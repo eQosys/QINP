@@ -12,6 +12,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [_do_](./control-flow.md#do-while-loop)
  - [_elif_](./control-flow.md#if-elif-else)
  - [_else_](./control-flow.md#if-elif-else)
+ - [_enum_](./declarations.md#enums)
  - [_if_](./control-flow.md#if-elif-else)
  - [import](#import)
  - [_pack_](./declarations.md#packs)

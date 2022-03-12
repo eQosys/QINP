@@ -8,6 +8,7 @@ The QINP language follows the ODR (One Definition Rule).
  - [Functions](#functions)
  - [Packs](#packs)
  - [Static](#static)
+ - [Enums](#enums)
 
 ---
 
@@ -110,4 +111,33 @@ The `static` keyword can be used to declare a variable in a function as static, 
 void foo():
 	static u32 x
 	print(++x)
+```
+
+---
+
+### Enums
+
+The `enum` keyword can be used to declare an enumeration.
+Every member is associated with an unsigned integer value.
+The members of enums are mostly treated as literals.
+The members of an enum are accessed via the [enum operator](./operators.md#namespace).
+
+Reserved values are -1 and -2.
+
+#### Usage
+```qinp
+enum [enumName]:
+	[memberName1], [memberName2]
+	[memberName3], [memberName4], [...]
+	[memberNameN]
+
+[enumName]::[memberNameX]
+```
+
+#### Example
+```qinp
+enum Color:
+	red, green, blue,
+	black, white, yellow		\\ The comma after the last member of a row is optional
+	cyan, magenta, orange
 ```

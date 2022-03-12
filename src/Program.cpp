@@ -86,7 +86,7 @@ int getPackSize(const ProgramRef program, const std::string& packName)
 		return -1;
 
 	if (!pack->second->isDefined)
-		return -1;
+		return 0;
 
 	return pack->second->size;
 }
