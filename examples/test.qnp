@@ -43,7 +43,7 @@ while --val:
 	printInc()
 
 enum Color:
-	Red = 2, Green,
+	Red = 2, Green
 	Blue, Yellow = 10,
 	Orange, Cyan,
 

@@ -1022,48 +1022,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, Functi
 	generateNasm_Linux_x86_64(ngi, func->body);
 }
 
-void writeEscapedString(std::stringstream& ss, const std::string& str)
-{
-	bool isInString = false;
-	for (int i = 0; i < str.size(); ++i)
-	{
-		char c = str[i];
-		switch (c)
-		{
-		case '\'':
-		case '\"':
-		case '\\':
-		case '\n':
-		case '\r':
-		case '\t':
-		case '\b':
-		case '\f':
-		case '\v':
-		case '\0':
-		case '\033':
-			if (isInString)
-				ss << '"';
-			isInString = false;
-			if (i != 0)
-				ss << ',';
-			ss << (int)c;
-			break;
-		default:
-			if (!isInString)
-			{
-				if (i != 0)
-					ss << ',';
-				ss << '"';
-			}
-			isInString = true;
-			ss << c;
-		}
-	}
-
-	if (isInString)
-		ss << '"';
-}
-
 // Generates Nasm code for the entire program
 std::string generateNasm_Linux_x86_64(ProgramRef program)
 {
@@ -1106,39 +1064,16 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  __##__envp: resq 1\n";
 
 	for (auto& glob : program->globals)
-	{
-		std::string sizeStr;
-
-		int nElements = getDatatypeNumElements(glob.second.datatype);
-		int baseSize;
-
-		if (isArray(glob.second.datatype))
-			baseSize = getDatatypeSize(ngi.program, { glob.second.datatype.name, 0 });
-		else if (isPackType(program, glob.second.datatype))
-		{
-			baseSize = 1;
-			nElements = getDatatypeSize(program, glob.second.datatype);
-		}
-		else
-			baseSize = getDatatypeSize(ngi.program, glob.second.datatype);
-
-		switch (baseSize)
-		{
-		case 1: sizeStr = "b"; break;
-		case 2: sizeStr = "w"; break;
-		case 4: sizeStr = "d"; break;
-		case 8: sizeStr = "q"; break;
-		}
-		ss << "  " << getMangledName(glob.second) << ": res" << sizeStr << " " << nElements << "\t\t; " << getPosStr(glob.second.pos) << "\n";
-	}
+		ss << "  " << getMangledName(glob.second) << ": resb " << getDatatypeSize(program, glob.second.datatype) << "\t\t; " << getPosStr(glob.second.pos) << "\n";
 
 	// C-Strings
 	ss << "SECTION .data\n";
 	for (auto& str : program->strings)
 	{
 		ss << "  " << getLiteralStringName(str.first) << ": db ";
-		writeEscapedString(ss, str.second);
-		ss << ",0\n";
+		for (char c : str.second)
+			ss << (int)c << ",";
+		ss << "0\n";
 	}
 
 	// Static local initializer test values

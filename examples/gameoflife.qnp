@@ -6,11 +6,10 @@ define HEIGHT 10
 pack Grid:
 	bool cells[WIDTH][HEIGHT]
 
-Grid mainGrid
-Grid backGrid
+Grid grids[2]
 
-Grid* pMain = &mainGrid
-Grid* pBack = &backGrid
+Grid* pMain = &grids[0]
+Grid* pBack = &grids[1]
 
 void flip():
 	Grid* pTemp = pMain
@@ -68,11 +67,11 @@ void update():
 			++j
 		++i
 
-mainGrid.cells[0][2] = true
-mainGrid.cells[1][0] = true
-mainGrid.cells[1][2] = true
-mainGrid.cells[2][1] = true
-mainGrid.cells[2][2] = true
+(grids[0]).cells[0][2] = true
+(grids[0]).cells[1][0] = true
+(grids[0]).cells[1][2] = true
+(grids[0]).cells[2][1] = true
+(grids[0]).cells[2][2] = true
 
 i64 n = 30
 while --n > 0:
