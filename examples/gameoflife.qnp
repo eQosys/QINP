@@ -1,6 +1,6 @@
 import "std.qnp"
 
-define WIDTH 10
+define WIDTH 20
 define HEIGHT 10
 
 pack Grid:
@@ -16,23 +16,33 @@ void flip():
 	pMain = pBack
 	pBack = pTemp
 
+void printBorder():
+	print("+")
+	i64 i = 0
+	while i++ < WIDTH:
+		print("-")
+	print("+\n")
+
 void show():
 	i64 i = 0
-	while i < WIDTH:
+	printBorder()
+	while i < HEIGHT:
 		i64 j = 0
-		while j < HEIGHT:
-			if pMain->cells[i][j]:
+		print("|")
+		while j < WIDTH:
+			if pMain->cells[j][i]:
 				print("#")
 			else:
 				print(" ")
 			++j
-		print("\n")
+		print("|\n")
 		++i
+	printBorder()
 
 void clear():
 	print("\r")
 	i64 i = 0
-	while i++ < HEIGHT:
+	while i++ < HEIGHT + 2:
 		print("\e[1F")
 
 void update():
@@ -73,7 +83,7 @@ grids[0].cells[1][2] = true
 grids[0].cells[2][1] = true
 grids[0].cells[2][2] = true
 
-i64 n = 30
+i64 n = 50
 while --n > 0:
 	show()
 	update()
