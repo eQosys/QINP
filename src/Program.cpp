@@ -124,7 +124,7 @@ int getDatatypePushSize(const ProgramRef program, const Datatype& datatype)
 
 int getDatatypePointedToSize(const ProgramRef program, Datatype datatype)
 {
-	if (!isPointer(datatype))
+	if (!isPointer(datatype) && !isArray(datatype))
 		THROW_QINP_ERROR("Cannot get size of non-pointer datatype");
 
 	dereferenceDatatype(datatype);

@@ -789,12 +789,12 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	return nullptr;
 }
 
-void autoFixDatatypeMismatch(ExpressionRef exp)
+void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 {
 	if (exp->left->datatype == exp->right->datatype)
 		return;
 
-	if (isPointer(exp->left->datatype))
+	if (isPointer(exp->left->datatype) || isArray(exp->left->datatype))
 	{
 		switch (exp->eType)
 		{
@@ -803,6 +803,21 @@ void autoFixDatatypeMismatch(ExpressionRef exp)
 		case Expression::ExprType::Assign_Sum:
 		case Expression::ExprType::Assign_Difference:
 			exp->right = genConvertExpression(exp->right, { "u64" });
+			if (isArray(exp->left->datatype))
+			{
+				auto temp = std::make_shared<Expression>(exp->pos);
+				temp->eType = Expression::ExprType::Product;
+				temp->right = exp->right;
+				temp->datatype = { "u64" };
+				
+				temp->left = std::make_shared<Expression>(exp->pos);
+				temp->left->eType = Expression::ExprType::Literal;
+				temp->left->valStr = std::to_string(getDatatypePointedToSize(info.program, exp->left->datatype));
+				temp->left->datatype = { "u64" };
+				temp->left->isLValue = false;
+
+				exp->right = temp;
+			}
 			return;
 		}
 	}
@@ -1004,7 +1019,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_XOR:
 		case Expression::ExprType::Assign_Bw_OR:
 			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(exp);
+			autoFixDatatypeMismatch(info, exp);
 			if (!exp->left->isLValue)
 				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot assign to non-lvalue!");
 			exp->datatype = exp->left->datatype;
@@ -1022,7 +1037,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Bitwise_XOR:
 		case Expression::ExprType::Bitwise_AND:
 			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(exp);
+			autoFixDatatypeMismatch(info, exp);
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
 			break;
@@ -1033,7 +1048,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
 			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(exp);
+			autoFixDatatypeMismatch(info, exp);
 			exp->datatype = { "bool" };
 			exp->isLValue = false;
 			break;
@@ -1045,7 +1060,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Quotient:
 		case Expression::ExprType::Remainder:
 			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(exp);
+			autoFixDatatypeMismatch(info, exp);
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
 			break;

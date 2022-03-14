@@ -8,8 +8,8 @@ pack Grid:
 
 Grid grids[2]
 
-Grid* pMain = &grids[0]
-Grid* pBack = &grids[1]
+Grid* pMain = grids + 0
+Grid* pBack = grids + 1
 
 void flip():
 	Grid* pTemp = pMain
