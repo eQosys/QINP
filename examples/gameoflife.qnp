@@ -67,11 +67,11 @@ void update():
 			++j
 		++i
 
-(grids[0]).cells[0][2] = true
-(grids[0]).cells[1][0] = true
-(grids[0]).cells[1][2] = true
-(grids[0]).cells[2][1] = true
-(grids[0]).cells[2][2] = true
+grids[0].cells[0][2] = true
+grids[0].cells[1][0] = true
+grids[0].cells[1][2] = true
+grids[0].cells[2][1] = true
+grids[0].cells[2][2] = true
 
 i64 n = 30
 while --n > 0:

@@ -1049,56 +1049,6 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
 			break;
-		case Expression::ExprType::MemberAccess:
-		case Expression::ExprType::MemberAccessDereference:
-		{
-			auto& memberToken = nextToken(info);
-			if (!isIdentifier(memberToken))
-				THROW_PROG_GEN_ERROR(pOpToken->pos, "Expected member name!");
-			switch (exp->eType)
-			{
-			case Expression::ExprType::MemberAccess:
-				if (isPointer(exp->left->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer!");
-				if (isArray(exp->left->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of array!");
-				break;
-			case Expression::ExprType::MemberAccessDereference:
-			{
-				exp->eType = Expression::ExprType::MemberAccess;
-				exp->left = genAutoArrayToPtr(exp->left);
-				if (!isPointer(exp->left->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer!");
-				if (exp->left->datatype.ptrDepth > 1)
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
-
-				auto temp = std::make_shared<Expression>(exp->pos);
-				temp->eType = Expression::ExprType::Dereference;
-				temp->left = exp->left;
-
-				temp->datatype = temp->left->datatype;
-				dereferenceDatatype(temp->datatype);
-				temp->isLValue = isArray(temp->datatype) ? false : true;
-
-				exp->left = temp;
-			}
-				break;
-			}
-			if (!isPackType(info, exp->left->datatype.name))
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack type!");
-
-			auto& pack = info.program->packs.at(exp->left->datatype.name);
-			if (!pack->isDefined)
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of declared-only pack type!");
-
-			auto memberIt = pack->members.find(memberToken.value);
-			if (memberIt == pack->members.end())
-				THROW_PROG_GEN_ERROR(memberToken.pos, "Unknown member!");
-			exp->datatype = memberIt->second.datatype;
-			exp->memberOffset = memberIt->second.offset;
-			exp->isLValue = true;
-		}
-			break;
 		case Expression::ExprType::Namespace:
 			break; // TODO: Implementation
 		default:
@@ -1185,6 +1135,58 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
 			break;
+		case Expression::ExprType::MemberAccess:
+		case Expression::ExprType::MemberAccessDereference:
+		{
+			auto& memberToken = nextToken(info);
+			if (!isIdentifier(memberToken))
+				THROW_PROG_GEN_ERROR(pOpToken->pos, "Expected member name!");
+			switch (exp->eType)
+			{
+			case Expression::ExprType::MemberAccess:
+				if (isPointer(exp->left->datatype))
+					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer!");
+				if (isArray(exp->left->datatype))
+					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of array!");
+				break;
+			case Expression::ExprType::MemberAccessDereference:
+			{
+				exp->eType = Expression::ExprType::MemberAccess;
+				exp->left = genAutoArrayToPtr(exp->left);
+				if (!isPointer(exp->left->datatype))
+					THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer!");
+				if (exp->left->datatype.ptrDepth > 1)
+					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
+
+				auto temp = std::make_shared<Expression>(exp->pos);
+				temp->eType = Expression::ExprType::Dereference;
+				temp->left = exp->left;
+
+				temp->datatype = temp->left->datatype;
+				dereferenceDatatype(temp->datatype);
+				temp->isLValue = isArray(temp->datatype) ? false : true;
+
+				exp->left = temp;
+			}
+				break;
+			}
+			if (!isPackType(info, exp->left->datatype.name))
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack type!");
+
+			auto& pack = info.program->packs.at(exp->left->datatype.name);
+			if (!pack->isDefined)
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of declared-only pack type!");
+
+			auto memberIt = pack->members.find(memberToken.value);
+			if (memberIt == pack->members.end())
+				THROW_PROG_GEN_ERROR(memberToken.pos, "Unknown member!");
+			exp->datatype = memberIt->second.datatype;
+			exp->memberOffset = memberIt->second.offset;
+			exp->isLValue = true;
+		}
+			break;
+		default:
+			assert(false && "Unknown operator!");
 		}
 	}
 

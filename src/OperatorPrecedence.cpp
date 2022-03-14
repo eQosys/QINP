@@ -107,15 +107,12 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "(", Expression::ExprType::FunctionCall },
 			{ "++", Expression::ExprType::Suffix_Increment },
 			{ "--", Expression::ExprType::Suffix_Decrement },
-		},
-		OpPrecLvl::Type::Unary_Suffix,
-	},
-	{
-		{
+
+			// Experimental, should have own group
 			{ ".", Expression::ExprType::MemberAccess },
 			{ "->", Expression::ExprType::MemberAccessDereference },
 		},
-		OpPrecLvl::Type::Binary,
+		OpPrecLvl::Type::Unary_Suffix,
 	},
 	//{
 	//	{
