@@ -1,0 +1,16 @@
+import "std.qnp"
+
+u64 i = 0
+while ++i < 100:
+	bool any = false
+	if !(i % 3):
+		print("Fizz ")
+		any = true
+	if !(i % 5):
+		print("Buzz ")
+		any = true
+	
+	if !any:
+		print(i)
+
+	print("\n")
