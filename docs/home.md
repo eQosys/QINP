@@ -34,4 +34,5 @@ The QINP language is a work in progress. It is not yet stable and may be subject
 
 ### Standard Library
 
-The Standard Library is a collection of functions that are available to all QINP programs and are essential to the language.
+The Standard Library is a collection of functions and packs that are available to all QINP programs and are essential to the language.
+For an overview of the content of the Standard Library, see the [Standard Library Reference](./stdlib/stdlib.md).
