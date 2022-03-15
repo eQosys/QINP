@@ -58,6 +58,11 @@ u8* strcpy(u8* dest, u8* src)...
 \\ @return The null-terminated string representation of the integer
 u8* itos(i64 num, u8* str)...
 
+\\ Convert a string to a base-10 integer
+\\ @param str The string to convert
+\\ @return The integer represented by the string
+i64 stoi(u8* str)...
+
 \\ Copy data from one buffer to another
 \\ @param dest The destination buffer
 \\ @param src The source buffer
@@ -172,8 +177,21 @@ u8* itos(i64 num, u8* str):
 	
 	*str = '\0'
 
-	return strrev(begin)
+	return strrev(begin, str)
 
+i64 stoi(u8* str):
+	i64 num = 0
+	bool negative = *str == '-'
+	if negative:
+		++str
+
+	while *str:
+		num = num * 10 + *str++ - '0'
+
+	if negative:
+		num = -num
+
+	return num
 
 void memcpy(void* dest, void* src, u64 len):
 	u8* d = (u8*)dest

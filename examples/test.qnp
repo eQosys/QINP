@@ -61,3 +61,6 @@ print(Color::Orange)
 print("\n")
 print(Color::Cyan)
 print("\n")
+
+print(stoi("-133") + 10)
+print("\n")
