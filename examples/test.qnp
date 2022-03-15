@@ -62,5 +62,6 @@ print("\n")
 print(Color::Cyan)
 print("\n")
 
-print(stoi("-133") + 10)
+print("\n")
+print(stoi("110110", 2))
 print("\n")

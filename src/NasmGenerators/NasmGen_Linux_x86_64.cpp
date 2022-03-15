@@ -264,14 +264,23 @@ void popSecReg(NasmGenInfo& ngi)
 }
 void movePrimToSec(NasmGenInfo& ngi, bool markUnused = true)
 {
-	ngi.ss << "  mov " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << ", " << primRegName(ngi) << "\n";
+	int size = sizeof(void*);
+	if (isRValue(ngi.primReg))
+		size = getDatatypeSize(ngi.program, ngi.primReg.datatype);
+		
+	ngi.ss << "  mov " << secRegName(size) << ", " << primRegName(size) << "\n";
 	ngi.secReg = ngi.primReg;
 	if (markUnused)
 		ngi.primReg.state = CellState::Unused;
 }
 void moveSecToPrim(NasmGenInfo& ngi, bool markUnused = true)
 {
-	ngi.ss << "  mov " << primRegName(getDatatypeSize(ngi.program, ngi.secReg.datatype)) << ", " << secRegName(ngi) << "\n";
+	int size = sizeof(void*);
+	if (isRValue(ngi.secReg))
+		size = getDatatypeSize(ngi.program, ngi.secReg.datatype);
+
+	ngi.ss << "  mov " << primRegName(size) << ", " << secRegName(size) << "\n";
+
 	ngi.primReg = ngi.secReg;
 	if (markUnused)
 		ngi.secReg.state = CellState::Unused;
@@ -844,6 +853,8 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::LocalVariable:
 		ss << "  mov " << primRegName(8) << ", rbp\n";
 		ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
+		if (expr->globName == "ch")
+			printf("asdf");
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);

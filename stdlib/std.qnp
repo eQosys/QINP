@@ -52,16 +52,28 @@ u8* strrev(u8* begin, u8* end)...
 \\ @return The destination buffer
 u8* strcpy(u8* dest, u8* src)...
 
-\\ Convert a base-10 integer to a string
+\\ Convert an integer to a string
 \\ @param num The integer to convert
 \\ @param str The string to store the converted integer in
+\\ @param base The base to use for the conversion (Valid values are 2 to 36)
 \\ @return The null-terminated string representation of the integer
-u8* itos(i64 num, u8* str)...
+u8* itos(i64 num, u8* str, i64 base)...
 
 \\ Convert a string to a base-10 integer
 \\ @param str The string to convert
+\\ @param base The base to use for the conversion (Valid values are 2 to 36)
 \\ @return The integer represented by the string
-i64 stoi(u8* str)...
+i64 stoi(u8* str, i64 base)...
+
+\\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
+\\ @param c The character to convert
+\\ @return The uppercase character
+u8 toupper(u8 c)...
+
+\\ Converts a character to lowercase. Values not in the range 'A' to 'Z' are unchanged.
+\\ @param c The character to convert
+\\ @return The lowercase character
+u8 tolower(u8 c)...
 
 \\ Copy data from one buffer to another
 \\ @param dest The destination buffer
@@ -112,7 +124,7 @@ void print(u8* str, u64 len):
 
 void print(i64 num):
 	u8 str[32]
-	print(itos(num, str))
+	print(itos(num, str, 10))
 
 u8 getchar():
 	u8 ch
@@ -159,7 +171,9 @@ u8* strcpy(u8* dest, u8* src):
 	*dest = '\0'
 	return begin
 
-u8* itos(i64 num, u8* str):
+u8* itos(i64 num, u8* str, i64 base):
+	u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
+
 	u8* begin = str
 	bool negative = num < 0
 
@@ -167,9 +181,8 @@ u8* itos(i64 num, u8* str):
 		num = -num
 
 	do:
-		*str = '0' + num % 10
-		++str
-		num = num / 10
+		*str++ = baseChars[num % base]
+		num = num / base
 	while num
 
 	if negative:
@@ -179,19 +192,35 @@ u8* itos(i64 num, u8* str):
 
 	return strrev(begin, str)
 
-i64 stoi(u8* str):
+i64 stoi(u8* str, i64 base):
+	u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
+
 	i64 num = 0
 	bool negative = *str == '-'
 	if negative:
 		++str
 
 	while *str:
-		num = num * 10 + *str++ - '0'
+		u8 ch = *str++
+		i64 index = 0
+		while baseChars[index] != ch:
+			++index
+		num = num * base + index
 
 	if negative:
 		num = -num
 
 	return num
+
+u8 toupper(u8 c):
+	if c < 'a' || c > 'z':
+		return c
+	return c - 'a' + 'A'
+
+u8 tolower(u8 c):
+	if c < 'A' || c > 'Z':
+		return c
+	return c - 'A' + 'a'
 
 void memcpy(void* dest, void* src, u64 len):
 	u8* d = (u8*)dest
