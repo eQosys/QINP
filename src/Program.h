@@ -7,6 +7,7 @@
 
 #include "Token.h"
 #include "Statement.h"
+#include "Symbols.h"
 
 struct Variable
 {
@@ -32,7 +33,18 @@ struct Function
 	bool isReachable = false;
 };
 
+struct Pack
+{
+	Token::Position pos;
+	std::string name;
+	std::map<std::string, Variable> members;
+	int size = 0;
+	bool isDefined = false;
+};
+
 typedef std::shared_ptr<Function> FunctionRef;
+
+typedef std::shared_ptr<Pack> PackRef;
 
 std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes);
 std::string getSignatureNoRet(const FunctionRef func);
@@ -52,22 +64,9 @@ std::string getStaticLocalInitName(int initID);
 
 typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (without return type) -> function
 
-struct Pack
-{
-	Token::Position pos;
-	std::string name;
-	std::map<std::string, Variable> members;
-	int size = 0;
-	bool isDefined = false;
-};
-
-typedef std::shared_ptr<Pack> PackRef;
-
 struct Program
 {
-	std::map<std::string, Variable> globals;
-	std::map<std::string, FunctionOverloads> functions;
-	std::map<std::string, PackRef> packs;
+	Symbol symbols;
 	std::map<int, std::string> strings;
 	BodyRef body;
 	int staticLocalInitCount = 0;
