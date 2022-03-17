@@ -9,6 +9,8 @@
 #include "Statement.h"
 
 struct Symbol;
+class SymbolIterator;
+
 typedef std::shared_ptr<Symbol> SymbolRef;
 typedef std::weak_ptr<Symbol> SymbolWeakRef;
 
@@ -29,6 +31,7 @@ struct Symbol
 		FunctionName, // The general function name
 		FunctionSpec, // Any specialization of the function (overloads)
 		Pack,
+		Enum,
 	} type = Type::None;
 
 	enum class State
@@ -49,28 +52,47 @@ struct Symbol
 	{
 		Datatype retType;
 		int retOffset = 16;
-		int frameSize = 0;
 		std::vector<Variable> params;
 		BodyRef body;
 		bool isReachable = false;
 	} func;
 
+	struct Frame
+	{
+		int size = 0;
+		int totalOffset = 0;
+	} frame;
+
 	struct Pack
 	{
 		int size = 0;
 	} pack;
+
+	int enumValue;
+
+public:
+	SymbolIterator begin();
+	SymbolIterator end();
 };
 
 typedef Symbol::Type SymType;
+typedef Symbol::State SymState;
 
-void addSymbol(SymbolRef symbol, SymbolRef curr);
+void addSymbol(SymbolRef curr, SymbolRef symbol);
 
-bool isSymType(const SymbolRef symbol, SymType type);
+bool isSymType(SymType type, const SymbolRef symbol);
 bool isVariable(const SymbolRef symbol);
+bool isFuncName(const SymbolRef symbol);
+bool isFuncSpec(const SymbolRef symbol);
 bool isFunction(const SymbolRef symbol);
 bool isPack(const SymbolRef symbol);
+bool isEnum(const SymbolRef symbol);
 
-SymbolRef getSymbol(const std::string& name, const SymbolRef curr);
+bool isSymState(SymState state, const SymbolRef symbol);
+bool isDeclared(const SymbolRef symbol);
+bool isDefined(const SymbolRef symbol);
+
+SymbolRef getSymbol(const SymbolRef curr, const std::string& name, bool localOnly = false);
 SymbolRef getParent(const SymbolRef symbol);
 
 class SymbolIterator
@@ -79,10 +101,14 @@ public:
 	SymbolIterator(const SymbolRef symbol);
 public:
 	SymbolIterator& operator++();
-	SymbolIterator& operator--();
 	bool operator==(const SymbolIterator& other);
 	bool operator!=(const SymbolIterator& other);
 	SymbolRef operator*();
 private:
-	std::stack<SymbolRef> m_stack;
+	SymbolRef currSym();
+	SymbolTable::iterator currIt();
+	void checkoutFrontLeaf();
+	void checkoutBackLeaf();
+private:
+	std::stack<std::pair<SymbolRef, SymbolTable::iterator>> m_stack;
 };

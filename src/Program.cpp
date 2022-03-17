@@ -71,7 +71,7 @@ std::string getStaticLocalInitName(int initID)
 
 bool isPackType(const ProgramRef program, const std::string& name)
 {
-	return program->packs.find(name) != program->packs.end();
+	return isPack(getSymbol(name, program->symbols));
 }
 
 bool isPackType(const ProgramRef program, const Datatype& datatype)
@@ -81,14 +81,14 @@ bool isPackType(const ProgramRef program, const Datatype& datatype)
 
 int getPackSize(const ProgramRef program, const std::string& packName)
 {
-	auto pack = program->packs.find(packName);
-	if (pack == program->packs.end())
+	auto sym = getSymbol(packName, program->symbols);
+	if (!isPack(sym))
 		return -1;
 
-	if (!pack->second->isDefined)
+	if (!isDefined(sym))
 		return 0;
 
-	return pack->second->size;
+	return sym->pack.size;
 }
 
 int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool treatArrayAsPointer)

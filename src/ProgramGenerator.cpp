@@ -301,56 +301,46 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 	return match;
 }
 
-const Variable* getVariable(ProgGenInfo& info, const std::string& name)
+SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
 {
-	// First check for locals, then for globals (shadowing)
-	for (auto frameIt = info.localStack.rbegin(); frameIt != info.localStack.rend(); ++frameIt)
-	{
-		auto locIt = frameIt->locals.find(name);
-		if (locIt != frameIt->locals.end())
-			return &locIt->second;
-	}
+	auto symbol = getSymbol(info.program->symbols, name);
+	if (!isVariable(symbol))
+		return nullptr;
 
-	auto& globals = info.program->globals;
-	auto globIt = globals.find(name);
-	if (globIt != globals.end())
-		return &globIt->second;
-
-	return nullptr;
+	return symbol;
 }
 
-const FunctionOverloads* getFunctions(ProgGenInfo& info, const std::string& name)
+SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 {
-	auto& functions = info.program->functions;
-	auto it = functions.find(name);
-	if (it != functions.end())
-		return &it->second;
+	auto symbol = getSymbol(info.program->symbols, name);
+	if (!isFuncName(symbol))
+		return nullptr;
 
-	return nullptr;
+	return symbol;
 }
 
-const std::map<std::string, uint>* getEnum(ProgGenInfo& info, const std::string& name)
+SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 {
-	auto it = info.enums.find(name);
-	if (it != info.enums.end())
-		return &it->second;
+	auto symbol = getSymbol(info.program->symbols, name);
+	if (!isEnum(symbol))
+		return nullptr;
 
-	return nullptr;
+	return symbol;
 }
 
 #define ERR_ENUM_NAME_NOT_FOUND -1
 #define ERR_ENUM_VALUE_NOT_FOUND -2
 uint getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
 {
-	auto pEnum = getEnum(info, enumName);
-	if (!pEnum)
+	auto enumSymbol = getEnum(info, enumName);
+	if (!enumSymbol)
 		return ERR_ENUM_NAME_NOT_FOUND;
-	
-	auto it = pEnum->find(memberName);
-	if (it == pEnum->end())
+
+	auto memberSymbol = getSymbol(enumSymbol, memberName, true);
+	if (!memberSymbol)
 		return ERR_ENUM_VALUE_NOT_FOUND;
 	
-	return it->second;
+	return memberSymbol->enumValue;
 }
 
 Datatype getParseDatatype(ProgGenInfo& info);
@@ -389,50 +379,31 @@ void parseExpectedColon(ProgGenInfo& info)
 	parseExpected(info, Token::Type::Separator, ":");
 }
 
-void addVariable(ProgGenInfo& info, Variable var, bool isStatic)
+void addVariable(ProgGenInfo& info, SymbolRef sym, bool isStatic)
 {
-	var.modName = var.name;
+	auto& var = sym->var;
+	var.modName = sym->name;
 
 	if (currContext(info) == ProgGenInfo::Context::Pack)
 	{
-		var.offset = info.currPack->size;
-		info.currPack->size += getDatatypeSize(info.program, var.datatype);
+		var.offset = info.program->currSym->pack.size;
+		info.program->currSym->pack.size += getDatatypeSize(info.program, var.datatype);
 
-		info.currPack->members.insert({ var.name, var });
+		addSymbol(info.program->currSym, sym);
 		return;
 	}
 
 	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
 	int varSize = getDatatypeSize(info.program, var.datatype);
 
-	if (getEnum(info, var.name))
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Enum with name '" + var.name + "' already exists!");
-	if (getPackSize(info.program, var.name) >= 0)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Pack with name '" + var.name + "' already exists!");
+	auto symbol = getSymbol(info.program->symbols, sym->name, true);
+	if (symbol)
+		THROW_PROG_GEN_ERROR(sym->pos, "Symbol '" + sym->name + "' already exists in the same scope!");
 
-	if (!info.localStack.empty())
-	{
-		auto varIt = currLocalFrame(info).locals.find(var.name);
-		if (varIt != currLocalFrame(info).locals.end())
-			THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared in the same frame: " + getPosStr(varIt->second.pos));
-	}
-	else
-	{
-		if (isGlobal)
-		{
-			auto varIt = info.program->globals.find(var.name);
-			if (varIt != info.program->globals.end())
-				THROW_PROG_GEN_ERROR(var.pos, "Variable with name '" + var.name + "' already declared globally: " + getPosStr(varIt->second.pos));
-			auto funcs = getFunctions(info, var.name);
-			if (funcs)
-				THROW_PROG_GEN_ERROR(var.pos, "Function with name '" + var.name + "' already declared: " + getPosStr(funcs->begin()->second->pos));
-		}
-	}
-
-	var.isLocal = !(isStatic || isGlobal);
+	//var.isLocal = !(isStatic || isGlobal);
 	static int staticID = 0;
 	if (isStatic)
-		var.modName = "static_" + std::to_string(staticID++) + "~" + var.name;
+		var.modName = "static_" + std::to_string(staticID++) + "~" + sym->name;
 	static int globVarID = 0;
 	if (isGlobal && !info.localStack.empty())
 		var.modName.append("~" + std::to_string(globVarID++));
@@ -440,75 +411,67 @@ void addVariable(ProgGenInfo& info, Variable var, bool isStatic)
 	if (var.isLocal && !info.localStack.empty())
 	{
 		varSize = getDatatypeSize(info.program, var.datatype);
-		currLocalFrame(info).frameSize += varSize;
-		currLocalFrame(info).totalOffset -= varSize;
-		var.offset = currLocalFrame(info).totalOffset;
-		if (-currLocalFrame(info).totalOffset > info.funcFrameSize)
-			info.funcFrameSize = -currLocalFrame(info).totalOffset;
+
+		info.program->currSym->frame.size += varSize;
+		info.program->currSym->frame.totalOffset -= varSize;
+		var.offset = info.program->currSym->frame.totalOffset;
+		if (-info.program->currSym->frame.totalOffset > info.funcFrameSize)
+			info.funcFrameSize = -info.program->currSym->frame.totalOffset;
 	}
 
-	if (info.localStack.empty())
-		info.program->globals.insert({ var.name, var });
-	else
-	{
-		currLocalFrame(info).locals.insert({ var.name, var });
-		if (!var.isLocal)
-			info.program->globals.insert({ var.modName, var });
-	}
+	addSymbol(info.program->currSym, sym);
 }
 
-void addFunction(ProgGenInfo& info, FunctionRef func)
+void addFunction(ProgGenInfo& info, SymbolRef func)
 {
-	auto varIt = info.program->globals.find(func->name);
-	if (varIt != info.program->globals.end())
-		THROW_PROG_GEN_ERROR(func->pos, "Variable with name '" + func->name + "' already declared here: " + getPosStr(varIt->second.pos));
+	auto funcs = getSymbol(info.program->symbols, func->name, true);
+	if (funcs && !isFuncName(funcs))
+		THROW_PROG_GEN_ERROR(func->pos, "Symbol '" + func->name + "' already exists in the same scope!");
 	
-	if (getEnum(info, func->name))
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Enum with name '" + func->name + "' already exists!");
-	if (getPackSize(info.program, func->name) >= 0)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Pack with name '" + func->name + "' already exists!");
-
-	auto sigNoRet = getSignatureNoRet(func);
-
-	auto nameIt = info.program->functions.find(func->name);
-	if (nameIt == info.program->functions.end())
+	if (!funcs)
 	{
-		info.program->functions[func->name].insert({ sigNoRet, func });
-		return;
+		funcs = std::make_shared<Symbol>();
+		funcs->name = func->name;
+		funcs->type = SymType::FunctionName;
+
+		addSymbol(info.program->symbols, funcs);
 	}
 
-	auto sigIt = nameIt->second.find(sigNoRet);
+	func->name = getSignatureNoRet(func);
 
-	if (sigIt == nameIt->second.end())
+	auto existingOverload = getSymbol(funcs, func->name, true);
+	if (!existingOverload)
 	{
-		nameIt->second.insert({ sigNoRet, func });
+		addSymbol(funcs, func);
 		return;
 	}
-
-	if (func->retType != sigIt->second->retType)
-		THROW_PROG_GEN_ERROR(func->pos, "Function with name '" + func->name + "' already declared with different return type: " + getPosStr(sigIt->second->pos));
-
-	if (!func->isDefined)
+	
+	if (existingOverload->func.retType != func->func.retType)
+		THROW_PROG_GEN_ERROR(func->pos, "Function '" + func->name + "' already exists with different return type!");
+	if (!isDefined(func))
 		return;
+	if (isDefined(existingOverload))
+		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(existingOverload->pos));
 
-	if (sigIt->second->isDefined && func->isDefined)
-		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(sigIt->second->pos));
-
-	sigIt->second = func;
+	*existingOverload = *func;
 }
 
-PackRef addPack(ProgGenInfo& info, PackRef pack)
+void addPack(ProgGenInfo& info, SymbolRef pack)
 {
-	auto packIt = info.program->packs.find(pack->name);
-	if (packIt != info.program->packs.end())
+	auto existingPack = getSymbol(info.program->symbols, pack->name, true);
+	
+	if (!existingPack)
 	{
-		if (packIt->second->isDefined)
-			THROW_PROG_GEN_ERROR(pack->pos, "Pack already defined here: " + getPosStr(packIt->second->pos));
-		if (pack->isDefined)
-			packIt->second->pos = pack->pos;
-		return packIt->second;
+		addSymbol(info.program->currSym, existingPack);
+		return;
 	}
-	return info.program->packs.insert({ pack->name, pack }).first->second;
+
+	if (!isDefined(pack))
+		return;
+	if (isDefined(existingPack))
+		THROW_PROG_GEN_ERROR(pack->pos, "Pack already defined here: " + getPosStr(existingPack->pos));
+
+	*existingPack = *pack;
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -577,13 +540,13 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				
 				if (pVar->isLocal)
 				{
-					int offset = pVar->offset;
+					int offset = pVar->var.offset;
 					result += (offset < 0) ? "- " : "+ ";
 					result += std::to_string(std::abs(offset));
 				}
 				else
 				{
-					result += getMangledName(*pVar);
+					result += getMangledName(pVar);
 				}
 			}
 
@@ -924,9 +887,9 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 		return nullptr;
 
 	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
-	exp->localOffset = pVar->offset;
-	exp->datatype = pVar->datatype;
-	exp->globName = pVar->modName;
+	exp->localOffset = pVar->var.offset;
+	exp->datatype = pVar->var.datatype;
+	exp->globName = pVar->var.modName;
 	exp->isLValue = isArray(exp->datatype) ? false : true;
 
 	nextToken(info);
@@ -1185,18 +1148,20 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			}
 				break;
 			}
-			if (!isPackType(info, exp->left->datatype.name))
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack type!");
 
-			auto& pack = info.program->packs.at(exp->left->datatype.name);
-			if (!pack->isDefined)
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of declared-only pack type!");
+			auto packSym = getSymbol(info.program->symbols, exp->left->datatype.name);
+			if (!packSym)
+				THROW_PROG_GEN_ERROR(exp->pos, "Unknown type '" + exp->left->datatype.name + "'!");
+			if (!isPack(packSym))
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack symbol!");
+			if (!isDefined(packSym))
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of undefined pack type!");
+			auto memberSym = getSymbol(packSym, memberToken.value, true);
+			if (!memberSym)
+				THROW_PROG_GEN_ERROR(exp->pos, "Unknown member '" + memberToken.value + "'!");
 
-			auto memberIt = pack->members.find(memberToken.value);
-			if (memberIt == pack->members.end())
-				THROW_PROG_GEN_ERROR(memberToken.pos, "Unknown member!");
-			exp->datatype = memberIt->second.datatype;
-			exp->memberOffset = memberIt->second.offset;
+			exp->datatype = memberSym->var.datatype;
+			exp->memberOffset = memberSym->var.offset;
 			exp->isLValue = true;
 		}
 			break;
@@ -1409,33 +1374,34 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
-	FunctionRef func = std::make_shared<Function>();
-	func->pos = peekToken(info).pos;
-	func->body = std::make_shared<Body>();
-	func->name = name;
-	func->retType = datatype;
+	SymbolRef funcSym = std::make_shared<Symbol>();
+	auto& func = funcSym->func;
+
+	funcSym->pos = peekToken(info).pos;
+	funcSym->name = name;
+	func.body = std::make_shared<Body>();
+	func.retType = datatype;
 
 	parseExpected(info, Token::Type::Separator, "(");
 
 	while (!isSeparator(peekToken(info), ")"))
 	{
-		Variable param;
-		param.isLocal = true;
+		Symbol::Variable param;
+		//param.isLocal = true;
 
 		param.datatype = getParseDatatype(info);
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
 		
-		param.offset = func->retOffset;
-		func->retOffset += getDatatypePushSize(info.program, param.datatype);
+		param.offset = func.retOffset;
+		func.retOffset += getDatatypePushSize(info.program, param.datatype);
 
 		if (!isIdentifier(peekToken(info)))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
 
-		param.name = nextToken(info).value;
-		param.modName = param.name;
+		param.modName = nextToken(info).value;
 
-		func->params.push_back(param);
+		func.params.push_back(param);
 
 		if (isSeparator(peekToken(info), ")"))
 			continue;
@@ -1445,36 +1411,36 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	parseExpected(info, Token::Type::Separator, ")");
 
-	func->isDefined = true;
+	funcSym->state = SymState::Defined;
 	if (isSeparator(peekToken(info), "..."))
 	{
-		func->isDefined = false;
+		funcSym->state = SymState::Declared;
 
 		nextToken(info);
 		parseExpectedNewline(info);
 	}
 
-	addFunction(info, func);
+	addFunction(info, funcSym);
 
-	if (func->isDefined)
+	if (isDefined(funcSym))
 	{
 		parseExpectedColon(info);
 		parseExpectedNewline(info);
 
 		increaseIndent(info.indent);
-		pushTempBody(info, func->body);
+		pushTempBody(info, func.body);
 		pushContext(info, ProgGenInfo::Context::Function);
 		pushLocalFrame(info);
 
-		info.funcRetOffset = func->retOffset;
-		info.funcRetType = func->retType;
+		info.funcRetOffset = func.retOffset;
+		info.funcRetType = func.retType;
 		info.funcFrameSize = 0;
 
-		for (auto& param : func->params)
+		for (auto& param : func.params)
 			currLocalFrame(info).locals.insert({ param.name, param });
 
 		parseFunctionBody(info);
-		func->frameSize = info.funcFrameSize;
+		funcSym->frame.frameSize = info.funcFrameSize;
 		
 		popLocalFrame(info);
 		popContext(info);

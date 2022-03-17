@@ -66,7 +66,8 @@ typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (with
 
 struct Program
 {
-	Symbol symbols;
+	SymbolRef symbols;
+	SymbolRef currSym;
 	std::map<int, std::string> strings;
 	BodyRef body;
 	int staticLocalInitCount = 0;
