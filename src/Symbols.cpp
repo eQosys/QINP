@@ -175,13 +175,15 @@ SymbolRef getParent(const SymbolRef symbol)
 
 SymbolIterator::SymbolIterator(Symbol* symbol, InitPos iPos)
 {
-	m_stack.push({ symbol, symbol->subSymbols.begin() });
 	switch (iPos)
 	{
 	case InitPos::Begin:
+		m_stack.push({ symbol, symbol->subSymbols.begin() });
 		checkoutFrontLeaf();
 		break;
 	case InitPos::End:
+		m_stack.push({ symbol, symbol->subSymbols.end() });
+		--currIt();
 		checkoutBackLeaf();
 		++*this;
 		break;
@@ -223,7 +225,7 @@ Symbol* SymbolIterator::currSym()
 	return m_stack.top().first;
 }
 
-SymbolTable::iterator SymbolIterator::currIt()
+SymbolTable::iterator& SymbolIterator::currIt()
 {
 	return m_stack.top().second;
 }

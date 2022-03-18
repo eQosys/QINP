@@ -135,7 +135,7 @@ public:
 	SymbolRef operator*();
 private:
 	Symbol* currSym();
-	SymbolTable::iterator currIt();
+	SymbolTable::iterator& currIt();
 	void checkoutFrontLeaf();
 	void checkoutBackLeaf();
 private:
