@@ -73,7 +73,7 @@ std::string getStaticLocalInitName(int initID)
 
 bool isPackType(const ProgramRef program, const std::string& name)
 {
-	return isPack(getSymbol(program->symbols, name));
+	return isPack(getSymbol(program->currSym, name));
 }
 
 bool isPackType(const ProgramRef program, const Datatype& datatype)

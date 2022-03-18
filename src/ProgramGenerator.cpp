@@ -79,6 +79,8 @@ void enterSymbol(ProgGenInfo& info, SymbolRef symbol)
 
 void exitSymbol(ProgGenInfo& info)
 {
+	if (info.program->currSym->parent.expired())
+		printf("Hello world!");
 	info.program->currSym = info.program->currSym->parent.lock();
 	assert(info.program->currSym);
 }
@@ -418,7 +420,7 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 	if (isDefined(existingOverload))
 		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(existingOverload->pos));
 
-	*existingOverload = *func;
+	replaceSymbol(funcs, func->name, func, true);
 }
 
 void addPack(ProgGenInfo& info, SymbolRef pack)
@@ -427,7 +429,7 @@ void addPack(ProgGenInfo& info, SymbolRef pack)
 	
 	if (!existingPack)
 	{
-		addSymbol(info.program->currSym, existingPack);
+		addSymbol(info.program->currSym, pack);
 		return;
 	}
 
@@ -1993,6 +1995,13 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
 	info.program->body = std::make_shared<Body>();
+	info.program->symbols = std::make_shared<Symbol>();
+	info.program->currSym = info.program->symbols;
+
+	auto sym = info.program->symbols;
+	sym->pos = {};
+	sym->name = "<global>";
+	sym->type = Symbol::Type::Global;
 
 	parseGlobalCode(info);
 

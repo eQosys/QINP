@@ -340,9 +340,8 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 
 void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& srcReg, int size)
 {
-	auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
-	auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
-	func->isReachable = true;
+	auto func = getSymbol(getSymbol(ngi.program->symbols, "memcpy"), getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } }), true);
+	func->func.isReachable = true;
 
 	ngi.ss << "  push " << size << "\n";
 	ngi.ss << "  push " << srcReg << "\n";
@@ -1018,19 +1017,19 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 }
 
 // Generates Nasm code for a function
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, FunctionRef func)
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, SymbolRef func)
 {
-	assert(func->body->statements.back()->type == Statement::Type::Return && "Function must end with return statement!");
+	assert(func->func.body->statements.back()->type == Statement::Type::Return && "Function must end with return statement!");
 
 	// Function prologue
 	ngi.ss << getMangledName(func) << ":\n";
 	ngi.ss << "  push rbp\n";
 	ngi.ss << "  mov rbp, rsp\n";
 
-	if (func->frameSize > 0)
-		ngi.ss << "  sub rsp, " << std::to_string(func->frameSize) << "\n";
+	if (func->frame.size > 0)
+		ngi.ss << "  sub rsp, " << std::to_string(func->frame.size) << "\n";
 
-	generateNasm_Linux_x86_64(ngi, func->body);
+	generateNasm_Linux_x86_64(ngi, func->func.body);
 }
 
 // Generates Nasm code for the entire program
@@ -1062,11 +1061,25 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  mov rax, 60\n";
 	ss << "  syscall\n";
 
+	std::vector<std::pair<std::string, SymbolRef>> funcs;
+	std::vector<SymbolRef> globals;
+	SymbolIterator it = program->symbols->begin();
+	while (it != program->symbols->end())
+	{
+		if (isFuncSpec(*it))
+			funcs.push_back({ getParent(*it)->name, *it });
+		else if (isVarGlobal(*it))
+			globals.push_back(*it);
+		++it;
+	}
+
 	// Functions
-	for (auto& overloads : program->functions)
-		for (auto& func : overloads.second)
-			if (func.second->isReachable)
-				generateNasm_Linux_x86_64(ngi, func.first, func.second);
+	//for (auto& overloads : program->functions)
+	//	for (auto& func : overloads.second)
+	//		if (func.second->isReachable)
+	//			generateNasm_Linux_x86_64(ngi, func.first, func.second);
+	for (auto& func : funcs)
+		generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	// Global variables
 	ss << "SECTION .bss\n";
@@ -1074,8 +1087,10 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  __##__argv: resq 1\n";
 	ss << "  __##__envp: resq 1\n";
 
-	for (auto& glob : program->globals)
-		ss << "  " << getMangledName(glob.second) << ": resb " << getDatatypeSize(program, glob.second.datatype) << "\t\t; " << getPosStr(glob.second.pos) << "\n";
+	//for (auto& glob : program->globals)
+	//	ss << "  " << getMangledName(glob.second) << ": resb " << getDatatypeSize(program, glob.second.datatype) << "\t\t; " << getPosStr(glob.second.pos) << "\n";
+	for (auto& global : globals)
+		ss << "  " << getMangledName(global) << ": resb " << getDatatypeSize(program, global->var.datatype) << "\t\t; " << getPosStr(global->pos) << "\n";
 
 	// C-Strings
 	ss << "SECTION .data\n";
@@ -1089,9 +1104,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 
 	// Static local initializer test values
 	for (int i = 0; i < program->staticLocalInitCount; ++i)
-	{
 		ss << "  " << getMangledName(getStaticLocalInitName(i), { "bool" }) << ": db 1\n";
-	}
 
 	if (!ngi.labelStack.empty())
 		THROW_NASM_GEN_ERROR(Token::Position(), "Unused label(s)!");

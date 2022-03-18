@@ -118,23 +118,26 @@ bool isVarStatic(const SymbolRef symbol);
 bool isVarParameter(const SymbolRef symbol);
 bool isVarPackMember(const SymbolRef symbol);
 
-SymbolRef getSymbol(const SymbolRef curr, const std::string& name, bool localOnly = false);
+SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly = false);
+void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);
 SymbolRef getParent(const SymbolRef symbol);
 
 class SymbolIterator
 {
 public:
-	SymbolIterator(const SymbolRef symbol);
+	enum class InitPos { Begin, End };
+public:
+	SymbolIterator(Symbol* symbol, InitPos iPos = InitPos::Begin);
 public:
 	SymbolIterator& operator++();
 	bool operator==(const SymbolIterator& other);
 	bool operator!=(const SymbolIterator& other);
 	SymbolRef operator*();
 private:
-	SymbolRef currSym();
+	Symbol* currSym();
 	SymbolTable::iterator currIt();
 	void checkoutFrontLeaf();
 	void checkoutBackLeaf();
 private:
-	std::stack<std::pair<SymbolRef, SymbolTable::iterator>> m_stack;
+	std::stack<std::pair<Symbol*, SymbolTable::iterator>> m_stack;
 };

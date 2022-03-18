@@ -4,6 +4,16 @@
 
 #include "Errors/ProgGenError.h"
 
+SymbolIterator Symbol::begin()
+{
+	return SymbolIterator(this, SymbolIterator::InitPos::Begin);
+}
+
+SymbolIterator Symbol::end()
+{
+	return SymbolIterator(this, SymbolIterator::InitPos::End);
+}
+
 void addSymbol(SymbolRef curr, SymbolRef symbol)
 {
 	if (curr->subSymbols.find(symbol->name) != curr->subSymbols.end())
@@ -47,6 +57,8 @@ bool isInEnum(const SymbolRef symbol)
 
 bool isSymType(SymType type, const SymbolRef symbol)
 {
+	if (!symbol)
+		return false;
 	return symbol->type == type;
 }
 
@@ -125,16 +137,35 @@ bool isVarPackMember(const SymbolRef symbol)
 	return isVarContext(symbol, Symbol::Variable::Context::PackMember);
 }
 
-SymbolRef getSymbol(const std::string& name, SymbolRef curr)
+SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly)
 {
 	while (curr)
 	{
 		auto it = curr->subSymbols.find(name);
 		if (it != curr->subSymbols.end())
 			return it->second;
+		if (localOnly)
+			break;
 		curr = getParent(curr);
 	}
 	return nullptr;
+}
+
+void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly)
+{
+	while (curr)
+	{
+		auto it = curr->subSymbols.find(name);
+		if (it != curr->subSymbols.end())
+		{
+			newSym->parent = it->second->parent;
+			it->second = newSym;
+			break;
+		}
+		if (localOnly)
+			assert(false && "Cannot replace non-existent symbol!");
+		curr = getParent(curr);
+	}
 }
 
 SymbolRef getParent(const SymbolRef symbol)
@@ -142,10 +173,19 @@ SymbolRef getParent(const SymbolRef symbol)
 	return symbol->parent.lock();
 }
 
-SymbolIterator::SymbolIterator(const SymbolRef symbol)
+SymbolIterator::SymbolIterator(Symbol* symbol, InitPos iPos)
 {
 	m_stack.push({ symbol, symbol->subSymbols.begin() });
-	checkoutFrontLeaf();
+	switch (iPos)
+	{
+	case InitPos::Begin:
+		checkoutFrontLeaf();
+		break;
+	case InitPos::End:
+		checkoutBackLeaf();
+		++*this;
+		break;
+	}
 }
 
 SymbolIterator& SymbolIterator::operator++()
@@ -178,7 +218,7 @@ SymbolRef SymbolIterator::operator*()
 	return currIt()->second;
 }
 
-SymbolRef SymbolIterator::currSym()
+Symbol* SymbolIterator::currSym()
 {
 	return m_stack.top().first;
 }
@@ -191,7 +231,7 @@ SymbolTable::iterator SymbolIterator::currIt()
 void SymbolIterator::checkoutFrontLeaf()
 {
 	while (!currIt()->second->subSymbols.empty())
-		m_stack.push({ currIt()->second, currIt()->second->subSymbols.begin() });
+		m_stack.push({ currIt()->second.get(), currIt()->second->subSymbols.begin() });
 }
 
 void SymbolIterator::checkoutBackLeaf()
@@ -200,6 +240,6 @@ void SymbolIterator::checkoutBackLeaf()
 	{
 		auto it = currIt()->second->subSymbols.end();
 		--it;
-		m_stack.push({ currIt()->second, it });
+		m_stack.push({ currIt()->second.get(), it });
 	}
 }
