@@ -199,7 +199,8 @@ SymbolIterator& SymbolIterator::operator++()
 			break;
 		m_stack.pop();
 		++currIt();
-		checkoutBackLeaf();
+		if (currIt() != currSym()->subSymbols.end())
+			checkoutBackLeaf();
 	}
 
 	return *this;
