@@ -1,5 +1,7 @@
 #include "Program.h"
 
+#include <cassert>
+
 #include "Errors/QinpError.h"
 
 std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes)
@@ -9,11 +11,11 @@ std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes)
 		signature += "." + getDatatypeStr(paramType);
 	return signature;
 }
-std::string getSignatureNoRet(const FunctionRef func)
+std::string getSignatureNoRet(const SymbolRef func)
 {
 	std::string signature;
-	for (const auto& param : func->params)
-		signature += "." + getDatatypeStr(param.datatype);
+	for (const auto& param : func->func.params)
+		signature += "." + getDatatypeStr(param->var.datatype);
 	return signature;
 }
 std::string getSignatureNoRet(const Expression* callExpr)
@@ -31,9 +33,9 @@ std::string getSignature(const Datatype& retType, const std::vector<Datatype>& p
 {
 	return getDatatypeStr(retType) + "$" + getSignatureNoRet(paramTypes);
 }
-std::string getSignature(const FunctionRef func)
+std::string getSignature(const SymbolRef func)
 {
-	return getDatatypeStr(func->retType) + "$" + getSignatureNoRet(func);
+	return getDatatypeStr(func->func.retType) + "$" + getSignatureNoRet(func);
 }
 std::string getSignature(const Expression* callExpr)
 {
@@ -44,10 +46,6 @@ std::string getMangledName(const std::string funcName, const Datatype& retType, 
 {
 	return funcName + "#" + getSignature(retType, paramTypes);
 }
-std::string getMangledName(const FunctionRef func)
-{
-	return func->name + "#" + getSignature(func);
-}
 std::string getMangledName(const std::string& funcName, const Expression* callExpr)
 {
 	return funcName + "#" + getSignature(callExpr);
@@ -56,9 +54,13 @@ std::string getMangledName(const std::string& varName, const Datatype& datatype)
 {
 	return varName + "#" + getDatatypeStr(datatype);
 }
-std::string getMangledName(const Variable& var)
+std::string getMangledName(const SymbolRef symbol)
 {
-	return getMangledName(var.modName, var.datatype);
+	if (isVariable(symbol))
+		return getMangledName(symbol->var.modName, symbol->var.datatype);
+	if (isFuncSpec(symbol))
+		return getParent(symbol)->name + "#" + getSignature(symbol);
+	assert(false && "Unhandled symbol type!");
 }
 std::string getLiteralStringName(int strID)
 {
@@ -71,7 +73,7 @@ std::string getStaticLocalInitName(int initID)
 
 bool isPackType(const ProgramRef program, const std::string& name)
 {
-	return isPack(getSymbol(name, program->symbols));
+	return isPack(getSymbol(program->symbols, name));
 }
 
 bool isPackType(const ProgramRef program, const Datatype& datatype)
@@ -81,7 +83,7 @@ bool isPackType(const ProgramRef program, const Datatype& datatype)
 
 int getPackSize(const ProgramRef program, const std::string& packName)
 {
-	auto sym = getSymbol(packName, program->symbols);
+	auto sym = getSymbol(program->symbols, packName);
 	if (!isPack(sym))
 		return -1;
 

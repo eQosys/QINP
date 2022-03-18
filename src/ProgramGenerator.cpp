@@ -33,8 +33,6 @@ struct ProgGenInfo
 	} indent;
 	std::string lastLoadedFunctionName = "";
 
-	std::vector<LocalStackFrame> localStack; // The stack of local variables, mostly one frame per indentation level.
-
 	std::stack<BodyRef> mainBodyBackups;
 	int funcRetOffset;
 	int funcFrameSize;
@@ -44,19 +42,8 @@ struct ProgGenInfo
 
 	std::map<std::string, Token> defSymbols;
 
-	enum class Context
-	{
-		Global,
-		Function,
-		Pack,
-	};
-	
-	std::stack<Context> contextStack;
-
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
-
-	PackRef currPack = nullptr;
 
 	std::map<std::string, std::map<std::string, uint>> enums;
 };
@@ -82,6 +69,18 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 	info.tokens = backup.tokens;
 	info.currToken = backup.currToken;
 	info.indent = backup.indent;
+}
+
+void enterSymbol(ProgGenInfo& info, SymbolRef symbol)
+{
+	assert(symbol);
+	info.program->currSym = symbol;
+}
+
+void exitSymbol(ProgGenInfo& info)
+{
+	info.program->currSym = info.program->currSym->parent.lock();
+	assert(info.program->currSym);
 }
 
 const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
@@ -138,38 +137,6 @@ void disableBreak(ProgGenInfo& info)
 bool isBreakEnabled(const ProgGenInfo& info)
 {
 	return info.breakEnableCount > 0;
-}
-
-LocalStackFrame& currLocalFrame(ProgGenInfo& info)
-{
-	return info.localStack.back();
-}
-
-void pushLocalFrame(ProgGenInfo& info)
-{
-	info.localStack.push_back({});
-	if (info.localStack.size() > 1)
-		currLocalFrame(info).totalOffset = info.localStack[info.localStack.size() - 2].totalOffset;
-}
-
-void popLocalFrame(ProgGenInfo& info)
-{
-	info.localStack.pop_back();
-}
-
-void pushContext(ProgGenInfo& info, ProgGenInfo::Context context)
-{
-	info.contextStack.push(context);
-}
-
-void popContext(ProgGenInfo& info)
-{
-	info.contextStack.pop();
-}
-
-ProgGenInfo::Context currContext(ProgGenInfo& info)
-{
-	return info.contextStack.top();
 }
 
 void mergeSubUsages(BodyRef parent, BodyRef child)
@@ -261,24 +228,24 @@ bool leftConversionIsProhibited(Expression::ExprType eType)
 
 ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
 
-FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& overloads, std::vector<ExpressionRef>& paramExpr)
+SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
 {
-	FunctionRef match = nullptr;
+	SymbolRef match = nullptr;
 
-	for (auto& overload : overloads)
+	for (auto overload : overloads->subSymbols)
 	{
-		auto& func = overload.second;
+		auto func = overload.second;
 
-		if (func->params.size() != paramExpr.size())
+		if (func->func.params.size() != paramExpr.size())
 			continue;
 
 		bool matchFound = true;
 		bool isExactMatch = true;
 		for (int i = 0; i < paramExpr.size() && matchFound; ++i)
 		{
-			if (paramExpr[i]->datatype != func->params[i].datatype)
+			if (paramExpr[i]->datatype != func->func.params[i]->var.datatype)
 				isExactMatch = false;
-			matchFound = !!genConvertExpression(paramExpr[i], func->params[i].datatype, false, false);
+			matchFound = !!genConvertExpression(paramExpr[i], func->func.params[i]->var.datatype, false, false);
 		}
 
 		if (isExactMatch)
@@ -295,7 +262,7 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 	if (match)
 	{
 		for (int i = 0; i < paramExpr.size(); ++i)
-			paramExpr[i] = genConvertExpression(paramExpr[i], match->params[i].datatype, false);
+			paramExpr[i] = genConvertExpression(paramExpr[i], match->func.params[i]->var.datatype, false);
 	}
 
 	return match;
@@ -303,7 +270,7 @@ FunctionRef getMatchingOverload(ProgGenInfo& info, const FunctionOverloads& over
 
 SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
 {
-	auto symbol = getSymbol(info.program->symbols, name);
+	auto symbol = getSymbol(info.program->currSym, name);
 	if (!isVariable(symbol))
 		return nullptr;
 
@@ -312,7 +279,7 @@ SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
 
 SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 {
-	auto symbol = getSymbol(info.program->symbols, name);
+	auto symbol = getSymbol(info.program->currSym, name);
 	if (!isFuncName(symbol))
 		return nullptr;
 
@@ -321,7 +288,7 @@ SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 
 SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 {
-	auto symbol = getSymbol(info.program->symbols, name);
+	auto symbol = getSymbol(info.program->currSym, name);
 	if (!isEnum(symbol))
 		return nullptr;
 
@@ -379,12 +346,12 @@ void parseExpectedColon(ProgGenInfo& info)
 	parseExpected(info, Token::Type::Separator, ":");
 }
 
-void addVariable(ProgGenInfo& info, SymbolRef sym, bool isStatic)
+void addVariable(ProgGenInfo& info, SymbolRef sym)
 {
 	auto& var = sym->var;
 	var.modName = sym->name;
 
-	if (currContext(info) == ProgGenInfo::Context::Pack)
+	if (isInPack(info.program->currSym))
 	{
 		var.offset = info.program->currSym->pack.size;
 		info.program->currSym->pack.size += getDatatypeSize(info.program, var.datatype);
@@ -393,22 +360,20 @@ void addVariable(ProgGenInfo& info, SymbolRef sym, bool isStatic)
 		return;
 	}
 
-	bool isGlobal = currContext(info) == ProgGenInfo::Context::Global;
 	int varSize = getDatatypeSize(info.program, var.datatype);
 
-	auto symbol = getSymbol(info.program->symbols, sym->name, true);
+	auto symbol = getSymbol(info.program->currSym, sym->name, true);
 	if (symbol)
 		THROW_PROG_GEN_ERROR(sym->pos, "Symbol '" + sym->name + "' already exists in the same scope!");
 
-	//var.isLocal = !(isStatic || isGlobal);
 	static int staticID = 0;
-	if (isStatic)
+	if (isVarStatic(sym))
 		var.modName = "static_" + std::to_string(staticID++) + "~" + sym->name;
 	static int globVarID = 0;
-	if (isGlobal && !info.localStack.empty())
+	if (isInGlobal(info.program->currSym))
 		var.modName.append("~" + std::to_string(globVarID++));
 
-	if (var.isLocal && !info.localStack.empty())
+	if (isVarLocal(sym) || isVarStatic(sym))
 	{
 		varSize = getDatatypeSize(info.program, var.datatype);
 
@@ -424,7 +389,7 @@ void addVariable(ProgGenInfo& info, SymbolRef sym, bool isStatic)
 
 void addFunction(ProgGenInfo& info, SymbolRef func)
 {
-	auto funcs = getSymbol(info.program->symbols, func->name, true);
+	auto funcs = getSymbol(info.program->currSym, func->name, true);
 	if (funcs && !isFuncName(funcs))
 		THROW_PROG_GEN_ERROR(func->pos, "Symbol '" + func->name + "' already exists in the same scope!");
 	
@@ -434,7 +399,7 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 		funcs->name = func->name;
 		funcs->type = SymType::FunctionName;
 
-		addSymbol(info.program->symbols, funcs);
+		addSymbol(info.program->currSym, funcs);
 	}
 
 	func->name = getSignatureNoRet(func);
@@ -458,7 +423,7 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 
 void addPack(ProgGenInfo& info, SymbolRef pack)
 {
-	auto existingPack = getSymbol(info.program->symbols, pack->name, true);
+	auto existingPack = getSymbol(info.program->currSym, pack->name, true);
 	
 	if (!existingPack)
 	{
@@ -538,7 +503,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				if (!pVar)
 					THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
 				
-				if (pVar->isLocal)
+				if (isVarLocal(pVar))
 				{
 					int offset = pVar->var.offset;
 					result += (offset < 0) ? "- " : "+ ";
@@ -886,7 +851,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	if (!pVar)
 		return nullptr;
 
-	exp->eType = pVar->isLocal ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
+	exp->eType = isVarLocal(pVar) ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
 	exp->localOffset = pVar->var.offset;
 	exp->datatype = pVar->var.datatype;
 	exp->globName = pVar->var.modName;
@@ -1086,10 +1051,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				auto overloads = getFunctions(info, exp->left->funcName);
 				if (!overloads)
 					THROW_PROG_GEN_ERROR(exp->pos, "Function '" + exp->left->funcName + "' not found!");
-				auto func = getMatchingOverload(info, *overloads, exp->paramExpr);
+				auto func = getMatchingOverload(info, overloads, exp->paramExpr);
 				if (!func)
 					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + exp->left->funcName + "'!");
-				exp->datatype = func->retType;
+				exp->datatype = func->func.retType;
 				exp->left->datatype = { getSignature(func), 1 };
 				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
 
@@ -1149,7 +1114,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				break;
 			}
 
-			auto packSym = getSymbol(info.program->symbols, exp->left->datatype.name);
+			auto packSym = getSymbol(info.program->currSym, exp->left->datatype.name);
 			if (!packSym)
 				THROW_PROG_GEN_ERROR(exp->pos, "Unknown type '" + exp->left->datatype.name + "'!");
 			if (!isPack(packSym))
@@ -1320,30 +1285,42 @@ void parseFunctionBody(ProgGenInfo& info);
 
 ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
-	Variable var;
-	var.pos = peekToken(info).pos;
-	var.name = name;
-	var.datatype = datatype;
+	SymbolRef sym = std::make_shared<Symbol>();
+	sym->type = SymType::Variable;
+	sym->pos = peekToken(info).pos;
+	sym->name = name;
+	sym->var.datatype = datatype;
+
+	if (isStatic)
+		sym->var.context = SymVarContext::Static;
+	else if (isInFunction(info.program->currSym))
+		sym->var.context = SymVarContext::Local;
+	else if (isInPack(info.program->currSym))
+		sym->var.context = SymVarContext::PackMember;
+	else if (isInEnum(info.program->currSym))
+		sym->var.context = SymVarContext::EnumMember;
+	else
+		sym->var.context = SymVarContext::Global;
 
 	while (isSeparator(peekToken(info), "["))
 	{
 		nextToken(info);
 		parseExpected(info, Token::Type::LiteralInteger);
-		++var.datatype.ptrDepth;
-		var.datatype.arraySizes.push_back(std::stoull(peekToken(info, -1).value));
-		if (var.datatype.arraySizes.back() <= 0)
+		++sym->var.datatype.ptrDepth;
+		sym->var.datatype.arraySizes.push_back(std::stoull(peekToken(info, -1).value));
+		if (sym->var.datatype.arraySizes.back() <= 0)
 			THROW_PROG_GEN_ERROR(peekToken(info, -1).pos, "Array size must be greater than zero!");
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 
-	if (isPackType(info.program, var.datatype))
-		if (!info.program->packs.at(var.datatype.name)->isDefined)
-			THROW_PROG_GEN_ERROR(var.pos, "Cannot use declared-only pack type!");
+	if (isPackType(info.program, sym->var.datatype))
+		if (!isDefined(getSymbol(info.program->currSym, sym->var.datatype.name)))
+			THROW_PROG_GEN_ERROR(sym->pos, "Cannot use declared-only pack type!");
 
-	addVariable(info, var, isStatic);
+	addVariable(info, sym);
 
 	ExpressionRef initExpr = nullptr;
-	if (currContext(info) != ProgGenInfo::Context::Pack)
+	if (!isInPack(info.program->currSym))
 	{
 		if (isOperator(peekToken(info), "="))
 		{
@@ -1386,8 +1363,11 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	while (!isSeparator(peekToken(info), ")"))
 	{
-		Symbol::Variable param;
-		//param.isLocal = true;
+		SymbolRef paramSym = std::make_shared<Symbol>();
+		paramSym->type = SymType::Variable;
+		paramSym->pos = peekToken(info).pos;
+		paramSym->parent = funcSym;
+		auto& param = paramSym->var;
 
 		param.datatype = getParseDatatype(info);
 		if (!param.datatype)
@@ -1400,8 +1380,9 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
 
 		param.modName = nextToken(info).value;
+		paramSym->name = param.modName;
 
-		func.params.push_back(param);
+		func.params.push_back(paramSym);
 
 		if (isSeparator(peekToken(info), ")"))
 			continue;
@@ -1429,21 +1410,19 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		increaseIndent(info.indent);
 		pushTempBody(info, func.body);
-		pushContext(info, ProgGenInfo::Context::Function);
-		pushLocalFrame(info);
+		enterSymbol(info, funcSym);
 
 		info.funcRetOffset = func.retOffset;
 		info.funcRetType = func.retType;
 		info.funcFrameSize = 0;
 
 		for (auto& param : func.params)
-			currLocalFrame(info).locals.insert({ param.name, param });
+			addSymbol(funcSym, param);
 
 		parseFunctionBody(info);
-		funcSym->frame.frameSize = info.funcFrameSize;
+		funcSym->frame.size = info.funcFrameSize;
 		
-		popLocalFrame(info);
-		popContext(info);
+		exitSymbol(info);
 		popTempBody(info);
 		decreaseIndent(info.indent);
 	}
@@ -1456,7 +1435,7 @@ bool parseDeclDef(ProgGenInfo& info)
 	bool isStatic = false;
 	if (isKeyword(typeToken, "static"))
 	{
-		if (currContext(info) != ProgGenInfo::Context::Function)
+		if (!isInFunction(info.program->currSym))
 			THROW_PROG_GEN_ERROR(typeToken.pos, "Static keyword can only be used in function definitions!");
 		isStatic = true;
 		nextToken(info);
@@ -1475,7 +1454,7 @@ bool parseDeclDef(ProgGenInfo& info)
 
 	if (isSeparator(peekToken(info), "("))
 	{
-		if (currContext(info) != ProgGenInfo::Context::Global)
+		if (!isInGlobal(info.program->currSym))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Functions are not allowed here!");
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
 	}
@@ -1633,11 +1612,11 @@ void parseBodyEx(ProgGenInfo& info, BodyRef body)
 {
 	increaseIndent(info.indent);
 	pushTempBody(info, body);
-	pushLocalFrame(info);
+	//pushLocalFrame(info);
 
 	parseBody(info);
 
-	popLocalFrame(info);
+	//popLocalFrame(info);
 	popTempBody(info);
 	decreaseIndent(info.indent);
 
@@ -1815,11 +1794,12 @@ bool parsePack(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 	nextToken(info);
 
-	PackRef pack = std::make_shared<Pack>();
-	pack->pos = nameToken.pos;
-	pack->name = nameToken.value;
+	SymbolRef packSym = std::make_shared<Symbol>();
+	packSym->pos = nameToken.pos;
+	packSym->name = nameToken.value;
+	auto& pack = packSym->pack;
 
-	pack = addPack(info, pack);
+	addPack(info, packSym);
 	if (isSeparator(peekToken(info), "..."))
 	{
 		nextToken(info);
@@ -1831,8 +1811,7 @@ bool parsePack(ProgGenInfo& info)
 	parseExpectedNewline(info);
 
 	increaseIndent(info.indent);
-	pushContext(info, ProgGenInfo::Context::Pack);
-	info.currPack = pack;
+	enterSymbol(info, packSym);
 
 	while (parseIndent(info))
 	{
@@ -1840,10 +1819,10 @@ bool parsePack(ProgGenInfo& info)
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected member definition!");
 	}
 
-	popContext(info);
+	exitSymbol(info);
 	decreaseIndent(info.indent);
 
-	pack->isDefined = true;
+	packSym->state = SymState::Defined;
 
 	return true;
 }
@@ -1989,18 +1968,18 @@ bool parseStatementImport(ProgGenInfo& info)
 	return true;
 }
 
-void markReachableFunctions(ProgGenInfo& info, BodyRef body)
-{
-	for (auto& funcInfo : body->usedFunctions)
-	{
-		auto func = info.program->functions.find(funcInfo.first)->second.find(funcInfo.second)->second;
-		if (func->isReachable)
-			continue;
-
-		func->isReachable = true;
-		markReachableFunctions(info, func->body);
-	}
-}
+//void markReachableFunctions(ProgGenInfo& info, BodyRef body)
+//{
+//	for (auto& funcInfo : body->usedFunctions)
+//	{
+//		auto func = info.program->functions.find(funcInfo.first)->second.find(funcInfo.second)->second;
+//		if (func->isReachable)
+//			continue;
+//
+//		func->isReachable = true;
+//		markReachableFunctions(info, func->body);
+//	}
+//}
 
 void detectUndefinedFunctions(const std::map<std::string, FunctionOverloads>& functions)
 {
@@ -2014,13 +1993,11 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
 	info.program->body = std::make_shared<Body>();
-	info.contextStack.push(ProgGenInfo::Context::Global);
 
 	parseGlobalCode(info);
 
-	markReachableFunctions(info, info.program->body);
-
-	detectUndefinedFunctions(info.program->functions);
+	//markReachableFunctions(info, info.program->body);
+	//detectUndefinedFunctions(info.program->functions);
 
 	return info.program;
 }

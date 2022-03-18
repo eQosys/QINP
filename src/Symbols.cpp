@@ -12,6 +12,39 @@ void addSymbol(SymbolRef curr, SymbolRef symbol)
 	curr->subSymbols[symbol->name] = symbol;
 }
 
+bool isInType(const SymbolRef symbol, Symbol::Type type)
+{
+	if (!symbol)
+		return false;
+	if (symbol->type == type)
+		return true;
+	if (!symbol->parent.expired())
+		return isInType(symbol->parent.lock(), type);
+	return false;
+}
+bool isInGlobal(const SymbolRef symbol)
+{
+	return
+		!isInPack(symbol) &&
+		!isInFunction(symbol) &&
+		isInType(symbol, Symbol::Type::Global);
+}
+
+bool isInFunction(const SymbolRef symbol)
+{
+	return isInType(symbol, Symbol::Type::FunctionSpec);
+}
+
+bool isInPack(const SymbolRef symbol)
+{
+	return isInType(symbol, Symbol::Type::Pack);
+}
+
+bool isInEnum(const SymbolRef symbol)
+{
+	return isInType(symbol, Symbol::Type::Enum);
+}
+
 bool isSymType(SymType type, const SymbolRef symbol)
 {
 	return symbol->type == type;
@@ -60,6 +93,36 @@ bool isDeclared(const SymbolRef symbol)
 bool isDefined(const SymbolRef symbol)
 {
 	return isSymState(SymState::Defined, symbol);
+}
+
+bool isVarContext(const SymbolRef symbol, Symbol::Variable::Context context)
+{
+	return isVariable(symbol) && symbol->var.context == context;
+}
+
+bool isVarGlobal(const SymbolRef symbol)
+{
+	return isVarContext(symbol, Symbol::Variable::Context::Global);
+}
+
+bool isVarLocal(const SymbolRef symbol)
+{
+	return isVarContext(symbol, Symbol::Variable::Context::Local);
+}
+
+bool isVarStatic(const SymbolRef symbol)
+{
+	return isVarContext(symbol, Symbol::Variable::Context::Static);
+}
+
+bool isVarParameter(const SymbolRef symbol)
+{
+	return isVarContext(symbol, Symbol::Variable::Context::Parameter);
+}
+
+bool isVarPackMember(const SymbolRef symbol)
+{
+	return isVarContext(symbol, Symbol::Variable::Context::PackMember);
 }
 
 SymbolRef getSymbol(const std::string& name, SymbolRef curr)

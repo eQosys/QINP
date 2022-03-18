@@ -46,13 +46,24 @@ struct Symbol
 		std::string modName;
 		int offset = -1;
 		Datatype datatype;
+
+		enum class Context
+		{
+			None,
+			Global,
+			Local,
+			Static,
+			Parameter,
+			PackMember,
+			EnumMember,
+		} context = Context::None;
 	} var;
 
 	struct Function
 	{
 		Datatype retType;
 		int retOffset = 16;
-		std::vector<Variable> params;
+		std::vector<SymbolRef> params;
 		BodyRef body;
 		bool isReachable = false;
 	} func;
@@ -77,8 +88,16 @@ public:
 
 typedef Symbol::Type SymType;
 typedef Symbol::State SymState;
+typedef Symbol::Variable::Context SymVarContext;
 
 void addSymbol(SymbolRef curr, SymbolRef symbol);
+
+// isIn* functions return true if the symbol itself or any of its parent is of the given type
+bool isInType(const SymbolRef symbol, Symbol::Type type);
+bool isInGlobal(const SymbolRef symbol);
+bool isInFunction(const SymbolRef symbol);
+bool isInPack(const SymbolRef symbol);
+bool isInEnum(const SymbolRef symbol);
 
 bool isSymType(SymType type, const SymbolRef symbol);
 bool isVariable(const SymbolRef symbol);
@@ -91,6 +110,13 @@ bool isEnum(const SymbolRef symbol);
 bool isSymState(SymState state, const SymbolRef symbol);
 bool isDeclared(const SymbolRef symbol);
 bool isDefined(const SymbolRef symbol);
+
+bool isVarContext(const SymbolRef symbol, Symbol::Variable::Context context);
+bool isVarGlobal(const SymbolRef symbol);
+bool isVarLocal(const SymbolRef symbol);
+bool isVarStatic(const SymbolRef symbol);
+bool isVarParameter(const SymbolRef symbol);
+bool isVarPackMember(const SymbolRef symbol);
 
 SymbolRef getSymbol(const SymbolRef curr, const std::string& name, bool localOnly = false);
 SymbolRef getParent(const SymbolRef symbol);
