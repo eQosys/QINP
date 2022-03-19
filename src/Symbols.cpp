@@ -151,7 +151,7 @@ bool isVarOffset(const SymbolRef symbol)
 		isVarPackMember(symbol);
 }
 
-SymbolRef getSymbolFromPath(SymbolRef root, const std::vector<std::string>& path)
+SymbolRef getSymbolFromPath(SymbolRef root, const SymPath& path)
 {
 	SymbolRef curr = root;
 	for (auto& name : path)
@@ -163,9 +163,9 @@ SymbolRef getSymbolFromPath(SymbolRef root, const std::vector<std::string>& path
 	return curr;
 }
 
-std::vector<std::string> getSymbolPath(SymbolRef root, SymbolRef symbol, bool removeFirst)
+SymPath getSymbolPath(SymbolRef root, SymbolRef symbol)
 {
-	std::vector<std::string> path;
+	SymPath path;
 
 	while (symbol != root)
 	{
@@ -173,12 +173,23 @@ std::vector<std::string> getSymbolPath(SymbolRef root, SymbolRef symbol, bool re
 		symbol = getParent(symbol);
 	}
 
-	if (removeFirst)
+	if (!root)
 		path.pop_back();
 
 	std::reverse(path.begin(), path.end());
 
 	return path;
+}
+
+std::string SymPathToString(const SymPath& path)
+{
+	std::string str;
+	for (int i = 0; i < path.size(); ++i)
+	{
+		if (i > 0) str += "?";
+		str += path[i];
+	}
+	return str;
 }
 
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)

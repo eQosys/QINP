@@ -3,9 +3,14 @@ import "std.qnp"
 space space1:
 	i32 x = 0
 
+	i32 func():
+		return 100
+
 space space2:
 	i32 x = 2
 
+	i32 func():
+		return 200
 
 print(::space1::x)
 print("\n")
@@ -14,4 +19,9 @@ print(space1::x)
 print("\n")
 
 print(space2::x)
+print("\n")
+
+print(space1::func())
+print("\n")
+print(space2::func())
 print("\n")

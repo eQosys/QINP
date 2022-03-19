@@ -306,6 +306,15 @@ SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 	return symbol;
 }
 
+SymbolRef getFunctions(ProgGenInfo& info, const std::vector<std::string>& path)
+{
+	auto symbol = getSymbolFromPath(info.program->symbols, path);
+	if (!isFuncName(symbol))
+		return nullptr;
+	
+	return symbol;
+}
+
 SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 {
 	auto symbol = getSymbol(currSym(info), name);
@@ -896,7 +905,10 @@ ExpressionRef getParseFunctionName(ProgGenInfo& info)
 
 	exp->eType = Expression::ExprType::FunctionName;
 	exp->isLValue = false;
-	exp->funcName = litToken.value;
+
+	auto funcSym = getFunctions(info, litToken.value);
+
+	exp->funcPath = getSymbolPath(nullptr, funcSym);
 
 	exp->datatype = { "...#" + litToken.value, 1 };
 
@@ -1098,17 +1110,17 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 			if (exp->left->eType == Expression::ExprType::FunctionName)
 			{
-				auto overloads = getFunctions(info, exp->left->funcName);
+				auto overloads = getFunctions(info, exp->left->funcPath);
 				if (!overloads)
-					THROW_PROG_GEN_ERROR(exp->pos, "Function '" + exp->left->funcName + "' not found!");
+					THROW_PROG_GEN_ERROR(exp->pos, "Function '" + exp->left->funcPath.back() + "' not found!");
 				auto func = getMatchingOverload(info, overloads, exp->paramExpr);
 				if (!func)
-					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + exp->left->funcName + "'!");
+					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + exp->left->funcPath.back() + "'!");
 				exp->datatype = func->func.retType;
 				exp->left->datatype = { getSignature(func), 1 };
-				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
+				exp->left->funcPath.push_back(getSignatureNoRet(func));
 
-				info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func, true));
+				info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
 			}
 			else
 			{

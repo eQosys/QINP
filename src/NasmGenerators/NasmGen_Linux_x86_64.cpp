@@ -856,7 +856,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionName:
-		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
+		ss << "  mov " << primRegName(8) << ", " << SymPathToString(expr->funcPath) << "\n";
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::rValue;
 		break;

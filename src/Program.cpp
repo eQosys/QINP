@@ -54,12 +54,12 @@ std::string getMangledName(const std::string& varName, const Datatype& datatype)
 {
 	return varName + "#" + getDatatypeStr(datatype);
 }
-std::string getMangledName(const SymbolRef symbol)
+std::string getMangledName(SymbolRef symbol)
 {
 	if (isVariable(symbol))
 		return getMangledName(symbol->var.modName, symbol->var.datatype);
 	if (isFuncSpec(symbol))
-		return getParent(symbol)->name + "#" + getSignature(symbol);
+		return SymPathToString(getSymbolPath(nullptr, symbol));
 	assert(false && "Unhandled symbol type!");
 }
 std::string getLiteralStringName(int strID)

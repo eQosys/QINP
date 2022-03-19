@@ -149,7 +149,7 @@ struct Expression : public Statement
 	std::string valStr; // Literal
 	int localOffset; // Local variable
 	std::string globName; // Global variable
-	std::string funcName; // Function Address
+	std::vector<std::string> funcPath; // Function Address
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
 

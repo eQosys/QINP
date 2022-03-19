@@ -57,7 +57,7 @@ std::string getSignature(const Expression* callExpr);
 std::string getMangledName(const std::string& funcName, const Datatype& retType, const std::vector<Datatype>& paramTypes);
 std::string getMangledName(const std::string& funcName, const Expression* callExpr);
 std::string getMangledName(const std::string& varName, const Datatype& datatype);
-std::string getMangledName(const SymbolRef symbol);
+std::string getMangledName(SymbolRef symbol);
 std::string getLiteralStringName(int strID);
 std::string getStaticLocalInitName(int initID);
 

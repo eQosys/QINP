@@ -122,8 +122,11 @@ bool isVarPackMember(const SymbolRef symbol);
 bool isVarLabeled(const SymbolRef symbol);
 bool isVarOffset(const SymbolRef symbol);
 
-SymbolRef getSymbolFromPath(SymbolRef root, const std::vector<std::string>& path);
-std::vector<std::string> getSymbolPath(SymbolRef root, SymbolRef symbol, bool removeFirst = false);
+typedef std::vector<std::string> SymPath;
+
+SymbolRef getSymbolFromPath(SymbolRef root, const SymPath& path);
+SymPath getSymbolPath(const SymbolRef root, const SymbolRef symbol);
+std::string SymPathToString(const SymPath& path);
 
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly = false);
 void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);
