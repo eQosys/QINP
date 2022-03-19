@@ -1078,7 +1078,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				exp->left->datatype = { getSignature(func), 1 };
 				exp->left->funcName = getMangledName(exp->left->funcName, exp.get());
 
-				info.program->body->usedFunctions.insert({ func->name, getSignatureNoRet(func) }); // Used to determine which functions are actually used in the executable
+				info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func, true));
 			}
 			else
 			{
@@ -1994,18 +1994,19 @@ bool parseStatementImport(ProgGenInfo& info)
 	return true;
 }
 
-//void markReachableFunctions(ProgGenInfo& info, BodyRef body)
-//{
-//	for (auto& funcInfo : body->usedFunctions)
-//	{
-//		auto func = info.program->functions.find(funcInfo.first)->second.find(funcInfo.second)->second;
-//		if (func->isReachable)
-//			continue;
-//
-//		func->isReachable = true;
-//		markReachableFunctions(info, func->body);
-//	}
-//}
+void markReachableFunctions(ProgGenInfo& info, BodyRef body)
+{
+	for (auto& funcPath : body->usedFunctions)
+	{
+		auto func = getSymbolFromPath(info.program->symbols, funcPath);
+
+		if (func->func.isReachable)
+			continue;
+
+		func->func.isReachable = true;
+		markReachableFunctions(info, func->func.body);
+	}
+}
 
 void detectUndefinedFunctions(const std::map<std::string, FunctionOverloads>& functions)
 {
@@ -2029,7 +2030,7 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 
 	parseGlobalCode(info);
 
-	//markReachableFunctions(info, info.program->body);
+	markReachableFunctions(info, info.program->body);
 	//detectUndefinedFunctions(info.program->functions);
 
 	return info.program;

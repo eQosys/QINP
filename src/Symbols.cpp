@@ -1,6 +1,7 @@
 #include "Symbols.h"
 
 #include <cassert>
+#include <algorithm>
 
 #include "Errors/ProgGenError.h"
 
@@ -14,12 +15,12 @@ SymbolIterator Symbol::end()
 	return SymbolIterator(this, SymbolIterator::InitPos::End);
 }
 
-void addSymbol(SymbolRef curr, SymbolRef symbol)
+void addSymbol(SymbolRef root, SymbolRef symbol)
 {
-	if (curr->subSymbols.find(symbol->name) != curr->subSymbols.end())
+	if (root->subSymbols.find(symbol->name) != root->subSymbols.end())
 		THROW_PROG_GEN_ERROR(symbol->pos, "Symbol '" + symbol->name + "' already defined");
-	symbol->parent = curr;
-	curr->subSymbols[symbol->name] = symbol;
+	symbol->parent = root;
+	root->subSymbols[symbol->name] = symbol;
 }
 
 bool isInType(const SymbolRef symbol, Symbol::Type type)
@@ -150,16 +151,46 @@ bool isVarOffset(const SymbolRef symbol)
 		isVarPackMember(symbol);
 }
 
-SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly)
+SymbolRef getSymbolFromPath(SymbolRef root, const std::vector<std::string>& path)
 {
-	while (curr)
+	SymbolRef curr = root;
+	for (auto& name : path)
 	{
-		auto it = curr->subSymbols.find(name);
-		if (it != curr->subSymbols.end())
+		curr = getSymbol(curr, name, true);
+		if (!curr)
+			return nullptr;
+	}
+	return curr;
+}
+
+std::vector<std::string> getSymbolPath(SymbolRef root, SymbolRef symbol, bool removeFirst)
+{
+	std::vector<std::string> path;
+
+	while (symbol != root)
+	{
+		path.push_back(symbol->name);
+		symbol = getParent(symbol);
+	}
+
+	if (removeFirst)
+		path.pop_back();
+
+	std::reverse(path.begin(), path.end());
+
+	return path;
+}
+
+SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)
+{
+	while (root)
+	{
+		auto it = root->subSymbols.find(name);
+		if (it != root->subSymbols.end())
 			return it->second;
 		if (localOnly)
 			break;
-		curr = getParent(curr);
+		root = getParent(root);
 	}
 	return nullptr;
 }

@@ -9,12 +9,14 @@ struct Expression;
 typedef std::shared_ptr<Expression> ExpressionRef;
 struct Function;
 typedef std::shared_ptr<Function> FunctionRef;
+struct Symbol;
+typedef std::shared_ptr<Symbol> SymbolRef;
 
 typedef std::shared_ptr<class Statement> StatementRef;
 struct Body
 {
 	std::vector<StatementRef> statements;
-	std::set<std::pair<std::string, std::string>> usedFunctions; // <name, sigNoRet>
+	std::set<std::vector<std::string>> usedFunctions; // Symbol paths
 };
 typedef std::shared_ptr<Body> BodyRef;
 

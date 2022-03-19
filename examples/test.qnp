@@ -1,5 +1,7 @@
 import "std.qnp"
 
+print(10)
+
 i32 var = 0
 void func():
 	i32 var = 10

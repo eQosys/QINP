@@ -1063,7 +1063,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	SymbolIterator it = program->symbols->begin();
 	while (it != program->symbols->end())
 	{
-		if (isFuncSpec(*it))
+		if (isFuncSpec(*it) && isDefined(*it) && (*it)->func.isReachable)
 			funcs.push_back({ getParent(*it)->name, *it });
 		else if (isVarLabeled(*it))
 			globals.push_back(*it);
@@ -1071,13 +1071,8 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	}
 
 	// Functions
-	//for (auto& overloads : program->functions)
-	//	for (auto& func : overloads.second)
-	//		if (func.second->isReachable)
-	//			generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	for (auto& func : funcs)
-		if (isDefined(func.second))
-			generateNasm_Linux_x86_64(ngi, func.first, func.second);
+		generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	// Global variables
 	ss << "SECTION .bss\n";
@@ -1085,8 +1080,6 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  __##__argv: resq 1\n";
 	ss << "  __##__envp: resq 1\n";
 
-	//for (auto& glob : program->globals)
-	//	ss << "  " << getMangledName(glob.second) << ": resb " << getDatatypeSize(program, glob.second.datatype) << "\t\t; " << getPosStr(glob.second.pos) << "\n";
 	for (auto& global : globals)
 		ss << "  " << getMangledName(global) << ": resb " << getDatatypeSize(program, global->var.datatype) << "\t\t; " << getPosStr(global->pos) << "\n";
 

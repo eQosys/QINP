@@ -91,7 +91,7 @@ typedef Symbol::Type SymType;
 typedef Symbol::State SymState;
 typedef Symbol::Variable::Context SymVarContext;
 
-void addSymbol(SymbolRef curr, SymbolRef symbol);
+void addSymbol(SymbolRef root, SymbolRef symbol);
 
 // isIn* functions return true if the symbol itself or any of its parent is of the given type
 bool isInType(const SymbolRef symbol, Symbol::Type type);
@@ -122,7 +122,10 @@ bool isVarPackMember(const SymbolRef symbol);
 bool isVarLabeled(const SymbolRef symbol);
 bool isVarOffset(const SymbolRef symbol);
 
-SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly = false);
+SymbolRef getSymbolFromPath(SymbolRef root, const std::vector<std::string>& path);
+std::vector<std::string> getSymbolPath(SymbolRef root, SymbolRef symbol, bool removeFirst = false);
+
+SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly = false);
 void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);
 SymbolRef getParent(const SymbolRef symbol);
 
