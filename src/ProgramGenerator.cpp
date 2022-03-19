@@ -905,7 +905,27 @@ ExpressionRef getParseFunctionName(ProgGenInfo& info)
 	return exp;
 }
 
-ExpressionRef getParseValue(ProgGenInfo& info)
+ExpressionRef getParseSpaceName(ProgGenInfo& info, bool localOnly)
+{
+	auto& litToken = peekToken(info);
+	if (!isIdentifier(litToken))
+		return nullptr;
+
+	auto spaceSymbol = getSymbol(currSym(info), litToken.value, localOnly);
+	if (!spaceSymbol)
+		return nullptr;
+
+	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
+	exp->eType = Expression::ExprType::SpaceName;
+	exp->spaceName = litToken.value;
+	exp->spaceSymbol = spaceSymbol;
+
+	nextToken(info);
+
+	return exp;
+}
+
+ExpressionRef getParseValue(ProgGenInfo& info, bool localOnly = false)
 {
 	auto exp = getParseLiteral(info);
 	if (exp) return exp;
@@ -914,6 +934,9 @@ ExpressionRef getParseValue(ProgGenInfo& info)
 	if (exp) return exp;
 
 	exp = getParseFunctionName(info);
+	if (exp) return exp;
+
+	exp = getParseSpaceName(info, localOnly);
 	if (exp) return exp;
 
 	THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected variable name or literal value!");
@@ -1013,7 +1036,14 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = false;
 			break;
 		case Expression::ExprType::Namespace:
-			break; // TODO: Implementation
+			if (exp->left->eType != Expression::ExprType::SpaceName)
+				THROW_PROG_GEN_ERROR(exp->left->pos, "Expected namespace name!");
+			enterSymbol(info, exp->left->spaceSymbol);
+
+			exp = getParseValue(info, true);
+
+			exitSymbol(info);
+			break;
 		default:
 			THROW_PROG_GEN_ERROR(exp->pos, "Invalid binary operator!");
 		}
@@ -1236,6 +1266,11 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->eType = Expression::ExprType::Literal;
 		exp->datatype = { "u64" };
 	}
+		break;
+	case Expression::ExprType::Namespace:
+		enterSymbol(info, info.program->symbols);
+		exp = getParseExpression(info, precLvl + 1);
+		exitSymbol(info);
 		break;
 	default:
 		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");
@@ -1804,6 +1839,52 @@ bool parseStatementDefine(ProgGenInfo& info)
 	return true;
 }
 
+bool parseSingleGlobalCode(ProgGenInfo& info);
+
+bool parseStatementSpace(ProgGenInfo& info)
+{
+	auto& spaceToken = peekToken(info);
+	if (!isKeyword(spaceToken, "space"))
+		return false;
+	nextToken(info);
+
+	auto& nameToken = peekToken(info);
+	nextToken(info);
+
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+
+	parseExpectedColon(info);
+	parseExpectedNewline(info);
+
+	auto spaceSym = std::make_shared<Symbol>();
+	spaceSym->type = SymType::Namespace;
+	spaceSym->pos = nameToken.pos;
+	spaceSym->name = nameToken.value;
+
+	increaseIndent(info.indent);
+	addSymbol(currSym(info), spaceSym);
+	enterSymbol(info, spaceSym);
+
+	int codeCount = 0;
+
+	while (parseIndent(info))
+	{
+		auto token = (*info.tokens)[info.currToken];
+		if (!parseSingleGlobalCode(info))
+			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
+		++codeCount;
+	}
+
+	if (codeCount == 0)
+		THROW_PROG_GEN_ERROR(spaceToken.pos, "Expected at least one statement!");
+
+	exitSymbol(info);
+	decreaseIndent(info.indent);
+
+	return true;
+}
+
 bool parsePack(ProgGenInfo& info)
 {
 	auto& packToken = peekToken(info);
@@ -1924,20 +2005,8 @@ void parseGlobalCode(ProgGenInfo& info)
 		if (!parseIndent(info))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected indent!");
 		auto token = (*info.tokens)[info.currToken];
-		if (parseEmptyLine(info)) continue;
-		if (parseStatementPass(info)) continue;
-		if (parseStatementImport(info)) continue;
-		if (parseStatementDefine(info)) continue;
-		if (parseControlFlow(info)) continue;
-		if (parseStatementContinue(info)) continue;
-		if (parseStatementBreak(info)) continue;
-		if (parsePack(info)) continue;
-		if (parseEnum(info)) continue;
-		if (parseDeclDef(info)) continue;
-		if (parseSinglelineAssembly(info)) continue;
-		if (parseMultilineAssembly(info)) continue;
-		if (parseExpression(info)) continue;
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
+		if (!parseSingleGlobalCode(info))
+			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
 	}
 }
 
@@ -1992,6 +2061,25 @@ bool parseStatementImport(ProgGenInfo& info)
 	loadProgGenInfoBackup(info, backup);
 
 	return true;
+}
+
+bool parseSingleGlobalCode(ProgGenInfo& info)
+{
+	if (parseEmptyLine(info)) return true;
+	if (parseStatementPass(info)) return true;
+	if (parseStatementImport(info)) return true;
+	if (parseStatementDefine(info)) return true;
+	if (parseStatementSpace(info)) return true;
+	if (parseControlFlow(info)) return true;
+	if (parseStatementContinue(info)) return true;
+	if (parseStatementBreak(info)) return true;
+	if (parsePack(info)) return true;
+	if (parseEnum(info)) return true;
+	if (parseDeclDef(info)) return true;
+	if (parseSinglelineAssembly(info)) return true;
+	if (parseMultilineAssembly(info)) return true;
+	if (parseExpression(info)) return true;
+	return false;
 }
 
 void markReachableFunctions(ProgGenInfo& info, BodyRef body)

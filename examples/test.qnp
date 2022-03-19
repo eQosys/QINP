@@ -1,40 +1,17 @@
 import "std.qnp"
 
-print(10)
+space space1:
+	i32 x = 0
 
-i32 var = 0
-void func():
-	i32 var = 10
+space space2:
+	i32 x = 2
 
-	print("::func::var = ")
-	print(var)
-	print("\n")
 
-	if var:
-		i32 var = 20
-
-		print("::func::if::var = ")
-		print(var)
-		print("\n")
-
-	print("::func::var = ")
-	print(var)
-	print("\n")
-
-func()
-
-print("::var = ")
-print(var)
+print(::space1::x)
+print("\n")
+::space1::x = 100
+print(space1::x)
 print("\n")
 
-i32 x = 0
-if !x:
-	i32 x = 10
-
-	print("::if::x = ")
-	print(x)
-	print("\n")
-
-print("::x = ")
-print(x)
+print(space2::x)
 print("\n")

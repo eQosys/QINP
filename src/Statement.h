@@ -133,6 +133,7 @@ struct Expression : public Statement
 		LabeledVariable,
 		OffsetVariable,
 		FunctionName,
+		SpaceName,
 	};
 
 	Expression(const Token::Position& pos)
@@ -153,6 +154,9 @@ struct Expression : public Statement
 	int paramSizeSum;
 
 	int memberOffset; // Member access
+
+	std::string spaceName; // Namespace
+	SymbolRef spaceSymbol;
 };
 
 std::string StatementTypeToString(Statement::Type type);
