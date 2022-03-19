@@ -1802,17 +1802,21 @@ bool parsePack(ProgGenInfo& info)
 	nextToken(info);
 
 	SymbolRef packSym = std::make_shared<Symbol>();
+	packSym->type = SymType::Pack;
 	packSym->pos = nameToken.pos;
 	packSym->name = nameToken.value;
 	auto& pack = packSym->pack;
 
-	addPack(info, packSym);
+	packSym->state = SymState::Defined;
 	if (isSeparator(peekToken(info), "..."))
 	{
+		packSym->state = SymState::Declared;
 		nextToken(info);
 		parseExpectedNewline(info);
 		return true;
 	}
+
+	addPack(info, packSym);
 	
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
