@@ -128,8 +128,8 @@ struct Expression : public Statement
 		Namespace,
 
 		Literal,
-		GlobalVariable,
-		LocalVariable,
+		LabeledVariable,
+		OffsetVariable,
 		FunctionName,
 	};
 

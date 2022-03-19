@@ -843,20 +843,17 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 		ss << "  mov " << primRegUsage(ngi) << ", " << expr->valStr << "\n";
 		break;
-	case Expression::ExprType::GlobalVariable:
+	case Expression::ExprType::LabeledVariable:
 		ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
-	case Expression::ExprType::LocalVariable:
+	case Expression::ExprType::OffsetVariable:
 		ss << "  mov " << primRegName(8) << ", rbp\n";
 		ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
-		if (expr->globName == "ch")
-			printf("asdf");
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
-		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionName:
 		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";

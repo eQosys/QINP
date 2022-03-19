@@ -118,6 +118,9 @@ bool isVarStatic(const SymbolRef symbol);
 bool isVarParameter(const SymbolRef symbol);
 bool isVarPackMember(const SymbolRef symbol);
 
+bool isVarLabeled(const SymbolRef symbol);
+bool isVarOffset(const SymbolRef symbol);
+
 SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly = false);
 void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);
 SymbolRef getParent(const SymbolRef symbol);

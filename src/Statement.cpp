@@ -69,8 +69,8 @@ std::string ExpressionTypeToString(Expression::ExprType type)
 	case Expression::ExprType::Suffix_Increment: return "Suffix_Increment";
 	case Expression::ExprType::Suffix_Decrement: return "Suffix_Decrement";
 	case Expression::ExprType::Literal: return "Literal";
-	case Expression::ExprType::GlobalVariable: return "GlobalVariable";
-	case Expression::ExprType::LocalVariable: return "LocalVariable";
+	case Expression::ExprType::LabeledVariable: return "LabeledVariable";
+	case Expression::ExprType::OffsetVariable: return "OffsetVariable";
 	case Expression::ExprType::FunctionName: return "FunctionName";
 	default: THROW_QINP_ERROR("Unknown expression type!");
 	}

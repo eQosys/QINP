@@ -1,2 +1,5 @@
+i32 var = 0
+
 i32 func(i32 x):
+	i32 var = 10
 	return x + x

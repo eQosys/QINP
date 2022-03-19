@@ -160,7 +160,7 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	auto& condBody = ifStatement->ifConditionalBodies.back();
 	
 	condBody.condition = std::make_shared<Expression>(initExpr->pos);
-	condBody.condition->eType = Expression::ExprType::GlobalVariable;
+	condBody.condition->eType = Expression::ExprType::LabeledVariable;
 	condBody.condition->isLValue = true;
 	condBody.condition->datatype = { "bool" };
 	condBody.condition->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
@@ -169,7 +169,7 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	assignExpr->eType = Expression::ExprType::Assign;
 	
 	assignExpr->left = std::make_shared<Expression>(initExpr->pos);
-	assignExpr->left->eType = Expression::ExprType::GlobalVariable;
+	assignExpr->left->eType = Expression::ExprType::LabeledVariable;
 	assignExpr->left->isLValue = true;
 	assignExpr->left->datatype = { "bool" };
 	assignExpr->left->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
@@ -505,7 +505,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				if (!pVar)
 					THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
 				
-				if (isVarLocal(pVar))
+				if (isVarOffset(pVar))
 				{
 					int offset = pVar->var.offset;
 					result += (offset < 0) ? "- " : "+ ";
@@ -853,7 +853,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	if (!pVar)
 		return nullptr;
 
-	exp->eType = isVarLocal(pVar) ? Expression::ExprType::LocalVariable : Expression::ExprType::GlobalVariable;
+	exp->eType = isVarLabeled(pVar) ? Expression::ExprType::OffsetVariable : Expression::ExprType::LabeledVariable;
 	exp->localOffset = pVar->var.offset;
 	exp->datatype = pVar->var.datatype;
 	exp->globName = pVar->var.modName;
@@ -1357,6 +1357,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	auto& func = funcSym->func;
 
 	funcSym->pos = peekToken(info).pos;
+	funcSym->type = SymType::FunctionSpec;
 	funcSym->name = name;
 	func.body = std::make_shared<Body>();
 	func.retType = datatype;
@@ -1370,6 +1371,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		paramSym->pos = peekToken(info).pos;
 		paramSym->parent = funcSym;
 		auto& param = paramSym->var;
+		param.context = SymVarContext::Parameter;
 
 		param.datatype = getParseDatatype(info);
 		if (!param.datatype)

@@ -137,6 +137,19 @@ bool isVarPackMember(const SymbolRef symbol)
 	return isVarContext(symbol, Symbol::Variable::Context::PackMember);
 }
 
+bool isVarLabeled(const SymbolRef symbol)
+{
+	return
+		isVarLocal(symbol) ||
+		isVarParameter(symbol) ||
+		isVarPackMember(symbol);
+}
+
+bool isVarOffset(const SymbolRef symbol)
+{
+	return !isVarLabeled(symbol);
+}
+
 SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly)
 {
 	while (curr)
@@ -179,28 +192,29 @@ SymbolIterator::SymbolIterator(Symbol* symbol, InitPos iPos)
 	{
 	case InitPos::Begin:
 		m_stack.push({ symbol, symbol->subSymbols.begin() });
-		checkoutFrontLeaf();
 		break;
 	case InitPos::End:
 		m_stack.push({ symbol, symbol->subSymbols.end() });
-		--currIt();
-		checkoutBackLeaf();
-		++*this;
 		break;
 	}
 }
 
 SymbolIterator& SymbolIterator::operator++()
 {
+	if (!currIt()->second->subSymbols.empty())
+	{
+		m_stack.push({ currIt()->second.get(), currIt()->second->subSymbols.begin() });
+		return *this;
+	}
+
 	++currIt();
+
 	while (currIt() == currSym()->subSymbols.end())
 	{
-		if (m_stack.size() == 1)
+		if (m_stack.size() <= 1)
 			break;
 		m_stack.pop();
 		++currIt();
-		if (currIt() != currSym()->subSymbols.end())
-			checkoutBackLeaf();
 	}
 
 	return *this;
