@@ -26,6 +26,7 @@ struct Symbol
 	enum class Type
 	{
 		None,
+		Namespace,
 		Global,
 		Variable,
 		FunctionName, // The general function name

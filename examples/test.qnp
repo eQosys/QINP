@@ -1,13 +1,38 @@
 import "std.qnp"
 
-i32 func():
-	static i32 a = 0
-	return a++
+i32 var = 0
+void func():
+	i32 var = 10
 
-print(func())
+	print("::func::var = ")
+	print(var)
+	print("\n")
+
+	if var:
+		i32 var = 20
+
+		print("::func::if::var = ")
+		print(var)
+		print("\n")
+
+	print("::func::var = ")
+	print(var)
+	print("\n")
+
+func()
+
+print("::var = ")
+print(var)
 print("\n")
-print(func())
+
+i32 x = 0
+if !x:
+	i32 x = 10
+
+	print("::if::x = ")
+	print(x)
+	print("\n")
+
+print("::x = ")
+print(x)
 print("\n")
-
-
-exit(100)

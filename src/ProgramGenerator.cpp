@@ -71,6 +71,11 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 	info.indent = backup.indent;
 }
 
+SymbolRef currSym(const ProgGenInfo& info)
+{
+	return currSym(info.program);
+}
+
 void enterSymbol(ProgGenInfo& info, SymbolRef symbol)
 {
 	assert(symbol);
@@ -83,9 +88,19 @@ void exitSymbol(ProgGenInfo& info)
 	info.program->symStack.pop();
 }
 
-SymbolRef currSym(const ProgGenInfo& info)
+SymbolRef addShadowSpace(ProgGenInfo& info)
 {
-	return currSym(info.program);
+	static int shadowId = 0;
+	std::string shadowName = "<" + std::to_string(shadowId++) + ">";
+	auto symbol = std::make_shared<Symbol>();
+	symbol->type = SymType::Namespace;
+	symbol->name = shadowName;
+	
+	addSymbol(currSym(info), symbol);
+
+	symbol->frame.totalOffset = getParent(symbol)->frame.totalOffset;
+
+	return symbol;
 }
 
 const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
@@ -1619,11 +1634,11 @@ void parseBodyEx(ProgGenInfo& info, BodyRef body)
 {
 	increaseIndent(info.indent);
 	pushTempBody(info, body);
-	//pushLocalFrame(info);
+	enterSymbol(info, addShadowSpace(info));
 
 	parseBody(info);
 
-	//popLocalFrame(info);
+	exitSymbol(info);
 	popTempBody(info);
 	decreaseIndent(info.indent);
 
