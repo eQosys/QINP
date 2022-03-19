@@ -73,7 +73,7 @@ std::string getStaticLocalInitName(int initID)
 
 bool isPackType(const ProgramRef program, const std::string& name)
 {
-	return isPack(getSymbol(program->currSym, name));
+	return isPack(getSymbol(currSym(program), name));
 }
 
 bool isPackType(const ProgramRef program, const Datatype& datatype)
@@ -131,4 +131,9 @@ int getDatatypePointedToSize(const ProgramRef program, Datatype datatype)
 
 	dereferenceDatatype(datatype);
 	return getDatatypeSize(program, datatype);
+}
+
+SymbolRef currSym(const ProgramRef program)
+{
+	return program->symStack.top();
 }

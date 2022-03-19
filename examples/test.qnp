@@ -1,5 +1,13 @@
-i32 var = 0
+import "std.qnp"
 
-i32 func(i32 x):
-	i32 var = 10
-	return x + x
+i32 func():
+	static i32 a = 0
+	return a++
+
+print(func())
+print("\n")
+print(func())
+print("\n")
+
+
+exit(100)

@@ -74,15 +74,18 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 void enterSymbol(ProgGenInfo& info, SymbolRef symbol)
 {
 	assert(symbol);
-	info.program->currSym = symbol;
+	info.program->symStack.push(symbol);
 }
 
 void exitSymbol(ProgGenInfo& info)
 {
-	if (info.program->currSym->parent.expired())
-		printf("Hello world!");
-	info.program->currSym = info.program->currSym->parent.lock();
-	assert(info.program->currSym);
+	assert(!info.program->symStack.empty());
+	info.program->symStack.pop();
+}
+
+SymbolRef currSym(const ProgGenInfo& info)
+{
+	return currSym(info.program);
 }
 
 const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
@@ -272,7 +275,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 
 SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
 {
-	auto symbol = getSymbol(info.program->currSym, name);
+	auto symbol = getSymbol(currSym(info), name);
 	if (!isVariable(symbol))
 		return nullptr;
 
@@ -281,7 +284,7 @@ SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
 
 SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 {
-	auto symbol = getSymbol(info.program->currSym, name);
+	auto symbol = getSymbol(currSym(info), name);
 	if (!isFuncName(symbol))
 		return nullptr;
 
@@ -290,7 +293,7 @@ SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 
 SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 {
-	auto symbol = getSymbol(info.program->currSym, name);
+	auto symbol = getSymbol(currSym(info), name);
 	if (!isEnum(symbol))
 		return nullptr;
 
@@ -353,18 +356,18 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 	auto& var = sym->var;
 	var.modName = sym->name;
 
-	if (isInPack(info.program->currSym))
+	if (isInPack(currSym(info)))
 	{
-		var.offset = info.program->currSym->pack.size;
-		info.program->currSym->pack.size += getDatatypeSize(info.program, var.datatype);
+		var.offset = currSym(info)->pack.size;
+		currSym(info)->pack.size += getDatatypeSize(info.program, var.datatype);
 
-		addSymbol(info.program->currSym, sym);
+		addSymbol(currSym(info), sym);
 		return;
 	}
 
 	int varSize = getDatatypeSize(info.program, var.datatype);
 
-	auto symbol = getSymbol(info.program->currSym, sym->name, true);
+	auto symbol = getSymbol(currSym(info), sym->name, true);
 	if (symbol)
 		THROW_PROG_GEN_ERROR(sym->pos, "Symbol '" + sym->name + "' already exists in the same scope!");
 
@@ -372,26 +375,26 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 	if (isVarStatic(sym))
 		var.modName = "static_" + std::to_string(staticID++) + "~" + sym->name;
 	static int globVarID = 0;
-	if (isInGlobal(info.program->currSym))
+	if (isInGlobal(currSym(info)))
 		var.modName.append("~" + std::to_string(globVarID++));
 
 	if (isVarLocal(sym) || isVarStatic(sym))
 	{
 		varSize = getDatatypeSize(info.program, var.datatype);
 
-		info.program->currSym->frame.size += varSize;
-		info.program->currSym->frame.totalOffset -= varSize;
-		var.offset = info.program->currSym->frame.totalOffset;
-		if (-info.program->currSym->frame.totalOffset > info.funcFrameSize)
-			info.funcFrameSize = -info.program->currSym->frame.totalOffset;
+		currSym(info)->frame.size += varSize;
+		currSym(info)->frame.totalOffset -= varSize;
+		var.offset = currSym(info)->frame.totalOffset;
+		if (-currSym(info)->frame.totalOffset > info.funcFrameSize)
+			info.funcFrameSize = -currSym(info)->frame.totalOffset;
 	}
 
-	addSymbol(info.program->currSym, sym);
+	addSymbol(currSym(info), sym);
 }
 
 void addFunction(ProgGenInfo& info, SymbolRef func)
 {
-	auto funcs = getSymbol(info.program->currSym, func->name, true);
+	auto funcs = getSymbol(currSym(info), func->name, true);
 	if (funcs && !isFuncName(funcs))
 		THROW_PROG_GEN_ERROR(func->pos, "Symbol '" + func->name + "' already exists in the same scope!");
 	
@@ -401,7 +404,7 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 		funcs->name = func->name;
 		funcs->type = SymType::FunctionName;
 
-		addSymbol(info.program->currSym, funcs);
+		addSymbol(currSym(info), funcs);
 	}
 
 	func->name = getSignatureNoRet(func);
@@ -425,11 +428,11 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 
 void addPack(ProgGenInfo& info, SymbolRef pack)
 {
-	auto existingPack = getSymbol(info.program->currSym, pack->name, true);
+	auto existingPack = getSymbol(currSym(info), pack->name, true);
 	
 	if (!existingPack)
 	{
-		addSymbol(info.program->currSym, pack);
+		addSymbol(currSym(info), pack);
 		return;
 	}
 
@@ -853,7 +856,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	if (!pVar)
 		return nullptr;
 
-	exp->eType = isVarLabeled(pVar) ? Expression::ExprType::OffsetVariable : Expression::ExprType::LabeledVariable;
+	exp->eType = isVarLabeled(pVar) ? Expression::ExprType::LabeledVariable : Expression::ExprType::OffsetVariable;
 	exp->localOffset = pVar->var.offset;
 	exp->datatype = pVar->var.datatype;
 	exp->globName = pVar->var.modName;
@@ -1116,7 +1119,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				break;
 			}
 
-			auto packSym = getSymbol(info.program->currSym, exp->left->datatype.name);
+			auto packSym = getSymbol(currSym(info), exp->left->datatype.name);
 			if (!packSym)
 				THROW_PROG_GEN_ERROR(exp->pos, "Unknown type '" + exp->left->datatype.name + "'!");
 			if (!isPack(packSym))
@@ -1295,11 +1298,11 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 
 	if (isStatic)
 		sym->var.context = SymVarContext::Static;
-	else if (isInFunction(info.program->currSym))
+	else if (isInFunction(currSym(info)))
 		sym->var.context = SymVarContext::Local;
-	else if (isInPack(info.program->currSym))
+	else if (isInPack(currSym(info)))
 		sym->var.context = SymVarContext::PackMember;
-	else if (isInEnum(info.program->currSym))
+	else if (isInEnum(currSym(info)))
 		sym->var.context = SymVarContext::EnumMember;
 	else
 		sym->var.context = SymVarContext::Global;
@@ -1316,13 +1319,13 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	}
 
 	if (isPackType(info.program, sym->var.datatype))
-		if (!isDefined(getSymbol(info.program->currSym, sym->var.datatype.name)))
+		if (!isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
 			THROW_PROG_GEN_ERROR(sym->pos, "Cannot use declared-only pack type!");
 
 	addVariable(info, sym);
 
 	ExpressionRef initExpr = nullptr;
-	if (!isInPack(info.program->currSym))
+	if (!isInPack(currSym(info)))
 	{
 		if (isOperator(peekToken(info), "="))
 		{
@@ -1439,7 +1442,7 @@ bool parseDeclDef(ProgGenInfo& info)
 	bool isStatic = false;
 	if (isKeyword(typeToken, "static"))
 	{
-		if (!isInFunction(info.program->currSym))
+		if (!isInFunction(currSym(info)))
 			THROW_PROG_GEN_ERROR(typeToken.pos, "Static keyword can only be used in function definitions!");
 		isStatic = true;
 		nextToken(info);
@@ -1458,7 +1461,7 @@ bool parseDeclDef(ProgGenInfo& info)
 
 	if (isSeparator(peekToken(info), "("))
 	{
-		if (!isInGlobal(info.program->currSym))
+		if (!isInGlobal(currSym(info)))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Functions are not allowed here!");
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
 	}
@@ -1998,7 +2001,7 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();
-	info.program->currSym = info.program->symbols;
+	enterSymbol(info, info.program->symbols);
 
 	auto sym = info.program->symbols;
 	sym->pos = {};

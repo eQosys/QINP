@@ -139,15 +139,15 @@ bool isVarPackMember(const SymbolRef symbol)
 
 bool isVarLabeled(const SymbolRef symbol)
 {
-	return
-		isVarLocal(symbol) ||
-		isVarParameter(symbol) ||
-		isVarPackMember(symbol);
+	return isVariable(symbol) && !isVarOffset(symbol);
 }
 
 bool isVarOffset(const SymbolRef symbol)
 {
-	return !isVarLabeled(symbol);
+	return
+		isVarLocal(symbol) ||
+		isVarParameter(symbol) ||
+		isVarPackMember(symbol);
 }
 
 SymbolRef getSymbol(SymbolRef curr, const std::string& name, bool localOnly)

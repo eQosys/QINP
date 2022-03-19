@@ -168,7 +168,7 @@ std::string secRegUsage(NasmGenInfo& ngi)
 	case CellState::rValue:
 		return secRegName(ngi);
 	case CellState::lValue:
-		return "[" + secRegName(ngi) + "]";
+		return "[" + secRegName(8) + "]";
 	}
 	assert("Invalid secReg state!" && false);
 	return "";
@@ -1065,7 +1065,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	{
 		if (isFuncSpec(*it))
 			funcs.push_back({ getParent(*it)->name, *it });
-		else if (isVarGlobal(*it))
+		else if (isVarLabeled(*it))
 			globals.push_back(*it);
 		++it;
 	}
@@ -1076,7 +1076,8 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	//		if (func.second->isReachable)
 	//			generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	for (auto& func : funcs)
-		generateNasm_Linux_x86_64(ngi, func.first, func.second);
+		if (isDefined(func.second))
+			generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	// Global variables
 	ss << "SECTION .bss\n";

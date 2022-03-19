@@ -66,7 +66,7 @@ typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (with
 struct Program
 {
 	SymbolRef symbols;
-	SymbolRef currSym;
+	std::stack<SymbolRef> symStack;
 	std::map<int, std::string> strings;
 	BodyRef body;
 	int staticLocalInitCount = 0;
@@ -83,3 +83,5 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 int getDatatypePushSize(const ProgramRef program, const Datatype& datatype);
 
 int getDatatypePointedToSize(const ProgramRef program, Datatype datatype);
+
+SymbolRef currSym(const ProgramRef program);

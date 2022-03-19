@@ -95,7 +95,7 @@ pack __timespec...
 
 \\ Sleep for the specified number of milliseconds
 \\ @param ms The number of milliseconds to sleep
-void sleep(u64 ms)...
+\\void sleep(u64 ms)...
 
 
 
@@ -255,17 +255,17 @@ u8** getenv():
 
 	return env
 
-pack __timespec:
-	i64 seconds
-	i64 nanoseconds
+\\pack __timespec:
+\\	i64 seconds
+\\	i64 nanoseconds
 
-void sleep(u64 ms):
-	__timespec ts
-	ts.seconds = ms / 1000
-	ts.nanoseconds = (ms % 1000) * 1000000
-	assembly:
-		"mov rax, $(SYS_NANOSLEEP)"
-		"mov rdi, rbp"
-		"add rdi, $(ts)"
-		"xor rsi, rsi"
-		"syscall"
+\\void sleep(u64 ms):
+\\	__timespec ts
+\\	ts.seconds = ms / 1000
+\\	ts.nanoseconds = (ms % 1000) * 1000000
+\\	assembly:
+\\		"mov rax, $(SYS_NANOSLEEP)"
+\\		"mov rdi, rbp"
+\\		"add rdi, $(ts)"
+\\		"xor rsi, rsi"
+\\		"syscall"
