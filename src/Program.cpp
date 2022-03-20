@@ -83,7 +83,7 @@ bool isPackType(const ProgramRef program, const Datatype& datatype)
 
 int getPackSize(const ProgramRef program, const std::string& packName)
 {
-	auto sym = getSymbol(program->symbols, packName);
+	auto sym = getSymbolFromPath(program->symbols, SymPathFromString(packName));
 	if (!isPack(sym))
 		return -1;
 

@@ -192,6 +192,20 @@ std::string SymPathToString(const SymPath& path)
 	return str;
 }
 
+SymPath SymPathFromString(const std::string& pathStr)
+{
+	SymPath path;
+	std::size_t end = -1;
+	do
+	{
+		auto begin = end + 1;
+		end = pathStr.find('?', begin);
+		path.push_back(pathStr.substr(begin, end - begin));
+	} while (end != std::string::npos);
+	
+	return path;
+}
+
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)
 {
 	while (root)

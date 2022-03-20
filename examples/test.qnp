@@ -12,16 +12,16 @@ space space2:
 	i32 func():
 		return 200
 
-print(::space1::x)
-print("\n")
+std::print(::space1::x)
+std::print("\n")
 ::space1::x = 100
-print(space1::x)
-print("\n")
+std::print(space1::x)
+std::print("\n")
 
-print(space2::x)
-print("\n")
+std::print(space2::x)
+std::print("\n")
 
-print(space1::func())
-print("\n")
-print(space2::func())
-print("\n")
+std::print(space1::func())
+std::print("\n")
+std::print(space2::func())
+std::print("\n")

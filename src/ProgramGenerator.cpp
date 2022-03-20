@@ -1176,7 +1176,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				break;
 			}
 
-			auto packSym = getSymbol(currSym(info), exp->left->datatype.name);
+			//auto packSym = getSymbol(currSym(info), exp->left->datatype.name);
+			auto packSym = getSymbolFromPath(info.program->symbols, SymPathFromString(exp->left->datatype.name));
 			if (!packSym)
 				THROW_PROG_GEN_ERROR(exp->pos, "Unknown type '" + exp->left->datatype.name + "'!");
 			if (!isPack(packSym))
@@ -1331,13 +1332,54 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 
 Datatype getParseDatatype(ProgGenInfo& info)
 {
-	auto& typeToken = peekToken(info);
-	if (!isBuiltinType(typeToken) && !isPackType(info, typeToken))
-		return Datatype();
-	nextToken(info);
-
 	Datatype datatype;
-	datatype.name = typeToken.value;
+
+	int prevTokId = info.currToken;
+	int nEntered = 0;
+
+	auto exitEntered = [&](const Datatype& dt, bool resetTokId)
+	{
+		if (resetTokId)
+			info.currToken = prevTokId;
+		while (nEntered--)
+			exitSymbol(info);
+		return dt;
+	};
+
+	if (isBuiltinType(peekToken(info)))
+	{
+		datatype.name = nextToken(info).value;
+	}
+	else
+	{
+		if (isOperator(peekToken(info), "::"))
+		{
+			nextToken(info);
+			++nEntered;
+			enterSymbol(info, info.program->symbols);
+		}
+
+		auto pNameToken = &nextToken(info);
+		if (!isIdentifier(*pNameToken))
+			return exitEntered({}, true);
+		while (isOperator(peekToken(info), "::"))
+		{
+			nextToken(info);
+			auto sym = getSymbol(currSym(info), pNameToken->value, true);
+			if (!sym)
+				return exitEntered({}, true);
+			++nEntered;
+			enterSymbol(info, sym);
+			pNameToken = &nextToken(info);
+			if (!isIdentifier(*pNameToken))
+				return exitEntered({}, true);
+		}
+
+		if (!isPackType(info, *pNameToken))
+			return exitEntered({}, true);
+
+		datatype.name = SymPathToString(getSymbolPath(nullptr, getSymbol(currSym(info), pNameToken->value, nEntered != 0)));
+	}
 
 	while (isOperator(peekToken(info), "*"))
 	{
@@ -1345,7 +1387,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 		++datatype.ptrDepth;
 	}
 
-	return datatype;
+	return exitEntered(datatype, false);
 }
 
 void parseFunctionBody(ProgGenInfo& info);

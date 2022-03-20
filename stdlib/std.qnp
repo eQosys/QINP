@@ -4,268 +4,269 @@
 import "linux.qnp"
 
 
-\\ Terminate the calling process and return the specified exit status.
-\\ @param status The exit status to return to the parent process.
-void exit(i32 status)...
+space std:
+	\\ Terminate the calling process and return the specified exit status.
+	\\ @param status The exit status to return to the parent process.
+	void exit(i32 status)...
 
-\\ Determine the length of a string (without the null terminator)
-\\ @param str The null-terminated string to measure
-\\ @return The length of the string
-u64 strlen(u8* str)...
+	\\ Determine the length of a string (without the null terminator)
+	\\ @param str The null-terminated string to measure
+	\\ @return The length of the string
+	u64 strlen(u8* str)...
 
-\\ Print a null-terminated string to stdout
-\\ @param str The null-terminated string to print
-void print(u8* str)...
+	\\ Print a null-terminated string to stdout
+	\\ @param str The null-terminated string to print
+	void print(u8* str)...
 
-\\ Print a string of specified length to stdout
-\\ @param str The string to print
-\\ @param len The length of the string to print
-void print(u8* str, u64 len)...
+	\\ Print a string of specified length to stdout
+	\\ @param str The string to print
+	\\ @param len The length of the string to print
+	void print(u8* str, u64 len)...
 
-\\ Print a base-10 integer to stdout
-\\ @param num The integer to print
-void print(i64 num)...
+	\\ Print a base-10 integer to stdout
+	\\ @param num The integer to print
+	void print(i64 num)...
 
-\\ Reads a character from stdin
-\\ @return The character read from stdin
-u8 getchar()...
+	\\ Reads a character from stdin
+	\\ @return The character read from stdin
+	u8 getchar()...
 
-\\ Read a null-terminated string from stdin
-\\ @param dest The destination buffer
-\\ @param size The size of the destination buffer
-u8* scan(u8* dest, u64 size)...
+	\\ Read a null-terminated string from stdin
+	\\ @param dest The destination buffer
+	\\ @param size The size of the destination buffer
+	u8* scan(u8* dest, u64 size)...
 
-\\ Reverse a null-terminated string
-\\ @param str The null-terminated string to reverse
-\\ @return The reversed string
-u8* strrev(u8* str)...
+	\\ Reverse a null-terminated string
+	\\ @param str The null-terminated string to reverse
+	\\ @return The reversed string
+	u8* strrev(u8* str)...
 
-\\ Reverse a string of specified length
-\\ @param begin Pointer to the first character of the string to reverse
-\\ @param end Pointer to the character after the last character of the string to reverse (usually the null-terminator)
-\\ @return The reversed string
-u8* strrev(u8* begin, u8* end)...
+	\\ Reverse a string of specified length
+	\\ @param begin Pointer to the first character of the string to reverse
+	\\ @param end Pointer to the character after the last character of the string to reverse (usually the null-terminator)
+	\\ @return The reversed string
+	u8* strrev(u8* begin, u8* end)...
 
-\\ Copy a null-terminated string
-\\ @param dest The destination buffer
-\\ @param src The source string
-\\ @return The destination buffer
-u8* strcpy(u8* dest, u8* src)...
+	\\ Copy a null-terminated string
+	\\ @param dest The destination buffer
+	\\ @param src The source string
+	\\ @return The destination buffer
+	u8* strcpy(u8* dest, u8* src)...
 
-\\ Convert an integer to a string
-\\ @param num The integer to convert
-\\ @param str The string to store the converted integer in
-\\ @param base The base to use for the conversion (Valid values are 2 to 36)
-\\ @return The null-terminated string representation of the integer
-u8* itos(i64 num, u8* str, i64 base)...
+	\\ Convert an integer to a string
+	\\ @param num The integer to convert
+	\\ @param str The string to store the converted integer in
+	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
+	\\ @return The null-terminated string representation of the integer
+	u8* itos(i64 num, u8* str, i64 base)...
 
-\\ Convert a string to a base-10 integer
-\\ @param str The string to convert
-\\ @param base The base to use for the conversion (Valid values are 2 to 36)
-\\ @return The integer represented by the string
-i64 stoi(u8* str, i64 base)...
+	\\ Convert a string to a base-10 integer
+	\\ @param str The string to convert
+	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
+	\\ @return The integer represented by the string
+	i64 stoi(u8* str, i64 base)...
 
-\\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
-\\ @param c The character to convert
-\\ @return The uppercase character
-u8 toupper(u8 c)...
+	\\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
+	\\ @param c The character to convert
+	\\ @return The uppercase character
+	u8 toupper(u8 c)...
 
-\\ Converts a character to lowercase. Values not in the range 'A' to 'Z' are unchanged.
-\\ @param c The character to convert
-\\ @return The lowercase character
-u8 tolower(u8 c)...
+	\\ Converts a character to lowercase. Values not in the range 'A' to 'Z' are unchanged.
+	\\ @param c The character to convert
+	\\ @return The lowercase character
+	u8 tolower(u8 c)...
 
-\\ Copy data from one buffer to another
-\\ @param dest The destination buffer
-\\ @param src The source buffer
-\\ @param len The number of bytes to copy
-void memcpy(void* dest, void* src, u64 len)...
+	\\ Copy data from one buffer to another
+	\\ @param dest The destination buffer
+	\\ @param src The source buffer
+	\\ @param len The number of bytes to copy
+	void memcpy(void* dest, void* src, u64 len)...
 
-\\ Get the arguments passed to the program
-\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
-\\ @return The number of arguments passed to the program
-u64 getargs(u8*** pargv)...
+	\\ Get the arguments passed to the program
+	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
+	\\ @return The number of arguments passed to the program
+	u64 getargs(u8*** pargv)...
 
-\\ Get the environment variables passed to the program
-\\ @return The pointer to an array of environment variables
-u8** getenv()...
+	\\ Get the environment variables passed to the program
+	\\ @return The pointer to an array of environment variables
+	u8** getenv()...
 
-\\ Pack holding a time specified in seconds and nanoseconds
-pack __timespec...
+	\\ Pack holding a time specified in seconds and nanoseconds
+	pack __timespec...
 
-\\ Sleep for the specified number of milliseconds
-\\ @param ms The number of milliseconds to sleep
-void sleep(u64 ms)...
+	\\ Sleep for the specified number of milliseconds
+	\\ @param ms The number of milliseconds to sleep
+	void sleep(u64 ms)...
 
 
 
-void exit(i32 status):
-	assembly:
-		"mov rax, $(SYS_EXIT)"
-		"mov edi, [rbp $(status)]"
-		"syscall"
+	void exit(i32 status):
+		assembly:
+			"mov rax, $(SYS_EXIT)"
+			"mov edi, [rbp $(status)]"
+			"syscall"
 
-u64 strlen(u8* str):
-	u8* begin = str
-	while *str:
-		++str
-	return str - begin
+	u64 strlen(u8* str):
+		u8* begin = str
+		while *str:
+			++str
+		return str - begin
 
-void print(u8* str):
-	print(str, strlen(str))
+	void print(u8* str):
+		print(str, strlen(str))
 
-void print(u8* str, u64 len):
-	assembly:
-		"mov rax, $(SYS_WRITE)"
-		"mov rdi, 1"
-		"mov rsi, [rbp $(str)]"
-		"mov rdx, [rbp $(len)]"
-		"syscall"
+	void print(u8* str, u64 len):
+		assembly:
+			"mov rax, $(SYS_WRITE)"
+			"mov rdi, 1"
+			"mov rsi, [rbp $(str)]"
+			"mov rdx, [rbp $(len)]"
+			"syscall"
 
-void print(i64 num):
-	u8 str[32]
-	print(itos(num, str, 10))
+	void print(i64 num):
+		u8 str[32]
+		print(itos(num, str, 10))
 
-u8 getchar():
-	u8 ch
+	u8 getchar():
+		u8 ch
 
-	assembly:
-		"mov rax, $(SYS_READ)"
-		"mov rdi, 0"
-		"mov rsi, rbp"
-		"add rsi, $(ch)"
-		"mov rdx, 1"
-		"syscall"
+		assembly:
+			"mov rax, $(SYS_READ)"
+			"mov rdi, 0"
+			"mov rsi, rbp"
+			"add rsi, $(ch)"
+			"mov rdx, 1"
+			"syscall"
 
-	return ch
+		return ch
 
-u8* scan(u8* dest, u64 size):
-	if !size:
-		return dest
-	u8* begin = dest
+	u8* scan(u8* dest, u64 size):
+		if !size:
+			return dest
+		u8* begin = dest
 
-	while --size:
-		*dest++ = getchar()
-	
-	*dest = '\0'
-	return begin
+		while --size:
+			*dest++ = getchar()
 
-u8* strrev(u8* str):
-	return strrev(str, str + strlen(str))
+		*dest = '\0'
+		return begin
 
-u8* strrev(u8* begin, u8* end):
-	u8* str = begin
-	u8 temp
+	u8* strrev(u8* str):
+		return strrev(str, str + strlen(str))
 
-	while begin < end:
-		temp = *begin
-		*begin++ = *--end
-		*end = temp
+	u8* strrev(u8* begin, u8* end):
+		u8* str = begin
+		u8 temp
 
-	return str
+		while begin < end:
+			temp = *begin
+			*begin++ = *--end
+			*end = temp
 
-u8* strcpy(u8* dest, u8* src):
-	u8* begin = dest
-	while *src:
-		*dest++ = *src++
-	*dest = '\0'
-	return begin
+		return str
 
-u8* itos(i64 num, u8* str, i64 base):
-	u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
+	u8* strcpy(u8* dest, u8* src):
+		u8* begin = dest
+		while *src:
+			*dest++ = *src++
+		*dest = '\0'
+		return begin
 
-	u8* begin = str
-	bool negative = num < 0
+	u8* itos(i64 num, u8* str, i64 base):
+		u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-	if negative:
-		num = -num
+		u8* begin = str
+		bool negative = num < 0
 
-	do:
-		*str++ = baseChars[num % base]
-		num = num / base
-	while num
+		if negative:
+			num = -num
 
-	if negative:
-		*str++ = '-'
-	
-	*str = '\0'
+		do:
+			*str++ = baseChars[num % base]
+			num = num / base
+		while num
 
-	return strrev(begin, str)
+		if negative:
+			*str++ = '-'
 
-i64 stoi(u8* str, i64 base):
-	u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
+		*str = '\0'
 
-	i64 num = 0
-	bool negative = *str == '-'
-	if negative:
-		++str
+		return strrev(begin, str)
 
-	while *str:
-		u8 ch = *str++
-		i64 index = 0
-		while baseChars[index] != ch:
-			++index
-		num = num * base + index
+	i64 stoi(u8* str, i64 base):
+		u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-	if negative:
-		num = -num
+		i64 num = 0
+		bool negative = *str == '-'
+		if negative:
+			++str
 
-	return num
+		while *str:
+			u8 ch = *str++
+			i64 index = 0
+			while baseChars[index] != ch:
+				++index
+			num = num * base + index
 
-u8 toupper(u8 c):
-	if c < 'a' || c > 'z':
-		return c
-	return c - 'a' + 'A'
+		if negative:
+			num = -num
 
-u8 tolower(u8 c):
-	if c < 'A' || c > 'Z':
-		return c
-	return c - 'A' + 'a'
+		return num
 
-void memcpy(void* dest, void* src, u64 len):
-	u8* d = (u8*)dest
-	u8* s = (u8*)src
+	u8 toupper(u8 c):
+		if c < 'a' || c > 'z':
+			return c
+		return c - 'a' + 'A'
 
-	while len--:
-		*d++ = *s++
+	u8 tolower(u8 c):
+		if c < 'A' || c > 'Z':
+			return c
+		return c - 'A' + 'a'
 
-u64 getargs(u8*** pargv):
-	u64 argc
-	assembly:
-		"mov rcx, [__##__argc]"
-		"mov [rbp $(argc)], rcx"
+	void memcpy(void* dest, void* src, u64 len):
+		u8* d = (u8*)dest
+		u8* s = (u8*)src
 
-	if !pargv:
+		while len--:
+			*d++ = *s++
+
+	u64 getargs(u8*** pargv):
+		u64 argc
+		assembly:
+			"mov rcx, [__##__argc]"
+			"mov [rbp $(argc)], rcx"
+
+		if !pargv:
+			return argc
+
+		u8** argv
+		assembly:
+			"mov rcx, [__##__argv]"
+			"mov [rbp $(argv)], rcx"
+
+		*pargv = argv
+
 		return argc
 
-	u8** argv
-	assembly:
-		"mov rcx, [__##__argv]"
-		"mov [rbp $(argv)], rcx"
+	u8** getenv():
+		u8** env
+		assembly:
+			"mov rcx, [__##__envp]"
+			"mov [rbp $(env)], rcx"
 
-	*pargv = argv
+		return env
 
-	return argc
+	pack __timespec:
+		i64 seconds
+		i64 nanoseconds
 
-u8** getenv():
-	u8** env
-	assembly:
-		"mov rcx, [__##__envp]"
-		"mov [rbp $(env)], rcx"
-
-	return env
-
-pack __timespec:
-	i64 seconds
-	i64 nanoseconds
-
-void sleep(u64 ms):
-	__timespec ts
-	ts.seconds = ms / 1000
-	ts.nanoseconds = (ms % 1000) * 1000000
-	assembly:
-		"mov rax, $(SYS_NANOSLEEP)"
-		"mov rdi, rbp"
-		"add rdi, $(ts)"
-		"xor rsi, rsi"
-		"syscall"
+	void sleep(u64 ms):
+		__timespec ts
+		ts.seconds = ms / 1000
+		ts.nanoseconds = (ms % 1000) * 1000000
+		assembly:
+			"mov rax, $(SYS_NANOSLEEP)"
+			"mov rdi, rbp"
+			"add rdi, $(ts)"
+			"xor rsi, rsi"
+			"syscall"	

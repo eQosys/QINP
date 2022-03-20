@@ -127,6 +127,7 @@ typedef std::vector<std::string> SymPath;
 SymbolRef getSymbolFromPath(SymbolRef root, const SymPath& path);
 SymPath getSymbolPath(const SymbolRef root, const SymbolRef symbol);
 std::string SymPathToString(const SymPath& path);
+SymPath SymPathFromString(const std::string& pathStr);
 
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly = false);
 void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);

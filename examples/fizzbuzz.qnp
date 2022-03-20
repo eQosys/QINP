@@ -4,13 +4,13 @@ u64 i = 0
 while ++i < 100:
 	bool any = false
 	if !(i % 3):
-		print("Fizz ")
+		std::print("Fizz ")
 		any = true
 	if !(i % 5):
-		print("Buzz ")
+		std::print("Buzz ")
 		any = true
 	
 	if !any:
-		print(i)
+		std::print(i)
 
-	print("\n")
+	std::print("\n")
