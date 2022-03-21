@@ -20,6 +20,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [return](#return)
  - [_while_](./control-flow.md#while-loop)
  - [_sizeof_](./operators.md#size-of)
+ - [spaces](#spaces)
  - [_static_](./declarations.md#static)
 
 ---
@@ -130,11 +131,13 @@ When the function it is used in has a return type other than `void`, the stateme
 In functions with a return type of `void`, the `return` statement is optional, otherwise the last statement in the function body must be a `return` statement.
 
 #### Usage
+
 ```qinp
 return [expression*]
 ```
 
 #### Examples
+
 ```qinp
 u64 square(u64 x):
 	return x * x
@@ -145,3 +148,49 @@ void say_hello():
 	print("Hello, world!")
 	return		\\ This is optional
 ```
+
+### Spaces
+
+Spaces are used to group functions/variables/etc.
+Symbols with the same name may exists in different spaces.
+When resolving a symbol reference. The most local symbol with a matching name is used.
+The preceding `::` operator is used to access a symbo from the global scope.
+Spaces can be nested.
+
+#### Usage
+
+> Space definition:
+> ```qinp
+> space [name]:
+> 	[body]
+> ```
+
+> Accessing a space member:
+> ```qinp
+> [space-name]::[member-name]
+> ::[space-name]::[member-name]
+> ```
+
+#### Examples
+
+> Space definition:
+> ```qinp
+> u64 x = 0
+> space foo:
+> 	u64 x = 1
+> space bar:
+> 	u64 x = 2
+> 
+> 	space foo:
+> 		u64 x = 3
+> ```
+
+> Accessing a space member:
+> ```qinp
+> x			\\ Always resolves to the local x
+> ::x			\\ Always accesses the global x
+> foo::x		\\ In global scope or foo space: ::foo::x, in bar space: ::bar::foo::x
+> bar::x		\\ In this example everywhere ::bar::x
+> ::foo::x
+> ::bar::x
+> ```
