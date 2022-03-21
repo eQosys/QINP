@@ -1,5 +1,10 @@
 # Stdlib - std.qnp
 
+## Overview
+ - [Functions](#functions)
+ - [Packs](#packs)
+ - [Definitions](#definitions)
+
 ## Functions
  - [void exit ( i32 status )]()
  - [u64 strlen ( u8* str )]()
@@ -22,3 +27,15 @@
 
 ## Packs
  - [__timespec]()
+
+## Definitions
+ - [EXIT_SUCCESS]()
+ - [EXIT_FAILURE]()
+ - [char]()
+ - [short]()
+ - [int]()
+ - [long]()
+ - [uchar]()
+ - [ushort]()
+ - [uint]()
+ - [ulong]()

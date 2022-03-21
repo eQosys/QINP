@@ -6,4 +6,6 @@ All files building the Standard Library can be found in the [stdlib](../../stdli
  - [./linux.qnp](./linux-qnp.md)
  - [./std.qnp](./std-qnp.md)
 
-The main file for the Standard Library is [std.qnp](./std-qnp.md). It consists of the most fundamental functions, definitions and packs.
+The main file for the Standard Library is [./std.qnp](./std-qnp.md). It consists of the most fundamental functions, definitions and packs.
+
+Every Function/pack defined in the stdlib exists in the `std` space.

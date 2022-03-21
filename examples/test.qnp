@@ -1,15 +1,15 @@
 import "std.qnp"
 
 space space1:
-	i32 x = 0
+	int x = 0
 
-	i32 func():
+	int func():
 		return 100
 
 space space2:
-	i32 x = 2
+	int x = 2
 
-	i32 func():
+	int func():
 		return 200
 
 std::print(::space1::x)
@@ -25,3 +25,5 @@ std::print(space1::func())
 std::print("\n")
 std::print(space2::func())
 std::print("\n")
+
+std::exit(EXIT_FAILURE)

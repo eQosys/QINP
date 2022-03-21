@@ -4,6 +4,21 @@
 import "linux.qnp"
 
 
+\\ Convenience definitions
+define EXIT_SUCCESS 0
+define EXIT_FAILURE 1
+
+define char i8
+define short i16
+define int i32
+define long i64
+
+define uchar u8
+define ushort u16
+define uint u32
+define ulong u64
+
+
 space std:
 	\\ Terminate the calling process and return the specified exit status.
 	\\ @param status The exit status to return to the parent process.
