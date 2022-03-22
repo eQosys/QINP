@@ -18,6 +18,12 @@ define ushort u16
 define uint u32
 define ulong u64
 
+define _FILE i32
+define _RESULT i32
+
+space std:
+	u8 buff[10]
+
 
 space std:
 	\\ Terminate the calling process and return the specified exit status.
@@ -31,16 +37,16 @@ space std:
 
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
-	void print(u8* str)...
+	_RESULT print(u8* str)...
 
 	\\ Print a string of specified length to stdout
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
-	void print(u8* str, u64 len)...
+	_RESULT print(u8* str, u64 len)...
 
 	\\ Print a base-10 integer to stdout
 	\\ @param num The integer to print
-	void print(i64 num)...
+	_RESULT print(i64 num)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read from stdin
@@ -67,6 +73,12 @@ space std:
 	\\ @param src The source string
 	\\ @return The destination buffer
 	u8* strcpy(u8* dest, u8* src)...
+
+	\\ Compare two null-terminated strings
+	\\ @param str1 The first string
+	\\ @param str2 The second string
+	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
+	i32 strcmp(u8* str1, u8* str2)...
 
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
@@ -95,7 +107,7 @@ space std:
 	\\ @param dest The destination buffer
 	\\ @param src The source buffer
 	\\ @param len The number of bytes to copy
-	void memcpy(void* dest, void* src, u64 len)...
+	void* memcpy(void* dest, void* src, u64 len)...
 
 	\\ Get the arguments passed to the program
 	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
@@ -111,7 +123,21 @@ space std:
 
 	\\ Sleep for the specified number of milliseconds
 	\\ @param ms The number of milliseconds to sleep
-	void sleep(u64 ms)...
+	_RESULT sleep(u64 ms)...
+
+	\\ Control device
+	\\ @param fd An open file descriptor
+	\\ @param request The request to perform
+	\\ @param arg The argument to the request
+	\\ @return The result of the request
+	_RESULT ioctl(_FILE fd, u32 request, void* parg)...
+
+	\\ Open a file
+	\\ @param filename The path to the file to open
+	\\ @param flags The flags to use when opening the file
+	\\ @param mode The mode to use when opening the file
+	\\ @return An open file descriptor
+	_FILE open(u8* filename, i32 flags, u16 mode)...
 
 
 
@@ -127,20 +153,23 @@ space std:
 			++str
 		return str - begin
 
-	void print(u8* str):
-		print(str, strlen(str))
+	_RESULT print(u8* str):
+		return print(str, strlen(str))
 
-	void print(u8* str, u64 len):
+	_RESULT print(u8* str, u64 len):
+		_RESULT result
 		assembly:
 			"mov rax, $(SYS_WRITE)"
 			"mov rdi, 1"
 			"mov rsi, [rbp $(str)]"
 			"mov rdx, [rbp $(len)]"
 			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
 
-	void print(i64 num):
+	_RESULT print(i64 num):
 		u8 str[32]
-		print(itos(num, str, 10))
+		return print(itos(num, str, 10))
 
 	u8 getchar():
 		u8 ch
@@ -186,6 +215,14 @@ space std:
 			*dest++ = *src++
 		*dest = '\0'
 		return begin
+	
+	i32 strcmp(u8* str1, u8* str2):
+		while *str1 && *str2:
+			if *str1 != *str2:
+				break
+			++str1
+			++str2
+		return (i32)*str1 - (i32)*str2
 
 	u8* itos(i64 num, u8* str, i64 base):
 		u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -238,12 +275,13 @@ space std:
 			return c
 		return c - 'A' + 'a'
 
-	void memcpy(void* dest, void* src, u64 len):
+	void* memcpy(void* dest, void* src, u64 len):
 		u8* d = (u8*)dest
 		u8* s = (u8*)src
 
 		while len--:
 			*d++ = *s++
+		return dest
 
 	u64 getargs(u8*** pargv):
 		u64 argc
@@ -275,13 +313,38 @@ space std:
 		i64 seconds
 		i64 nanoseconds
 
-	void sleep(u64 ms):
+	_RESULT sleep(u64 ms):
 		__timespec ts
 		ts.seconds = ms / 1000
 		ts.nanoseconds = (ms % 1000) * 1000000
+		_RESULT result
 		assembly:
 			"mov rax, $(SYS_NANOSLEEP)"
 			"mov rdi, rbp"
 			"add rdi, $(ts)"
 			"xor rsi, rsi"
-			"syscall"	
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
+
+	_RESULT ioctl(_FILE fd, u32 request, void* parg):
+		_RESULT result
+		assembly:
+			"mov rax, $(SYS_IOCTL)"
+			"mov edi, [rbp $(fd)]"
+			"mov esi, [rbp $(request)]"
+			"mov rdx, [rbp $(parg)]"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
+
+	_FILE open(u8* filename, i32 flags, u16 mode):
+		_RESULT result
+		assembly:
+			"mov rax, $(SYS_OPEN)"
+			"mov rdi, [rbp $(filename)]"
+			"mov esi, [rbp $(flags)]"
+			"mov edx, [rbp $(mode)]"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result

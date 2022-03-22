@@ -1911,13 +1911,17 @@ bool parseStatementSpace(ProgGenInfo& info)
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
 
-	auto spaceSym = std::make_shared<Symbol>();
-	spaceSym->type = SymType::Namespace;
-	spaceSym->pos = nameToken.pos;
-	spaceSym->name = nameToken.value;
+	auto spaceSym = getSymbol(currSym(info), nameToken.value, true);
+	if (!spaceSym)
+	{
+		spaceSym = std::make_shared<Symbol>();
+		spaceSym->type = SymType::Namespace;
+		spaceSym->pos = nameToken.pos;
+		spaceSym->name = nameToken.value;
+		addSymbol(currSym(info), spaceSym);
+	}
 
 	increaseIndent(info.indent);
-	addSymbol(currSym(info), spaceSym);
 	enterSymbol(info, spaceSym);
 
 	int codeCount = 0;

@@ -1,29 +1,3 @@
 import "std.qnp"
 
-space space1:
-	int x = 0
-
-	int func():
-		return 100
-
-space space2:
-	int x = 2
-
-	int func():
-		return 200
-
-std::print(::space1::x)
-std::print("\n")
-::space1::x = 100
-std::print(space1::x)
-std::print("\n")
-
-std::print(space2::x)
-std::print("\n")
-
-std::print(space1::func())
-std::print("\n")
-std::print(space2::func())
-std::print("\n")
-
-std::exit(EXIT_FAILURE)
+std::print(std::strcmp("abc", "abcd"))

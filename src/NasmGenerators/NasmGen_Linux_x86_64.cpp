@@ -389,7 +389,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			assert("Invalid conversion!" && false);
 		}
 
-		if (isUnsignedInt(oldType) && isInteger(newType))
+		if ((isUnsignedInt(oldType) && isInteger(newType)) || (isInteger(oldType) && isPointer(newType)))
 		{
 			if (oldSize == 4 && newSize == 8)
 				break;
@@ -405,7 +405,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			break;
 		}
 
-		if (isPointer(oldType) && (isPointer(newType) || isInteger(newType)))
+		if (isPointer(oldType) && ((isPointer(newType) || isInteger(newType))))
 		{
 			break;
 		}
