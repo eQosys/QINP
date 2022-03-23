@@ -21,8 +21,6 @@ define ulong u64
 define _FILE i32
 define _RESULT i32
 
-space std:
-	u8 buff[10]
 
 
 space std:

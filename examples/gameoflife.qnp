@@ -65,15 +65,9 @@ void update():
 						++count
 				++k
 			if pMain->cells[i][j]:
-				if count < 2 || count > 3:
-					pBack->cells[i][j] = false
-				else:
-					pBack->cells[i][j] = true
+				pBack->cells[i][j] = (2 <= count && count <= 3)
 			else:
-				if count == 3:
-					pBack->cells[i][j] = true
-				else:
-					pBack->cells[i][j] = false
+				pBack->cells[i][j] = (count == 3)
 			++j
 		++i
 
