@@ -1,7 +1,6 @@
-\\ QINP Standard library main header
+\\ QINP Standard Library
+\\ Platform Independent
 
-
-import "linux.qnp"
 
 
 \\ Convenience definitions
@@ -26,7 +25,7 @@ define _RESULT i32
 space std:
 	\\ Terminate the calling process and return the specified exit status.
 	\\ @param status The exit status to return to the parent process.
-	void exit(i32 status)...
+	void exit(i32 status)...		\\ Platform dependent
 
 	\\ Determine the length of a string (without the null terminator)
 	\\ @param str The null-terminated string to measure
@@ -35,24 +34,28 @@ space std:
 
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
+	\\ @return The number of characters printed. Negative on error.
 	_RESULT print(u8* str)...
 
 	\\ Print a string of specified length to stdout
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
-	_RESULT print(u8* str, u64 len)...
+	\\ @return The number of characters printed. Negative on error.
+	_RESULT print(u8* str, u64 len)...		\\ Platform dependent
 
 	\\ Print a base-10 integer to stdout
 	\\ @param num The integer to print
+	\\ @return The number of characters printed. Negative on error.
 	_RESULT print(i64 num)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read from stdin
-	u8 getchar()...
+	u8 getchar()...		\\ Platform dependent
 
 	\\ Read a null-terminated string from stdin
 	\\ @param dest The destination buffer
 	\\ @param size The size of the destination buffer
+	\\ @return Address of the destination buffer
 	u8* scan(u8* dest, u64 size)...
 
 	\\ Reverse a null-terminated string
@@ -105,23 +108,22 @@ space std:
 	\\ @param dest The destination buffer
 	\\ @param src The source buffer
 	\\ @param len The number of bytes to copy
+	\\ @return The destination buffer
 	void* memcpy(void* dest, void* src, u64 len)...
 
 	\\ Get the arguments passed to the program
 	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
 	\\ @return The number of arguments passed to the program
-	u64 getargs(u8*** pargv)...
+	u64 getargs(u8*** pargv)...		\\ Platform dependent
 
 	\\ Get the environment variables passed to the program
 	\\ @return The pointer to an array of environment variables
-	u8** getenv()...
-
-	\\ Pack holding a time specified in seconds and nanoseconds
-	pack __timespec...
+	u8** getenv()...		\\ Platform dependent
 
 	\\ Sleep for the specified number of milliseconds
 	\\ @param ms The number of milliseconds to sleep
-	_RESULT sleep(u64 ms)...
+	\\ @return Zero on success, negative on error
+	_RESULT sleep(u64 ms)...		\\ Platform dependent
 
 	\\ Control device
 	\\ @param fd An open file descriptor
@@ -139,12 +141,6 @@ space std:
 
 
 
-	void exit(i32 status):
-		assembly:
-			"mov rax, $(SYS_EXIT)"
-			"mov edi, [rbp $(status)]"
-			"syscall"
-
 	u64 strlen(u8* str):
 		u8* begin = str
 		while *str:
@@ -154,33 +150,9 @@ space std:
 	_RESULT print(u8* str):
 		return print(str, strlen(str))
 
-	_RESULT print(u8* str, u64 len):
-		_RESULT result
-		assembly:
-			"mov rax, $(SYS_WRITE)"
-			"mov rdi, 1"
-			"mov rsi, [rbp $(str)]"
-			"mov rdx, [rbp $(len)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
-
 	_RESULT print(i64 num):
 		u8 str[32]
 		return print(itos(num, str, 10))
-
-	u8 getchar():
-		u8 ch
-
-		assembly:
-			"mov rax, $(SYS_READ)"
-			"mov rdi, 0"
-			"mov rsi, rbp"
-			"add rsi, $(ch)"
-			"mov rdx, 1"
-			"syscall"
-
-		return ch
 
 	u8* scan(u8* dest, u64 size):
 		if !size:
@@ -281,68 +253,4 @@ space std:
 			*d++ = *s++
 		return dest
 
-	u64 getargs(u8*** pargv):
-		u64 argc
-		assembly:
-			"mov rcx, [__##__argc]"
-			"mov [rbp $(argc)], rcx"
-
-		if !pargv:
-			return argc
-
-		u8** argv
-		assembly:
-			"mov rcx, [__##__argv]"
-			"mov [rbp $(argv)], rcx"
-
-		*pargv = argv
-
-		return argc
-
-	u8** getenv():
-		u8** env
-		assembly:
-			"mov rcx, [__##__envp]"
-			"mov [rbp $(env)], rcx"
-
-		return env
-
-	pack __timespec:
-		i64 seconds
-		i64 nanoseconds
-
-	_RESULT sleep(u64 ms):
-		__timespec ts
-		ts.seconds = ms / 1000
-		ts.nanoseconds = (ms % 1000) * 1000000
-		_RESULT result
-		assembly:
-			"mov rax, $(SYS_NANOSLEEP)"
-			"mov rdi, rbp"
-			"add rdi, $(ts)"
-			"xor rsi, rsi"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
-
-	_RESULT ioctl(_FILE fd, u32 request, void* parg):
-		_RESULT result
-		assembly:
-			"mov rax, $(SYS_IOCTL)"
-			"mov edi, [rbp $(fd)]"
-			"mov esi, [rbp $(request)]"
-			"mov rdx, [rbp $(parg)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
-
-	_FILE open(u8* filename, i32 flags, u16 mode):
-		_RESULT result
-		assembly:
-			"mov rax, $(SYS_OPEN)"
-			"mov rdi, [rbp $(filename)]"
-			"mov esi, [rbp $(flags)]"
-			"mov edx, [rbp $(mode)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
+import "linux/std.qnp"

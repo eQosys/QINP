@@ -1,6 +1,5 @@
-\\ Linux specific functions/definitions
-
 \\ Syscalls (Taken from https://filippo.io/linux-syscall-table/)
+
 define SYS_READ 0
 define SYS_WRITE 1
 define SYS_OPEN 2

@@ -1,0 +1,101 @@
+\\ QINP Standard Library
+\\ Linux Specific
+
+import "linux/syscall.qnp"
+
+space std:
+	void exit(i32 status):
+		assembly:
+			"mov rax, $(SYS_EXIT)"
+			"mov edi, [rbp $(status)]"
+			"syscall"
+
+	_RESULT print(u8* str, u64 len):
+		_RESULT result
+		assembly:
+			"mov rax, $(SYS_WRITE)"
+			"mov rdi, 1"
+			"mov rsi, [rbp $(str)]"
+			"mov rdx, [rbp $(len)]"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
+
+	u8 getchar():
+		u8 ch
+
+		assembly:
+			"mov rax, $(SYS_READ)"
+			"mov rdi, 0"
+			"mov rsi, rbp"
+			"add rsi, $(ch)"
+			"mov rdx, 1"
+			"syscall"
+
+		return ch
+
+	u64 getargs(u8*** pargv):
+		u64 argc
+		assembly:
+			"mov rcx, [__##__argc]"
+			"mov [rbp $(argc)], rcx"
+
+		if !pargv:
+			return argc
+
+		u8** argv
+		assembly:
+			"mov rcx, [__##__argv]"
+			"mov [rbp $(argv)], rcx"
+
+		*pargv = argv
+
+		return argc
+
+	u8** getenv():
+		u8** env
+		assembly:
+			"mov rcx, [__##__envp]"
+			"mov [rbp $(env)], rcx"
+
+		return env
+
+	pack __timespec:
+		i64 seconds
+		i64 nanoseconds
+
+	_RESULT sleep(u64 ms):
+		__timespec ts
+		ts.seconds = ms / 1000
+		ts.nanoseconds = (ms % 1000) * 1000000
+		_RESULT result
+		assembly:
+			"mov rax, $(SYS_NANOSLEEP)"
+			"mov rdi, rbp"
+			"add rdi, $(ts)"
+			"xor rsi, rsi"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
+
+	_RESULT ioctl(_FILE fd, u32 request, void* parg):
+		_RESULT result
+		assembly:
+			"mov rax, $(SYS_IOCTL)"
+			"mov edi, [rbp $(fd)]"
+			"mov esi, [rbp $(request)]"
+			"mov rdx, [rbp $(parg)]"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
+
+	_FILE open(u8* filename, i32 flags, u16 mode):
+		_RESULT result
+		assembly:
+			"mov rax, $(SYS_OPEN)"
+			"mov rdi, [rbp $(filename)]"
+			"mov esi, [rbp $(flags)]"
+			"mov edx, [rbp $(mode)]"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
