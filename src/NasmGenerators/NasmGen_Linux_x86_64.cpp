@@ -351,8 +351,7 @@ void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& 
 }
 
 #define DISABLE_EXPR_FOR_PACKS(ngi, expr) \
-	if (isPackType(ngi.program, expr->datatype)) \
-		assert(false && "Invalid expression for pack type!")
+	assert(!isPackType(ngi.program, expr->datatype) && "Invalid expression for pack type!")
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
@@ -389,7 +388,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			assert("Invalid conversion!" && false);
 		}
 
-		if ((isUnsignedInt(oldType) && isInteger(newType)) || (isInteger(oldType) && isPointer(newType)))
+		if (
+			(isUnsignedInt(oldType) && isInteger(newType)) ||
+			(isInteger(oldType) && isPointer(newType)) ||
+			(isBool(oldType) && (isInteger || isPointer(newType)))
+			)
 		{
 			if (oldSize == 4 && newSize == 8)
 				break;
@@ -441,35 +444,173 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Assign_Sum:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Sum not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Difference:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Difference not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Product:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Product not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "mul " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Quotient:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Quotient not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		auto remainderName = regName('d', getDatatypeSize(ngi.program, ngi.primReg.datatype));
+		ss << "  xor " << remainderName << ", " << remainderName << "\n";
+
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Remainder:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Remainder not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		auto remainderName = regName('d', getDatatypeSize(ngi.program, ngi.primReg.datatype));
+
+		ss << "  xor " << remainderName << ", " << remainderName << "\n";
+
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
+		ss << "  mov " << primRegUsage(ngi) << ", " << remainderName << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_LeftShift:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Left Shift not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_RightShift:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Right Shift not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_AND:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise AND not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_XOR:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise XOR not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  xor " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_OR:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise OR not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Logical_OR:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);

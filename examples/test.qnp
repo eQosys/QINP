@@ -1,3 +1,11 @@
 import "std.qnp"
 
-std::print(std::strcmp("abc", "abcd"))
+i32 a = 10
+
+std::print(a)
+std::print("\n")
+
+a %= 4
+
+std::print(a)
+std::print("\n")
