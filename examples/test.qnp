@@ -5,7 +5,12 @@ i32 a = 10
 std::print(a)
 std::print("\n")
 
-a %= 4
+std::print(a %= 4)
+std::print("\n")
+
+i32 b = (a -= 4)
 
 std::print(a)
+std::print("\n")
+std::print(b)
 std::print("\n")

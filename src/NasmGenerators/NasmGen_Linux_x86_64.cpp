@@ -334,8 +334,9 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 {
 	generateBinaryEvaluation(ngi, expr);
 	primRegLToRVal(ngi);
-	secRegLToRVal(ngi);
-	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
+	//secRegLToRVal(ngi);
+	//ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
+	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 }
 
 void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& srcReg, int size)
@@ -482,6 +483,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
+		secRegLToRVal(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
 
@@ -498,6 +500,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
+		secRegLToRVal(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
 
@@ -517,6 +520,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		pushPrimReg(ngi);
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		popSecReg(ngi);
+		secRegLToRVal(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
 
@@ -615,7 +619,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = { "bool" };
 		// State already modified
@@ -624,7 +627,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = { "bool" };
 		// State already modified
@@ -633,7 +635,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
@@ -642,7 +643,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  xor " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
@@ -651,7 +651,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified

@@ -201,11 +201,11 @@ space std:
 		bool negative = num < 0
 
 		if negative:
-			num = -num
+			num *= -1
 
 		do:
 			*str++ = baseChars[num % base]
-			num = num / base
+			num /= base
 		while num
 
 		if negative:

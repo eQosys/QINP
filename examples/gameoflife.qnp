@@ -61,8 +61,6 @@ void update():
 						continue
 					if k == i && l == j:
 						continue
-					\\if pMain->cells[k][l]:
-					\\	++count
 					count += pMain->cells[k][l]
 				++k
 			if pMain->cells[i][j]:
