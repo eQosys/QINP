@@ -15,6 +15,11 @@ struct OpPrecLvl
 		Unary_Suffix,
 		Binary,
 	} type;
+	enum class EvalOrder
+	{
+		LeftToRight,
+		RightToLeft,
+	} evalOrder;
 };
 
 extern std::vector<OpPrecLvl> opPrecLvls;

@@ -17,36 +17,42 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "|=", Expression::ExprType::Assign_Bw_OR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::RightToLeft,
 	},
 	{
 		{
 			{ "||", Expression::ExprType::Logical_OR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "&&", Expression::ExprType::Logical_AND },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "|", Expression::ExprType::Bitwise_OR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "^", Expression::ExprType::Bitwise_XOR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "&", Expression::ExprType::Bitwise_AND },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -54,6 +60,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "!=", Expression::ExprType::Comparison_NotEqual },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -63,6 +70,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ ">=", Expression::ExprType::Comparison_GreaterEqual },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -70,6 +78,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ ">>", Expression::ExprType::Shift_Right },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -77,6 +86,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "-", Expression::ExprType::Difference },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -85,6 +95,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "%", Expression::ExprType::Remainder },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -120,5 +131,6 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "::", Expression::ExprType::Namespace },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 };

@@ -974,21 +974,48 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 {
 	auto& opsLvl = opPrecLvls[precLvl];
 
-	auto exp = getParseExpression(info, precLvl + 1);
+	ExpressionRef baseExpr = nullptr;
+	auto currExpr = getParseExpression(info, precLvl + 1);
 
 	const Token* pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
 	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOpKey(*pOpToken))
 	{
+		switch (opsLvl.evalOrder)
+		{
+		case OpPrecLvl::EvalOrder::LeftToRight:
 		{
 			auto temp = std::make_shared<Expression>(pOpToken->pos);
-			temp->left = exp;
-			exp = temp;
+			temp->left = currExpr;
+			currExpr = temp;
 		}
-		exp->eType = it->second;
+			break;
+		case OpPrecLvl::EvalOrder::RightToLeft:
+		{
+			if (!baseExpr)
+			{
+				auto temp = std::make_shared<Expression>(pOpToken->pos);
+				temp->left = currExpr;
+				currExpr = temp;
+				baseExpr = currExpr;
+			}
+			else
+			{
+				auto temp = std::make_shared<Expression>(pOpToken->pos);
+				temp->left = currExpr->right;
+				currExpr->right = temp;
+				currExpr = temp;
+			}
+		}
+			break;
+		default:
+			assert(false && "Unknown eval order!");
+		}
+
+		currExpr->eType = it->second;
 		nextToken(info);
 
-		switch (exp->eType)
+		switch (currExpr->eType)
 		{
 		case Expression::ExprType::Assign:
 		case Expression::ExprType::Assign_Sum:
@@ -1001,28 +1028,28 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_AND:
 		case Expression::ExprType::Assign_Bw_XOR:
 		case Expression::ExprType::Assign_Bw_OR:
-			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(info, exp);
-			if (!exp->left->isLValue)
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot assign to non-lvalue!");
-			exp->datatype = exp->left->datatype;
-			exp->isLValue = true;
+			currExpr->right = getParseExpression(info, precLvl + 1);
+			autoFixDatatypeMismatch(info, currExpr);
+			if (!currExpr->left->isLValue)
+				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Cannot assign to non-lvalue!");
+			currExpr->datatype = currExpr->left->datatype;
+			currExpr->isLValue = true;
 			break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
-			exp->right = getParseExpression(info, precLvl + 1);
-			exp->left = genConvertExpression(exp->left, { "bool" });
-			exp->right = genConvertExpression(exp->right, { "bool" });
-			exp->datatype = { "bool" };
-			exp->isLValue = false;
+			currExpr->right = getParseExpression(info, precLvl + 1);
+			currExpr->left = genConvertExpression(currExpr->left, { "bool" });
+			currExpr->right = genConvertExpression(currExpr->right, { "bool" });
+			currExpr->datatype = { "bool" };
+			currExpr->isLValue = false;
 			break;
 		case Expression::ExprType::Bitwise_OR:
 		case Expression::ExprType::Bitwise_XOR:
 		case Expression::ExprType::Bitwise_AND:
-			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(info, exp);
-			exp->datatype = exp->left->datatype;
-			exp->isLValue = false;
+			currExpr->right = getParseExpression(info, precLvl + 1);
+			autoFixDatatypeMismatch(info, currExpr);
+			currExpr->datatype = currExpr->left->datatype;
+			currExpr->isLValue = false;
 			break;
 		case Expression::ExprType::Comparison_Equal:
 		case Expression::ExprType::Comparison_NotEqual:
@@ -1030,10 +1057,10 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_LessEqual:
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
-			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(info, exp);
-			exp->datatype = { "bool" };
-			exp->isLValue = false;
+			currExpr->right = getParseExpression(info, precLvl + 1);
+			autoFixDatatypeMismatch(info, currExpr);
+			currExpr->datatype = { "bool" };
+			currExpr->isLValue = false;
 			break;
 		case Expression::ExprType::Shift_Left:
 		case Expression::ExprType::Shift_Right:
@@ -1042,26 +1069,26 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Product:
 		case Expression::ExprType::Quotient:
 		case Expression::ExprType::Remainder:
-			exp->right = getParseExpression(info, precLvl + 1);
-			autoFixDatatypeMismatch(info, exp);
-			exp->datatype = exp->left->datatype;
-			exp->isLValue = false;
+			currExpr->right = getParseExpression(info, precLvl + 1);
+			autoFixDatatypeMismatch(info, currExpr);
+			currExpr->datatype = currExpr->left->datatype;
+			currExpr->isLValue = false;
 			break;
 		case Expression::ExprType::Namespace:
-			if (exp->left->eType != Expression::ExprType::SpaceName)
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Expected namespace name!");
-			enterSymbol(info, exp->left->spaceSymbol);
+			if (currExpr->left->eType != Expression::ExprType::SpaceName)
+				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Expected namespace name!");
+			enterSymbol(info, currExpr->left->spaceSymbol);
 
-			exp = getParseValue(info, true);
+			currExpr = getParseValue(info, true);
 
 			exitSymbol(info);
 			break;
 		default:
-			THROW_PROG_GEN_ERROR(exp->pos, "Invalid binary operator!");
+			THROW_PROG_GEN_ERROR(currExpr->pos, "Invalid binary operator!");
 		}
 	}
 
-	return exp;
+	return baseExpr ? baseExpr : currExpr;
 }
 
 ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)

@@ -334,8 +334,6 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 {
 	generateBinaryEvaluation(ngi, expr);
 	primRegLToRVal(ngi);
-	//secRegLToRVal(ngi);
-	//ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
 	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 }
 
