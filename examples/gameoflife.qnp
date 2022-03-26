@@ -70,6 +70,17 @@ void update():
 			++j
 		++i
 
+bool hasChanged():
+	i64 i = 0
+	while i < WIDTH:
+		i64 j = 0
+		while j < HEIGHT:
+			if pMain->cells[i][j] != pBack->cells[i][j]:
+				return true
+			++j
+		++i
+	return false
+
 grids[0].cells[0][2] = true
 grids[0].cells[1][0] = true
 grids[0].cells[1][2] = true
@@ -83,4 +94,7 @@ while --n > 0:
 	std::sleep(100)
 	clear()
 	flip()
+
+	if !hasChanged():
+		break
 show()
