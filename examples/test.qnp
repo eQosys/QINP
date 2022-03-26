@@ -4,7 +4,6 @@ i32 a = 10
 
 std::print(a)
 std::print("\n")
-
 std::print(a %= 4)
 std::print("\n")
 
@@ -13,4 +12,9 @@ i32 b = a -= 4
 std::print(a)
 std::print("\n")
 std::print(b)
+std::print("\n")
+
+std::print(__file__)
+std::print(":")
+std::print(__line__)
 std::print("\n")

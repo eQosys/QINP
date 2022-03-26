@@ -123,6 +123,8 @@ bool isKeyword(const std::string& name)
 		"sizeof",
 		"static",
 		"space",
+		"__file__",
+		"__line__",
 		// "const"
 		// "default",
 		// "offsetof",
