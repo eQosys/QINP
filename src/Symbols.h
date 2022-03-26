@@ -123,6 +123,8 @@ bool isVarPackMember(const SymbolRef symbol);
 bool isVarLabeled(const SymbolRef symbol);
 bool isVarOffset(const SymbolRef symbol);
 
+bool isReachable(const SymbolRef symbol);
+
 typedef std::vector<std::string> SymPath;
 
 SymbolRef getSymbolFromPath(SymbolRef root, const SymPath& path);

@@ -18,9 +18,3 @@ std::print(__file__)
 std::print(":")
 std::print(__line__)
 std::print("\n")
-
-define PRINT_POS:
-	std::print(__file__)
-	std::print(":")
-	std::print(__line__)
-	std::print("\n")

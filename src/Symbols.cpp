@@ -151,6 +151,13 @@ bool isVarOffset(const SymbolRef symbol)
 		isVarPackMember(symbol);
 }
 
+
+bool isReachable(const SymbolRef symbol)
+{
+	assert(isFuncSpec(symbol));
+	return symbol->func.isReachable;
+}
+
 SymbolRef getSymbolFromPath(SymbolRef root, const SymPath& path)
 {
 	SymbolRef curr = root;

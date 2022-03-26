@@ -154,7 +154,7 @@ int main(int argc, char** argv, char** environ)
 		if (verbose)
 			for (auto sym : *program->symbols)
 				if (isFuncSpec(sym) && !isDefined(sym))
-					std::cout << "WARN: Function '" << sym->name << "' was declared at " << getPosStr(sym->pos) << " but never defined!" << std::endl;
+					std::cout << "WARN: Missing definition for function '" << getMangledName(sym) << "' declared at " << getPosStr(sym->pos) << "!" << std::endl;
 
 		std::string output = generateNasm_Linux_x86_64(program);
 	

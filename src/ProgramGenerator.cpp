@@ -2186,12 +2186,16 @@ void markReachableFunctions(ProgGenInfo& info, BodyRef body)
 	}
 }
 
-void detectUndefinedFunctions(const std::map<std::string, FunctionOverloads>& functions)
+void detectUndefinedFunctions(ProgGenInfo& info)
 {
-	for (auto& overloads : functions)
-		for (auto& func : overloads.second)
-			if (!func.second->isDefined && func.second->isReachable)
-				THROW_PROG_GEN_ERROR(func.second->pos, "Function: '" + func.second->name + "' is referenced but undefined!");
+	for (auto sym : *info.program->symbols)
+	{
+		if (isFuncSpec(sym))
+		{
+			if (!isDefined(sym) && isReachable(sym))
+				THROW_PROG_GEN_ERROR(sym->pos, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
+		}
+	}
 }
 
 ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs)
@@ -2209,7 +2213,7 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 	parseGlobalCode(info);
 
 	markReachableFunctions(info, info.program->body);
-	//detectUndefinedFunctions(info.program->functions);
+	detectUndefinedFunctions(info);
 
 	return info.program;
 }
