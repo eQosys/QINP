@@ -242,6 +242,17 @@ SymbolRef getParent(const SymbolRef symbol)
 	return symbol->parent.lock();
 }
 
+SymbolRef getParent(SymbolRef curr, Symbol::Type type)
+{
+	while (curr)
+	{
+		if (curr->type == type)
+			return curr;
+		curr = getParent(curr);
+	}
+	return curr;
+}
+
 SymbolIterator::SymbolIterator(Symbol* symbol, InitPos iPos)
 {
 	switch (iPos)

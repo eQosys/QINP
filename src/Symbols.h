@@ -67,6 +67,7 @@ struct Symbol
 		std::vector<SymbolRef> params;
 		BodyRef body;
 		bool isReachable = false;
+		std::set<int> instantiatedStrings;
 	} func;
 
 	struct Frame
@@ -132,6 +133,7 @@ SymPath SymPathFromString(const std::string& pathStr);
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly = false);
 void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);
 SymbolRef getParent(const SymbolRef symbol);
+SymbolRef getParent(SymbolRef curr, Symbol::Type type);
 
 class SymbolIterator
 {

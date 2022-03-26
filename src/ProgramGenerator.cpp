@@ -856,9 +856,14 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->datatype = { "bool" };
 		break;
 	case Token::Type::String:
-		exp->valStr = getLiteralStringName(info.program->strings.size());
-		info.program->strings.insert({ info.program->strings.size(), litToken.value });
+	{
+		int strID = info.program->strings.size();
+		exp->valStr = getLiteralStringName(strID);
+		info.program->strings.insert({ strID, { 1, litToken.value } });
 		exp->datatype = { "u8", 1, { (int)litToken.value.size() + 1 } };
+		if (isInFunction(currSym(info)))
+			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
+	}
 		break;
 	default:
 		THROW_PROG_GEN_ERROR(litToken.pos, "Invalid literal type!");

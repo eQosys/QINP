@@ -1201,8 +1201,16 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	SymbolIterator it = program->symbols->begin();
 	while (it != program->symbols->end())
 	{
-		if (isFuncSpec(*it) && isDefined(*it) && (*it)->func.isReachable)
-			funcs.push_back({ getParent(*it)->name, *it });
+		if (isFuncSpec(*it) && isDefined(*it))
+		{
+			if ((*it)->func.isReachable)
+				funcs.push_back({ getParent(*it)->name, *it });
+			else
+			{
+				for (int strID : getParent(*it, Symbol::Type::FunctionSpec)->func.instantiatedStrings)
+					--program->strings.find(strID)->second.first;
+			}
+		}
 		else if (isVarLabeled(*it))
 			globals.push_back(*it);
 		++it;
@@ -1225,8 +1233,11 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "SECTION .data\n";
 	for (auto& str : program->strings)
 	{
+		if (str.second.first <= 0)
+			continue;
+
 		ss << "  " << getLiteralStringName(str.first) << ": db ";
-		for (char c : str.second)
+		for (char c : str.second.second)
 			ss << (int)c << ",";
 		ss << "0\n";
 	}
