@@ -441,11 +441,11 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 	}
 	
 	if (existingOverload->func.retType != func->func.retType)
-		THROW_PROG_GEN_ERROR(func->pos, "Function '" + func->name + "' already exists with different return type!");
+		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
 	if (!isDefined(func))
 		return;
 	if (isDefined(existingOverload))
-		THROW_PROG_GEN_ERROR(func->pos, "Function already defined here: " + getPosStr(existingOverload->pos));
+		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(existingOverload->pos));
 
 	replaceSymbol(funcs, func->name, func, true);
 }
@@ -2209,11 +2209,8 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 {
 	for (auto sym : *info.program->symbols)
 	{
-		if (isFuncSpec(sym))
-		{
-			if (!isDefined(sym) && isReachable(sym))
-				THROW_PROG_GEN_ERROR(sym->pos, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
-		}
+		if (isFuncSpec(sym) && !isDefined(sym) && isReachable(sym))
+			THROW_PROG_GEN_ERROR(sym->pos, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
 	}
 }
 
