@@ -33,5 +33,5 @@
 
  - -p, --platform
  
-   Specifies the target platform. (unix, windows, macos)
-   Only unix is supported for now.
+   Specifies the target platform. (linux, windows, macos)
+   Only linux is supported for now.

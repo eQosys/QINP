@@ -22,6 +22,8 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [_sizeof_](./operators.md#size-of)
  - [spaces](#spaces)
  - [_static_](./declarations.md#static)
+ - [_\_\_file\_\__](#file)
+ - [_\_\_line\_\__](#line)
 
 ---
 
@@ -94,17 +96,35 @@ A single file is imported once and all other imports of the same file are ignore
 The filepaths are resolved with the compiler import-directory options.
 Resolving import paths relative to the importing file is planned.
 
+Conditional imports can be used to import a file only if the specified platform matches the compiler platform.
+Possible platforms are:
+ - `windows`
+ - `linux`
+ - `macos`
+
 #### Usage
 
-```qinp
-import [file_string]
-```
+> Standard import:
+> ```qinp
+> import [file_string]
+> ```
+
+> Conditional import:
+> ```qinp
+> import.[platform] [file_string]
+> ```
 
 #### Example
 
-```qinp
-import "std.qnp"
-```
+> Standard import:
+> ```qinp
+> import "std.qnp"
+> ```
+
+> Conditional import:
+> ```qinp
+> import.linux "linux/std.qnp"
+> ```
 
 ---
 
@@ -194,3 +214,11 @@ Spaces can be nested.
 > ::foo::x
 > ::bar::x
 > ```
+
+### \_\_file\_\_
+
+The `__file__` keyword is replaced with the canonical path of the file containing the keyword.
+
+### \_\_line\_\_
+
+The `__line__` keyword is replaced with the line number of the keyword.

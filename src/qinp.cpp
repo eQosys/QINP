@@ -86,8 +86,8 @@ std::map<std::string, OptionInfo> argNames =
 	"  -r, --run\n" \
 	"    Run the generated program.\n" \
 	"  -p, --platform=[platform]\n" \
-	"    Specify the target platform. (unix, windows, macos)\n" \
-	"    Only unix is supported for now.\n"
+	"    Specify the target platform. (linux, windows, macos)\n" \
+	"    Only linux is supported for now.\n"
 
 class Timer
 {
@@ -127,7 +127,7 @@ int main(int argc, char** argv, char** environ)
 			return 1;
 		}
 
-		if (args.getOption("platform").front() != "unix")
+		if (args.getOption("platform").front() != "linux")
 		{
 			std::cout << "Platform not supported!\n";
 			return 1;
@@ -148,7 +148,7 @@ int main(int argc, char** argv, char** environ)
 			Timer timer;
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, inFilename);
-			program = generateProgram(tokens, importDirs);
+			program = generateProgram(tokens, importDirs, args.getOption("platform").front());
 		}
 
 		if (verbose)

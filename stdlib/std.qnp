@@ -253,4 +253,4 @@ space std:
 			*d++ = *s++
 		return dest
 
-import "linux/std.qnp"
+import.linux "linux/std.qnp"

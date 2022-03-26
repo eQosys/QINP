@@ -2105,11 +2105,30 @@ bool parseStatementImport(ProgGenInfo& info)
 	auto& importToken = peekToken(info);
 	if (!isKeyword(importToken, "import"))
 		return false;
-
 	nextToken(info);
+
+	bool platformMatch = true;
+
+	if (isOperator(peekToken(info), "."))
+	{
+		nextToken(info);
+		auto& platformToken = nextToken(info);
+		if (!isIdentifier(platformToken))
+			THROW_PROG_GEN_ERROR(platformToken.pos, "Expected platform identifier!");
+
+		static const std::set<std::string> platformNames = { "windows", "linux", "macos" };
+		if (platformNames.find(platformToken.value) == platformNames.end())
+			THROW_PROG_GEN_ERROR(platformToken.pos, "Unknown platform identifier: '" + platformToken.value + "'!");
+		if (platformToken.value != info.program->platform)
+			platformMatch = false;
+	}
+
 	auto& fileToken = nextToken(info);
 	if (!isString(fileToken))
 		THROW_PROG_GEN_ERROR(fileToken.pos, "Expected file path!");
+
+	if (!platformMatch)
+		return true;
 
 	std::string path;
 	for (auto& dir : info.importDirs)
@@ -2198,9 +2217,10 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 	}
 }
 
-ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs)
+ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
+	info.program->platform = platform;
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();
 	enterSymbol(info, info.program->symbols);

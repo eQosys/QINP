@@ -70,6 +70,8 @@ struct Program
 	std::map<int, std::pair<int, std::string>> strings; // string ID -> (useCount, string)
 	BodyRef body;
 	int staticLocalInitCount = 0;
+
+	std::string platform;
 };
 typedef std::shared_ptr<Program> ProgramRef;
 
