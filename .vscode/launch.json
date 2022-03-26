@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/bin/Debug/QINP",
-            "args": [ "-v", "-k", "-r", "-i=stdlib/", "examples/gameoflife.qnp" ],
+            "args": [ "-v", "-k", "-r", "-p=unix", "-i=stdlib/", "examples/gameoflife.qnp" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
         }

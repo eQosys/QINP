@@ -30,3 +30,8 @@
  - -r, --run
 
    Runs the generated program.
+
+ - -p, --platform
+ 
+   Specifies the target platform. (unix, windows, macos)
+   Only unix is supported for now.

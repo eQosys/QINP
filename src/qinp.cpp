@@ -67,6 +67,7 @@ std::map<std::string, OptionInfo> argNames =
 	{ "o", { "output", OptionInfo::Type::Single } },
 	{ "k", { "keep", OptionInfo::Type::NoValue } },
 	{ "r", { "run", OptionInfo::Type::NoValue } },
+	{ "p", { "platform", OptionInfo::Type::Single } },
 };
 
 #define HELP_TEXT \
@@ -83,7 +84,10 @@ std::map<std::string, OptionInfo> argNames =
 	"  -k, --keep\n" \
 	"    Keep the generated assembly file.\n" \
 	"  -r, --run\n" \
-	"    Run the generated program.\n"
+	"    Run the generated program.\n" \
+	"  -p, --platform=[platform]\n" \
+	"    Specify the target platform. (unix, windows, macos)\n" \
+	"    Only unix is supported for now.\n"
 
 class Timer
 {
@@ -115,6 +119,18 @@ int main(int argc, char** argv, char** environ)
 		{
 			std::cout << HELP_TEXT;
 			return 0;
+		}
+
+		if (!args.hasOption("platform"))
+		{
+			std::cout << "Platform not specified!\n";
+			return 1;
+		}
+
+		if (args.getOption("platform").front() != "unix")
+		{
+			std::cout << "Platform not supported!\n";
+			return 1;
 		}
 
 		verbose = args.hasOption("verbose");
