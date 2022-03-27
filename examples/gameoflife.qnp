@@ -2,6 +2,7 @@ import "std.qnp"
 
 define WIDTH 20
 define HEIGHT 10
+define N_ITERATIONS 50
 
 pack Grid:
 	bool cells[WIDTH][HEIGHT]
@@ -87,8 +88,8 @@ grids[0].cells[1][2] = true
 grids[0].cells[2][1] = true
 grids[0].cells[2][2] = true
 
-i64 n = 50
-while --n > 0:
+i64 n = 0
+while n++ < N_ITERATIONS:
 	show()
 	update()
 	std::sleep(100)
@@ -98,3 +99,7 @@ while --n > 0:
 	if !hasChanged():
 		break
 show()
+
+std::print("Ran for ")
+std::print(n)
+std::print(" iterations\n")

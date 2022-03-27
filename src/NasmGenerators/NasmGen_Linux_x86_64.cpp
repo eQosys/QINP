@@ -772,10 +772,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Left operand of member access must be lValue");
-		ss << "  add " << primRegName(8) << ", " << expr->memberOffset << "\n";
+		ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << "\n";
 		
 		ngi.primReg.datatype = expr->datatype;
-		//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 	}
 		break;
@@ -985,14 +984,14 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 		if (isVarLabeled(expr->symbol))
 		{
-			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
+			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->symbol->var.modName, expr->datatype) << "\n";
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		}
 		else if (isVarOffset(expr->symbol))
 		{
 			ss << "  mov " << primRegName(8) << ", rbp\n";
-			ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
+			ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << " ; local '" << expr->symbol->var.modName << "'\n";
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		}

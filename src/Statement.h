@@ -144,12 +144,8 @@ struct Expression : public Statement
 	ExpressionRef left; // Binary operator
 	ExpressionRef right;
 	std::string valStr; // Literal
-	int localOffset; // Local variable
-	std::string globName; // Global variable
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
-
-	int memberOffset; // Member access
 
 	SymbolRef symbol;
 };

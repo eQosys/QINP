@@ -192,7 +192,6 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	condBody.condition->symbol = statSym;
 	condBody.condition->isLValue = true;
 	condBody.condition->datatype = { "bool" };
-	condBody.condition->globName = statSym->var.modName;
 
 	auto assignExpr = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->eType = Expression::ExprType::Assign;
@@ -202,7 +201,6 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	assignExpr->left->symbol = statSym;
 	assignExpr->left->isLValue = true;
 	assignExpr->left->datatype = { "bool" };
-	assignExpr->left->globName = statSym->var.modName;
 	
 	assignExpr->right = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->right->eType = Expression::ExprType::Literal;
@@ -897,9 +895,7 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 
 	exp->eType = Expression::ExprType::Symbol; // isVarLabeled(pVar) ? Expression::ExprType::LabeledVariable : Expression::ExprType::OffsetVariable;
 	exp->symbol = pVar;
-	exp->localOffset = pVar->var.offset;
 	exp->datatype = pVar->var.datatype;
-	exp->globName = pVar->var.modName;
 	exp->isLValue = isArray(exp->datatype) ? false : true;
 
 	nextToken(info);
@@ -1203,7 +1199,6 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				break;
 			}
 
-			//auto packSym = getSymbol(currSym(info), exp->left->datatype.name);
 			auto packSym = getSymbolFromPath(info.program->symbols, SymPathFromString(exp->left->datatype.name));
 			if (!packSym)
 				THROW_PROG_GEN_ERROR(exp->pos, "Unknown type '" + exp->left->datatype.name + "'!");
@@ -1216,7 +1211,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->pos, "Unknown member '" + memberToken.value + "'!");
 
 			exp->datatype = memberSym->var.datatype;
-			exp->memberOffset = memberSym->var.offset;
+			exp->symbol = memberSym;
 			exp->isLValue = true;
 		}
 			break;
