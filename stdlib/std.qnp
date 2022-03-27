@@ -224,7 +224,7 @@ space std:
 			++str
 
 		while *str:
-			u8 ch = *str++
+			u8 ch = tolower(*str++)
 			i64 index = 0
 			while baseChars[index] != ch:
 				++index

@@ -47,3 +47,6 @@ t.c[3] = 12
 
 std::print(t.a)
 std::print("\n")
+
+std::print(std::stoi("Fef", 16))
+std::print("\n")
