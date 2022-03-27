@@ -70,7 +70,7 @@ std::string getLiteralStringName(int strID)
 }
 std::string getStaticLocalInitName(int initID)
 {
-	return "stat_loc_init_##_" + std::to_string(initID);
+	return "static_check_##_" + std::to_string(initID);
 }
 
 bool isPackType(const ProgramRef program, const std::string& name)

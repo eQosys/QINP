@@ -1197,6 +1197,10 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  mov rcx, rsp\n";
 	ss << "  add rcx, rax\n";
 	ss << "  mov [__##__envp], rcx\n";
+
+	// Static local initializer test values
+	for (int i = 0; i < program->staticLocalInitCount; ++i)
+		ss << "  mov BYTE [" << getMangledName(getStaticLocalInitName(i), { "bool" }) << "], 1\n";
 	
 	// Global code
 	generateNasm_Linux_x86_64(ngi, program->body);
@@ -1251,10 +1255,6 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 			ss << (int)c << ",";
 		ss << "0\n";
 	}
-
-	// Static local initializer test values
-	for (int i = 0; i < program->staticLocalInitCount; ++i)
-		ss << "  " << getMangledName(getStaticLocalInitName(i), { "bool" }) << ": db 1\n";
 
 	if (!ngi.labelStack.empty())
 		THROW_NASM_GEN_ERROR(Token::Position(), "Unused label(s)!");

@@ -169,30 +169,40 @@ void pushStatement(ProgGenInfo& info, StatementRef statement)
 	info.program->body->statements.push_back(statement);
 }
 
+void addVariable(ProgGenInfo& info, SymbolRef sym);
+
 void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 {
 	auto ifStatement = std::make_shared<Statement>(initExpr->pos, Statement::Type::If_Clause);
 
 	ifStatement->ifConditionalBodies.push_back(ConditionalBody());
 	auto& condBody = ifStatement->ifConditionalBodies.back();
-	
-	// TODO: Create global boolean variable
-	assert(false && "Missing implementation!");
+
+	auto statSym = std::make_shared<Symbol>();
+	statSym->pos = initExpr->pos;
+	statSym->name = getStaticLocalInitName(info.program->staticLocalInitCount++);
+	statSym->type = SymType::Variable;
+	statSym->var.datatype = { "bool" };
+	statSym->var.context = SymVarContext::Global;
+
+	addVariable(info, statSym);
 
 	condBody.condition = std::make_shared<Expression>(initExpr->pos);
 	condBody.condition->eType = Expression::ExprType::Symbol;
+	condBody.condition->symbol = statSym;
 	condBody.condition->isLValue = true;
 	condBody.condition->datatype = { "bool" };
-	condBody.condition->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
+	condBody.condition->globName = statSym->var.modName;
 
 	auto assignExpr = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->eType = Expression::ExprType::Assign;
 	
 	assignExpr->left = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->left->eType = Expression::ExprType::Symbol;
+	assignExpr->left->symbol = statSym;
 	assignExpr->left->isLValue = true;
 	assignExpr->left->datatype = { "bool" };
-	assignExpr->left->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
+	assignExpr->left->globName = statSym->var.modName;
 	
 	assignExpr->right = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->right->eType = Expression::ExprType::Literal;
@@ -205,8 +215,6 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	condBody.body->statements.push_back(initExpr);
 
 	pushStatement(info, ifStatement);
-
-	++info.program->staticLocalInitCount;
 }
 
 StatementRef lastStatement(ProgGenInfo& info)
