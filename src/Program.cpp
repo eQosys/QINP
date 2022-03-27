@@ -63,6 +63,7 @@ std::string getMangledName(SymbolRef symbol)
 	if (isFuncName(symbol))
 		return symbol->name;
 	assert(false && "Unhandled symbol type!");
+	return "";
 }
 std::string getLiteralStringName(int strID)
 {
