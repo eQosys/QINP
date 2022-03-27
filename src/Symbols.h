@@ -79,6 +79,7 @@ struct Symbol
 	struct Pack
 	{
 		int size = 0;
+		bool isUnion = false;
 	} pack;
 
 	int enumValue;

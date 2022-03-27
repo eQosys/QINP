@@ -25,14 +25,9 @@ void addSymbol(SymbolRef root, SymbolRef symbol)
 
 bool isInType(const SymbolRef symbol, Symbol::Type type)
 {
-	if (!symbol)
-		return false;
-	if (symbol->type == type)
-		return true;
-	if (!symbol->parent.expired())
-		return isInType(symbol->parent.lock(), type);
-	return false;
+	return getParent(symbol, type) != nullptr;
 }
+
 bool isInGlobal(const SymbolRef symbol)
 {
 	return

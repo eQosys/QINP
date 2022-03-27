@@ -20,25 +20,30 @@ std::print(__line__)
 std::print("\n")
 
 
-void func():
-	static i32 i = 0
-	std::print(++i)
-	std::print("\n")
+union Test:
+	i32 a
+	i32 b
+	i8 c[4]
 
-void func2():
-	static i32 i = 10
-	std::print(--i)
-	std::print("\n")
+Test t
+t.a = 123456
 
-func()
-func2()
-func()
-func2()
-func()
-func2()
-func()
-func2()
-func()
-func2()
-func()
-func2()
+std::print(t.a)
+std::print("\n")
+
+std::print(t.b)
+std::print("\n")
+
+std::print((i32)t.c[0])
+std::print(", ")
+std::print((i32)t.c[1])
+std::print(", ")
+std::print((i32)t.c[2])
+std::print(", ")
+std::print((i32)t.c[3])
+std::print("\n")
+
+t.c[3] = 12
+
+std::print(t.a)
+std::print("\n")

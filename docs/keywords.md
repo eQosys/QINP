@@ -4,6 +4,8 @@ This page lists the keywords in the QINP language.
 Keywords are special identifiers in the QINP language and cannot be used for any other purpose. The [builtin types](./builtin-types.md) are also treated as keywords.
 
 ## Overview
+ - [_\_\_file\_\__](#file)
+ - [_\_\_line\_\__](#line)
  - [asm](#inline-assembly)
  - [assembly](#inline-assembly)
  - [_break_](./control-flow.md#break)
@@ -18,12 +20,11 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [_pack_](./declarations.md#packs)
  - [pass](#pass)
  - [return](#return)
+ - [_union_](./declarations.md#unions)
  - [_while_](./control-flow.md#while-loop)
  - [_sizeof_](./operators.md#size-of)
- - [spaces](#spaces)
+ - [space](#spaces)
  - [_static_](./declarations.md#static)
- - [_\_\_file\_\__](#file)
- - [_\_\_line\_\__](#line)
 
 ---
 

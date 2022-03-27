@@ -390,8 +390,16 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 
 	if (isInPack(currSym(info)))
 	{
-		var.offset = currSym(info)->pack.size;
-		currSym(info)->pack.size += getDatatypeSize(info.program, var.datatype);
+		if (getParent(currSym(info), SymType::Pack)->pack.isUnion)
+		{
+			var.offset = 0;
+			currSym(info)->pack.size = std::max(currSym(info)->pack.size, getDatatypeSize(info.program, var.datatype));
+		}
+		else
+		{
+			var.offset = currSym(info)->pack.size;
+			currSym(info)->pack.size += getDatatypeSize(info.program, var.datatype);
+		}
 
 		addSymbol(currSym(info), sym);
 		return;
@@ -1965,10 +1973,10 @@ bool parseStatementSpace(ProgGenInfo& info)
 	return true;
 }
 
-bool parsePack(ProgGenInfo& info)
+bool parsePackUnion(ProgGenInfo& info)
 {
 	auto& packToken = peekToken(info);
-	if (!isKeyword(packToken, "pack"))
+	if (!isKeyword(packToken, "pack") && !isKeyword(packToken, "union"))
 		return false;
 	nextToken(info);
 
@@ -1981,6 +1989,7 @@ bool parsePack(ProgGenInfo& info)
 	packSym->type = SymType::Pack;
 	packSym->pos = nameToken.pos;
 	packSym->name = nameToken.value;
+	packSym->pack.isUnion = isKeyword(packToken, "union");
 	auto& pack = packSym->pack;
 
 	packSym->state = SymState::Defined;
@@ -2172,7 +2181,7 @@ bool parseSingleGlobalCode(ProgGenInfo& info)
 	if (parseControlFlow(info)) return true;
 	if (parseStatementContinue(info)) return true;
 	if (parseStatementBreak(info)) return true;
-	if (parsePack(info)) return true;
+	if (parsePackUnion(info)) return true;
 	if (parseEnum(info)) return true;
 	if (parseDeclDef(info)) return true;
 	if (parseSinglelineAssembly(info)) return true;

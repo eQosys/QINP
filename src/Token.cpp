@@ -105,6 +105,8 @@ bool isKeyword(const std::string& name)
 {
 	static const std::set<std::string> keywords =
 	{
+		"__file__",
+		"__line__",
 		"asm",
 		"assembly",
 		"break",
@@ -119,19 +121,17 @@ bool isKeyword(const std::string& name)
 		"pack",
 		"pass",
 		"return",
+		"union",
 		"while",
 		"sizeof",
-		"static",
 		"space",
-		"__file__",
-		"__line__",
+		"static",
 		// "const"
 		// "default",
 		// "offsetof",
 		// "for",
 		// "new", "delete",
 		// "goto", "operator",
-		// "union",
 		// "blueprint",
 		// "switch", "case"
 	};
