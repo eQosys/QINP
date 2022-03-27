@@ -981,22 +981,32 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 		ss << "  mov " << primRegUsage(ngi) << ", " << expr->valStr << "\n";
 		break;
-	case Expression::ExprType::LabeledVariable:
-		ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
-		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
-		break;
-	case Expression::ExprType::OffsetVariable:
-		ss << "  mov " << primRegName(8) << ", rbp\n";
-		ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
-		break;
-	case Expression::ExprType::FunctionName:
-		ss << "  mov " << primRegName(8) << ", " << SymPathToString(expr->funcPath) << "\n";
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::rValue;
+	case Expression::ExprType::Symbol:
+	{
+		if (isVarLabeled(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		}
+		else if (isVarOffset(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", rbp\n";
+			ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		}
+		else if (isFuncSpec(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", " << SymPathToString(getSymbolPath(nullptr, expr->symbol)) << "\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = CellState::rValue;
+		}
+		else
+		{
+			assert(false && "Unknown symbol type!");
+		}
+	}
 		break;
 	default:
 		THROW_NASM_GEN_ERROR(expr->pos, "Unsupported expression type!");

@@ -109,7 +109,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "--", Expression::ExprType::Prefix_Decrement },
 			{ "(", Expression::ExprType::Explicit_Cast },
 			{ "sizeof", Expression::ExprType::SizeOf },
-			{ "::", Expression::ExprType::Namespace },
+			{ "::", Expression::ExprType::SpaceAccess },
 		},
 		OpPrecLvl::Type::Unary_Prefix,
 	},
@@ -128,7 +128,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 	},
 	{
 		{
-			{ "::", Expression::ExprType::Namespace },
+			{ "::", Expression::ExprType::SpaceAccess },
 		},
 		OpPrecLvl::Type::Binary,
 		OpPrecLvl::EvalOrder::LeftToRight,

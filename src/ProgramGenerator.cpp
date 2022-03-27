@@ -31,7 +31,6 @@ struct ProgGenInfo
 		int nPerLvl = 0;
 		std::string chStr = "";
 	} indent;
-	std::string lastLoadedFunctionName = "";
 
 	std::stack<BodyRef> mainBodyBackups;
 	int funcRetOffset;
@@ -177,8 +176,11 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	ifStatement->ifConditionalBodies.push_back(ConditionalBody());
 	auto& condBody = ifStatement->ifConditionalBodies.back();
 	
+	// TODO: Create global boolean variable
+	assert(false && "Missing implementation!");
+
 	condBody.condition = std::make_shared<Expression>(initExpr->pos);
-	condBody.condition->eType = Expression::ExprType::LabeledVariable;
+	condBody.condition->eType = Expression::ExprType::Symbol;
 	condBody.condition->isLValue = true;
 	condBody.condition->datatype = { "bool" };
 	condBody.condition->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
@@ -187,7 +189,7 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	assignExpr->eType = Expression::ExprType::Assign;
 	
 	assignExpr->left = std::make_shared<Expression>(initExpr->pos);
-	assignExpr->left->eType = Expression::ExprType::LabeledVariable;
+	assignExpr->left->eType = Expression::ExprType::Symbol;
 	assignExpr->left->isLValue = true;
 	assignExpr->left->datatype = { "bool" };
 	assignExpr->left->globName = getStaticLocalInitName(info.program->staticLocalInitCount);
@@ -885,7 +887,8 @@ ExpressionRef getParseVariable(ProgGenInfo& info)
 	if (!pVar)
 		return nullptr;
 
-	exp->eType = isVarLabeled(pVar) ? Expression::ExprType::LabeledVariable : Expression::ExprType::OffsetVariable;
+	exp->eType = Expression::ExprType::Symbol; // isVarLabeled(pVar) ? Expression::ExprType::LabeledVariable : Expression::ExprType::OffsetVariable;
+	exp->symbol = pVar;
 	exp->localOffset = pVar->var.offset;
 	exp->datatype = pVar->var.datatype;
 	exp->globName = pVar->var.modName;
@@ -908,14 +911,9 @@ ExpressionRef getParseFunctionName(ProgGenInfo& info)
 	if (!funcs)
 		return nullptr;
 
-	exp->eType = Expression::ExprType::FunctionName;
+	exp->eType = Expression::ExprType::Symbol;
+	exp->symbol = getFunctions(info, litToken.value);
 	exp->isLValue = false;
-
-	auto funcSym = getFunctions(info, litToken.value);
-
-	exp->funcPath = getSymbolPath(nullptr, funcSym);
-
-	exp->datatype = { "...#" + litToken.value, 1 };
 
 	nextToken(info);
 
@@ -933,9 +931,8 @@ ExpressionRef getParseSpaceName(ProgGenInfo& info, bool localOnly)
 		return nullptr;
 
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
-	exp->eType = Expression::ExprType::SpaceName;
-	exp->spaceName = litToken.value;
-	exp->spaceSymbol = spaceSymbol;
+	exp->eType = Expression::ExprType::Symbol;
+	exp->symbol = spaceSymbol;
 
 	nextToken(info);
 
@@ -1079,10 +1076,10 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->datatype = currExpr->left->datatype;
 			currExpr->isLValue = false;
 			break;
-		case Expression::ExprType::Namespace:
-			if (currExpr->left->eType != Expression::ExprType::SpaceName)
+		case Expression::ExprType::SpaceAccess:
+			if (currExpr->left->eType != Expression::ExprType::Symbol)
 				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Expected namespace name!");
-			enterSymbol(info, currExpr->left->spaceSymbol);
+			enterSymbol(info, currExpr->left->symbol);
 
 			currExpr = getParseValue(info, true);
 
@@ -1129,9 +1126,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::FunctionCall:
 		{
-			exp->isLValue = false;
-			if (exp->left->datatype.ptrDepth == 0)
+			if (exp->left->eType != Expression::ExprType::Symbol || !isFuncName(exp->left->symbol))
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot call non-function!");
+			exp->isLValue = false;
+
 			while (!isSeparator(peekToken(info), ")"))
 			{
 				exp->paramExpr.push_back(getParseExpression(info));
@@ -1140,26 +1138,15 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			}
 			parseExpected(info, Token::Type::Separator, ")");
 
-			if (exp->left->eType == Expression::ExprType::FunctionName)
-			{
-				auto overloads = getFunctions(info, exp->left->funcPath);
-				if (!overloads)
-					THROW_PROG_GEN_ERROR(exp->pos, "Function '" + exp->left->funcPath.back() + "' not found!");
-				auto func = getMatchingOverload(info, overloads, exp->paramExpr);
-				if (!func)
-					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + exp->left->funcPath.back() + "'!");
-				exp->datatype = func->func.retType;
-				exp->left->datatype = { getSignature(func), 1 };
-				exp->left->funcPath.push_back(getSignatureNoRet(func));
+			auto func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
+			if (!func)
+				THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
 
-				info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
-			}
-			else
-			{
-				THROW_PROG_GEN_ERROR(exp->pos, "Not implemented yet!");
-				// TODO: Check if signature matches (possibly through implicit conversions)
-				exp->datatype = {}; // TODO: Get return type from exp->left->datatype
-			}
+			exp->datatype = func->func.retType;
+			exp->left->datatype = { getSignature(func), 1 };
+			exp->left->symbol = func;
+
+			info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
 
 			exp->paramSizeSum = 0;
 			for (auto& param : exp->paramExpr)
@@ -1312,7 +1299,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->datatype = { "u64" };
 	}
 		break;
-	case Expression::ExprType::Namespace:
+	case Expression::ExprType::SpaceAccess:
 		enterSymbol(info, info.program->symbols);
 		exp = getParseExpression(info, precLvl + 1);
 		exitSymbol(info);
