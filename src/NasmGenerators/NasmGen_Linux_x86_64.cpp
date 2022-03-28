@@ -615,17 +615,27 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 	case Expression::ExprType::Logical_OR:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateBinaryEvaluation(ngi, expr);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
-		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		pushLabel(ngi, "LOGICAL_OR_SKIP");
+		ss << "  cmp " << primRegUsage(ngi) << ", 1\n";
+		ss << "  je " << getLabel(ngi, 0) << "\n";
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		placeLabel(ngi, 0);
+		popLabel(ngi);
 		ngi.primReg.datatype = { "bool" };
 		// State already modified
 		break;
 	case Expression::ExprType::Logical_AND:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateBinaryEvaluation(ngi, expr);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
-		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		pushLabel(ngi, "LOGICAL_AND_SKIP");
+		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+		ss << "  je " << getLabel(ngi, 0) << "\n";
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		placeLabel(ngi, 0);
+		popLabel(ngi);
 		ngi.primReg.datatype = { "bool" };
 		// State already modified
 		break;

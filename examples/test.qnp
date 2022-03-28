@@ -50,3 +50,24 @@ std::print("\n")
 
 std::print(std::stoi("Fef", 16))
 std::print("\n")
+
+bool trueFunc(u8* str):
+	std::print(str)
+	return true
+bool falseFunc(u8* str):
+	std::print(str)
+	return false
+
+std::print("\n\n")
+
+trueFunc("1\n") && trueFunc("2\n")
+trueFunc("3\n") && falseFunc("4\n")
+falseFunc("5\n") && falseFunc("6\n")
+falseFunc("7\n") && trueFunc("8\n")
+
+std::print("\n\n")
+
+trueFunc("1\n") || trueFunc("2\n")
+trueFunc("3\n") || falseFunc("4\n")
+falseFunc("5\n") || falseFunc("6\n")
+falseFunc("7\n") || trueFunc("8\n")
