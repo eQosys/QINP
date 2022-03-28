@@ -1,93 +1,9 @@
 import "std.qnp"
 
-i32 a = 10
+u8** argv
+u64 argc = std::getargs(&argv)
 
-std::print(a)
-std::print("\n")
-std::print(a %= 4)
-std::print("\n")
-
-i32 b = a -= 4
-
-std::print(a)
-std::print("\n")
-std::print(b)
-std::print("\n")
-
-std::print(__file__)
-std::print(":")
-std::print(__line__)
-std::print("\n")
-
-
-union Test:
-	i32 a
-	i32 b
-	i8 c[4]
-
-Test t
-t.a = 123456
-
-std::print(t.a)
-std::print("\n")
-
-std::print(t.b)
-std::print("\n")
-
-std::print((i32)t.c[0])
-std::print(", ")
-std::print((i32)t.c[1])
-std::print(", ")
-std::print((i32)t.c[2])
-std::print(", ")
-std::print((i32)t.c[3])
-std::print("\n")
-
-t.c[3] = 12
-
-std::print(t.a)
-std::print("\n")
-
-std::print(std::stoi("Fef", 16))
-std::print("\n")
-
-bool trueFunc(u8* str):
-	std::print(str)
-	return true
-bool falseFunc(u8* str):
-	std::print(str)
-	return false
-
-std::print("\n\n")
-
-trueFunc("1\n") && trueFunc("2\n")
-trueFunc("3\n") && falseFunc("4\n")
-falseFunc("5\n") && falseFunc("6\n")
-falseFunc("7\n") && trueFunc("8\n")
-
-std::print("\n\n")
-
-trueFunc("1\n") || trueFunc("2\n")
-trueFunc("3\n") || falseFunc("4\n")
-falseFunc("5\n") || falseFunc("6\n")
-falseFunc("7\n") || trueFunc("8\n")
-
-std::print("\n\n")
-
-enum Color:
-	Red,
-	Green,
-	Blue
-
-space LEL:
-	enum Color:
-		Red = 100
-
-	std::print(::Color::Red)
-	std::print("\n")
-	std::print(Color::Red)
-	std::print("\n")
-	std::print(::Color::Green)
-	std::print("\n")
-	std::print(::Color::Blue)
+u64 i = 0
+while i < argc:
+	std::print(argv[i++])
 	std::print("\n")

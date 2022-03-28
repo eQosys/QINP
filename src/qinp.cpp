@@ -195,7 +195,7 @@ int main(int argc, char** argv, char** environ)
 
 		if (args.hasOption("run"))
 		{
-			auto runCmd = "./" + outFilename + " test_arg";
+			auto runCmd = "./" + outFilename;
 			if (args.hasOption("runarg"))
 				for (auto& arg : args.getOption("runarg"))
 					runCmd += " " + arg;

@@ -1229,7 +1229,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->isLValue = isArray(exp->datatype) ? false : true;
 		break;
 	case Expression::ExprType::Logical_NOT:
-		exp->left = getParseExpression(info, precLvl);
+		exp->left = genConvertExpression(getParseExpression(info, precLvl), Datatype{ "bool", 0 });
 		exp->datatype = { "bool" };
 		exp->isLValue = false;
 		break;
