@@ -359,14 +359,14 @@ void parseExpected(ProgGenInfo& info, Token::Type type)
 {
 	auto& token = nextToken(info);
 	if (token.type != type)
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "', expected token of type '" + TokenTypeToString(type) + "'!");
+		THROW_PROG_GEN_ERROR(token.pos, "Expected token of type '" + TokenTypeToString(type) + "', but found '" + TokenTypeToString(token.type) + "'!");
 }
 
 void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
 {
 	auto& token = nextToken(info);
 	if (token.type != type || token.value != value)
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "', expected '" + value + "'!");
+		THROW_PROG_GEN_ERROR(token.pos, "Expected '" + value + "', but found '" + token.value + "'!");
 }
 
 void parseExpectedNewline(ProgGenInfo& info)

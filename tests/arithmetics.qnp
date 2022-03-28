@@ -1,0 +1,21 @@
+import "std.qnp"
+
+std::print("10 + 3 = ")
+std::print(10 + 3)
+std::print("\n------------------\n")
+
+std::print("9 - 7 = ")
+std::print(9 - 7)
+std::print("\n------------------\n")
+
+std::print("43 * 3 = ")
+std::print(43 * 3)
+std::print("\n------------------\n")
+
+std::print("120 / 5 = ")
+std::print(120 / 5)
+std::print("\n------------------\n")
+
+std::print("5 % 3 = ")
+std::print(5 % 3)
+std::print("\n------------------\n")

@@ -68,6 +68,7 @@ std::map<std::string, OptionInfo> argNames =
 	{ "k", { "keep", OptionInfo::Type::NoValue } },
 	{ "r", { "run", OptionInfo::Type::NoValue } },
 	{ "p", { "platform", OptionInfo::Type::Single } },
+	{ "a", { "runarg", OptionInfo::Type::Multi } },
 };
 
 #define HELP_TEXT \
@@ -87,17 +88,24 @@ std::map<std::string, OptionInfo> argNames =
 	"    Run the generated program.\n" \
 	"  -p, --platform=[platform]\n" \
 	"    Specify the target platform. (linux, windows, macos)\n" \
-	"    Only linux is supported for now.\n"
+	"    Only linux is supported for now.\n" \
+	"  -a, --runarg=[arg]\n" \
+	"    Specify a single argument to pass to the generated program.\n" \
+	"	  Only used when --run is specified.\n"
 
 class Timer
 {
 public:
-	Timer()
+	Timer(bool printOnDestruction)
+		: m_printOnDestruction(printOnDestruction)
 	{
 		start = std::chrono::high_resolution_clock::now();
 	}
 	~Timer()
 	{
+		if (!m_printOnDestruction)
+			return;
+
 		end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> diff = end - start;
 		std::cout << diff.count() << "s" << std::endl;
@@ -105,11 +113,13 @@ public:
 private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	std::chrono::time_point<std::chrono::high_resolution_clock> end;
+	bool m_printOnDestruction;
 };
 
 int main(int argc, char** argv, char** environ)
 {
 	bool verbose = true;
+	int runRet = 0;
 	try
 	{
 		auto args = parseArgs(getArgs(argc, argv), argNames);
@@ -144,8 +154,8 @@ int main(int argc, char** argv, char** environ)
 
 		ProgramRef program;
 		{
-			std::cout << "Code gen: ";
-			Timer timer;
+			if (verbose) std::cout << "Code gen: ";
+			Timer timer(verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, inFilename);
 			program = generateProgram(tokens, importDirs, args.getOption("platform").front());
@@ -167,14 +177,14 @@ int main(int argc, char** argv, char** environ)
 		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
 
 		{
-			std::cout << "Nasm: ";
-			Timer timer;
+			if (verbose) std::cout << "Nasm: ";
+			Timer timer(verbose);
 			if (execCmd(nasmCmd))
 				THROW_QINP_ERROR("Assembler Error!");
 		}
 		{
-			std::cout << "Linker: ";
-			Timer timer;
+			if (verbose) std::cout << "Linker: ";
+			Timer timer(verbose);
 			if (execCmd(ldCmd))
 				THROW_QINP_ERROR("Linker Error!");
 		}
@@ -186,8 +196,11 @@ int main(int argc, char** argv, char** environ)
 		if (args.hasOption("run"))
 		{
 			auto runCmd = "./" + outFilename + " test_arg";
+			if (args.hasOption("runarg"))
+				for (auto& arg : args.getOption("runarg"))
+					runCmd += " " + arg;
 			if (verbose) std::cout << "Running generated program..." << std::endl;
-			int runRet = execCmd(runCmd);
+			runRet = execCmd(runCmd);
 			if (verbose) std::cout << std::endl << "Exit code: " << runRet << std::endl;
 		}
 	}
@@ -209,5 +222,5 @@ int main(int argc, char** argv, char** environ)
 		return 1;
 	}
 
-    return 0;
+    return runRet;
 }
