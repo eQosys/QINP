@@ -13,13 +13,13 @@ TEST_EXT = ".blob"
 TEST_DIR = "./tests/"
 
 def runCmd(cmd: List[str], **kwargs):
-	print("[INF] Running command:", " ".join(map(shlex.quote, cmd)))
+	print("[CMD]:", " ".join(map(shlex.quote, cmd)))
 	return subprocess.run(cmd, **kwargs)
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
 	# TODO: Pass argv to QINP
 	cmd = ["./bin/Debug/QINP", "-r", "-p=linux", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}"]
-	cmd.extend(map(shlex.quote, map(lambda str: "-a=" + str, argv)))
+	cmd.extend(map(lambda str: "-a=" + str, argv))
 	return cmd
 
 @dataclass

@@ -198,7 +198,7 @@ int main(int argc, char** argv, char** environ)
 			auto runCmd = "./" + outFilename;
 			if (args.hasOption("runarg"))
 				for (auto& arg : args.getOption("runarg"))
-					runCmd += " " + arg;
+					runCmd += " \"" + arg + "\""; // TODO: Proper quoting
 			if (verbose) std::cout << "Running generated program..." << std::endl;
 			runRet = execCmd(runCmd);
 			if (verbose) std::cout << std::endl << "Exit code: " << runRet << std::endl;
