@@ -33,6 +33,7 @@ struct Symbol
 		FunctionSpec, // Any specialization of the function (overloads)
 		Pack,
 		Enum,
+		EnumMember,
 	} type = Type::None;
 
 	enum class State
@@ -56,7 +57,6 @@ struct Symbol
 			Static,
 			Parameter,
 			PackMember,
-			EnumMember,
 		} context = Context::None;
 	} var;
 

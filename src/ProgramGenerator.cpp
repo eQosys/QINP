@@ -43,8 +43,6 @@ struct ProgGenInfo
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
-
-	std::map<std::string, std::map<std::string, uint>> enums;
 };
 
 struct ProgGenInfoBackup
@@ -361,14 +359,14 @@ void parseExpected(ProgGenInfo& info, Token::Type type)
 {
 	auto& token = nextToken(info);
 	if (token.type != type)
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "', expected token of type '" + TokenTypeToString(type) + "'!");
 }
 
 void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
 {
 	auto& token = nextToken(info);
 	if (token.type != type || token.value != value)
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "'!");
+		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token '" + token.value + "', expected '" + value + "'!");
 }
 
 void parseExpectedNewline(ProgGenInfo& info)
@@ -823,7 +821,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 		return nullptr;
 
 	nextToken(info);
-	parseExpected(info, Token::Type::Separator, "::");
+	parseExpected(info, Token::Type::Operator, "::");
 
 	auto& memberToken = nextToken(info);
 
@@ -877,7 +875,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->valStr = getLiteralStringName(strID);
 		info.program->strings.insert({ strID, { 1, litToken.value } });
 		exp->datatype = { "u8", 1, { (int)litToken.value.size() + 1 } };
-		if (isInFunction(currSym(info)))
+		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code
 			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
 	}
 		break;
@@ -885,94 +883,60 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(litToken.pos, "Invalid literal type!");
 	}
 
-
 	return exp;
 }
 
-ExpressionRef getParseVariable(ProgGenInfo& info)
+ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 {
-	auto& litToken = peekToken(info);
-	if (!isIdentifier(litToken))
+	auto& symToken = peekToken(info);
+	if (!isIdentifier(symToken))
+		return nullptr;
+	
+	auto sym = getSymbol(currSym(info), symToken.value, localOnly);
+	if (!sym)
 		return nullptr;
 
-	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
-
-	auto pVar = getVariable(info, litToken.value);
-	if (!pVar)
-		return nullptr;
-
-	exp->eType = Expression::ExprType::Symbol; // isVarLabeled(pVar) ? Expression::ExprType::LabeledVariable : Expression::ExprType::OffsetVariable;
-	exp->symbol = pVar;
-	exp->datatype = pVar->var.datatype;
-	exp->isLValue = isArray(exp->datatype) ? false : true;
-
-	nextToken(info);
-
-	return exp;
-}
-
-ExpressionRef getParseFunctionName(ProgGenInfo& info)
-{
-	auto& litToken = peekToken(info);
-	if (!isIdentifier(litToken))
-		return nullptr;
-
-	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
-
-	auto funcs = getFunctions(info, litToken.value);
-	if (!funcs)
-		return nullptr;
+	ExpressionRef exp = std::make_shared<Expression>(symToken.pos);
 
 	exp->eType = Expression::ExprType::Symbol;
-	exp->symbol = getFunctions(info, litToken.value);
-	exp->isLValue = false;
+	exp->symbol = sym;
+
+	if (isVariable(sym))
+	{
+		exp->datatype = sym->var.datatype;
+		exp->isLValue = isArray(exp->datatype) ? false : true;
+	}
+	else if (isFuncName(sym))
+	{
+		;
+	}
 
 	nextToken(info);
 
 	return exp;
 }
 
-ExpressionRef getParseSpaceName(ProgGenInfo& info, bool localOnly)
+ExpressionRef getParseValue(ProgGenInfo& info, bool localOnly)
 {
-	auto& litToken = peekToken(info);
-	if (!isIdentifier(litToken))
-		return nullptr;
+	ExpressionRef exp = nullptr;
 
-	auto spaceSymbol = getSymbol(currSym(info), litToken.value, localOnly);
-	if (!spaceSymbol)
-		return nullptr;
-
-	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
-	exp->eType = Expression::ExprType::Symbol;
-	exp->symbol = spaceSymbol;
-
-	nextToken(info);
-
-	return exp;
-}
-
-ExpressionRef getParseValue(ProgGenInfo& info, bool localOnly = false)
-{
-	auto exp = getParseLiteral(info);
+	exp = getParseLiteral(info);
 	if (exp) return exp;
 
-	exp = getParseVariable(info);
+	if (info.currToken == 457)
+		printf("HELLO");
+
+	exp = getParseSymbol(info, localOnly);
 	if (exp) return exp;
 
-	exp = getParseFunctionName(info);
-	if (exp) return exp;
-
-	exp = getParseSpaceName(info, localOnly);
-	if (exp) return exp;
-
-	THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected variable name or literal value!");
+	THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected symbol name or literal value!");
 }
 
 ExpressionRef getParseParenthesized(ProgGenInfo& info)
 {
 	auto& parenOpen = peekToken(info);
 	if (!isSeparator(parenOpen, "("))
-		return getParseValue(info);
+		return getParseValue(info, false);
 	
 	nextToken(info);
 	auto exp = getParseExpression(info);
@@ -1436,8 +1400,6 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 		sym->var.context = SymVarContext::Local;
 	else if (isInPack(currSym(info)))
 		sym->var.context = SymVarContext::PackMember;
-	else if (isInEnum(currSym(info)))
-		sym->var.context = SymVarContext::EnumMember;
 	else
 		sym->var.context = SymVarContext::Global;
 
@@ -2035,23 +1997,19 @@ bool parseEnum(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 	nextToken(info);
 
-	if (getEnum(info, nameToken.value))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Enum with name '" + nameToken.value + "' already exists!");
-
-	if (getVariable(info, nameToken.value))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Variable with name '" + nameToken.value + "' already exists!");
-	
-	if (getFunctions(info, nameToken.value))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Function with name '" + nameToken.value + "' already exists!");
-
-	if (getPackSize(info.program, nameToken.value) >= 0)
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Pack with name '" + nameToken.value + "' already exists!");
+	if (getSymbol(currSym(info), nameToken.value, true))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol with name '" + nameToken.value + "' already exists!");
 
 	parseExpectedColon(info);
 	parseExpectedNewline(info);
 
-	info.enums.insert({ nameToken.value, {} });
-	auto& enumRef = info.enums.find(nameToken.value)->second;
+	auto enumSym = std::make_shared<Symbol>();
+	enumSym->pos = nameToken.pos;
+	enumSym->name = nameToken.value;
+	enumSym->type = SymType::Enum;
+	enumSym->state = SymState::Defined;
+
+	addSymbol(currSym(info), enumSym);
 
 	int currIndex = 0;
 	increaseIndent(info.indent);
@@ -2060,7 +2018,7 @@ bool parseEnum(ProgGenInfo& info)
 		while (isIdentifier(peekToken(info))) {
 			auto& memberToken = nextToken(info);
 
-			if (enumRef.find(memberToken.value) != enumRef.end())
+			if (getSymbol(enumSym, memberToken.value, true) != nullptr)
 				THROW_PROG_GEN_ERROR(memberToken.pos, "Enum member '" + memberToken.value + "' already exists!");
 
 			if (isOperator(peekToken(info), "="))
@@ -2073,7 +2031,14 @@ bool parseEnum(ProgGenInfo& info)
 				currIndex = std::stoul(valToken.value);
 			}
 
-			enumRef.insert({ memberToken.value, currIndex++ });
+			auto memSym = std::make_shared<Symbol>();
+			memSym->pos = memberToken.pos;
+			memSym->name = memberToken.value;
+			memSym->type = SymType::EnumMember;
+
+			memSym->enumValue = currIndex++;
+
+			addSymbol(enumSym, memSym);
 
 			if (!isSeparator(peekToken(info), ","))
 				break;

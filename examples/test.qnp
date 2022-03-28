@@ -71,3 +71,23 @@ trueFunc("1\n") || trueFunc("2\n")
 trueFunc("3\n") || falseFunc("4\n")
 falseFunc("5\n") || falseFunc("6\n")
 falseFunc("7\n") || trueFunc("8\n")
+
+std::print("\n\n")
+
+enum Color:
+	Red,
+	Green,
+	Blue
+
+space LEL:
+	enum Color:
+		Red = 100
+
+	std::print(::Color::Red)
+	std::print("\n")
+	std::print(Color::Red)
+	std::print("\n")
+	std::print(::Color::Green)
+	std::print("\n")
+	std::print(::Color::Blue)
+	std::print("\n")
