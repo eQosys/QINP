@@ -1,0 +1,22 @@
+import "std.qnp"
+
+void show(bool b):
+	std::print("b = ")
+	if b:
+		std::print("true")
+	else:
+		std::print("false")
+	std::print("\n")
+
+show(!true)
+show(!false)
+show(!!true)
+show(!!false)
+show(true && true)
+show(true && false)
+show(false && true)
+show(false && false)
+show(true || true)
+show(true || false)
+show(false || true)
+show(false || false)

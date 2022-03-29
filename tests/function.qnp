@@ -1,0 +1,52 @@
+import "std.qnp"
+
+void funcEmpty():
+	pass
+
+void funcNoRetNoParam():
+	std::print("Hello world!\n")
+	\\ Implicit return statement possible (only on void functions)
+
+void funcNoRetButParam(i32 a):
+	std::print(a)
+	std::print("\n")
+	return						\\ Not necessary
+
+i32 funcRetNoParam():
+	return 42
+
+i32 funcRetAndParam(i32 a):
+	a *= a
+	return a + a
+
+void funcRecursion(i32 a):
+	if a > 0:
+		std::print(a)
+		std::print("\n")
+		funcRecursion(a - 1)
+	else:
+		std::print("Done\n")
+
+void funcDeclared()...
+
+void funcUsingDeclared():
+	funcDeclared()
+
+void funcDeclared():
+	std::print("Hello from previously declared!\n")
+
+funcEmpty()
+
+funcNoRetNoParam()
+
+funcNoRetButParam(123)
+
+std::print(funcRetNoParam())
+std::print("\n")
+
+std::print(funcRetAndParam(123))
+std::print("\n")
+
+funcRecursion(10)
+
+funcUsingDeclared()

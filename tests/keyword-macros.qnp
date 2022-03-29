@@ -1,0 +1,9 @@
+import "std.qnp"
+
+void nothing(u8* str):
+	pass
+
+nothing(__file__)
+
+std::print(__line__)
+std::print("\n")

@@ -1,0 +1,37 @@
+import "std.qnp"
+
+union Data:
+	i32 asInt
+	u8 asBytes[4]
+	bool asBool[4]
+
+Data data
+data.asBytes[0] = 0
+data.asBytes[1] = 1
+data.asBytes[2] = 32
+data.asBytes[3] = 51
+
+std::print("data.asInt = ")
+std::print(data.asInt)
+std::print("\n")
+
+std::print("data.asBytes = ")
+std::print(data.asBytes[0])
+std::print(",")
+std::print(data.asBytes[1])
+std::print(",")
+std::print(data.asBytes[2])
+std::print(",")
+std::print(data.asBytes[3])
+std::print("\n")
+
+
+std::print("data.asBool = ")
+std::print(data.asBool[0])
+std::print(",")
+std::print(data.asBool[1])
+std::print(",")
+std::print(data.asBool[2])
+std::print(",")
+std::print(data.asBool[3])
+std::print("\n")

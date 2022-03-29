@@ -1,0 +1,90 @@
+import "std.qnp"
+
+i32 var = 0
+
+space Space1:
+	i32 var = 1
+
+	space Space11:
+		i32 var = 11
+
+		std::print("From ::Space1::Space11: \n")
+		std::print("  var = ")
+		std::print(var)
+		std::print("\n")
+		std::print("  ::var = ")
+		std::print(::var)
+		std::print("\n")
+		std::print("  ::Space1::var = ")
+		std::print(::Space1::var)
+		std::print("\n")
+		std::print("  ::Space1::Space11::var = ")
+		std::print(::Space1::Space11::var)
+		std::print("\n")
+
+	std::print("From ::Space1: \n")
+	std::print("  var = ")
+	std::print(var)
+	std::print("\n")
+	std::print("  ::var = ")
+	std::print(::var)
+	std::print("\n")
+	std::print("  ::Space1::var = ")
+	std::print(::Space1::var)
+	std::print("\n")
+	std::print("  ::Space1::Space11::var = ")
+	std::print(::Space1::Space11::var)
+	std::print("\n")
+	
+space Space2:
+	i32 var = 2
+
+	std::print("From ::Space2: \n")
+	std::print("  var = ")
+	std::print(var)
+	std::print("\n")
+	std::print("  ::var = ")
+	std::print(::var)
+	std::print("\n")
+	std::print("  ::Space1::var = ")
+	std::print(::Space1::var)
+	std::print("\n")
+	std::print("  ::Space1::Space11::var = ")
+	std::print(::Space1::Space11::var)
+	std::print("\n")
+	std::print("  ::Space2::var = ")
+	std::print(::Space2::var)
+	std::print("\n")
+
+std::print("From global: \n")
+std::print("  var = ")
+std::print(var)
+std::print("\n")
+std::print("  ::var = ")
+std::print(::var)
+std::print("\n")
+std::print("  ::Space1::var = ")
+std::print(::Space1::var)
+std::print("\n")
+std::print("  ::Space1::Space11::var = ")
+std::print(::Space1::Space11::var)
+std::print("\n")
+std::print("  ::Space2::var = ")
+std::print(::Space2::var)
+std::print("\n")
+
+space Space1:
+	space Space11:
+		std::print("From ::Space1::Space11 (Second time): \n")
+		std::print("  var = ")
+		std::print(var)
+		std::print("\n")
+		std::print("  ::var = ")
+		std::print(::var)
+		std::print("\n")
+		std::print("  ::Space1::var = ")
+		std::print(::Space1::var)
+		std::print("\n")
+		std::print("  ::Space1::Space11::var = ")
+		std::print(::Space1::Space11::var)
+		std::print("\n")

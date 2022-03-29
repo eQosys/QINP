@@ -1,0 +1,15 @@
+import "std.qnp"
+
+i32 var = 12345
+
+std::print("(bool)var = ")
+std::print((bool)var)
+std::print("\n")
+
+std::print("(i16)var = ")
+std::print((i16)var)
+std::print("\n")
+
+std::print("(i8)var = ")
+std::print((i8)var)
+std::print("\n")

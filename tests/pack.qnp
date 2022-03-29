@@ -1,0 +1,20 @@
+import "std.qnp"
+
+pack User:
+	i32 age
+	u8 name[32]
+
+std::print("sizeof(User) = ")
+std::print(sizeof(User))
+std::print("\n")
+
+User user
+user.age = 17
+std::strcpy(user.name, "TecStylos")
+
+std::print("user.age = ")
+std::print(user.age)
+std::print("\n")
+std::print("user.name = ")
+std::print(user.name)
+std::print("\n")

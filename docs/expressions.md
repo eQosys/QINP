@@ -24,9 +24,9 @@ Expressions can be grouped using parentheses, which ensures that the expression 
 
 ### Conversions
 
-Conversions are used to convert between different types.
+Conversions are used to convert data between different types.
 
-They may occure in two forms:
+They may occur in two forms:
 #### Implicit
 > Implicit conversions are performed automatically when required.
 > Not all types can be implicitly converted to each other.

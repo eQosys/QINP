@@ -1,0 +1,24 @@
+import "std.qnp"
+
+i32 i = 10
+while i-- > 0:
+	std::print(i)
+	std::print("\n")
+
+std::print("-----------------\n")
+
+i = 10
+while i-- > 0:
+	if i == 5:
+		break
+	std::print(i)
+	std::print("\n")
+
+std::print("-----------------\n")
+
+i = 10
+while i-- > 0:
+	if i == 5:
+		continue
+	std::print(i)
+	std::print("\n")
