@@ -464,22 +464,25 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 	replaceSymbol(funcs, func->name, func, true);
 }
 
-void addPack(ProgGenInfo& info, SymbolRef pack)
+SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
 {
 	auto existingPack = getSymbol(currSym(info), pack->name, true);
 	
 	if (!existingPack)
 	{
 		addSymbol(currSym(info), pack);
-		return;
+		return pack;
 	}
 
+	if (!isPack(existingPack) || existingPack->pack.isUnion != pack->pack.isUnion)
+		THROW_PROG_GEN_ERROR(pack->pos, "Pack '" + pack->name + "' already exists in the same scope!");
+
 	if (!isDefined(pack))
-		return;
+		return existingPack;
 	if (isDefined(existingPack))
 		THROW_PROG_GEN_ERROR(pack->pos, "Pack already defined here: " + getPosStr(existingPack->pos));
 
-	*existingPack = *pack;
+	return replaceSymbol(currSym(info), pack->name, pack, true);
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -1954,19 +1957,23 @@ bool parsePackUnion(ProgGenInfo& info)
 	packSym->pack.isUnion = isKeyword(packToken, "union");
 	auto& pack = packSym->pack;
 
-	packSym->state = SymState::Defined;
-	if (isSeparator(peekToken(info), "..."))
+	packSym->state = isSeparator(peekToken(info), "...") ? SymState::Declared : SymState::Defined;
+
+	if (isDeclared(packSym))
 	{
-		packSym->state = SymState::Declared;
 		nextToken(info);
 		parseExpectedNewline(info);
+		packSym = addPack(info, packSym);
 		return true;
 	}
-
-	addPack(info, packSym);
-	
-	parseExpectedColon(info);
-	parseExpectedNewline(info);
+	else if (isDefined(packSym))
+	{
+		parseExpectedColon(info);
+		parseExpectedNewline(info);
+		packSym = addPack(info, packSym);
+	}
+	else
+		assert(false && "Unknown symbol state!");
 
 	increaseIndent(info.indent);
 	enterSymbol(info, packSym);

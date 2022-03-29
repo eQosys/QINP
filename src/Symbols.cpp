@@ -222,7 +222,7 @@ SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)
 	return nullptr;
 }
 
-void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly)
+SymbolRef replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly)
 {
 	while (curr)
 	{
@@ -231,12 +231,15 @@ void replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bo
 		{
 			newSym->parent = it->second->parent;
 			it->second = newSym;
+			curr = it->second;
 			break;
 		}
 		if (localOnly)
 			assert(false && "Cannot replace non-existent symbol!");
 		curr = getParent(curr);
 	}
+
+	return curr;
 }
 
 SymbolRef getParent(const SymbolRef symbol)

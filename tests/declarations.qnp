@@ -1,0 +1,35 @@
+import "std.qnp"
+
+i32 varDecl
+
+i32 varDef = 10
+
+i32 arrDecl[16]
+
+i32* ptrDecl
+
+i32* ptrDef = &varDecl
+
+void funcDecl(i32 arg)...
+
+bool funcDef(u64 arg):
+	return arg == 0
+
+pack Data...
+
+Data* pData
+
+pack Data:
+	Data* pSub
+	i32 val
+
+enum Color:
+	Red, Green,
+	Blue
+
+Data data
+pData = &data
+pData->val = 10
+
+std::print(data.val)
+std::print("\n")
