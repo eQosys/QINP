@@ -18,7 +18,7 @@ def runCmd(cmd: List[str], **kwargs):
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
 	# TODO: Pass argv to QINP
-	cmd = ["./bin/Debug/QINP", "-r", "-p=linux", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}"]
+	cmd = ["./bin/Debug/QINP", "-r", "-p=linux", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o=/tmp/{testName}.out"]
 	cmd.extend(map(lambda str: "-a=" + str, argv))
 	return cmd
 
@@ -69,7 +69,7 @@ def runTest(testName: str) -> bool:
 	testInfo = loadTestInfo(testName)
 	if testInfo is None:
 		print("[ERR] Test not found!")
-		return
+		return False
 
 	output = runCmd(makeTestCmd(testName, testInfo.argv), input=testInfo.stdin, capture_output=True)
 	
@@ -134,23 +134,28 @@ if __name__ == "__main__":
 
 		numFailed = 0
 		numTests = 0
+		failNames = []
 
 		if testName == "all":
-			for testName in os.listdir(TEST_DIR):
-				if testName.endswith(QINP_EXT):
-					if not runTest(testName[:-len(QINP_EXT)]):
+			for testPath in os.listdir(TEST_DIR):
+				if testPath.endswith(QINP_EXT):
+					testName = testPath[:-len(QINP_EXT)]
+					if not runTest(testName):
 						numFailed += 1
+						failNames.append(testName)
 					numTests += 1
 
 		else:
 			if not runTest(testName):
 				numFailed += 1
+				failNames += testName
 			numTests += 1
 
 		if numFailed == 0:
 			print("[INF] All tests passed!")
 		else:
 			print(f"[ERR] {numFailed}/{numTests} tests failed!")
+			print("[ERR] Failed tests:", *failNames)
 	elif command == "help":
 		print("Usage: ./test.py [command] [args...]")
 		print("Commands:")

@@ -134,13 +134,13 @@ int main(int argc, char** argv, char** environ)
 		if (!args.hasOption("platform"))
 		{
 			std::cout << "Platform not specified!\n";
-			return 1;
+			return -1;
 		}
 
 		if (args.getOption("platform").front() != "linux")
 		{
 			std::cout << "Platform not supported!\n";
-			return 1;
+			return -1;
 		}
 
 		verbose = args.hasOption("verbose");
@@ -195,7 +195,7 @@ int main(int argc, char** argv, char** environ)
 
 		if (args.hasOption("run"))
 		{
-			auto runCmd = "./" + outFilename;
+			auto runCmd = outFilename;
 			if (args.hasOption("runarg"))
 				for (auto& arg : args.getOption("runarg"))
 					runCmd += " \"" + arg + "\""; // TODO: Proper quoting
@@ -209,17 +209,17 @@ int main(int argc, char** argv, char** environ)
 		std::cout << "QNP ERROR: " << e.what() << std::endl;
 		if (verbose)
 			std::cout << "WHERE: " << e.where() << std::endl;
-		return 1;
+		return -1;
 	}
 	catch (const std::exception& e)
 	{
 		std::cout << "STD ERROR: " << e.what() << std::endl;
-		return 1;
+		return -1;
 	}
 	catch (...)
 	{
 		std::cout << "ERROR: Unknown error!" << std::endl;
-		return 1;
+		return -1;
 	}
 
     return runRet;
