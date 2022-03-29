@@ -159,7 +159,7 @@ if __name__ == "__main__":
 		else:
 			if not runTest(testName):
 				numFailed += 1
-				failNames += testName
+				failNames.append(testName)
 			numTests += 1
 
 		if numFailed == 0:
