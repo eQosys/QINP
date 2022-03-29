@@ -125,6 +125,9 @@ if __name__ == "__main__":
 				sys.exit(1)
 			testName, *argv = argv
 			if testName == "all":
+				answer = input("Are you sure you want to update all tests? (y/N) ").lower()
+				if answer != "y":
+					sys.exit(0)
 				for testName in os.listdir(TEST_DIR):
 					if testName.endswith(QINP_EXT):
 						updateOutput(testName[:-len(QINP_EXT)])
