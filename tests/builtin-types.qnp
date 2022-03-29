@@ -1,0 +1,72 @@
+import "std.qnp"
+
+bool vBool
+i8 vI8
+i16 vI16
+i32 vI32
+i64 vI64
+u8 vU8
+u16 vU16
+u32 vU32
+u64 vU64
+void* vPtr
+
+std::print("sizeof(vBool) = ")
+std::print(sizeof(vBool))
+std::print(",")
+std::print(sizeof(bool))
+std::print("\n")
+
+std::print("sizeof(vI8) = ")
+std::print(sizeof(vI8))
+std::print(",")
+std::print(sizeof(i8))
+std::print("\n")
+
+std::print("sizeof(vI16) = ")
+std::print(sizeof(vI16))
+std::print(",")
+std::print(sizeof(i16))
+std::print("\n")
+
+std::print("sizeof(vI32) = ")
+std::print(sizeof(vI32))
+std::print(",")
+std::print(sizeof(i32))
+std::print("\n")
+
+std::print("sizeof(vI64) = ")
+std::print(sizeof(vI64))
+std::print(",")
+std::print(sizeof(i64))
+std::print("\n")
+
+std::print("sizeof(vU8) = ")
+std::print(sizeof(vU8))
+std::print(",")
+std::print(sizeof(u8))
+std::print("\n")
+
+std::print("sizeof(vU16) = ")
+std::print(sizeof(vU16))
+std::print(",")
+std::print(sizeof(u16))
+std::print("\n")
+
+std::print("sizeof(vU32) = ")
+std::print(sizeof(vU32))
+std::print(",")
+std::print(sizeof(u32))
+std::print("\n")
+
+std::print("sizeof(vU64) = ")
+std::print(sizeof(vU64))
+std::print(",")
+std::print(sizeof(u64))
+std::print("\n")
+
+std::print("sizeof(vPtr) = ")
+std::print(sizeof(vPtr))
+std::print(",")
+std::print(sizeof(void*))
+std::print("\n")

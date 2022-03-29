@@ -13,7 +13,7 @@ TEST_EXT = ".blob"
 TEST_DIR = "./tests/"
 
 def runCmd(cmd: List[str], **kwargs):
-	print("[CMD]:", " ".join(map(shlex.quote, cmd)))
+	print("[CMD]", " ".join(map(shlex.quote, cmd)))
 	return subprocess.run(cmd, **kwargs)
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
