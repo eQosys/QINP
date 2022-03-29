@@ -134,7 +134,7 @@ std::string SymPathToString(const SymPath& path);
 SymPath SymPathFromString(const std::string& pathStr);
 
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly = false);
-SymbolRef replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly = false);
+SymbolRef replaceSymbol(SymbolRef curr, SymbolRef newSym);
 SymbolRef getParent(const SymbolRef symbol);
 SymbolRef getParent(SymbolRef curr, Symbol::Type type);
 

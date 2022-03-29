@@ -222,24 +222,11 @@ SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)
 	return nullptr;
 }
 
-SymbolRef replaceSymbol(SymbolRef curr, const std::string& name, SymbolRef newSym, bool localOnly)
+SymbolRef replaceSymbol(SymbolRef currSym, SymbolRef newSym)
 {
-	while (curr)
-	{
-		auto it = curr->subSymbols.find(name);
-		if (it != curr->subSymbols.end())
-		{
-			newSym->parent = it->second->parent;
-			it->second = newSym;
-			curr = it->second;
-			break;
-		}
-		if (localOnly)
-			assert(false && "Cannot replace non-existent symbol!");
-		curr = getParent(curr);
-	}
-
-	return curr;
+	newSym->parent = currSym->parent;
+	*currSym = *newSym;
+	return currSym;
 }
 
 SymbolRef getParent(const SymbolRef symbol)

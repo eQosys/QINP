@@ -430,7 +430,7 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 	addSymbol(currSym(info), sym);
 }
 
-void addFunction(ProgGenInfo& info, SymbolRef func)
+SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 {
 	auto funcs = getSymbol(currSym(info), func->name, true);
 	if (funcs && !isFuncName(funcs))
@@ -448,20 +448,21 @@ void addFunction(ProgGenInfo& info, SymbolRef func)
 	func->name = getSignatureNoRet(func);
 
 	auto existingOverload = getSymbol(funcs, func->name, true);
+
 	if (!existingOverload)
 	{
 		addSymbol(funcs, func);
-		return;
+		return func;
 	}
 	
 	if (existingOverload->func.retType != func->func.retType)
 		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
 	if (!isDefined(func))
-		return;
+		return existingOverload;
 	if (isDefined(existingOverload))
 		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(existingOverload->pos));
 
-	replaceSymbol(funcs, func->name, func, true);
+	return replaceSymbol(existingOverload, func);
 }
 
 SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
@@ -482,7 +483,7 @@ SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
 	if (isDefined(existingPack))
 		THROW_PROG_GEN_ERROR(pack->pos, "Pack already defined here: " + getPosStr(existingPack->pos));
 
-	return replaceSymbol(currSym(info), pack->name, pack, true);
+	return replaceSymbol(existingPack, pack);
 }
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
@@ -1456,13 +1457,12 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
 {
 	SymbolRef funcSym = std::make_shared<Symbol>();
-	auto& func = funcSym->func;
 
 	funcSym->pos = peekToken(info).pos;
 	funcSym->type = SymType::FunctionSpec;
 	funcSym->name = name;
-	func.body = std::make_shared<Body>();
-	func.retType = datatype;
+	funcSym->func.body = std::make_shared<Body>();
+	funcSym->func.retType = datatype;
 
 	parseExpected(info, Token::Type::Separator, "(");
 
@@ -1479,8 +1479,8 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
 		
-		param.offset = func.retOffset;
-		func.retOffset += getDatatypePushSize(info.program, param.datatype);
+		param.offset = funcSym->func.retOffset;
+		funcSym->func.retOffset += getDatatypePushSize(info.program, param.datatype);
 
 		if (!isIdentifier(peekToken(info)))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
@@ -1488,7 +1488,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		param.modName = nextToken(info).value;
 		paramSym->name = param.modName;
 
-		func.params.push_back(paramSym);
+		funcSym->func.params.push_back(paramSym);
 
 		if (isSeparator(peekToken(info), ")"))
 			continue;
@@ -1507,7 +1507,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		parseExpectedNewline(info);
 	}
 
-	addFunction(info, funcSym);
+	funcSym = addFunction(info, funcSym);
 
 	if (isDefined(funcSym))
 	{
@@ -1515,14 +1515,14 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		parseExpectedNewline(info);
 
 		increaseIndent(info.indent);
-		pushTempBody(info, func.body);
+		pushTempBody(info, funcSym->func.body);
 		enterSymbol(info, funcSym);
 
-		info.funcRetOffset = func.retOffset;
-		info.funcRetType = func.retType;
+		info.funcRetOffset = funcSym->func.retOffset;
+		info.funcRetType = funcSym->func.retType;
 		info.funcFrameSize = 0;
 
-		for (auto& param : func.params)
+		for (auto& param : funcSym->func.params)
 			addSymbol(funcSym, param);
 
 		parseFunctionBody(info);
