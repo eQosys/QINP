@@ -155,7 +155,6 @@ if __name__ == "__main__":
 						numFailed += 1
 						failNames.append(testName)
 					numTests += 1
-
 		else:
 			if not runTest(testName):
 				numFailed += 1
@@ -163,7 +162,7 @@ if __name__ == "__main__":
 			numTests += 1
 
 		if numFailed == 0:
-			print("[ INF ] All tests passed!")
+			print(f"[ INF ] {numTests}/{numTests} tests passed!")
 		else:
 			print(f"[ ERR ] {numFailed}/{numTests} tests failed!")
 			print("[ ERR ] Failed tests:", *failNames)
