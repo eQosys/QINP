@@ -23,13 +23,8 @@ pack Data:
 	Data* pSub
 	i32 val
 
+Data data
+
 enum Color:
 	Red, Green,
 	Blue
-
-Data data
-pData = &data
-pData->val = 10
-
-std::print(data.val)
-std::print("\n")
