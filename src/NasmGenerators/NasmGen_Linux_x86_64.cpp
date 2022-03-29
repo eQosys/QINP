@@ -1140,10 +1140,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		pushLabel(ngi, "DO_WHILE_BEGIN");
 		pushLoopLabels(ngi);
 		placeLabel(ngi, LABEL_ID_DO_WHILE_BEGIN);
-		placeLabel(ngi, LABEL_ID_CONTINUE);
 
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.body);
 
+		placeLabel(ngi, LABEL_ID_CONTINUE);
+		
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.condition.get());
 
 		primRegLToRVal(ngi);
