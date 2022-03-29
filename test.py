@@ -13,12 +13,12 @@ TEST_EXT = ".blob"
 TEST_DIR = "./tests/"
 
 def runCmd(cmd: List[str], **kwargs):
-	print("[CMD]", " ".join(map(shlex.quote, cmd)))
+	print("[ CMD ]", " ".join(map(shlex.quote, cmd)))
 	return subprocess.run(cmd, **kwargs)
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
 	# TODO: Pass argv to QINP
-	cmd = ["./bin/Debug/QINP", "-r", "-p=linux", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o=/tmp/{testName}.out"]
+	cmd = [ "./bin/Debug/QINP", "-r", "-p=linux", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o=/tmp/{testName}.out" ]
 	cmd.extend(map(lambda str: "-a=" + str, argv))
 	return cmd
 
@@ -45,7 +45,7 @@ def saveTestInfo(testName: str, testInfo: TestInfo) -> None:
 def updateInput(testName: str, argv: List[str]) -> None:
 	testInfo = loadTestInfo(testName) or DEF_TEST_INFO
 
-	print("[INF] Enter input. Press Ctrl+D to finish...")
+	print("[ INF ] Enter input. Press Ctrl+D to finish...")
 	testInfo.stdin = sys.stdin.buffer.read()
 	testInfo.argv = argv
 
@@ -58,17 +58,17 @@ def updateOutput(testName: str) -> None:
 	testInfo.stdout = output.stdout
 	testInfo.exitCode = output.returncode
 
-	print("[INF] Exit code:", testInfo.exitCode)
-	print("[INF] Output:\n", testInfo.stdout.decode("utf-8"))
+	print("[ INF ] Exit code:", testInfo.exitCode)
+	print("[ INF ] Output:\n", testInfo.stdout.decode("utf-8"))
 
 	saveTestInfo(testName, testInfo)
 
 def runTest(testName: str) -> bool:
-	print(f"[INF] Running test '{testName}'...")
+	print(f"[ INF ] Running test '{testName}'...")
 
 	testInfo = loadTestInfo(testName)
 	if testInfo is None:
-		print("[ERR] Test not found!")
+		print("[ ERR ] Test not found!")
 		return False
 
 	output = runCmd(makeTestCmd(testName, testInfo.argv), input=testInfo.stdin, capture_output=True)
@@ -76,20 +76,26 @@ def runTest(testName: str) -> bool:
 	success = True
 
 	if output.returncode != testInfo.exitCode:
-		print("[ERR] Exit code mismatch!")
-		print("[ERR]   Expected:", testInfo.exitCode)
-		print("[ERR]   Actual:", output.returncode)
+		print("[ ERR ] Exit code mismatch!")
+		print("[ ERR ]   Expected:", testInfo.exitCode)
+		print("[ ERR ]   Actual:", output.returncode)
 		success = False
 	
 	if output.stdout != testInfo.stdout:
-		print("[ERR] Output mismatch!")
-		print("[ERR]   Expected:\n", testInfo.stdout.decode("utf-8"))
-		print("[ERR]   Actual:\n", output.stdout.decode("utf-8"))
+		print("[ ERR ] Output mismatch!")
+		print("[ ERR ]   Expected:\n", testInfo.stdout.decode("utf-8"))
+		print("[ ERR ]   Actual:\n", output.stdout.decode("utf-8"))
 		success = False
 
 	if not success:
-		print("[ERR] Test failed!")
+		print("[ ERR ] Test failed!")
 	
+	return success
+
+def buildQINP() -> bool:
+	print("[ INF ] Building QINP...")
+	output = runCmd([ "./build.sh", "Debug" ])
+	success = output.returncode == 0
 	return success
 
 if __name__ == "__main__":
@@ -112,6 +118,8 @@ if __name__ == "__main__":
 			testName, *argv = argv
 			updateInput(testName, argv)
 		elif mode == "output":
+			if not buildQINP():
+				sys.exit(1)
 			if len(argv) < 1:
 				print("Usage: ./test.py update output [test-name]")
 				sys.exit(1)
@@ -131,6 +139,9 @@ if __name__ == "__main__":
 			print("Usage: ./test.py run [test-name]")
 			sys.exit(1)
 		testName, *argv = argv
+
+		if not buildQINP():
+			sys.exit(1)
 
 		numFailed = 0
 		numTests = 0
@@ -152,10 +163,10 @@ if __name__ == "__main__":
 			numTests += 1
 
 		if numFailed == 0:
-			print("[INF] All tests passed!")
+			print("[ INF ] All tests passed!")
 		else:
-			print(f"[ERR] {numFailed}/{numTests} tests failed!")
-			print("[ERR] Failed tests:", *failNames)
+			print(f"[ ERR ] {numFailed}/{numTests} tests failed!")
+			print("[ ERR ] Failed tests:", *failNames)
 	elif command == "help":
 		print("Usage: ./test.py [command] [args...]")
 		print("Commands:")
