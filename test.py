@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import shlex
 import pickle
 import subprocess
@@ -31,6 +32,15 @@ class TestInfo:
 
 DEF_TEST_INFO = TestInfo([], b"", b"", 0)
 
+def runTestCmd(testName: str, testInfo: TestInfo) -> subprocess.CompletedProcess[str]:
+	output = None
+	try:
+		output = runCmd(makeTestCmd(testName, testInfo.argv), input=testInfo.stdin, capture_output=True, timeout=5)
+	except subprocess.TimeoutExpired:
+		return True, output
+
+	return False, output
+
 def loadTestInfo(testName: str) -> Optional[TestInfo]:
 	try:
 		with open(f"{TEST_DIR}{testName}{TEST_EXT}", "rb") as f:
@@ -54,7 +64,12 @@ def updateInput(testName: str, argv: List[str]) -> None:
 def updateOutput(testName: str) -> None:
 	testInfo = loadTestInfo(testName) or DEF_TEST_INFO
 
-	output = runCmd(makeTestCmd(testName, testInfo.argv), input=testInfo.stdin, capture_output=True)
+	timedOut, output = runTestCmd(testName, testInfo)
+
+	if timedOut:
+		print("[ ERR ] Test timed out!")
+		return
+
 	testInfo.stdout = output.stdout
 	testInfo.exitCode = output.returncode
 
@@ -71,7 +86,11 @@ def runTest(testName: str) -> bool:
 		print("[ ERR ] Test not found!")
 		return False
 
-	output = runCmd(makeTestCmd(testName, testInfo.argv), input=testInfo.stdin, capture_output=True)
+	timedOut, output = runTestCmd(testName, testInfo)
+
+	if timedOut:
+		print("[ ERR ] Test timed out!")
+		return False
 	
 	success = True
 
