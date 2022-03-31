@@ -139,6 +139,7 @@ struct Expression : public Statement
 
 	ExprType eType = ExprType::None;
 	bool isLValue = false;
+	bool isObject = false;
 	Datatype datatype;
 
 	ExpressionRef left; // Binary operator

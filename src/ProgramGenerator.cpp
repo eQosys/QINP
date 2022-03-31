@@ -12,6 +12,9 @@
 #include "Tokenizer.h"
 #include "OperatorPrecedence.h"
 
+#define ENABLE_EXPR_ONLY_FOR_OBJ(expr) if (!expr->isObject) THROW_PROG_GEN_ERROR(expr->pos, "Expected object!")
+#define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR(expr->pos, "Expected non-object!")
+
 struct LocalStackFrame
 {
 	std::map<std::string, Variable> locals;
@@ -688,10 +691,12 @@ Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 
 ExpressionRef makeConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype)
 {
+	ENABLE_EXPR_ONLY_FOR_OBJ(expToConvert);
 	auto exp = std::make_shared<Expression>(expToConvert->pos);
 	exp->eType = Expression::ExprType::Conversion;
 	exp->left = expToConvert;
 	exp->datatype = newDatatype;
+	exp->isObject = true;
 	return exp;
 }
 
@@ -844,6 +849,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	expr->datatype = { "u32" };
 	expr->valStr = std::to_string(value);
 	expr->isLValue = false;
+	expr->isObject = true;
 
 	return expr;
 }
@@ -864,14 +870,17 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	case Token::Type::LiteralInteger:
 		exp->valStr = litToken.value;
 		exp->datatype = { (std::stoull(exp->valStr) >> 63) ? "u64" : "i64" };
+		exp->isObject = true;
 		break;
 	case Token::Type::LiteralChar:
 		exp->valStr = std::to_string(litToken.value[0]);
 		exp->datatype = { "u8" };
+		exp->isObject = true;
 		break;
 	case Token::Type::LiteralBoolean:
 		exp->valStr = std::to_string(litToken.value == "true" ? 1 : 0);
 		exp->datatype = { "bool" };
+		exp->isObject = true;
 		break;
 	case Token::Type::String:
 	{
@@ -879,6 +888,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->valStr = getLiteralStringName(strID);
 		info.program->strings.insert({ strID, { 1, litToken.value } });
 		exp->datatype = { "u8", 1, { (int)litToken.value.size() + 1 } };
+		exp->isObject = true;
 		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code
 			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
 	}
@@ -915,6 +925,41 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 		;
 	}
 
+	switch (sym->type)
+	{
+	case SymType::None:
+	case SymType::Enum:
+	case SymType::FunctionName:
+	case SymType::Global:
+	case SymType::Namespace:
+	case SymType::Pack:
+		exp->isObject = false;
+		break;
+	case SymType::FunctionSpec:
+	case SymType::EnumMember:
+		exp->isObject = true;
+		break;
+	case SymType::Variable:
+		switch (sym->var.context)
+		{
+		case SymVarContext::None:
+		case SymVarContext::PackMember:
+			exp->isObject = false;
+			break;
+		case SymVarContext::Local:
+		case SymVarContext::Global:
+		case SymVarContext::Static:
+		case SymVarContext::Parameter:
+			exp->isObject = true;
+			break;
+		default:
+			assert(false && "Unknown SymVarContext!");
+		}
+		break;
+	default:
+		assert(false && "Unknown SymType!");
+	}
+
 	nextToken(info);
 
 	return exp;
@@ -926,9 +971,6 @@ ExpressionRef getParseValue(ProgGenInfo& info, bool localOnly)
 
 	exp = getParseLiteral(info);
 	if (exp) return exp;
-
-	if (info.currToken == 457)
-		printf("HELLO");
 
 	exp = getParseSymbol(info, localOnly);
 	if (exp) return exp;
@@ -1011,27 +1053,36 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_XOR:
 		case Expression::ExprType::Assign_Bw_OR:
 			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
 			if (!currExpr->left->isLValue)
 				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Cannot assign to non-lvalue!");
 			currExpr->datatype = currExpr->left->datatype;
 			currExpr->isLValue = true;
+			currExpr->isObject = true;
 			break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
 			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			currExpr->left = genConvertExpression(currExpr->left, { "bool" });
 			currExpr->right = genConvertExpression(currExpr->right, { "bool" });
 			currExpr->datatype = { "bool" };
 			currExpr->isLValue = false;
+			currExpr->isObject = true;
 			break;
 		case Expression::ExprType::Bitwise_OR:
 		case Expression::ExprType::Bitwise_XOR:
 		case Expression::ExprType::Bitwise_AND:
 			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
 			currExpr->datatype = currExpr->left->datatype;
 			currExpr->isLValue = false;
+			currExpr->isObject = true;
 			break;
 		case Expression::ExprType::Comparison_Equal:
 		case Expression::ExprType::Comparison_NotEqual:
@@ -1040,9 +1091,12 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Comparison_Greater:
 		case Expression::ExprType::Comparison_GreaterEqual:
 			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
 			currExpr->datatype = { "bool" };
 			currExpr->isLValue = false;
+			currExpr->isObject = true;
 			break;
 		case Expression::ExprType::Shift_Left:
 		case Expression::ExprType::Shift_Right:
@@ -1052,18 +1106,27 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Quotient:
 		case Expression::ExprType::Remainder:
 			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
 			currExpr->datatype = currExpr->left->datatype;
 			currExpr->isLValue = false;
+			currExpr->isObject = true;
 			break;
 		case Expression::ExprType::SpaceAccess:
+		{
 			if (currExpr->left->eType != Expression::ExprType::Symbol)
 				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Expected namespace name!");
 			enterSymbol(info, currExpr->left->symbol);
 
+			bool isObject = isSymType(SymType::Namespace, currExpr->left->symbol);
+
 			currExpr = getParseValue(info, true);
 
+			//currExpr->isObject = isObject;
+
 			exitSymbol(info);
+		}
 			break;
 		default:
 			THROW_PROG_GEN_ERROR(currExpr->pos, "Invalid binary operator!");
@@ -1094,6 +1157,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		switch (exp->eType)
 		{
 		case Expression::ExprType::Subscript:
+			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 			exp->datatype = exp->left->datatype;
 			if (exp->datatype.ptrDepth == 0)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
@@ -1101,7 +1165,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			dereferenceDatatype(exp->datatype);
 			exp->isLValue = isArray(exp->datatype) ? false : true;
+			exp->isObject = true;
 			exp->right = genConvertExpression(getParseExpression(info), { "u64" });
+			ENABLE_EXPR_ONLY_FOR_OBJ(exp->right);
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
 		case Expression::ExprType::FunctionCall:
@@ -1125,6 +1191,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->datatype = func->func.retType;
 			exp->left->datatype = { getSignature(func), 1 };
 			exp->left->symbol = func;
+			exp->isObject = func->func.retType != Datatype{ "void" };
 
 			info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
 
@@ -1136,12 +1203,15 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::Suffix_Increment:
 		case Expression::ExprType::Suffix_Decrement:
+			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
+			exp->isObject = true;
 			break;
 		case Expression::ExprType::MemberAccess:
 		case Expression::ExprType::MemberAccessDereference:
 		{
+			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 			auto& memberToken = nextToken(info);
 			if (!isIdentifier(memberToken))
 				THROW_PROG_GEN_ERROR(pOpToken->pos, "Expected member name!");
@@ -1189,6 +1259,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->datatype = memberSym->var.datatype;
 			exp->symbol = memberSym;
 			exp->isLValue = true;
+			exp->isObject = true;
 		}
 			break;
 		default:
@@ -1216,14 +1287,17 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	{
 	case Expression::ExprType::AddressOf:
 		exp->left = getParseExpression(info, precLvl);
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		if (!exp->left->isLValue)
 			THROW_PROG_GEN_ERROR(exp->pos, "Cannot take address of non-lvalue!");
 		exp->datatype = exp->left->datatype;
 		++exp->datatype.ptrDepth;
 		exp->isLValue = false;
+		exp->isObject = true;
 		break;
 	case Expression::ExprType::Dereference:
 		exp->left = getParseExpression(info, precLvl);
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = exp->left->datatype;
 		if (exp->datatype.ptrDepth == 0)
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference a non-pointer!");
@@ -1231,24 +1305,31 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference pointer to void!");
 		dereferenceDatatype(exp->datatype);
 		exp->isLValue = isArray(exp->datatype) ? false : true;
+		exp->isObject = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
 		exp->left = genConvertExpression(getParseExpression(info, precLvl), Datatype{ "bool", 0 });
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = { "bool" };
 		exp->isLValue = false;
+		exp->isObject = true;
 		break;
 	case Expression::ExprType::Bitwise_NOT:
 		exp->left = getParseExpression(info, precLvl);
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = exp->left->datatype;
 		exp->isLValue = false;
+		exp->isObject = true;
 		break;
 	case Expression::ExprType::Prefix_Plus:
 	case Expression::ExprType::Prefix_Minus:
 	case Expression::ExprType::Prefix_Increment:
 	case Expression::ExprType::Prefix_Decrement:
 		exp->left = getParseExpression(info, precLvl);
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = exp->left->datatype;
 		exp->isLValue = false;
+		exp->isObject = true;
 		break;
 	case Expression::ExprType::Explicit_Cast:
 	{
@@ -1260,6 +1341,8 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		}
 		parseExpected(info, Token::Type::Separator, ")");
 		exp = genConvertExpression(getParseExpression(info, precLvl), newDatatype, true);
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp);
+		exp->isObject = true;
 	}
 		break;
 	case Expression::ExprType::SizeOf:
@@ -1276,6 +1359,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->valStr = std::to_string(getDatatypeSize(info.program, datatype));
 		exp->eType = Expression::ExprType::Literal;
 		exp->datatype = { "u64" };
+		exp->isObject = true;
 	}
 		break;
 	case Expression::ExprType::SpaceAccess:
