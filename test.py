@@ -19,7 +19,7 @@ def runCmd(cmd: List[str], **kwargs):
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
 	# TODO: Pass argv to QINP
-	cmd = [ "./bin/Debug/QINP", "-r", "-p=linux", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o=/tmp/{testName}.out" ]
+	cmd = [ "./bin/Debug/QINP", "-r", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o=/tmp/{testName}.out" ]
 	cmd.extend(map(lambda str: "-a=" + str, argv))
 	return cmd
 

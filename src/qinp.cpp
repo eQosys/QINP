@@ -10,6 +10,7 @@
 #include "Tokenizer.h"
 #include "ArgsParser.h"
 #include "ProgramGenerator.h"
+#include "PlatformName.h"
 
 #include "NasmGenerators/NasmGen_Linux_x86_64.h"
 
@@ -131,13 +132,11 @@ int main(int argc, char** argv, char** environ)
 			return 0;
 		}
 
-		if (!args.hasOption("platform"))
-		{
-			std::cout << "Platform not specified!\n";
-			return -1;
-		}
+		std::string platform = QINP_PLATFORM;
+		if (args.hasOption("platform"))
+			platform = args.getOption("platform").front();
 
-		if (args.getOption("platform").front() != "linux")
+		if (platform != "linux")
 		{
 			std::cout << "Platform not supported!\n";
 			return -1;
@@ -158,7 +157,7 @@ int main(int argc, char** argv, char** environ)
 			Timer timer(verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, inFilename);
-			program = generateProgram(tokens, importDirs, args.getOption("platform").front());
+			program = generateProgram(tokens, importDirs, platform);
 		}
 
 		if (verbose)

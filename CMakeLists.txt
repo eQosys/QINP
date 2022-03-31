@@ -31,3 +31,11 @@ include_directories(
 )
 
 set_property(TARGET QINP PROPERTY CXX_STANDARD 17)
+
+if (WIN32)
+    add_compile_definitions(QINP_PLATFORM_WIN32)
+elseif (UNIX)
+    add_compile_definitions(QINP_PLATFORM_UNIX)
+elseif (APPLE)
+    add_compile_definitions(QINP_PLATFORM_APPLE)
+endif()
