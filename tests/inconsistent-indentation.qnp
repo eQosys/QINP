@@ -1,0 +1,3 @@
+space SPACE:
+	u32 thisIsTabIndented
+    u32 thisIsSpaceIndented

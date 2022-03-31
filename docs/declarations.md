@@ -7,6 +7,7 @@ The QINP language follows the ODR (One Definition Rule).
  - [Variables](#variables)
  - [Functions](#functions)
  - [Packs](#packs)
+ - [Unions](#unions)
  - [Static](#static)
  - [Enums](#enums)
 
@@ -26,15 +27,15 @@ Arrays can not be initialized.
 
 > Simple Declaration/Definition
 >
-> > `datatype` `name`
+> `datatype` `name`
 
 > Simple Declaration/Definition with initialization
 >
-> > `datatype` `name` = `expression`
+> `datatype` `name` = `expression`
 
 > Array Declaration/Definition
 >
-> > `datatype` `name`[`size`]
+> `datatype` `name`[`size`]
 
 #### Examples
 
@@ -61,6 +62,18 @@ Arrays can not be initialized.
 A function declaration associates a name with a return type and a list of zero or more parameters.
 A function definition additionally associates a list of statements.
 
+#### Usage
+
+> Declaration
+> ```qinp
+> [return-type] [name] ( [parameter-list] )...
+> ```
+
+> Definition
+> ```qinp
+> [return-type] [name] ( [parameter-list] ):
+> 	[body]
+
 #### Examples
 
 > Declaration
@@ -85,6 +98,21 @@ Before accessing any member of a pack, the pack must be defined.
 Packs can hold pointers to objects of the same pack type.
 The size of a pack is constant and only known after the pack's definition. The [sizeof operator](./operators.md#sizeof) can be used on defined packs, but not on declared-only ones.
 
+#### Usage
+
+> Declaration
+> ```qinp
+> pack [name]...
+> ```
+
+> Definition
+> ```qinp
+> pack [name]:
+> 	[member-1]
+> 	[member-2]
+> 	...
+> ```
+
 #### Examples
 
 > Declaration
@@ -102,9 +130,45 @@ The size of a pack is constant and only known after the pack's definition. The [
 
 ---
 
+### Unions
+
+Unions are similar to packs, except that each member shares it's memory with all other members.
+The size of the union is the size of the largest member.
+
+#### Usage
+
+> Declaration
+> ```qinp
+> union [name]...
+> ```
+
+> Definition
+> ```qinp
+> union [name]:
+> 	[member-1]
+> 	[member-2]
+> 	...
+> ```
+
+#### Examples
+
+> Declaration
+> ```qinp
+> union Data...
+> ```
+
+> Definition
+> ```qinp
+> union Data:
+> 	u32 var
+> 	u8 name[5]
+> ```
+
+---
+
 ### Static
 
-The `static` keyword can be used to declare a variable in a function as static, which means that its state is preserved between function calls (like a global variable), without being visible outside the function. When defining a static variable, the initializer is only run once (with the first call of the function).
+The `static` keyword can be used to declare/define a variable in a function as static, which means that its state is preserved between function calls (like a global variable), without being visible outside the function. When defining a static variable, the initializer is only run once (with the first call of the function).
 
 #### Example
 ```qinp

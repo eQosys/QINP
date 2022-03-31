@@ -1,0 +1,21 @@
+import "std.qnp"
+
+void show(i32 var):
+	std::print("var = ")
+	std::print(var)
+	std::print("\n")
+
+show(13)
+show(+15)
+show(-23)
+show(12 + 32)
+show(12 - 32)
+show(12 * 32)
+show(32 / 12)
+show(132 % 32)
+show(~123)
+show(123 & 456)
+show(123 | 456)
+show(123 ^ 456)
+show(123 << 3)
+show(123 >> 2)

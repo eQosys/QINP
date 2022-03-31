@@ -6,6 +6,7 @@
 #include <set>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #include "Errors/QinpError.h"
 #include "Errors/TokenizerError.h"
@@ -100,6 +101,21 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 		if (token.type == Token::Type::Comment)
 			return;
 		
+		if (token.type == Token::Type::Keyword)
+		{
+			if (token.value == "__file__")
+			{
+				token.type = Token::Type::String;
+				token.value = std::filesystem::canonical(token.pos.file).string();
+			}
+			else if (token.value == "__line__")
+			{
+				token.type = Token::Type::LiteralInteger;
+				token.value = std::to_string(token.pos.line);
+			}
+		}
+
+
 		tokens->push_back(token);
 	};
 

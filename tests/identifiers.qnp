@@ -1,0 +1,5 @@
+u32 thisIsAnIdentifier
+u32 _thisIsAlsoAnIdentifier
+u32 identifiersMayContainNumbers12345
+
+u32 12thisIsNotAnIdentifier

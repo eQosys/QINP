@@ -1,0 +1,17 @@
+import "std.qnp"
+
+u32 a
+u32 b
+
+asm: "mov DWORD [$(a)], 10"
+
+assembly:
+	"mov DWORD [$(b)], 100"
+	"mov eax, [$(b)]"
+	"add eax, [$(a)]"
+	"mov [$(b)], eax"
+
+std::print(a)
+std::print("\n")
+std::print(b)
+std::print("\n")

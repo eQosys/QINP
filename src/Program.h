@@ -7,6 +7,7 @@
 
 #include "Token.h"
 #include "Statement.h"
+#include "Symbols.h"
 
 struct Variable
 {
@@ -32,26 +33,6 @@ struct Function
 	bool isReachable = false;
 };
 
-typedef std::shared_ptr<Function> FunctionRef;
-
-std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes);
-std::string getSignatureNoRet(const FunctionRef func);
-std::string getSignatureNoRet(const Expression* callExpr);
-
-std::string getSignature(const Datatype& retType, const std::vector<Datatype>& paramTypes);
-std::string getSignature(const FunctionRef func);
-std::string getSignature(const Expression* callExpr);
-
-std::string getMangledName(const std::string& funcName, const Datatype& retType, const std::vector<Datatype>& paramTypes);
-std::string getMangledName(const FunctionRef func);
-std::string getMangledName(const std::string& funcName, const Expression* callExpr);
-std::string getMangledName(const std::string& varName, const Datatype& datatype);
-std::string getMangledName(const Variable& var);
-std::string getLiteralStringName(int strID);
-std::string getStaticLocalInitName(int initID);
-
-typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (without return type) -> function
-
 struct Pack
 {
 	Token::Position pos;
@@ -61,16 +42,36 @@ struct Pack
 	bool isDefined = false;
 };
 
+typedef std::shared_ptr<Function> FunctionRef;
+
 typedef std::shared_ptr<Pack> PackRef;
+
+std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes);
+std::string getSignatureNoRet(const SymbolRef func);
+std::string getSignatureNoRet(const Expression* callExpr);
+
+std::string getSignature(const Datatype& retType, const std::vector<Datatype>& paramTypes);
+std::string getSignature(const SymbolRef func);
+std::string getSignature(const Expression* callExpr);
+
+std::string getMangledName(const std::string& funcName, const Datatype& retType, const std::vector<Datatype>& paramTypes);
+std::string getMangledName(const std::string& funcName, const Expression* callExpr);
+std::string getMangledName(const std::string& varName, const Datatype& datatype);
+std::string getMangledName(SymbolRef symbol);
+std::string getLiteralStringName(int strID);
+std::string getStaticLocalInitName(int initID);
+
+typedef std::map<std::string, FunctionRef> FunctionOverloads; // signature (without return type) -> function
 
 struct Program
 {
-	std::map<std::string, Variable> globals;
-	std::map<std::string, FunctionOverloads> functions;
-	std::map<std::string, PackRef> packs;
-	std::map<int, std::string> strings;
+	SymbolRef symbols;
+	std::stack<SymbolRef> symStack;
+	std::map<int, std::pair<int, std::string>> strings; // string ID -> (useCount, string)
 	BodyRef body;
 	int staticLocalInitCount = 0;
+
+	std::string platform;
 };
 typedef std::shared_ptr<Program> ProgramRef;
 
@@ -84,3 +85,5 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 int getDatatypePushSize(const ProgramRef program, const Datatype& datatype);
 
 int getDatatypePointedToSize(const ProgramRef program, Datatype datatype);
+
+SymbolRef currSym(const ProgramRef program);

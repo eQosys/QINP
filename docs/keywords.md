@@ -4,6 +4,8 @@ This page lists the keywords in the QINP language.
 Keywords are special identifiers in the QINP language and cannot be used for any other purpose. The [builtin types](./builtin-types.md) are also treated as keywords.
 
 ## Overview
+ - [_\_\_file\_\__](#file)
+ - [_\_\_line\_\__](#line)
  - [asm](#inline-assembly)
  - [assembly](#inline-assembly)
  - [_break_](./control-flow.md#break)
@@ -18,8 +20,10 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [_pack_](./declarations.md#packs)
  - [pass](#pass)
  - [return](#return)
+ - [_union_](./declarations.md#unions)
  - [_while_](./control-flow.md#while-loop)
  - [_sizeof_](./operators.md#size-of)
+ - [space](#spaces)
  - [_static_](./declarations.md#static)
 
 ---
@@ -93,17 +97,35 @@ A single file is imported once and all other imports of the same file are ignore
 The filepaths are resolved with the compiler import-directory options.
 Resolving import paths relative to the importing file is planned.
 
+Conditional imports can be used to import a file only if the specified platform matches the compiler platform.
+Possible platforms are:
+ - `windows`
+ - `linux`
+ - `macos`
+
 #### Usage
 
-```qinp
-import [file_string]
-```
+> Standard import:
+> ```qinp
+> import [file_string]
+> ```
+
+> Conditional import:
+> ```qinp
+> import.[platform] [file_string]
+> ```
 
 #### Example
 
-```qinp
-import "std.qnp"
-```
+> Standard import:
+> ```qinp
+> import "std.qnp"
+> ```
+
+> Conditional import:
+> ```qinp
+> import.linux "linux/std.qnp"
+> ```
 
 ---
 
@@ -130,11 +152,13 @@ When the function it is used in has a return type other than `void`, the stateme
 In functions with a return type of `void`, the `return` statement is optional, otherwise the last statement in the function body must be a `return` statement.
 
 #### Usage
+
 ```qinp
 return [expression*]
 ```
 
 #### Examples
+
 ```qinp
 u64 square(u64 x):
 	return x * x
@@ -145,3 +169,57 @@ void say_hello():
 	print("Hello, world!")
 	return		\\ This is optional
 ```
+
+### Spaces
+
+Spaces are used to group functions/variables/etc.
+Symbols with the same name may exists in different spaces.
+When resolving a symbol reference. The most local symbol with a matching name is used.
+The preceding `::` operator is used to access a symbo from the global scope.
+Spaces can be nested.
+
+#### Usage
+
+> Space definition:
+> ```qinp
+> space [name]:
+> 	[body]
+> ```
+
+> Accessing a space member:
+> ```qinp
+> [space-name]::[member-name]
+> ::[space-name]::[member-name]
+> ```
+
+#### Examples
+
+> Space definition:
+> ```qinp
+> u64 x = 0
+> space foo:
+> 	u64 x = 1
+> space bar:
+> 	u64 x = 2
+> 
+> 	space foo:
+> 		u64 x = 3
+> ```
+
+> Accessing a space member:
+> ```qinp
+> x			\\ Always resolves to the local x
+> ::x			\\ Always accesses the global x
+> foo::x		\\ In global scope or foo space: ::foo::x, in bar space: ::bar::foo::x
+> bar::x		\\ In this example everywhere ::bar::x
+> ::foo::x
+> ::bar::x
+> ```
+
+### \_\_file\_\_
+
+The `__file__` keyword is replaced with the canonical path of the file containing the keyword.
+
+### \_\_line\_\_
+
+The `__line__` keyword is replaced with the line number of the keyword.

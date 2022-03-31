@@ -1,0 +1,12 @@
+import "std.qnp"
+
+void count():
+	static i32 i = 0
+	std::print("i = ")
+	std::print(++i)
+	std::print("\n")
+
+count()
+count()
+count()
+count()

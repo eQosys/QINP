@@ -1,0 +1,9 @@
+import "std.qnp"
+
+"Hello world"
+
+std::print("sizeof(\"Hello world!\\n\") = ")
+std::print(sizeof("Hello world!\n"))
+std::print("\n")
+
+"Escape sequences: \' \" \\ \n \r \t \b \f \v \e \0"

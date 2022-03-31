@@ -9,12 +9,14 @@ struct Expression;
 typedef std::shared_ptr<Expression> ExpressionRef;
 struct Function;
 typedef std::shared_ptr<Function> FunctionRef;
+struct Symbol;
+typedef std::shared_ptr<Symbol> SymbolRef;
 
 typedef std::shared_ptr<class Statement> StatementRef;
 struct Body
 {
 	std::vector<StatementRef> statements;
-	std::set<std::pair<std::string, std::string>> usedFunctions; // <name, sigNoRet>
+	std::set<std::vector<std::string>> usedFunctions; // Symbol paths
 };
 typedef std::shared_ptr<Body> BodyRef;
 
@@ -125,12 +127,10 @@ struct Expression : public Statement
 		MemberAccess,
 		MemberAccessDereference,
 
-		Namespace,
+		SpaceAccess,
 
 		Literal,
-		GlobalVariable,
-		LocalVariable,
-		FunctionName,
+		Symbol,
 	};
 
 	Expression(const Token::Position& pos)
@@ -139,18 +139,16 @@ struct Expression : public Statement
 
 	ExprType eType = ExprType::None;
 	bool isLValue = false;
+	bool isObject = false;
 	Datatype datatype;
 
 	ExpressionRef left; // Binary operator
 	ExpressionRef right;
 	std::string valStr; // Literal
-	int localOffset; // Local variable
-	std::string globName; // Global variable
-	std::string funcName; // Function Address
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
 
-	int memberOffset; // Member access
+	SymbolRef symbol;
 };
 
 std::string StatementTypeToString(Statement::Type type);

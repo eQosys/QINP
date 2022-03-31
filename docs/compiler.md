@@ -30,3 +30,13 @@
  - -r, --run
 
    Runs the generated program.
+
+ - -p, --platform
+ 
+   Specifies the target platform. (linux, windows, macos)
+   Only linux is supported for now.
+
+ - -a, --runarg
+  
+    Specifies a single argument to pass to the generated program.
+    Only used when --run is specified.

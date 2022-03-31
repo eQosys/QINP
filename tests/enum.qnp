@@ -1,0 +1,21 @@
+import "std.qnp"
+
+enum Color:
+	Red, Green,
+	Blue = 5, Yellow, Cyan,
+	Magenta = 6, White
+
+std::print(Color::Red)
+std::print("\n")
+std::print(Color::Green)
+std::print("\n")
+std::print(Color::Blue)
+std::print("\n")
+std::print(Color::Yellow)
+std::print("\n")
+std::print(Color::Cyan)
+std::print("\n")
+std::print(Color::Magenta)
+std::print("\n")
+std::print(Color::White)
+std::print("\n")

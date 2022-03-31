@@ -67,6 +67,8 @@ std::map<std::string, OptionInfo> argNames =
 	{ "o", { "output", OptionInfo::Type::Single } },
 	{ "k", { "keep", OptionInfo::Type::NoValue } },
 	{ "r", { "run", OptionInfo::Type::NoValue } },
+	{ "p", { "platform", OptionInfo::Type::Single } },
+	{ "a", { "runarg", OptionInfo::Type::Multi } },
 };
 
 #define HELP_TEXT \
@@ -83,17 +85,27 @@ std::map<std::string, OptionInfo> argNames =
 	"  -k, --keep\n" \
 	"    Keep the generated assembly file.\n" \
 	"  -r, --run\n" \
-	"    Run the generated program.\n"
+	"    Run the generated program.\n" \
+	"  -p, --platform=[platform]\n" \
+	"    Specify the target platform. (linux, windows, macos)\n" \
+	"    Only linux is supported for now.\n" \
+	"  -a, --runarg=[arg]\n" \
+	"    Specify a single argument to pass to the generated program.\n" \
+	"	  Only used when --run is specified.\n"
 
 class Timer
 {
 public:
-	Timer()
+	Timer(bool printOnDestruction)
+		: m_printOnDestruction(printOnDestruction)
 	{
 		start = std::chrono::high_resolution_clock::now();
 	}
 	~Timer()
 	{
+		if (!m_printOnDestruction)
+			return;
+
 		end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> diff = end - start;
 		std::cout << diff.count() << "s" << std::endl;
@@ -101,11 +113,13 @@ public:
 private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	std::chrono::time_point<std::chrono::high_resolution_clock> end;
+	bool m_printOnDestruction;
 };
 
 int main(int argc, char** argv, char** environ)
 {
 	bool verbose = true;
+	int runRet = 0;
 	try
 	{
 		auto args = parseArgs(getArgs(argc, argv), argNames);
@@ -115,6 +129,18 @@ int main(int argc, char** argv, char** environ)
 		{
 			std::cout << HELP_TEXT;
 			return 0;
+		}
+
+		if (!args.hasOption("platform"))
+		{
+			std::cout << "Platform not specified!\n";
+			return -1;
+		}
+
+		if (args.getOption("platform").front() != "linux")
+		{
+			std::cout << "Platform not supported!\n";
+			return -1;
 		}
 
 		verbose = args.hasOption("verbose");
@@ -128,19 +154,17 @@ int main(int argc, char** argv, char** environ)
 
 		ProgramRef program;
 		{
-			std::cout << "Code gen: ";
-			Timer timer;
+			if (verbose) std::cout << "Code gen: ";
+			Timer timer(verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, inFilename);
-			program = generateProgram(tokens, importDirs);
+			program = generateProgram(tokens, importDirs, args.getOption("platform").front());
 		}
 
 		if (verbose)
-			for (auto& overloads : program->functions)
-				for (auto& func : overloads.second)
-					if (!func.second->isDefined)
-						std::cout << "WARN: Function '" << func.second->name << "' was declared at '" << getPosStr(func.second->pos) << "' but never defined!" << std::endl;
-
+			for (auto sym : *program->symbols)
+				if (isFuncSpec(sym) && !isDefined(sym))
+					std::cout << "WARN: Missing definition for function '" << getMangledName(sym) << "' declared at " << getPosStr(sym->pos) << "!" << std::endl;
 
 		std::string output = generateNasm_Linux_x86_64(program);
 	
@@ -153,14 +177,14 @@ int main(int argc, char** argv, char** environ)
 		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
 
 		{
-			std::cout << "Nasm: ";
-			Timer timer;
+			if (verbose) std::cout << "Nasm: ";
+			Timer timer(verbose);
 			if (execCmd(nasmCmd))
 				THROW_QINP_ERROR("Assembler Error!");
 		}
 		{
-			std::cout << "Linker: ";
-			Timer timer;
+			if (verbose) std::cout << "Linker: ";
+			Timer timer(verbose);
 			if (execCmd(ldCmd))
 				THROW_QINP_ERROR("Linker Error!");
 		}
@@ -171,9 +195,12 @@ int main(int argc, char** argv, char** environ)
 
 		if (args.hasOption("run"))
 		{
-			auto runCmd = "./" + outFilename + " test_arg";
+			auto runCmd = outFilename;
+			if (args.hasOption("runarg"))
+				for (auto& arg : args.getOption("runarg"))
+					runCmd += " \"" + arg + "\""; // TODO: Proper quoting
 			if (verbose) std::cout << "Running generated program..." << std::endl;
-			int runRet = execCmd(runCmd);
+			runRet = execCmd(runCmd);
 			if (verbose) std::cout << std::endl << "Exit code: " << runRet << std::endl;
 		}
 	}
@@ -182,18 +209,18 @@ int main(int argc, char** argv, char** environ)
 		std::cout << "QNP ERROR: " << e.what() << std::endl;
 		if (verbose)
 			std::cout << "WHERE: " << e.where() << std::endl;
-		return 1;
+		return -1;
 	}
 	catch (const std::exception& e)
 	{
 		std::cout << "STD ERROR: " << e.what() << std::endl;
-		return 1;
+		return -1;
 	}
 	catch (...)
 	{
 		std::cout << "ERROR: Unknown error!" << std::endl;
-		return 1;
+		return -1;
 	}
 
-    return 0;
+    return runRet;
 }

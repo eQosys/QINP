@@ -68,7 +68,7 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			case OptionInfo::Type::Multi:
 				if (pos == std::string::npos)
 					THROW_QINP_ERROR("Option " + key + " requires value!");
-				args.options.insert({ key, { arg.substr(pos + 1) } });
+				args.options[key].push_back(arg.substr(pos + 1));
 				break;
 			case OptionInfo::Type::Single:
 				if (pos == std::string::npos)
@@ -100,7 +100,7 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			case OptionInfo::Type::Multi:
 				if (pos == std::string::npos)
 					THROW_QINP_ERROR("Option " + key + " requires value!");
-				args.options.insert({ key, { arg.substr(pos + 1) } });
+				args.options[key].push_back(arg.substr(pos + 1));
 				break;
 			case OptionInfo::Type::Single:
 				if (pos == std::string::npos)

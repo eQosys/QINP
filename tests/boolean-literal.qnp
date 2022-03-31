@@ -1,0 +1,9 @@
+import "std.qnp"
+
+std::print("true = ")
+std::print(true)
+std::print("\n")
+
+std::print("false = ")
+std::print(false)
+std::print("\n")

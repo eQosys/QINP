@@ -138,7 +138,7 @@ For function addresses, the size of the function pointer is returned (usually 8 
 
 ---
 
-### Namespace
+### Spaces
 
-The `::` operator is used to access members of a namespace.
-At the moment the only way to create a namespace is through [enums](./declarations.md#enums).
+The `::` operator is used to access members of a space.
+Spaces can be declared using the [space](./keywords.md#spaces) keyword.

@@ -40,6 +40,7 @@ const std::map<std::string, Token::Type> specialKeywords =
 	{ ">=",  Token::Type::Operator },
 	{ ".",   Token::Type::Operator },
 	{ "->",  Token::Type::Operator },
+	{ "::",  Token::Type::Operator },
 
 	{ "(",   Token::Type::Separator },
 	{ ")",   Token::Type::Separator },
@@ -48,7 +49,6 @@ const std::map<std::string, Token::Type> specialKeywords =
 	{ "{",   Token::Type::Separator },
 	{ "}",   Token::Type::Separator },
 	{ ":",   Token::Type::Separator },
-	{ "::",  Token::Type::Separator },
 	{ ",",   Token::Type::Separator },
 	{ "...", Token::Type::Separator },
 };
@@ -105,6 +105,8 @@ bool isKeyword(const std::string& name)
 {
 	static const std::set<std::string> keywords =
 	{
+		"__file__",
+		"__line__",
 		"asm",
 		"assembly",
 		"break",
@@ -119,8 +121,10 @@ bool isKeyword(const std::string& name)
 		"pack",
 		"pass",
 		"return",
+		"union",
 		"while",
 		"sizeof",
+		"space",
 		"static",
 		// "const"
 		// "default",
@@ -128,7 +132,6 @@ bool isKeyword(const std::string& name)
 		// "for",
 		// "new", "delete",
 		// "goto", "operator",
-		// "union",
 		// "blueprint",
 		// "switch", "case"
 	};

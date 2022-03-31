@@ -17,36 +17,42 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "|=", Expression::ExprType::Assign_Bw_OR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::RightToLeft,
 	},
 	{
 		{
 			{ "||", Expression::ExprType::Logical_OR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "&&", Expression::ExprType::Logical_AND },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "|", Expression::ExprType::Bitwise_OR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "^", Expression::ExprType::Bitwise_XOR },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
 			{ "&", Expression::ExprType::Bitwise_AND },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -54,6 +60,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "!=", Expression::ExprType::Comparison_NotEqual },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -63,6 +70,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ ">=", Expression::ExprType::Comparison_GreaterEqual },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -70,6 +78,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ ">>", Expression::ExprType::Shift_Right },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -77,6 +86,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "-", Expression::ExprType::Difference },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -85,6 +95,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "%", Expression::ExprType::Remainder },
 		},
 		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
 	},
 	{
 		{
@@ -98,6 +109,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "--", Expression::ExprType::Prefix_Decrement },
 			{ "(", Expression::ExprType::Explicit_Cast },
 			{ "sizeof", Expression::ExprType::SizeOf },
+			{ "::", Expression::ExprType::SpaceAccess },
 		},
 		OpPrecLvl::Type::Unary_Prefix,
 	},
@@ -114,10 +126,11 @@ std::vector<OpPrecLvl> opPrecLvls =
 		},
 		OpPrecLvl::Type::Unary_Suffix,
 	},
-	//{
-	//	{
-	//		{ "::", Expression::ExprType::Namespace },
-	//	},
-	//	OpPrecLvl::Type::Binary,
-	//},
+	{
+		{
+			{ "::", Expression::ExprType::SpaceAccess },
+		},
+		OpPrecLvl::Type::Binary,
+		OpPrecLvl::EvalOrder::LeftToRight,
+	},
 };

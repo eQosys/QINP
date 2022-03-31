@@ -14,6 +14,7 @@ add_executable(
     QINP
     "src/qinp.cpp"
     "src/Token.cpp"
+    "src/Symbols.cpp"
     "src/Program.cpp"
     "src/Datatype.cpp"
     "src/Tokenizer.cpp"

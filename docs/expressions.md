@@ -24,9 +24,9 @@ Expressions can be grouped using parentheses, which ensures that the expression 
 
 ### Conversions
 
-Conversions are used to convert between different types.
+Conversions are used to convert data between different types.
 
-They may occure in two forms:
+They may occur in two forms:
 #### Implicit
 > Implicit conversions are performed automatically when required.
 > Not all types can be implicitly converted to each other.
@@ -62,4 +62,4 @@ There are different types of literals:
 
 #### String Literals
 
-String literals are surrounded by double quotes. Their datatype is u8\[n\], while n stands for the number of characters in the string (including the null terminator). Using the [sizeof operator](./operators.md#sizeof) on a string literal yields the number of bytes used to store the string.
+String literals are surrounded by double quotes. Their datatype is u8\[n\], while n stands for the number of characters in the string (including the null terminator). Using the [sizeof operator](./operators.md#size-of) on a string literal yields the number of bytes used to store the string.

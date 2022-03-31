@@ -4,4 +4,4 @@
 
 #include "Program.h"
 
-ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs);
+ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform);

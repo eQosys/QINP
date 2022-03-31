@@ -168,7 +168,7 @@ std::string secRegUsage(NasmGenInfo& ngi)
 	case CellState::rValue:
 		return secRegName(ngi);
 	case CellState::lValue:
-		return "[" + secRegName(ngi) + "]";
+		return "[" + secRegName(8) + "]";
 	}
 	assert("Invalid secReg state!" && false);
 	return "";
@@ -334,15 +334,13 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 {
 	generateBinaryEvaluation(ngi, expr);
 	primRegLToRVal(ngi);
-	secRegLToRVal(ngi);
-	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegName(getDatatypeSize(ngi.program, ngi.primReg.datatype)) << "\n";
+	ngi.ss << "  cmp " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 }
 
 void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& srcReg, int size)
 {
-	auto sigNoRet = getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } });
-	auto func = ngi.program->functions.at("memcpy").at(sigNoRet);
-	func->isReachable = true;
+	auto func = getSymbol(getSymbol(ngi.program->symbols, "memcpy"), getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } }), true);
+	func->func.isReachable = true;
 
 	ngi.ss << "  push " << size << "\n";
 	ngi.ss << "  push " << srcReg << "\n";
@@ -352,8 +350,7 @@ void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& 
 }
 
 #define DISABLE_EXPR_FOR_PACKS(ngi, expr) \
-	if (isPackType(ngi.program, expr->datatype)) \
-		assert(false && "Invalid expression for pack type!")
+	assert(!isPackType(ngi.program, expr->datatype) && "Invalid expression for pack type!")
 
 void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 {
@@ -390,7 +387,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			assert("Invalid conversion!" && false);
 		}
 
-		if (isUnsignedInt(oldType) && isInteger(newType))
+		if (
+			(isUnsignedInt(oldType) && isInteger(newType)) ||
+			(isInteger(oldType) && isPointer(newType)) ||
+			(isBool(oldType) && (isInteger || isPointer(newType)))
+			)
 		{
 			if (oldSize == 4 && newSize == 8)
 				break;
@@ -406,7 +407,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			break;
 		}
 
-		if (isPointer(oldType) && (isPointer(newType) || isInteger(newType)))
+		if (isPointer(oldType) && ((isPointer(newType) || isInteger(newType))))
 		{
 			break;
 		}
@@ -442,50 +443,199 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 		break;
 	case Expression::ExprType::Assign_Sum:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Sum not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Difference:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Difference not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  sub " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Product:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Product not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+		secRegLToRVal(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "mul " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Quotient:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Quotient not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+		secRegLToRVal(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		auto remainderName = regName('d', getDatatypeSize(ngi.program, ngi.primReg.datatype));
+		ss << "  xor " << remainderName << ", " << remainderName << "\n";
+
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Remainder:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Remainder not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+		secRegLToRVal(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		auto remainderName = regName('d', getDatatypeSize(ngi.program, ngi.primReg.datatype));
+
+		ss << "  xor " << remainderName << ", " << remainderName << "\n";
+
+		ss << "  " << instrPrefix(ngi.primReg.datatype) << "div " << secRegUsage(ngi) << "\n";
+		ss << "  mov " << primRegUsage(ngi) << ", " << remainderName << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_LeftShift:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Left Shift not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_RightShift:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Right Shift not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_AND:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise AND not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_XOR:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise XOR not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  xor " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Assign_Bw_OR:
+	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		THROW_NASM_GEN_ERROR(expr->pos, "Assignment by Bitwise OR not supported!");
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		pushPrimReg(ngi);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		popSecReg(ngi);
+
+		bool pushed = primRegLToRVal(ngi, true);
+
+		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+
+		primRegRToLVal(ngi, pushed);
+
+		break;
+	}
 	case Expression::ExprType::Logical_OR:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateBinaryEvaluation(ngi, expr);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
-		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		pushLabel(ngi, "LOGICAL_OR_SKIP");
+		ss << "  cmp " << primRegUsage(ngi) << ", 1\n";
+		ss << "  je " << getLabel(ngi, 0) << "\n";
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		placeLabel(ngi, 0);
+		popLabel(ngi);
 		ngi.primReg.datatype = { "bool" };
 		// State already modified
 		break;
 	case Expression::ExprType::Logical_AND:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateBinaryEvaluation(ngi, expr);
+		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
-		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
+		pushLabel(ngi, "LOGICAL_AND_SKIP");
+		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+		ss << "  je " << getLabel(ngi, 0) << "\n";
+		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		placeLabel(ngi, 0);
+		popLabel(ngi);
 		ngi.primReg.datatype = { "bool" };
 		// State already modified
 		break;
@@ -493,7 +643,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  or " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
@@ -502,7 +651,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  xor " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
@@ -511,7 +659,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		generateBinaryEvaluation(ngi, expr);
 		primRegLToRVal(ngi);
-		secRegLToRVal(ngi);
 		ss << "  and " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		// Datatype doesn't change
 		// State already modified
@@ -635,10 +782,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	{
 		generateNasm_Linux_x86_64(ngi, expr->left.get());
 		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Left operand of member access must be lValue");
-		ss << "  add " << primRegName(8) << ", " << expr->memberOffset << "\n";
+		ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << "\n";
 		
 		ngi.primReg.datatype = expr->datatype;
-		//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 	}
 		break;
@@ -844,25 +990,32 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 		ss << "  mov " << primRegUsage(ngi) << ", " << expr->valStr << "\n";
 		break;
-	case Expression::ExprType::GlobalVariable:
-		ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->globName, expr->datatype) << "\n";
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
-		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
-		break;
-	case Expression::ExprType::LocalVariable:
-		ss << "  mov " << primRegName(8) << ", rbp\n";
-		ss << "  add " << primRegName(8) << ", " << expr->localOffset << " ; local '" << expr->globName << "'\n";
-		if (expr->globName == "ch")
-			printf("asdf");
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
-		//ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
-		break;
-	case Expression::ExprType::FunctionName:
-		ss << "  mov " << primRegName(8) << ", " << expr->funcName << "\n";
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::rValue;
+	case Expression::ExprType::Symbol:
+	{
+		if (isVarLabeled(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->symbol->var.modName, expr->datatype) << "\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		}
+		else if (isVarOffset(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", rbp\n";
+			ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << " ; local '" << expr->symbol->var.modName << "'\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
+		}
+		else if (isFuncSpec(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", " << SymPathToString(getSymbolPath(nullptr, expr->symbol)) << "\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = CellState::rValue;
+		}
+		else
+		{
+			assert(false && "Unknown symbol type!");
+		}
+	}
 		break;
 	default:
 		THROW_NASM_GEN_ERROR(expr->pos, "Unsupported expression type!");
@@ -987,10 +1140,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		pushLabel(ngi, "DO_WHILE_BEGIN");
 		pushLoopLabels(ngi);
 		placeLabel(ngi, LABEL_ID_DO_WHILE_BEGIN);
-		placeLabel(ngi, LABEL_ID_CONTINUE);
 
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.body);
 
+		placeLabel(ngi, LABEL_ID_CONTINUE);
+		
 		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.condition.get());
 
 		primRegLToRVal(ngi);
@@ -1018,19 +1172,19 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 }
 
 // Generates Nasm code for a function
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, FunctionRef func)
+void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, SymbolRef func)
 {
-	assert(func->body->statements.back()->type == Statement::Type::Return && "Function must end with return statement!");
+	assert(func->func.body->statements.back()->type == Statement::Type::Return && "Function must end with return statement!");
 
 	// Function prologue
 	ngi.ss << getMangledName(func) << ":\n";
 	ngi.ss << "  push rbp\n";
 	ngi.ss << "  mov rbp, rsp\n";
 
-	if (func->frameSize > 0)
-		ngi.ss << "  sub rsp, " << std::to_string(func->frameSize) << "\n";
+	if (func->frame.size > 0)
+		ngi.ss << "  sub rsp, " << std::to_string(func->frame.size) << "\n";
 
-	generateNasm_Linux_x86_64(ngi, func->body);
+	generateNasm_Linux_x86_64(ngi, func->func.body);
 }
 
 // Generates Nasm code for the entire program
@@ -1053,6 +1207,10 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  mov rcx, rsp\n";
 	ss << "  add rcx, rax\n";
 	ss << "  mov [__##__envp], rcx\n";
+
+	// Static local initializer test values
+	for (int i = 0; i < program->staticLocalInitCount; ++i)
+		ss << "  mov BYTE [" << getMangledName(getStaticLocalInitName(i), { "bool" }) << "], 1\n";
 	
 	// Global code
 	generateNasm_Linux_x86_64(ngi, program->body);
@@ -1062,11 +1220,29 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  mov rax, 60\n";
 	ss << "  syscall\n";
 
+	std::vector<std::pair<std::string, SymbolRef>> funcs;
+	std::vector<SymbolRef> globals;
+	SymbolIterator it = program->symbols->begin();
+	while (it != program->symbols->end())
+	{
+		if (isFuncSpec(*it) && isDefined(*it))
+		{
+			if ((*it)->func.isReachable)
+				funcs.push_back({ getParent(*it)->name, *it });
+			else
+			{
+				for (int strID : getParent(*it, Symbol::Type::FunctionSpec)->func.instantiatedStrings)
+					--program->strings.find(strID)->second.first;
+			}
+		}
+		else if (isVarLabeled(*it))
+			globals.push_back(*it);
+		++it;
+	}
+
 	// Functions
-	for (auto& overloads : program->functions)
-		for (auto& func : overloads.second)
-			if (func.second->isReachable)
-				generateNasm_Linux_x86_64(ngi, func.first, func.second);
+	for (auto& func : funcs)
+		generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	// Global variables
 	ss << "SECTION .bss\n";
@@ -1074,23 +1250,20 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  __##__argv: resq 1\n";
 	ss << "  __##__envp: resq 1\n";
 
-	for (auto& glob : program->globals)
-		ss << "  " << getMangledName(glob.second) << ": resb " << getDatatypeSize(program, glob.second.datatype) << "\t\t; " << getPosStr(glob.second.pos) << "\n";
+	for (auto& global : globals)
+		ss << "  " << getMangledName(global) << ": resb " << getDatatypeSize(program, global->var.datatype) << "\t\t; " << getPosStr(global->pos) << "\n";
 
 	// C-Strings
 	ss << "SECTION .data\n";
 	for (auto& str : program->strings)
 	{
+		if (str.second.first <= 0)
+			continue;
+
 		ss << "  " << getLiteralStringName(str.first) << ": db ";
-		for (char c : str.second)
+		for (char c : str.second.second)
 			ss << (int)c << ",";
 		ss << "0\n";
-	}
-
-	// Static local initializer test values
-	for (int i = 0; i < program->staticLocalInitCount; ++i)
-	{
-		ss << "  " << getMangledName(getStaticLocalInitName(i), { "bool" }) << ": db 1\n";
 	}
 
 	if (!ngi.labelStack.empty())
