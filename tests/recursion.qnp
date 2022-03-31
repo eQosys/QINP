@@ -1,0 +1,9 @@
+import "std.qnp"
+
+i32 fib(i32 n):
+	if n < 2:
+		return n
+	return fib(n-1) + fib(n-2)
+
+std::print(fib(10))
+std::print("\n")
