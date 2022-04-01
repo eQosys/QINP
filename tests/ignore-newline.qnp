@@ -1,5 +1,6 @@
 import "std.qnp"
 
-std::print(\
+std::\  	
+	print(\ 
 	"Hello world!\n" \
 )

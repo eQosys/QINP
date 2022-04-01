@@ -60,6 +60,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 		TokenizeIdentifier,
 		CheckCommentOrNewlineIgnore,
 		TokenizeSingleLineComment,
+		TokenizeNewlineIgnore,
 		TokenizeLiteral,
 		TokenizeSpecialKeyword,
 		TokenizeString,
@@ -209,10 +210,11 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 				token.value.push_back(c);
 				state = State::TokenizeSingleLineComment;
 				break;
+			case ' ':
+			case '\t':
 			case '\n':
-				token.type = Token::Type::Whitespace;
-				token.value = " ";
-				state = State::EndToken;
+				--index;
+				state = State::TokenizeNewlineIgnore;
 				break;
 			default:
 				THROW_TOKENIZER_ERROR(token.pos, "Expected '\\' after '\\'!");
@@ -226,6 +228,16 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			}
 			--index;
 			state = State::EndToken;
+			break;
+		case State::TokenizeNewlineIgnore:
+			if (c == '\n')
+			{
+				token.type = Token::Type::Whitespace;
+				token.value = " ";
+				state = State::EndToken;
+			}
+			else if (c != ' ' && c != '\t')
+				THROW_TOKENIZER_ERROR(token.pos, "Expected whitespace or newline after '\\'!");
 			break;
 		case State::TokenizeLiteral:
 			if (isNum(c) || '.' == c)
