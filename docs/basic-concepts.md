@@ -7,6 +7,7 @@ This page views the basic concepts of the QINP language.
  - [Comments](#comments)
  - [Indentation](#indentation)
  - [Identifiers](#identifiers)
+ - [Line breaks](#line-breaks)
 
 ---
 
@@ -49,3 +50,16 @@ Identifiers are used to name variables, functions, packs, etc.
 Valid characters are `a-z, A-Z, 0-9, _`, but the first character must be a letter or an underscore.
 
 Identifiers are case sensitive.
+
+### Line breaks
+
+Newlines and indentations are important to the compiler.
+It is possible to split a line across multiple lines by using a backslash ('\\') at the end of a line.
+
+#### Example
+
+```qinp
+std::print(\
+	"Hello, world!\n" \
+)
+```

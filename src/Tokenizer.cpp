@@ -58,7 +58,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 		BeginToken,
 		EndToken,
 		TokenizeIdentifier,
-		CheckSingleLineComment,
+		CheckCommentOrNewlineIgnore,
 		TokenizeSingleLineComment,
 		TokenizeLiteral,
 		TokenizeSpecialKeyword,
@@ -162,7 +162,7 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			{
 				token.value.push_back(c);
 				token.type = Token::Type::Comment;
-				state = State::CheckSingleLineComment;
+				state = State::CheckCommentOrNewlineIgnore;
 			}
 			else if (isSpecialKeywordBegin(std::string(1, c)))
 			{
@@ -202,11 +202,21 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			
 			state = State::EndToken;
 			break;
-		case State::CheckSingleLineComment:
-			if ('\\' != c)
+		case State::CheckCommentOrNewlineIgnore:
+			switch (c)
+			{
+			case '\\':
+				token.value.push_back(c);
+				state = State::TokenizeSingleLineComment;
+				break;
+			case '\n':
+				token.type = Token::Type::Whitespace;
+				token.value = " ";
+				state = State::EndToken;
+				break;
+			default:
 				THROW_TOKENIZER_ERROR(token.pos, "Expected '\\' after '\\'!");
-			token.value.push_back(c);
-			state = State::TokenizeSingleLineComment;
+			}
 			break;
 		case State::TokenizeSingleLineComment:
 			if (!isNewline(c))
