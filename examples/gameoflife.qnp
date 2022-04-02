@@ -56,11 +56,10 @@ void update():
 			while k < i+2:
 				i64 l = j-2
 				while ++l < j+2:
-					if (k < 0 || k >= WIDTH) || \
-						(l < 0 || l >= HEIGHT) || \
-						(k == i && l == j):
-						continue
-					count += pMain->cells[k][l]
+					if (k >= 0 && k < WIDTH) && \
+						(l >= 0 && l < HEIGHT) && \
+						(k != i || l != j):
+						count += pMain->cells[k][l]
 				++k
 			if pMain->cells[i][j]:
 				pBack->cells[i][j] = (2 <= count && count <= 3)

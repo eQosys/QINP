@@ -73,7 +73,7 @@ std::map<std::string, OptionInfo> argNames =
 };
 
 #define HELP_TEXT \
-	"Usage: qinp [options] [input files]\n" \
+	"Usage: qinp [options] [input file]\n" \
 	"Options:\n" \
 	"  -h, --help\n" \
 	"    Print this help message.\n" \
