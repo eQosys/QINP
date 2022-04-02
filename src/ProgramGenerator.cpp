@@ -2185,10 +2185,9 @@ bool parseStatementImport(ProgGenInfo& info)
 	if (!platformMatch)
 		return true;
 
-	std::string path;
-	for (auto& dir : info.importDirs)
+	auto getImportFile = [&](const std::string& dir) -> std::string
 	{
-		path = (std::filesystem::path(dir) / fileToken.value).string();
+		std::string path = (std::filesystem::path(dir) / fileToken.value).string();
 		std::string absPath;
 		try
 		{
@@ -2196,23 +2195,41 @@ bool parseStatementImport(ProgGenInfo& info)
 		}
 		catch (std::filesystem::filesystem_error&)
 		{
-			path = "";
-			continue;
+			return "<notFound>";
 		}
 
 		if (info.imports.find(absPath) != info.imports.end())
-			return true;
+			return "<alreadyImported>";
 
 		if (std::filesystem::is_regular_file(path))
 		{
 			info.imports.insert(absPath);
-			break;
+			return path;
 		}
-		path = "";
-	}
+		return "<notFound>";
+	};
 
-	if (path.empty())
-		THROW_PROG_GEN_ERROR(fileToken.pos, "Import file not found: '" + fileToken.value + "'!");
+	std::string path = "<notFound>"; // TODO: getImportFile(" DIR OF CURRENT TRANSLATION UNIT ");
+
+	if (path == "<alreadyImported>")
+		return true;
+	
+	if (path == "<notFound>")
+	{
+		for (auto& dir : info.importDirs)
+		{
+			path = getImportFile(dir);
+
+			if (path == "<alreadyImported>")
+				return true;
+
+			if (path != "<notFound>")
+				break;
+		}
+
+		if (path == "<notFound>")
+			THROW_PROG_GEN_ERROR(fileToken.pos, "Import file not found: '" + fileToken.value + "'!");
+	}
 
 	std::string code = readTextFile(path);
 
