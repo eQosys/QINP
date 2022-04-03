@@ -12,8 +12,9 @@ endif()
 
 add_executable(
     QINP
-    "src/qinp.cpp"
+    "src/QINP.cpp"
     "src/Token.cpp"
+    "src/ExecCmd.cpp"
     "src/Symbols.cpp"
     "src/Program.cpp"
     "src/Datatype.cpp"
