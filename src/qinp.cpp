@@ -13,7 +13,7 @@
 
 #include "NasmGenerators/NasmGen_Linux_x86_64.h"
 
-#if defined QINP_PLATFORM_LINUX
+#if defined QINP_PLATFORM_UNIX
 
 #include <sys/wait.h>
 
