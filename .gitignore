@@ -2,8 +2,15 @@ bin/
 .kdev4/
 .cache/
 
+.vs/*
+!.vs/launch.vs.json
+
+out/
+
 *.o
 *.out
 *.asm
 
 .vscode/settings.json
+
+CMakeSettings.json

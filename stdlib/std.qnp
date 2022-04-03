@@ -254,3 +254,4 @@ space std:
 		return dest
 
 import.linux "linux/std.qnp"
+import.windows "windows/std.qnp"

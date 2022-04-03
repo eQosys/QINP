@@ -123,7 +123,13 @@ int main(int argc, char** argv, char** _env)
 
 		verbose = args.hasOption("verbose");
 
-		auto inFilename = args.values[0];
+		if (args.values.empty())
+		{
+			std::cout << "Missing input files!\n";
+			return -1;
+		}
+
+		const auto& inFilename = args.values[0];
 
 		std::set<std::string> importDirs;
 		if (args.hasOption("import"))
