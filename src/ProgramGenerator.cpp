@@ -339,7 +339,7 @@ SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 
 #define ERR_ENUM_NAME_NOT_FOUND -1
 #define ERR_ENUM_VALUE_NOT_FOUND -2
-uint getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
+unsigned int getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
 {
 	auto enumSymbol = getEnum(info, enumName);
 	if (!enumSymbol)
@@ -841,7 +841,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	if (!isIdentifier(memberToken))
 		THROW_PROG_GEN_ERROR(memberToken.pos, "Expected enum member identifier!");
 
-	uint value = getEnumValue(info, enumToken.value, memberToken.value);
+	unsigned int value = getEnumValue(info, enumToken.value, memberToken.value);
 
 	if (value == ERR_ENUM_NAME_NOT_FOUND)
 		THROW_PROG_GEN_ERROR(enumToken.pos, "Enum '" + enumToken.value + "' not found!");
@@ -2195,7 +2195,7 @@ bool parseStatementImport(ProgGenInfo& info)
 		std::string absPath;
 		try
 		{
-			absPath = std::filesystem::canonical(path);
+			absPath = std::filesystem::canonical(path).string();
 		}
 		catch (std::filesystem::filesystem_error&)
 		{

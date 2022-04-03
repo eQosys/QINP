@@ -38,7 +38,7 @@ if [ "${CONFIG}" = "" ]; then
     echo "Running CMake without a build type..."
     cmake ../.. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 else
-    echo "Running CMake with build type '${CONFIG}'"
+    echo "Running CMake with build type '${CONFIG}'..."
     cmake ../.. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=${CONFIG}
 fi
 

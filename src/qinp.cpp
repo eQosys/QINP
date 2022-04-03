@@ -4,7 +4,6 @@
 #include <vector>
 #include <filesystem>
 #include <fstream>
-#include <sys/wait.h>
 
 #include "Errors/QinpError.h"
 #include "Tokenizer.h"
@@ -13,6 +12,10 @@
 #include "PlatformName.h"
 
 #include "NasmGenerators/NasmGen_Linux_x86_64.h"
+
+#if defined QINP_PLATFORM_LINUX
+
+#include <sys/wait.h>
 
 int execCmd(const std::string& command)
 {
@@ -36,6 +39,29 @@ int execCmd(const std::string& command)
 	else
 		return -1;
 }
+
+#elif defined QINP_PLATFORM_WINDOWS
+
+#include <windows.h>
+
+int execCmd(const std::string& command)
+{
+	STARTUPINFO si;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&pi, sizeof(pi));
+
+	BOOL b = CreateProcessA("C:\\Windows\\System32\\cmd.exe", (LPSTR)command.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
+	WaitForSingleObject(pi.hProcess, INFINITE);
+
+	DWORD dwExitCode = 0;
+	GetExitCodeProcess(pi.hProcess, &dwExitCode);
+
+	return dwExitCode;
+}
+
+#endif
 
 void writeTextFileOverwrite(const std::string& filename, const std::string& text)
 {
@@ -117,14 +143,14 @@ private:
 	bool m_printOnDestruction;
 };
 
-int main(int argc, char** argv, char** environ)
+int main(int argc, char** argv, char** _env)
 {
 	bool verbose = true;
 	int runRet = 0;
 	try
 	{
 		auto args = parseArgs(getArgs(argc, argv), argNames);
-		auto env = getEnv(environ);
+		auto env = getEnv(_env);
 
 		if (args.hasOption("help"))
 		{
@@ -136,7 +162,9 @@ int main(int argc, char** argv, char** environ)
 		if (args.hasOption("platform"))
 			platform = args.getOption("platform").front();
 
-		if (platform != "linux")
+		if (platform != "linux" &&
+			platform != "windows"
+			)
 		{
 			std::cout << "Platform not supported!\n";
 			return -1;

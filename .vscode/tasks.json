@@ -3,17 +3,26 @@
     "tasks": [
         {
             "label": "build",
-            "command": "./build.sh",
+            "group": "build",
             "type": "shell",
-            "args": [ "Debug" ],
-            "problemMatcher": [
-                "$tsc"
-            ],
+
             "presentation": {
                 "reveal": "always",
                 "clear": true,
             },
-            "group": "build"
+
+            "options": {
+                "cwd": "${workspaceFolder}",
+            },
+            
+            "args": [ "Debug" ],
+
+            "linux": {
+                "command": "./build.sh",
+            },
+            "windows": {
+                "command": "${cwd}\\build.bat",
+            }
         }
     ]
 }

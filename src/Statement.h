@@ -12,7 +12,7 @@ typedef std::shared_ptr<Function> FunctionRef;
 struct Symbol;
 typedef std::shared_ptr<Symbol> SymbolRef;
 
-typedef std::shared_ptr<class Statement> StatementRef;
+typedef std::shared_ptr<struct Statement> StatementRef;
 struct Body
 {
 	std::vector<StatementRef> statements;
