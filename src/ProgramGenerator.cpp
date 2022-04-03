@@ -27,6 +27,7 @@ struct ProgGenInfo
 	TokenListRef tokens;
 	ProgramRef program;
 	std::set<std::string> importDirs;
+	std::string progPath;
 	int currToken = 0;
 	struct Indent
 	{
@@ -53,6 +54,7 @@ struct ProgGenInfoBackup
 	TokenListRef tokens;
 	int currToken;
 	ProgGenInfo::Indent indent;
+	std::string progPath;
 };
 
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
@@ -61,6 +63,7 @@ ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
 	backup.tokens = info.tokens;
 	backup.currToken = info.currToken;
 	backup.indent = info.indent;
+	backup.progPath = info.progPath;
 	return backup;
 }
 
@@ -69,6 +72,7 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 	info.tokens = backup.tokens;
 	info.currToken = backup.currToken;
 	info.indent = backup.indent;
+	info.progPath = backup.progPath;
 }
 
 SymbolRef currSym(const ProgGenInfo& info)
@@ -2209,7 +2213,7 @@ bool parseStatementImport(ProgGenInfo& info)
 		return "<notFound>";
 	};
 
-	std::string path = "<notFound>"; // TODO: getImportFile(" DIR OF CURRENT TRANSLATION UNIT ");
+	std::string path = getImportFile(std::filesystem::path(info.progPath).parent_path().string());
 
 	if (path == "<alreadyImported>")
 		return true;
@@ -2237,6 +2241,7 @@ bool parseStatementImport(ProgGenInfo& info)
 
 	info.tokens = tokenize(code, path);
 	info.currToken = 0;
+	info.progPath = path;
 	parseGlobalCode(info);
 
 	loadProgGenInfoBackup(info, backup);
@@ -2286,9 +2291,9 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 	}
 }
 
-ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform)
+ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform, const std::string& progPath)
 {
-	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs };
+	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs, progPath };
 	info.program->platform = platform;
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();

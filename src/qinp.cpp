@@ -157,7 +157,7 @@ int main(int argc, char** argv, char** environ)
 			Timer timer(verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, inFilename);
-			program = generateProgram(tokens, importDirs, platform);
+			program = generateProgram(tokens, importDirs, platform, inFilename);
 		}
 
 		if (verbose)

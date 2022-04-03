@@ -1,7 +1,7 @@
 \\ QINP Standard Library
 \\ Linux Specific
 
-import "linux/syscall.qnp"
+import "syscall.qnp"
 
 space std:
 	void exit(i32 status):
