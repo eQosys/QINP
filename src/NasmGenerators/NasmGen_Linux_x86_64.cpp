@@ -3,6 +3,7 @@
 #include <stack>
 #include <sstream>
 #include <cassert>
+#include <algorithm>
 
 #include "Errors/NasmGenError.h"
 
@@ -107,7 +108,7 @@ CellInfo::State getRValueIfArray(const Datatype& datatype)
 	return isArray(datatype) ? CellState::rValue : CellState::lValue;
 }
 
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr);
+void genExpr(NasmGenInfo& ngi, const Expression* expr);
 
 std::string basePtrOffset(int offset)
 {
@@ -323,9 +324,9 @@ bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 
 void generateBinaryEvaluation(NasmGenInfo& ngi, const Expression* expr)
 {
-	generateNasm_Linux_x86_64(ngi, expr->left.get());
+	genExpr(ngi, expr->left.get());
 	pushPrimReg(ngi);
-	generateNasm_Linux_x86_64(ngi, expr->right.get());
+	genExpr(ngi, expr->right.get());
 	movePrimToSec(ngi);
 	popPrimReg(ngi);
 }
@@ -352,7 +353,7 @@ void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& 
 #define DISABLE_EXPR_FOR_PACKS(ngi, expr) \
 	assert(!isPackType(ngi.program, expr->datatype) && "Invalid expression for pack type!")
 
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
+void genExpr(NasmGenInfo& ngi, const Expression* expr)
 {
 	auto& ss = ngi.ss;
 
@@ -361,7 +362,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Conversion:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 
 		auto& oldType = expr->left->datatype;
 		auto& newType = expr->datatype;
@@ -419,10 +420,10 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Assign:
 	{
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		bool isPack = isPackType(ngi.program, expr->left->datatype);
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(ngi.primReg.datatype == expr->right->datatype && "Assign: datatype mismatch!");
 		assert(isLValue(ngi.primReg) && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
@@ -445,9 +446,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Sum:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -461,9 +462,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Difference:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -477,9 +478,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Product:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
 
@@ -494,9 +495,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Quotient:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
 
@@ -514,9 +515,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Remainder:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 		secRegLToRVal(ngi);
 
@@ -536,9 +537,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Bw_LeftShift:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -552,9 +553,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Bw_RightShift:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -568,9 +569,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Bw_AND:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -584,9 +585,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Bw_XOR:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -600,9 +601,9 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Assign_Bw_OR:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
@@ -615,12 +616,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 	case Expression::ExprType::Logical_OR:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		pushLabel(ngi, "LOGICAL_OR_SKIP");
 		ss << "  cmp " << primRegUsage(ngi) << ", 1\n";
 		ss << "  je " << getLabel(ngi, 0) << "\n";
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		placeLabel(ngi, 0);
 		popLabel(ngi);
 		ngi.primReg.datatype = { "bool" };
@@ -628,12 +629,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Logical_AND:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		pushLabel(ngi, "LOGICAL_AND_SKIP");
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  je " << getLabel(ngi, 0) << "\n";
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		placeLabel(ngi, 0);
 		popLabel(ngi);
 		ngi.primReg.datatype = { "bool" };
@@ -780,7 +781,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::MemberAccess:
 	{
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Left operand of member access must be lValue");
 		ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << "\n";
 		
@@ -792,13 +793,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		assert("Member access dereference should be converted to member access by the program generator" && false);
 		break;
 	case Expression::ExprType::AddressOf:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Cannot take address of non-lvalue!");
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::rValue;
 		break;
 	case Expression::ExprType::Dereference:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot dereference non-pointer!");
 		ngi.primReg.datatype = expr->datatype;
 		
@@ -817,7 +818,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Logical_NOT:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());\
+		genExpr(ngi, expr->left.get());\
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  sete al\n";
@@ -827,7 +828,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Bitwise_NOT:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		ss << "  not " << primRegUsage(ngi) << "\n";
 		// Datatype doesn't change
@@ -836,13 +837,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Prefix_Plus:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		// Nothing else to do
 		break;
 	case Expression::ExprType::Prefix_Minus:
 	{
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		primRegLToRVal(ngi);
 		ss << "  neg " << primRegUsage(ngi) << "\n";
 		if (isUnsignedInt(ngi.primReg.datatype))
@@ -853,7 +854,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Prefix_Increment:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(isLValue(ngi.primReg) && "Cannot increment non-lvalue!");
 		primRegLToRVal(ngi, true);
 		if (isPointer(ngi.primReg.datatype))
@@ -865,7 +866,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Prefix_Decrement:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(isLValue(ngi.primReg) && "Cannot decrement non-lvalue!");
 		primRegLToRVal(ngi, true);
 		if (isPointer(ngi.primReg.datatype))
@@ -876,11 +877,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Subscript:
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot subscript non-pointer!");
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
-		generateNasm_Linux_x86_64(ngi, expr->right.get());
+		genExpr(ngi, expr->right.get());
 		primRegLToRVal(ngi);
 		ss << "  mov " << secRegName(8) << ", " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
 		ss << "  mul " << secRegName(8) << "\n";
@@ -902,7 +903,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 
 		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
 		{
-			generateNasm_Linux_x86_64(ngi, expr->paramExpr[i].get());
+			genExpr(ngi, expr->paramExpr[i].get());
 			if (isPackType(ngi.program, ngi.primReg.datatype))
 			{
 				if (isXValue(ngi.primReg)) // xvalues are already on the stack
@@ -918,7 +919,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ss << "  push " << primRegName(8) << "\n";
 		}
 
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
 		assert(typesMatch && "Cannot call non-function!");
 		ss << "  call " << primRegUsage(ngi) << "\n";
@@ -943,7 +944,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Suffix_Increment:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(isLValue(ngi.primReg) && "Cannot increment non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
@@ -964,7 +965,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Suffix_Decrement:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
-		generateNasm_Linux_x86_64(ngi, expr->left.get());
+		genExpr(ngi, expr->left.get());
 		assert(isLValue(ngi.primReg) && "Cannot decrement non-lvalue!");
 		movePrimToSec(ngi, false);
 		primRegLToRVal(ngi);
@@ -1026,18 +1027,18 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 	}
 }
 
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement);
+void genStatementAsm(NasmGenInfo& ngi, StatementRef statement);
 
 // Generates Nasm code for any code 'body'
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, BodyRef body)
+void genBodyAsm(NasmGenInfo& ngi, BodyRef body)
 {
 	auto& ss = ngi.ss;
 
 	for (auto& statement : body->statements)
-		generateNasm_Linux_x86_64(ngi, statement);
+		genStatementAsm(ngi, statement);
 }
 
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
+void genStatementAsm(NasmGenInfo& ngi, StatementRef statement)
 {
 	auto& ss = ngi.ss;
 
@@ -1052,7 +1053,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 	case Statement::Type::Return:
 		if (statement->subExpr)
 		{
-			generateNasm_Linux_x86_64(ngi, statement->subExpr.get());
+			genExpr(ngi, statement->subExpr.get());
 			if (isPackType(ngi.program, ngi.primReg.datatype))
 			{
 				ss << "  mov rcx, rbp\n";
@@ -1090,13 +1091,13 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 				replaceLabel(ngi, "IF_NEXT", LABEL_ID_IF_NEXT);
 			}
 
-			generateNasm_Linux_x86_64(ngi, condBody.condition.get());
+			genExpr(ngi, condBody.condition.get());
 
 			primRegLToRVal(ngi);
 			ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 			ss << "  je " << getLabel(ngi, LABEL_ID_IF_NEXT) << "\n";
 
-			generateNasm_Linux_x86_64(ngi, condBody.body);
+			genBodyAsm(ngi, condBody.body);
 		}
 
 		if (statement->elseBody)
@@ -1105,7 +1106,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 			placeLabel(ngi, LABEL_ID_IF_NEXT);
 			replaceLabel(ngi, "IF_NEXT", LABEL_ID_IF_NEXT);
 
-			generateNasm_Linux_x86_64(ngi, statement->elseBody);
+			genBodyAsm(ngi, statement->elseBody);
 		}
 
 		placeLabel(ngi, LABEL_ID_IF_NEXT);
@@ -1123,12 +1124,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		placeLabel(ngi, LABEL_ID_WHILE_BEGIN);
 		placeLabel(ngi, LABEL_ID_CONTINUE);
 
-		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.condition.get());
+		genExpr(ngi, statement->whileConditionalBody.condition.get());
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  je " << getLabel(ngi, LABEL_ID_WHILE_END) << "\n";
 
-		generateNasm_Linux_x86_64(ngi, statement->whileConditionalBody.body);
+		genBodyAsm(ngi, statement->whileConditionalBody.body);
 
 		ss << "  jmp " << getLabel(ngi, LABEL_ID_WHILE_BEGIN) << "\n";
 
@@ -1145,11 +1146,11 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		pushLoopLabels(ngi);
 		placeLabel(ngi, LABEL_ID_DO_WHILE_BEGIN);
 
-		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.body);
+		genBodyAsm(ngi, statement->doWhileConditionalBody.body);
 
 		placeLabel(ngi, LABEL_ID_CONTINUE);
 		
-		generateNasm_Linux_x86_64(ngi, statement->doWhileConditionalBody.condition.get());
+		genExpr(ngi, statement->doWhileConditionalBody.condition.get());
 
 		primRegLToRVal(ngi);
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
@@ -1167,7 +1168,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 		ss << "  jmp " << getLoopLabel(ngi, LABEL_ID_BREAK) << "\n";
 		break;
 	case Statement::Type::Expression:
-		generateNasm_Linux_x86_64(ngi, (Expression*)statement.get());
+		genExpr(ngi, (Expression*)statement.get());
 		autoPopXValues(ngi);
 		break;
 	default:
@@ -1176,7 +1177,7 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, StatementRef statement)
 }
 
 // Generates Nasm code for a function
-void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, SymbolRef func)
+void genFuncAsm(NasmGenInfo& ngi, const std::string& name, SymbolRef func)
 {
 	assert(func->func.body->statements.back()->type == Statement::Type::Return && "Function must end with return statement!");
 
@@ -1188,100 +1189,121 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const std::string& name, Symbol
 	if (func->frame.size > 0)
 		ngi.ss << "  sub rsp, " << std::to_string(func->frame.size) << "\n";
 
-	generateNasm_Linux_x86_64(ngi, func->func.body);
+	genBodyAsm(ngi, func->func.body);
 }
 
-// Generates Nasm code for the entire program
-std::string generateNasm_Linux_x86_64(ProgramRef program)
+void genPrologue(NasmGenInfo& ngi)
 {
-	NasmGenInfo ngi;
-	ngi.program = program;
-	auto& ss = ngi.ss;
-
-	std::vector<std::pair<std::string, SymbolRef>> funcs;
-	std::vector<SymbolRef> globals;
-	std::vector<SymbolRef> extFuncs;
-	SymbolIterator it = program->symbols->begin();
-	while (it != program->symbols->end())
-	{
-		if (isFuncSpec(*it) && isDefined(*it))
-		{
-			if ((*it)->func.isReachable)
-				funcs.push_back({ getParent(*it)->name, *it });
-			else
-				for (int strID : getParent(*it, Symbol::Type::FunctionSpec)->func.instantiatedStrings)
-					--program->strings.find(strID)->second.first;
-		}
-		else if (isVarLabeled(*it))
-			globals.push_back(*it);
-		else if (isExtFunc(*it) && isReachable(*it))
-			extFuncs.push_back(*it);
-		++it;
-	}
-
 	// Prologue
-	ss << "  global _start\n";
+	ngi.ss << "  global _start\n";
 
-	if (program->platform == "windows")
-		ss << "default rel\n";
+	if (ngi.program->platform == "windows")
+		ngi.ss << "default rel\n";
 
-	// Extern functions
-	for (auto& func : extFuncs)
-		ss << "  extern " << func->func.asmName << "\n";
+	std::for_each(
+		ngi.program->symbols->begin(),
+		ngi.program->symbols->end(),
+		[&](SymbolRef sym) {
+			if (isExtFunc(sym) && isReachable(sym))
+				ngi.ss << "  extern " << sym->func.asmName << "\n";
+		}
+	);
 
 	// Initialization
-	ss << "section .text\n";
-	ss << "_start:\n";
-	ss << "  pop rax\n";
-	ss << "  mov [__##__argc], rax\n";
-	ss << "  mov [__##__argv], rsp\n";
-	ss << "  inc rax\n";
-	ss << "  mov rcx, 8\n";
-	ss << "  mul rcx\n";
-	ss << "  mov rcx, rsp\n";
-	ss << "  add rcx, rax\n";
-	ss << "  mov [__##__envp], rcx\n";
+	ngi.ss << "section .text\n";
+	ngi.ss << "_start:\n";
+	ngi.ss << "  pop rax\n";
+	ngi.ss << "  mov [__##__argc], rax\n";
+	ngi.ss << "  mov [__##__argv], rsp\n";
+	ngi.ss << "  inc rax\n";
+	ngi.ss << "  mov rcx, 8\n";
+	ngi.ss << "  mul rcx\n";
+	ngi.ss << "  mov rcx, rsp\n";
+	ngi.ss << "  add rcx, rax\n";
+	ngi.ss << "  mov [__##__envp], rcx\n";
 
 	// Static local initializer test values
-	for (int i = 0; i < program->staticLocalInitCount; ++i)
-		ss << "  mov BYTE [" << getMangledName(getStaticLocalInitName(i), { "bool" }) << "], 1\n";
-	
-	// Global code
-	generateNasm_Linux_x86_64(ngi, program->body);
+	for (int i = 0; i < ngi.program->staticLocalInitCount; ++i)
+		ngi.ss << "  mov BYTE [" << getMangledName(getStaticLocalInitName(i), { "bool" }) << "], 1\n";
+}
 
+void genEpilogue(NasmGenInfo& ngi)
+{
 	// Global code epilogue
-	ss << "  mov rdi, 0\n";
-	ss << "  mov rax, 60\n";
-	ss << "  syscall\n";
+	ngi.ss << "  mov rdi, 0\n";
+	ngi.ss << "  mov rax, 60\n";
+	ngi.ss << "  syscall\n";
+	ngi.ss << "  hlt\n";
+}
 
-	// Functions
-	for (auto& func : funcs)
-		generateNasm_Linux_x86_64(ngi, func.first, func.second);
-	
+void genFunctions(NasmGenInfo& ngi)
+{
+	std::for_each(
+		ngi.program->symbols->begin(),
+		ngi.program->symbols->end(),
+		[&](SymbolRef sym) {
+			if (!isFuncSpec(sym) || !isDefined(sym))
+				return;
+			if (isReachable(sym))
+				genFuncAsm(ngi, getParent(sym)->name, sym);
+			else
+				for (int strID : sym->func.instantiatedStrings)
+					--ngi.program->strings.find(strID)->second.first;
+		}
+	);
+}
+
+void genGlobals(NasmGenInfo& ngi)
+{
 	// Global variables
-	ss << "section .bss\n";
-	ss << "  __##__argc: resq 1\n";
-	ss << "  __##__argv: resq 1\n";
-	ss << "  __##__envp: resq 1\n";
+	ngi.ss << "section .bss\n";
+	ngi.ss << "  __##__argc: resq 1\n";
+	ngi.ss << "  __##__argv: resq 1\n";
+	ngi.ss << "  __##__envp: resq 1\n";
 
-	for (auto& global : globals)
-		ss << "  " << getMangledName(global) << ": resb " << getDatatypeSize(program, global->var.datatype) << "\t\t; " << getPosStr(global->pos) << "\n";
+	std::for_each(
+		ngi.program->symbols->begin(),
+		ngi.program->symbols->end(),
+		[&](SymbolRef sym) {
+			if (!isVarLabeled(sym))
+				return;
 
+			ngi.ss << "  " << getMangledName(sym) << ": resb " << getDatatypeSize(ngi.program, sym->var.datatype) << "\t\t; " << getPosStr(sym->pos) << "\n";
+		}
+	);
+}
+
+void genStrings(NasmGenInfo& ngi)
+{
 	// C-Strings
-	ss << "section .data\n";
-	for (auto& str : program->strings)
+	ngi.ss << "section .data\n";
+	for (auto& str : ngi.program->strings)
 	{
 		if (str.second.first <= 0)
 			continue;
 
-		ss << "  " << getLiteralStringName(str.first) << ": db ";
+		ngi.ss << "  " << getLiteralStringName(str.first) << ": db ";
 		for (char c : str.second.second)
-			ss << (int)c << ",";
-		ss << "0\n";
+			ngi.ss << (int)c << ",";
+		ngi.ss << "0\n";
 	}
+}
+
+// Generates Nasm code for the entire program
+std::string genAsm(ProgramRef program)
+{
+	NasmGenInfo ngi;
+	ngi.program = program;
+
+	genPrologue(ngi);
+	genBodyAsm(ngi, program->body);
+	genEpilogue(ngi);
+	genFunctions(ngi);
+	genGlobals(ngi);
+	genStrings(ngi);
 
 	if (!ngi.labelStack.empty())
 		THROW_NASM_GEN_ERROR(Token::Position(), "Unused label(s)!");
 	
-	return ss.str();
+	return ngi.ss.str();
 }

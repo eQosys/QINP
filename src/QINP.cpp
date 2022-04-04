@@ -150,7 +150,7 @@ int main(int argc, char** argv, char** _env)
 				if (isFuncSpec(sym) && !isDefined(sym))
 					std::cout << "WARN: Undefined function '" << getMangledName(sym) << "' declared at " << getPosStr(sym->pos) << "!" << std::endl;
 
-		std::string output = generateNasm_Linux_x86_64(program);
+		std::string output = genAsm(program);
 	
 		std::string asmFilename = std::filesystem::path(inFilename).replace_extension(".asm").string();
 		writeTextFileOverwrite(asmFilename, output);
