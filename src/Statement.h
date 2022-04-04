@@ -147,6 +147,7 @@ struct Expression : public Statement
 	std::string valStr; // Literal
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
+	bool isExtCall = false;
 
 	SymbolRef symbol;
 };

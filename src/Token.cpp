@@ -116,6 +116,7 @@ bool isKeyword(const std::string& name)
 		"elif",
 		"else",
 		"enum",
+		"extern",
 		"if",
 		"import",
 		"pack",

@@ -10,6 +10,7 @@ out/
 *.o
 *.out
 *.asm
+*.exe
 
 .vscode/settings.json
 

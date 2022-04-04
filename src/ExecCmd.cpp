@@ -41,13 +41,19 @@ int execCmd(const std::string& command)
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
 
-	BOOL b = CreateProcessA("C:\\Windows\\System32\\cmd.exe", (LPSTR)command.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
-	WaitForSingleObject(pi.hProcess, INFINITE);
+	if (CreateProcessA(NULL, (LPSTR)command.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+	{
+		WaitForSingleObject(pi.hProcess, INFINITE);
 
-	DWORD dwExitCode = 0;
-	GetExitCodeProcess(pi.hProcess, &dwExitCode);
+		DWORD dwExitCode = 0;
+		GetExitCodeProcess(pi.hProcess, &dwExitCode);
 
-	return dwExitCode;
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+
+		return dwExitCode;
+	}
+	THROW_QINP_ERROR("CreateProcess failed!");
 }
 
 #endif

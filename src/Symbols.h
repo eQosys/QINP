@@ -31,6 +31,7 @@ struct Symbol
 		Variable,
 		FunctionName, // The general function name
 		FunctionSpec, // Any specialization of the function (overloads)
+		ExtFunc,
 		Pack,
 		Enum,
 		EnumMember,
@@ -68,6 +69,7 @@ struct Symbol
 		BodyRef body;
 		bool isReachable = false;
 		std::set<int> instantiatedStrings;
+		std::string asmName;
 	} func;
 
 	struct Frame
@@ -106,6 +108,7 @@ bool isSymType(SymType type, const SymbolRef symbol);
 bool isVariable(const SymbolRef symbol);
 bool isFuncName(const SymbolRef symbol);
 bool isFuncSpec(const SymbolRef symbol);
+bool isExtFunc(const SymbolRef symbol);
 bool isFunction(const SymbolRef symbol);
 bool isPack(const SymbolRef symbol);
 bool isEnum(const SymbolRef symbol);

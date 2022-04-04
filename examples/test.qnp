@@ -1,9 +1,3 @@
 import "std.qnp"
 
-u8** argv
-u64 argc = std::getargs(&argv)
-
-u64 i = 0
-while i < argc:
-	std::print(argv[i++])
-	std::print("\n")
+std::exit(10)

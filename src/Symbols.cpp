@@ -73,6 +73,11 @@ bool isFuncSpec(const SymbolRef symbol)
 	return isSymType(SymType::FunctionSpec, symbol);
 }
 
+bool isExtFunc(const SymbolRef symbol)
+{
+	return isSymType(SymType::ExtFunc, symbol);
+}
+
 bool isFunction(const SymbolRef symbol)
 {
 	return isFuncName(symbol) || isFuncSpec(symbol);
@@ -149,7 +154,7 @@ bool isVarOffset(const SymbolRef symbol)
 
 bool isReachable(const SymbolRef symbol)
 {
-	assert(isFuncSpec(symbol));
+	assert(isFuncSpec(symbol) || isExtFunc(symbol));
 	return symbol->func.isReachable;
 }
 

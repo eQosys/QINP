@@ -148,7 +148,7 @@ int main(int argc, char** argv, char** _env)
 		if (verbose)
 			for (auto sym : *program->symbols)
 				if (isFuncSpec(sym) && !isDefined(sym))
-					std::cout << "WARN: Missing definition for function '" << getMangledName(sym) << "' declared at " << getPosStr(sym->pos) << "!" << std::endl;
+					std::cout << "WARN: Undefined function '" << getMangledName(sym) << "' declared at " << getPosStr(sym->pos) << "!" << std::endl;
 
 		std::string output = generateNasm_Linux_x86_64(program);
 	
@@ -156,9 +156,28 @@ int main(int argc, char** argv, char** _env)
 		writeTextFileOverwrite(asmFilename, output);
 
 		auto objFilename = std::filesystem::path(inFilename).replace_extension(".o").string();
-		auto outFilename = args.hasOption("output") ? args.getOption("output").front() : std::filesystem::path(inFilename).replace_extension(".out").string();
-		auto nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
-		auto ldCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
+
+		std::string outExt;
+		if (platform == "linux")
+			outExt = ".out";
+		else if (platform == "windows")
+			outExt = ".exe";
+
+		auto outFilename = args.hasOption("output") ? args.getOption("output").front() : std::filesystem::path(inFilename).replace_extension(outExt).string();
+
+		std::string nasmCmd;
+		std::string linkCmd;
+
+		if (platform == "linux")
+		{
+			nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
+			linkCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
+		}
+		else if (platform == "windows")
+		{
+			nasmCmd = "nasm -f win64 -o \"" + objFilename + "\" \"" + asmFilename + "\"";
+			linkCmd = "vcvarsall.bat x86_amd64 && link /subsystem:console /nodefaultlib /entry:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
+		}
 
 		{
 			if (verbose) std::cout << "Nasm: ";
@@ -169,7 +188,7 @@ int main(int argc, char** argv, char** _env)
 		{
 			if (verbose) std::cout << "Linker: ";
 			Timer timer(verbose);
-			if (execCmd(ldCmd))
+			if (execCmd(linkCmd))
 				THROW_QINP_ERROR("Linker Error!");
 		}
 

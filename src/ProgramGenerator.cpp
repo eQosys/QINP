@@ -936,6 +936,7 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 	case SymType::FunctionName:
 	case SymType::Global:
 	case SymType::Namespace:
+	case SymType::ExtFunc:
 	case SymType::Pack:
 		exp->isObject = false;
 		break;
@@ -1176,7 +1177,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::FunctionCall:
 		{
-			if (exp->left->eType != Expression::ExprType::Symbol || !isFuncName(exp->left->symbol))
+			exp->isExtCall = isExtFunc(exp->left->symbol);
+
+			if (exp->left->eType != Expression::ExprType::Symbol || (!isFuncName(exp->left->symbol) && !exp->isExtCall))
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot call non-function!");
 			exp->isLValue = false;
 
@@ -1188,7 +1191,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			}
 			parseExpected(info, Token::Type::Separator, ")");
 
-			auto func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
+			SymbolRef func = exp->left->symbol;
+			if (!exp->isExtCall)
+				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
 			if (!func)
 				THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
 
@@ -1202,7 +1207,6 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->paramSizeSum = 0;
 			for (auto& param : exp->paramExpr)
 				exp->paramSizeSum += getDatatypePushSize(info.program, param->datatype);
-
 		}
 			break;
 		case Expression::ExprType::Suffix_Increment:
@@ -1643,9 +1647,6 @@ bool parseDeclDef(ProgGenInfo& info)
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 
-	if (getDatatypeSize(info.program, datatype) < 0)
-		THROW_PROG_GEN_ERROR(typeToken.pos, "Unknown datatype!");
-
 	if (isSeparator(peekToken(info), "("))
 	{
 		if (!isInGlobal(currSym(info)))
@@ -1656,6 +1657,79 @@ bool parseDeclDef(ProgGenInfo& info)
 	{
 		parseExpectedDeclDefVariable(info, datatype, isStatic, nameToken.value);
 	}
+
+	return true;
+}
+
+bool parseDeclExtFunc(ProgGenInfo& info)
+{
+	auto& extToken = peekToken(info);
+
+	if (!isKeyword(extToken, "extern"))
+		return false;
+	nextToken(info);
+
+	auto funcSym = std::make_shared<Symbol>();
+
+	funcSym->pos = extToken.pos;
+	funcSym->type = SymType::ExtFunc;
+
+	auto& typeToken = peekToken(info);
+	funcSym->func.retType = getParseDatatype(info);
+
+	if (!funcSym->func.retType)
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
+
+	auto& nameToken = nextToken(info);
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+	funcSym->name = nameToken.value;
+
+	parseExpected(info, Token::Type::Separator, "(");
+
+	while (!isSeparator(peekToken(info), ")"))
+	{
+		SymbolRef paramSym = std::make_shared<Symbol>();
+		paramSym->type = SymType::Variable;
+		paramSym->pos = peekToken(info).pos;
+		paramSym->parent = funcSym;
+		auto& param = paramSym->var;
+		param.context = SymVarContext::Parameter;
+
+		param.datatype = getParseDatatype(info);
+		if (!param.datatype)
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
+
+		param.offset = funcSym->func.retOffset;
+		funcSym->func.retOffset += getDatatypePushSize(info.program, param.datatype);
+
+		if (!isIdentifier(peekToken(info)))
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
+
+		param.modName = nextToken(info).value;
+		paramSym->name = param.modName;
+
+		funcSym->func.params.push_back(paramSym);
+
+		if (isSeparator(peekToken(info), ")"))
+			continue;
+
+		parseExpected(info, Token::Type::Separator, ",");
+	}
+
+	parseExpected(info, Token::Type::Separator, ")");
+
+	parseExpected(info, Token::Type::Operator, "=");
+
+	auto& asmNameTok = nextToken(info);
+
+	if (!isString(asmNameTok))
+		THROW_PROG_GEN_ERROR(asmNameTok.pos, "Expected assembly name!");
+	funcSym->func.asmName = asmNameTok.value;
+
+	parseExpectedNewline(info);
+
+	addSymbol(currSym(info), funcSym);
 
 	return true;
 }
@@ -2262,6 +2336,7 @@ bool parseSingleGlobalCode(ProgGenInfo& info)
 	if (parsePackUnion(info)) return true;
 	if (parseEnum(info)) return true;
 	if (parseDeclDef(info)) return true;
+	if (parseDeclExtFunc(info)) return true;
 	if (parseSinglelineAssembly(info)) return true;
 	if (parseMultilineAssembly(info)) return true;
 	if (parseExpression(info)) return true;
@@ -2278,7 +2353,8 @@ void markReachableFunctions(ProgGenInfo& info, BodyRef body)
 			continue;
 
 		func->func.isReachable = true;
-		markReachableFunctions(info, func->func.body);
+		if (!isExtFunc(func))
+			markReachableFunctions(info, func->func.body);
 	}
 }
 

@@ -2,4 +2,7 @@
 \\ Windows Specific
 
 space std:
-	pass
+	extern void __ExitProcess(i32 status) = "ExitProcess"
+
+	void exit(i32 status):
+		__ExitProcess(status)

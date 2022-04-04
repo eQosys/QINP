@@ -808,7 +808,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 			ss << "  mov " << primRegName(8) << ", " << primRegUsage(ngi) << "\n";
 			break;
 		case CellState::rValue:
-			//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 			ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 			break;
 		default:
@@ -888,7 +887,6 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = expr->datatype;
-		//ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
 	case Expression::ExprType::FunctionCall:
@@ -1008,6 +1006,12 @@ void generateNasm_Linux_x86_64(NasmGenInfo& ngi, const Expression* expr)
 		else if (isFuncSpec(expr->symbol))
 		{
 			ss << "  mov " << primRegName(8) << ", " << SymPathToString(getSymbolPath(nullptr, expr->symbol)) << "\n";
+			ngi.primReg.datatype = expr->datatype;
+			ngi.primReg.state = CellState::rValue;
+		}
+		else if (isExtFunc(expr->symbol))
+		{
+			ss << "  mov " << primRegName(8) << ", " << expr->symbol->func.asmName << "\n";
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = CellState::rValue;
 		}
@@ -1194,9 +1198,39 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ngi.program = program;
 	auto& ss = ngi.ss;
 
+	std::vector<std::pair<std::string, SymbolRef>> funcs;
+	std::vector<SymbolRef> globals;
+	std::vector<SymbolRef> extFuncs;
+	SymbolIterator it = program->symbols->begin();
+	while (it != program->symbols->end())
+	{
+		if (isFuncSpec(*it) && isDefined(*it))
+		{
+			if ((*it)->func.isReachable)
+				funcs.push_back({ getParent(*it)->name, *it });
+			else
+				for (int strID : getParent(*it, Symbol::Type::FunctionSpec)->func.instantiatedStrings)
+					--program->strings.find(strID)->second.first;
+		}
+		else if (isVarLabeled(*it))
+			globals.push_back(*it);
+		else if (isExtFunc(*it) && isReachable(*it))
+			extFuncs.push_back(*it);
+		++it;
+	}
+
 	// Prologue
-	ss << "SECTION .text\n";
 	ss << "  global _start\n";
+
+	if (program->platform == "windows")
+		ss << "default rel\n";
+
+	// Extern functions
+	for (auto& func : extFuncs)
+		ss << "  extern " << func->func.asmName << "\n";
+
+	// Initialization
+	ss << "section .text\n";
 	ss << "_start:\n";
 	ss << "  pop rax\n";
 	ss << "  mov [__##__argc], rax\n";
@@ -1220,32 +1254,12 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 	ss << "  mov rax, 60\n";
 	ss << "  syscall\n";
 
-	std::vector<std::pair<std::string, SymbolRef>> funcs;
-	std::vector<SymbolRef> globals;
-	SymbolIterator it = program->symbols->begin();
-	while (it != program->symbols->end())
-	{
-		if (isFuncSpec(*it) && isDefined(*it))
-		{
-			if ((*it)->func.isReachable)
-				funcs.push_back({ getParent(*it)->name, *it });
-			else
-			{
-				for (int strID : getParent(*it, Symbol::Type::FunctionSpec)->func.instantiatedStrings)
-					--program->strings.find(strID)->second.first;
-			}
-		}
-		else if (isVarLabeled(*it))
-			globals.push_back(*it);
-		++it;
-	}
-
 	// Functions
 	for (auto& func : funcs)
 		generateNasm_Linux_x86_64(ngi, func.first, func.second);
 	
 	// Global variables
-	ss << "SECTION .bss\n";
+	ss << "section .bss\n";
 	ss << "  __##__argc: resq 1\n";
 	ss << "  __##__argv: resq 1\n";
 	ss << "  __##__envp: resq 1\n";
@@ -1254,7 +1268,7 @@ std::string generateNasm_Linux_x86_64(ProgramRef program)
 		ss << "  " << getMangledName(global) << ": resb " << getDatatypeSize(program, global->var.datatype) << "\t\t; " << getPosStr(global->pos) << "\n";
 
 	// C-Strings
-	ss << "SECTION .data\n";
+	ss << "section .data\n";
 	for (auto& str : program->strings)
 	{
 		if (str.second.first <= 0)
