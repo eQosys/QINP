@@ -114,11 +114,11 @@ space std:
 	\\ Get the arguments passed to the program
 	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
 	\\ @return The number of arguments passed to the program
-	u64 getargs(u8*** pargv)...		\\ Platform dependent implementation
+	u64 getargs(u8*** pargv)...
 
 	\\ Get the environment variables passed to the program
 	\\ @return The pointer to an array of environment variables
-	u8** getenv()...		\\ Platform dependent implementation
+	u8** getenv()...
 
 	\\ Sleep for the specified number of milliseconds
 	\\ @param ms The number of milliseconds to sleep
@@ -252,6 +252,32 @@ space std:
 		while len--:
 			*d++ = *s++
 		return dest
+
+	u64 getargs(u8*** pargv):
+		u64 argc
+		assembly:
+			"mov rcx, [__##__argc]"
+			"mov [rbp $(argc)], rcx"
+
+		if !pargv:
+			return argc
+
+		u8** argv
+		assembly:
+			"mov rcx, [__##__argv]"
+			"mov [rbp $(argv)], rcx"
+
+		*pargv = argv
+
+		return argc
+
+	u8** getenv():
+		u8** env
+		assembly:
+			"mov rcx, [__##__envp]"
+			"mov [rbp $(env)], rcx"
+
+		return env
 
 import.linux "linux/std.qnp"
 import.windows "windows/std.qnp"

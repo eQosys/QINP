@@ -34,32 +34,6 @@ space std:
 
 		return ch
 
-	u64 getargs(u8*** pargv):
-		u64 argc
-		assembly:
-			"mov rcx, [__##__argc]"
-			"mov [rbp $(argc)], rcx"
-
-		if !pargv:
-			return argc
-
-		u8** argv
-		assembly:
-			"mov rcx, [__##__argv]"
-			"mov [rbp $(argv)], rcx"
-
-		*pargv = argv
-
-		return argc
-
-	u8** getenv():
-		u8** env
-		assembly:
-			"mov rcx, [__##__envp]"
-			"mov [rbp $(env)], rcx"
-
-		return env
-
 	pack __timespec:
 		i64 seconds
 		i64 nanoseconds

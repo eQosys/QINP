@@ -176,7 +176,8 @@ int main(int argc, char** argv, char** _env)
 		else if (platform == "windows")
 		{
 			nasmCmd = "nasm -f win64 -o \"" + objFilename + "\" \"" + asmFilename + "\"";
-			linkCmd = "vcvarsall.bat x86_amd64 && link /subsystem:console /nodefaultlib /entry:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
+			// TODO: Link without LARGEADDRESSAWARE:NO
+			linkCmd = "vcvarsall.bat x86_amd64 && link /LARGEADDRESSAWARE:NO /MACHINE:X64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /ENTRY:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
 		}
 
 		{

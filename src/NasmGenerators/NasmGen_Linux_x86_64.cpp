@@ -353,6 +353,83 @@ void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& 
 #define DISABLE_EXPR_FOR_PACKS(ngi, expr) \
 	assert(!isPackType(ngi.program, expr->datatype) && "Invalid expression for pack type!")
 
+void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
+{
+	bool isVoidFunc = expr->datatype == Datatype{ "void" };
+	if (!isVoidFunc)
+	{
+		if (isPackType(ngi.program, expr->datatype))
+			pushXValue(ngi, expr->datatype);
+		else
+			ngi.ss << "  sub rsp, 8\n"; // All non-pack types (builtins) have a maximum size of 8 bytes
+	}
+
+	for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
+	{
+		genExpr(ngi, expr->paramExpr[i].get());
+		if (isPackType(ngi.program, ngi.primReg.datatype))
+		{
+			if (isXValue(ngi.primReg)) // xvalues are already on the stack
+				continue;
+
+			ngi.ss << "  sub rsp, " << getDatatypePushSize(ngi.program, ngi.primReg.datatype) << "\n";
+			ngi.ss << "  mov rcx, rsp\n";
+
+			genMemcpy(ngi, "rcx", "rax", getDatatypeSize(ngi.program, ngi.primReg.datatype));
+			continue;
+		}
+		primRegLToRVal(ngi);
+		ngi.ss << "  push " << primRegName(8) << "\n";
+	}
+
+	genExpr(ngi, expr->left.get());
+	bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
+	assert(typesMatch && "Cannot call non-function!");
+	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
+	ngi.ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
+
+	ngi.primReg.datatype = expr->datatype;
+	ngi.primReg.state = CellState::rValue;
+
+	if (!isVoidFunc)
+	{
+		if (isPackType(ngi.program, ngi.primReg.datatype))
+		{
+			ngi.ss << "  mov rax, rsp\n";
+			ngi.primReg.state = CellState::xValue;
+		}
+		else
+		{
+			ngi.ss << "  pop " << primRegName(8) << "\n";
+		}
+	}
+}
+
+void genExtCall(NasmGenInfo& ngi, const Expression* expr)
+{
+	// extern functions only support base types atm
+
+	for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
+	{
+		genExpr(ngi, expr->paramExpr[i].get());
+		primRegLToRVal(ngi);
+		ngi.ss << "  push " << primRegName(8) << "\n";
+	}
+
+	static const std::vector<const char*> paramRegs = { "rcx", "rdx", "r8", "r9" };
+	for (int i = 0; i < std::min(expr->paramExpr.size(), paramRegs.size()); ++i)
+		ngi.ss << "  pop " << paramRegs[i] << "\n";
+
+	genExpr(ngi, expr->left.get());
+	bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
+	assert(typesMatch && "Cannot call non-function!");
+	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
+
+	// Return value already in rax
+	ngi.primReg.datatype = expr->datatype;
+	ngi.primReg.state = CellState::rValue;
+}
+
 void genExpr(NasmGenInfo& ngi, const Expression* expr)
 {
 	auto& ss = ngi.ss;
@@ -892,54 +969,10 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::FunctionCall:
 	{
-		bool isVoidFunc = expr->datatype == Datatype{ "void" };
-		if (!isVoidFunc)
-		{
-			if (isPackType(ngi.program, expr->datatype))
-				pushXValue(ngi, expr->datatype);
-			else
-				ss << "  sub rsp, 8\n"; // All non-pack types (builtins) have a maximum size of 8 bytes
-		}
-
-		for (int i = expr->paramExpr.size() - 1; i >= 0; --i)
-		{
-			genExpr(ngi, expr->paramExpr[i].get());
-			if (isPackType(ngi.program, ngi.primReg.datatype))
-			{
-				if (isXValue(ngi.primReg)) // xvalues are already on the stack
-					continue;
-
-				ss << "  sub rsp, " << getDatatypePushSize(ngi.program, ngi.primReg.datatype) << "\n";
-				ss << "  mov rcx, rsp\n";
-
-				genMemcpy(ngi, "rcx", "rax", getDatatypeSize(ngi.program, ngi.primReg.datatype));
-				continue;
-			}
-			primRegLToRVal(ngi);
-			ss << "  push " << primRegName(8) << "\n";
-		}
-
-		genExpr(ngi, expr->left.get());
-		bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
-		assert(typesMatch && "Cannot call non-function!");
-		ss << "  call " << primRegUsage(ngi) << "\n";
-		ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
-
-		ngi.primReg.datatype = expr->datatype;
-		ngi.primReg.state = CellState::rValue;
-
-		if (!isVoidFunc)
-		{
-			if (isPackType(ngi.program, ngi.primReg.datatype))
-			{
-				ss << "  mov rax, rsp\n";
-				ngi.primReg.state = CellState::xValue;
-			}
-			else
-			{
-				ss << "  pop " << primRegName(8) << "\n";
-			}
-		}
+		if (expr->isExtCall)
+			genExtCall(ngi, expr);
+		else
+			genFuncCall(ngi, expr);
 	}
 		break;
 	case Expression::ExprType::Suffix_Increment:
@@ -1195,10 +1228,11 @@ void genFuncAsm(NasmGenInfo& ngi, const std::string& name, SymbolRef func)
 void genPrologue(NasmGenInfo& ngi)
 {
 	// Prologue
-	ngi.ss << "  global _start\n";
 
 	if (ngi.program->platform == "windows")
 		ngi.ss << "default rel\n";
+
+	ngi.ss << "  global _start\n";
 
 	std::for_each(
 		ngi.program->symbols->begin(),
@@ -1209,18 +1243,27 @@ void genPrologue(NasmGenInfo& ngi)
 		}
 	);
 
-	// Initialization
-	ngi.ss << "section .text\n";
-	ngi.ss << "_start:\n";
-	ngi.ss << "  pop rax\n";
-	ngi.ss << "  mov [__##__argc], rax\n";
-	ngi.ss << "  mov [__##__argv], rsp\n";
-	ngi.ss << "  inc rax\n";
-	ngi.ss << "  mov rcx, 8\n";
-	ngi.ss << "  mul rcx\n";
-	ngi.ss << "  mov rcx, rsp\n";
-	ngi.ss << "  add rcx, rax\n";
-	ngi.ss << "  mov [__##__envp], rcx\n";
+	// init argc, argv, env
+	if (ngi.program->platform == "linux")
+	{
+		ngi.ss << "section .text\n";
+		ngi.ss << "_start:\n";
+		ngi.ss << "  pop rax\n";
+		ngi.ss << "  mov [__##__argc], rax\n";
+		ngi.ss << "  mov [__##__argv], rsp\n";
+		ngi.ss << "  inc rax\n";
+		ngi.ss << "  mov rcx, 8\n";
+		ngi.ss << "  mul rcx\n";
+		ngi.ss << "  mov rcx, rsp\n";
+		ngi.ss << "  add rcx, rax\n";
+		ngi.ss << "  mov [__##__envp], rcx\n";
+	}
+	else if (ngi.program->platform == "windows")
+	{
+		ngi.ss << "section .text\n";
+		// TODO: LOAD ARGC, ARGV, ENV
+		ngi.ss << "_start:\n";
+	}
 
 	// Static local initializer test values
 	for (int i = 0; i < ngi.program->staticLocalInitCount; ++i)
@@ -1230,10 +1273,16 @@ void genPrologue(NasmGenInfo& ngi)
 void genEpilogue(NasmGenInfo& ngi)
 {
 	// Global code epilogue
-	ngi.ss << "  mov rdi, 0\n";
-	ngi.ss << "  mov rax, 60\n";
-	ngi.ss << "  syscall\n";
-	ngi.ss << "  hlt\n";
+	if (ngi.program->platform == "linux")
+	{
+		ngi.ss << "  mov rdi, 0\n";
+		ngi.ss << "  mov rax, 60\n";
+		ngi.ss << "  syscall\n";
+	}
+	else if (ngi.program->platform == "windows")
+	{
+		ngi.ss << "  hlt\n";
+	}
 }
 
 void genFunctions(NasmGenInfo& ngi)

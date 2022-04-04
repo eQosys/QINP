@@ -12,7 +12,8 @@
         "-k",
         "-r",
         "-i=stdlib\\",
-        "examples\\test.qnp"
+        "examples\\test.qnp",
+        "-a=test_arg"
       ],
       "currentDir": "${workspaceRoot}"
     }
