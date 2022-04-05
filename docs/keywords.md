@@ -92,7 +92,19 @@ define foo "bar"
 
 ### Extern
 
-TODO: Documentation
+The `extern` keyword can be used to declare functions that are part of an external library (Mainly C).
+Functions marked with the `extern` keyword can used the same way as any other function.
+Currently only builtin types can be used as return types and parameter types. (Pointers to packs are valid)
+
+#### Usage
+```qinp
+extern [function declaration] = [export-name]
+```
+
+#### Example
+```qinp
+extern void __ExitProcess(i32 status) = "ExitProcess" \\ ExitProcess is part of the Windows API
+```
 
 ---
 
