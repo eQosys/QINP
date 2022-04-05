@@ -1191,12 +1191,20 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			}
 			parseExpected(info, Token::Type::Separator, ")");
 
-			SymbolRef func = exp->left->symbol;
-			if (!exp->isExtCall)
+			SymbolRef func = nullptr;
+			if (exp->isExtCall)
+			{
+				func = exp->left->symbol;
+				for (int i = 0; i < exp->paramExpr.size(); ++i)
+					exp->paramExpr[i] = genConvertExpression(exp->paramExpr[i], exp->left->symbol->func.params[i]->var.datatype);
+			}
+			else
+			{
 				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
-			if (!func)
-				THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
-
+				if (!func)
+					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
+			}
+			
 			exp->datatype = func->func.retType;
 			exp->left->datatype = { getSignature(func), 1 };
 			exp->left->symbol = func;

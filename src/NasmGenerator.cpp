@@ -414,6 +414,7 @@ void genExtCall(NasmGenInfo& ngi, const Expression* expr)
 		genExpr(ngi, expr->paramExpr[i].get());
 		primRegLToRVal(ngi);
 		ngi.ss << "  push " << primRegName(8) << "\n";
+		assert((isPointer(ngi.primReg.datatype) || isBuiltinType(ngi.primReg.datatype.name)) && "Arguments of extern functions must be base types!");
 	}
 
 	static const std::vector<const char*> paramRegs = { "rcx", "rdx", "r8", "r9" };
@@ -427,6 +428,7 @@ void genExtCall(NasmGenInfo& ngi, const Expression* expr)
 
 	// Return value already in rax
 	ngi.primReg.datatype = expr->datatype;
+	assert((isPointer(ngi.primReg.datatype) || isBuiltinType(ngi.primReg.datatype.name)) && "Return value of extern functions must be of base type!");
 	ngi.primReg.state = CellState::rValue;
 }
 
