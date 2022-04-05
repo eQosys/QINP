@@ -1,4 +1,4 @@
-#include "NasmGen_Linux_x86_64.h"
+#include "NasmGenerator.h"
 
 #include <stack>
 #include <sstream>

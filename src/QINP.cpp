@@ -12,7 +12,7 @@
 #include "PlatformName.h"
 #include "ExecCmd.h"
 
-#include "NasmGenerators/NasmGen_Linux_x86_64.h"
+#include "NasmGenerator.h"
 
 void writeTextFileOverwrite(const std::string& filename, const std::string& text)
 {
