@@ -10,10 +10,10 @@ space std:
 		__ExitProcess(status)
 
 	_RESULT print(u8* str, u64 len):
-		static u64 hStdOut = __GetStdHandle((i32)-11)
+		static u64 hStdOut = __GetStdHandle(-11)
 
 		i32 nWritten
-		__WriteConsole(hStdOut, (void*)str, (i32)len, &nWritten, (void*)0)
+		__WriteConsole(hStdOut, (void*)str, len, &nWritten, (void*)0)
 		return nWritten
 
 	\\u8 getchar():
