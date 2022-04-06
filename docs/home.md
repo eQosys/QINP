@@ -11,6 +11,20 @@
 ### Development
 The QINP language is a work in progress. It is not yet stable and may be subject to breaking changes.
 
+Next steps (Not in order):
+ - [ ] Self hosted
+ - [ ] Dynamic memory management
+ - [ ] General optimization
+ - [ ] Inline functions
+ - [ ] Object oriented programming
+ - [ ] Function pointers
+ - [ ] Operator overloading
+ - [ ] Blueprints + Varargs
+ - [ ] Floating point values/operations
+ - [ ] Signal handling
+ - [ ] Full Windows support
+ - [ ] Literal expressions
+
 ---
 
 ### Language
