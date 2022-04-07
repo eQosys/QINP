@@ -740,7 +740,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 		if (isInteger(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
 
-		else if (isExplicit && isPointer(newDatatype))
+		else if ((isExplicit || expToConvert->eType == Expression::ExprType::Literal) && isPointer(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
 		
 		else if (doThrow)

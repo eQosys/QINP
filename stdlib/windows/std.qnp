@@ -13,7 +13,7 @@ space std:
 		static u64 hStdOut = __GetStdHandle(-11)
 
 		i32 nWritten
-		__WriteConsole(hStdOut, (void*)str, len, &nWritten, (void*)0)
+		__WriteConsole(hStdOut, str, len, &nWritten, 0)
 		return nWritten
 
 	\\u8 getchar():
