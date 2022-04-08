@@ -47,6 +47,7 @@ std::map<std::string, OptionInfo> argNames =
 	{ "r", { "run", OptionInfo::Type::NoValue } },
 	{ "p", { "platform", OptionInfo::Type::Single } },
 	{ "a", { "runarg", OptionInfo::Type::Multi } },
+	{ "x", { "extern", OptionInfo::Type::Multi } },
 };
 
 #define HELP_TEXT \
@@ -69,7 +70,9 @@ std::map<std::string, OptionInfo> argNames =
 	"    Only linux is supported for now.\n" \
 	"  -a, --runarg=[arg]\n" \
 	"    Specify a single argument to pass to the generated program.\n" \
-	"	  Only used when --run is specified.\n"
+	"	  Only used when --run is specified.\n" \
+	"  -x, --extern=[filepath]\n" \
+	"    Specify a library/object file to link against.\n" \
 
 class Timer
 {
@@ -178,6 +181,13 @@ int main(int argc, char** argv, char** _env)
 			nasmCmd = "nasm -f win64 -o \"" + objFilename + "\" \"" + asmFilename + "\"";
 			// TODO: Link without LARGEADDRESSAWARE:NO
 			linkCmd = "vcvarsall.bat x86_amd64 && link /LARGEADDRESSAWARE:NO /MACHINE:X64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /ENTRY:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
+		}
+
+		if (args.hasOption("extern"))
+		{
+			auto& libs = args.getOption("extern");
+			for (auto& lib : libs)
+				linkCmd += " \"" + lib + "\"";
 		}
 
 		{
