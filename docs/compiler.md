@@ -13,19 +13,19 @@
 
  - -v, --verbose
 
-   Print verbose output.
+   Prints verbose output.
 
  - -i, --import=\[path\]
 
-   Specify an import directory.
+   Specifies an import directory.
   
  - -o, --output=\[path\]
 
-   Specify the output path of the generated program.
+   Specifies the output path of the generated program.
 
  - -k, --keep
 
-   Keep the generated assembly file.
+   Keeps the generated assembly file.
 
  - -r, --run
 
@@ -40,3 +40,7 @@
   
     Specifies a single argument to pass to the generated program.
     Only used when --run is specified.
+
+ - -x, --extern
+  
+    Specifies a library/object file to link against.

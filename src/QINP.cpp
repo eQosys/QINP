@@ -54,25 +54,25 @@ std::map<std::string, OptionInfo> argNames =
 	"Usage: qinp [options] [input file]\n" \
 	"Options:\n" \
 	"  -h, --help\n" \
-	"    Print this help message.\n" \
+	"    Prints this help message.\n" \
 	"  -v, --verbose\n" \
-	"    Print verbose output.\n" \
+	"    Prints verbose output.\n" \
 	"  -i, --import=[path]\n" \
-	"    Specify an import directory.\n" \
+	"    Specifies an import directory.\n" \
 	"  -o, --output=[path]\n" \
-	"    Specify the output path of the generated executable.\n" \
+	"    Specifies the output path of the generated executable.\n" \
 	"  -k, --keep\n" \
-	"    Keep the generated assembly file.\n" \
+	"    Keeps the generated assembly file.\n" \
 	"  -r, --run\n" \
-	"    Run the generated program.\n" \
+	"    Runs the generated program.\n" \
 	"  -p, --platform=[platform]\n" \
-	"    Specify the target platform. (linux, windows, macos)\n" \
+	"    Specifies the target platform. (linux, windows, macos)\n" \
 	"    Only linux is supported for now.\n" \
 	"  -a, --runarg=[arg]\n" \
-	"    Specify a single argument to pass to the generated program.\n" \
+	"    Specifies a single argument to pass to the generated program.\n" \
 	"	  Only used when --run is specified.\n" \
 	"  -x, --extern=[filepath]\n" \
-	"    Specify a library/object file to link against.\n" \
+	"    Specifies a library/object file to link against.\n" \
 
 class Timer
 {
