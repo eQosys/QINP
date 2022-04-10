@@ -1,9 +1,8 @@
 import "std.qnp"
 
 u64 fib(u64 n):
-	if n < 2:
-		return n
-	return fib(n-1) + fib(n-2)
+	\\ n+0 is required to prevent the compiler from complaining about a type mismatch (lvalue vs. rvalue) NEEDS FIX!
+	return n < 2 ? n+0 : fib(n-1) + fib(n-2)
 
 u64 i = 0
 while i++ < 10:
