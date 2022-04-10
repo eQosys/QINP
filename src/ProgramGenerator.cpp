@@ -740,7 +740,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 		if (isInteger(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
 
-		else if ((isExplicit || expToConvert->eType == Expression::ExprType::Literal) && isPointer(newDatatype))
+		else if (isExplicit && isPointer(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
 		
 		else if (doThrow)
@@ -1079,6 +1079,9 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 
 			currExpr->farRight = getParseExpression(info, precLvl + 1);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->farRight);
+
+			currExpr->right = genAutoArrayToPtr(currExpr->right);
+			currExpr->farRight = genAutoArrayToPtr(currExpr->farRight);
 
 			if (currExpr->right->datatype != currExpr->farRight->datatype)
 				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same datatype!");

@@ -143,6 +143,7 @@ For function addresses, the size of the function pointer is returned (usually 8 
 
 The conditional operator `? :` is used to evaluate one of two expressions depending on the value of another expression.
 The last two expressions must evaluate to the same type.
+Arrays are automatically converted to pointers.
 
 ---
 

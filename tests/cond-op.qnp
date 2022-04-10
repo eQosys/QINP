@@ -1,0 +1,9 @@
+import "std.qnp"
+
+void printBool(bool b):
+	std::print(b ? "true" : "false")
+
+printBool(true)
+std::print("\n")
+printBool(false)
+std::print("\n")
