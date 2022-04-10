@@ -31,10 +31,7 @@ void show():
 		i64 j = 0
 		std::print("|")
 		while j < WIDTH:
-			if pMain->cells[j][i]:
-				std::print("#")
-			else:
-				std::print(" ")
+			std::print(pMain->cells[j][i] ? "#" : " ")
 			++j
 		std::print("|\n")
 		++i
@@ -61,10 +58,7 @@ void update():
 						(k != i || l != j):
 						count += pMain->cells[k][l]
 				++k
-			if pMain->cells[i][j]:
-				pBack->cells[i][j] = (2 <= count && count <= 3)
-			else:
-				pBack->cells[i][j] = (count == 3)
+			pBack->cells[i][j] = pMain->cells[i][j] ? 2 <= count && count <= 3 : count == 3
 			++j
 		++i
 

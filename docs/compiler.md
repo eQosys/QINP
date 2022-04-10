@@ -34,7 +34,7 @@
  - -p, --platform
  
    Specifies the target platform. (linux, windows, macos)
-   Only linux is supported for now.
+   Only linux and windows are supported for now.
 
  - -a, --runarg
   

@@ -24,6 +24,7 @@ Next steps (Not in order):
  - [ ] Signal handling
  - [ ] Full Windows support
  - [ ] Literal expressions
+ - [ ] Exceptions
 
 ---
 

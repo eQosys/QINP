@@ -1067,6 +1067,30 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->isLValue = true;
 			currExpr->isObject = true;
 			break;
+		case Expression::ExprType::Conditional_Op:
+		{
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
+			currExpr->left = genConvertExpression(currExpr->left, { "bool" });
+
+			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
+
+			parseExpectedColon(info);
+
+			currExpr->farRight = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->farRight);
+
+			if (currExpr->right->datatype != currExpr->farRight->datatype)
+				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same datatype!");
+
+			if (currExpr->right->isLValue != currExpr->farRight->isLValue)
+				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same value type!");
+
+			currExpr->datatype = currExpr->right->datatype;
+			currExpr->isLValue = currExpr->right->isLValue;
+			currExpr->isObject = currExpr->right->isObject;
+		}
+			break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
 			currExpr->right = getParseExpression(info, precLvl + 1);
@@ -1127,8 +1151,6 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			bool isObject = isSymType(SymType::Namespace, currExpr->left->symbol);
 
 			currExpr = getParseValue(info, true);
-
-			//currExpr->isObject = isObject;
 
 			exitSymbol(info);
 		}

@@ -67,7 +67,7 @@ std::map<std::string, OptionInfo> argNames =
 	"    Runs the generated program.\n" \
 	"  -p, --platform=[platform]\n" \
 	"    Specifies the target platform. (linux, windows, macos)\n" \
-	"    Only linux is supported for now.\n" \
+	"    Only linux and windows are supported for now.\n" \
 	"  -a, --runarg=[arg]\n" \
 	"    Specifies a single argument to pass to the generated program.\n" \
 	"	  Only used when --run is specified.\n" \

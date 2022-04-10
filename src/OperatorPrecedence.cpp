@@ -15,6 +15,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "&=", Expression::ExprType::Assign_Bw_AND },
 			{ "^=", Expression::ExprType::Assign_Bw_XOR },
 			{ "|=", Expression::ExprType::Assign_Bw_OR },
+			{ "?", Expression::ExprType::Conditional_Op },
 		},
 		OpPrecLvl::Type::Binary,
 		OpPrecLvl::EvalOrder::RightToLeft,

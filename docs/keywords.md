@@ -113,13 +113,14 @@ extern void __ExitProcess(i32 status) = "ExitProcess" \\ ExitProcess is part of 
 QINP code files can be imported using the `import` keyword.
 A single file is imported once and all other imports of the same file are ignored.
 
-The filepaths are resolved with the compiler import-directory options.
-Resolving import paths relative to the importing file is planned.
+The compiler tries to resolve imports in the following order:
+ 1. Relative to the current file
+ 2. Directories specified via compiler option [`-i`](./compiler.md#commandline-arguments) (checked in the order given)
 
 Conditional imports can be used to import a file only if the specified platform matches the compiler platform.
-Possible platforms are:
- - `windows`
+Possible platform values are:
  - `linux`
+ - `windows`
  - `macos`
 
 #### Usage

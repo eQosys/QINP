@@ -79,6 +79,7 @@ struct Expression : public Statement
 		Assign_Bw_AND,
 		Assign_Bw_XOR,
 		Assign_Bw_OR,
+		Conditional_Op,
 
 		Logical_OR,
 
@@ -144,6 +145,7 @@ struct Expression : public Statement
 
 	ExpressionRef left; // Binary operator
 	ExpressionRef right;
+	ExpressionRef farRight; // Conditional operator
 	std::string valStr; // Literal
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;

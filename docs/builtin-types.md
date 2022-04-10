@@ -22,7 +22,7 @@ The size of a `bool` is `1` byte.
 ---
 
 ### Signed Integers
-All 'i*' types are signed integers. The number in the name stands for the number of bits used to represent the type.
+All `i*` types are signed integers. The number in the name stands for the number of bits used to represent the type.
 
 Type | Size (in bytes) | Min  | Max
 ---- | --------------- | ---  | ------

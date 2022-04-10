@@ -693,6 +693,29 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 
 		break;
 	}
+	case Expression::ExprType::Conditional_Op:
+	{
+		genExpr(ngi, expr->left.get());
+		pushLabel(ngi, "COND_END");
+		pushLabel(ngi, "COND_FALSE");
+
+		primRegLToRVal(ngi);
+
+		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
+		ss << "  je " << getLabel(ngi, 0) << "\n";
+
+		genExpr(ngi, expr->right.get());
+		ss << "  jmp " << getLabel(ngi, 1) << "\n";
+		
+		placeLabel(ngi, 0);
+		genExpr(ngi, expr->farRight.get());
+
+		placeLabel(ngi, 1);
+
+		popLabel(ngi);
+		popLabel(ngi);
+	}
+		break;
 	case Expression::ExprType::Logical_OR:
 		DISABLE_EXPR_FOR_PACKS(ngi, expr->left);
 		genExpr(ngi, expr->left.get());

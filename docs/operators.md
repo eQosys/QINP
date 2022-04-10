@@ -12,6 +12,7 @@
  - [Function Call](#function-call)
  - [C-Style Cast](#c-style-cast)
  - [size-of](#size-of)
+ - [Conditional Operator](#conditional-operator)
 
 ---
 
@@ -22,7 +23,7 @@
 | a = b      | ++a           | +a         | !a       | a == b     | a[b]          | a(...)
 | a += b     | --a           | -a         | a && b   | a != b     | *a            | (a)b
 | a -= b     | a++           | a + b      | a \|\| b | a < b      | &a            | sizeof(a)
-| a *= b     | a--           | a - b      |          | a > b      | a.b           |
+| a *= b     | a--           | a - b      |          | a > b      | a.b           | a ? b : c
 | a /= b     |               | a * b      |          | a <= b     | a->b          |
 | a %= b     |               | a / b      |          | a >= b     | ::            |
 | a &= b     |               | a % b      |          |            |               |
@@ -39,23 +40,23 @@
 
 Operators with a lower precedence are evaluated first.
 
-| Precedence | Operator                                                                       | Associativity
-| ---------- | ------------------------------------------------------------------------------ | -------------
-| 0          | `::`                                                                           | left-to-right
-| 1          | `a.b` `a->b`                                                                   | left-to-right
-| 2          | `a++` `a--` `a()` `a[]`                                                        | left-to-right
-| 3          | `++a` `--a` `+a` `-a` `!a` `~a` `(a)b` `*a` `&a`                               | right-to-left
-| 4          | `a*b` `a/b` `a%b`                                                              | left-to-right
-| 5          | `a+b` `a-b`                                                                    | left-to-right
-| 6          | `a<<b` `a>>b`                                                                  | left-to-right
-| 7          | `a<b` `a<=b` `a>b` `a>=b`                                                      | left-to-right
-| 8          | `a==b` `a!=b`                                                                  | left-to-right
-| 9          | `a&b`                                                                          | left-to-right
-| 10         | `a^b`                                                                          | left-to-right
-| 11         | `a\|b`                                                                         | left-to-right
-| 12         | `a&&b`                                                                         | left-to-right
-| 13         | `a\|\|b`                                                                       | left-to-right
-| 14         | `a=b` `a+=b` `a-=b` `a*=b` `a/=b` `a%=b` `a<<=b` `a>>=b` `a&=b` `a^=b` `a\|=b` | right-to-left
+| Precedence | Operator                                                                               | Associativity
+| ---------- | -------------------------------------------------------------------------------------- | -------------
+| 0          | `::`                                                                                   | left-to-right
+| 1          | `a.b` `a->b`                                                                           | left-to-right
+| 2          | `a++` `a--` `a()` `a[]`                                                                | left-to-right
+| 3          | `++a` `--a` `+a` `-a` `!a` `~a` `(a)b` `*a` `&a`                                       | right-to-left
+| 4          | `a*b` `a/b` `a%b`                                                                      | left-to-right
+| 5          | `a+b` `a-b`                                                                            | left-to-right
+| 6          | `a<<b` `a>>b`                                                                          | left-to-right
+| 7          | `a<b` `a<=b` `a>b` `a>=b`                                                              | left-to-right
+| 8          | `a==b` `a!=b`                                                                          | left-to-right
+| 9          | `a&b`                                                                                  | left-to-right
+| 10         | `a^b`                                                                                  | left-to-right
+| 11         | `a\|b`                                                                                 | left-to-right
+| 12         | `a&&b`                                                                                 | left-to-right
+| 13         | `a\|\|b`                                                                               | left-to-right
+| 14         | `a=b` `a+=b` `a-=b` `a*=b` `a/=b` `a%=b` `a<<=b` `a>>=b` `a&=b` `a^=b` `a\|=b` `a?b:c` | right-to-left
 
 ---
 
@@ -135,6 +136,13 @@ The `sizeof` operator returns the size of the resulting value of an expression a
 The expression inside the `sizeof` operator is not evaluated.
 When using a function call, the size of the return value is used.
 For function addresses, the size of the function pointer is returned (usually 8 bytes)
+
+---
+
+### Conditional Operator
+
+The conditional operator `? :` is used to evaluate one of two expressions depending on the value of another expression.
+The last two expressions must evaluate to the same type.
 
 ---
 
