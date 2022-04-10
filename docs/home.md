@@ -37,7 +37,7 @@ Building:
 #### Examples
 
 The [examples](../examples/) can be a good starting point to get to know the QINP language.
-The [tests](../test/) may also be interesting to some users.
+The [tests](../tests/) may also be interesting to some users.
 
 #### Tests
 
