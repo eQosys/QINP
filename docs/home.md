@@ -1,10 +1,37 @@
 # QINP Reference
 
 ## Overview
+ - [Getting Started](#getting-started)
  - [Development](#development)
  - [Language](#language)
  - [Compiler](#compiler)
  - [Standard Library](#standard-library)
+
+---
+
+### Getting Started
+
+#### Linux
+
+Prerequisites:
+ - CMake
+ - Make
+ - C++17 Compiler
+ - NASM
+
+Building:
+ - run `./build.sh Release` in the project root directory to build QINP. The executable can be found in `./bin/Release/`
+
+#### Windows
+
+Prerequisites:
+ - Visual Studio ('Desktop development with C++' workflow)
+ - NASM
+
+Note: NASM and 'vcvars64.bat' must be added to PATH.
+
+Building:
+ - Use Visual Studio's CMake project integration to build QINP.
 
 ---
 

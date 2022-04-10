@@ -180,7 +180,7 @@ int main(int argc, char** argv, char** _env)
 		{
 			nasmCmd = "nasm -f win64 -o \"" + objFilename + "\" \"" + asmFilename + "\"";
 			// TODO: Link without LARGEADDRESSAWARE:NO
-			linkCmd = "vcvarsall.bat x86_amd64 && link /LARGEADDRESSAWARE:NO /MACHINE:X64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /ENTRY:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
+			linkCmd = "vcvars64.bat && link /LARGEADDRESSAWARE:NO /MACHINE:X64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /ENTRY:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
 		}
 
 		if (args.hasOption("extern"))
