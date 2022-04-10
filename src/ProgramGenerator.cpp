@@ -1086,9 +1086,6 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			if (currExpr->right->datatype != currExpr->farRight->datatype)
 				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same datatype!");
 
-			if (currExpr->right->isLValue != currExpr->farRight->isLValue)
-				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same value type!");
-
 			currExpr->datatype = currExpr->right->datatype;
 			currExpr->isLValue = currExpr->right->isLValue;
 			currExpr->isObject = currExpr->right->isObject;

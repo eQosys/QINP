@@ -699,16 +699,20 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		pushLabel(ngi, "COND_END");
 		pushLabel(ngi, "COND_FALSE");
 
+		bool anyRVal = !expr->right->isLValue || !expr->farRight->isLValue;
+
 		primRegLToRVal(ngi);
 
 		ss << "  cmp " << primRegUsage(ngi) << ", 0\n";
 		ss << "  je " << getLabel(ngi, 0) << "\n";
 
 		genExpr(ngi, expr->right.get());
+		if (anyRVal) primRegLToRVal(ngi);
 		ss << "  jmp " << getLabel(ngi, 1) << "\n";
 		
 		placeLabel(ngi, 0);
 		genExpr(ngi, expr->farRight.get());
+		if (anyRVal) primRegLToRVal(ngi);
 
 		placeLabel(ngi, 1);
 
