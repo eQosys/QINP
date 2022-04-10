@@ -31,7 +31,7 @@ Prerequisites:
 Note: NASM and 'vcvars64.bat' must be added to PATH.
 
 Building:
- - Use Visual Studio's CMake project integration to build QINP.
+ - Use Visual Studio's CMake integration to build QINP.
 
 ---
 

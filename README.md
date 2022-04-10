@@ -8,7 +8,7 @@ At the moment only the x86_64 Linux platform is supported.
 
 ## Getting Started
 
-Instructions on how to build QINP can be found [here](./docs/home.md#gettings-started)
+Instructions on how to build QINP can be found [here](./docs/home.md#getting-started)
 
 ## Documentation
 The beginning of the documentation can be found [here](./docs/home.md).
