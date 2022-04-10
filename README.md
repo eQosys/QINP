@@ -4,7 +4,7 @@ QINP is a statically typed, procedural programming language which is inspired by
 
 !!! The language is a work in progress and therefore not yet stable and may be subject to breaking changes !!!
 
-At the moment only the x86_64 Linux platform is supported.
+At the moment only Linux and Windows (both x86_64) are supported.
 
 ## Getting Started
 

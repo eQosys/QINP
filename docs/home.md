@@ -33,6 +33,20 @@ Note: NASM and 'vcvars64.bat' must be added to PATH.
 Building:
  - Use Visual Studio's CMake integration to build QINP.
 
+
+#### Examples
+
+The [examples](../examples/) can be a good starting point to get to know the QINP language.
+The [tests](../test/) may also be interesting to some users.
+
+#### Tests
+
+The [./test.py](../test.py) script can be used to test the QINP language features.
+
+To run all tests from the [./tests/](../tests/) directory, run `test.py run all`
+
+For more information about what the test script can do run `test.py help`
+
 ---
 
 ### Development
