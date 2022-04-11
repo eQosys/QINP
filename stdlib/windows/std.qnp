@@ -4,7 +4,7 @@
 space std:
 	extern void __ExitProcess(i32 status) = "ExitProcess"
 	extern u64 __GetStdHandle(i32 nStdHandle) = "GetStdHandle"
-	extern bool __WriteConsole(u64 handle, void* Buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
+	extern bool __WriteConsole(u64 handle, void* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
 
 	void exit(i32 status):
 		__ExitProcess(status)
