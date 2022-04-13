@@ -1,0 +1,2 @@
+void square(i32 x):
+	return x * x

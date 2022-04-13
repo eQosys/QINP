@@ -1778,7 +1778,8 @@ bool parseStatementReturn(ProgGenInfo& info)
 
 	if (info.funcRetType != Datatype{ "void" })
 		lastStatement(info)->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
-
+	else if (!isNewline(peekToken(info)))
+		THROW_PROG_GEN_ERROR(exprBegin.pos, "Return statement in void function must be followed by a newline!");
 	parseExpectedNewline(info);
 
 	return true;
