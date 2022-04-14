@@ -11,17 +11,17 @@ int execCmd(const std::string& command)
 	pid_t p = fork();
 
 	if (p == -1)
-		THROW_QINP_ERROR("Fork failed!");
+		THROW_QINP_ERROR("Fork failed! ( CMD: '" + command + "' )");
 	
 	if (p == 0)
 	{
 		execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
-		THROW_QINP_ERROR("Exec failed!");
+		THROW_QINP_ERROR("Exec failed! ( CMD: '" + command + "' )");
 	}
 
 	int status;
 	if (waitpid(p, &status, 0) == -1)
-		THROW_QINP_ERROR("Waitpid failed!");
+		THROW_QINP_ERROR("Waitpid failed! ( CMD: '" + command + "' )");
 
 	if (WIFEXITED(status))
 		return WEXITSTATUS(status);
@@ -53,7 +53,7 @@ int execCmd(const std::string& command)
 
 		return dwExitCode;
 	}
-	THROW_QINP_ERROR("CreateProcess failed!");
+	THROW_QINP_ERROR("CreateProcess failed! ( CMD: '" + command + "' )");
 }
 
 #endif

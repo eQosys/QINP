@@ -18,6 +18,7 @@ Prerequisites:
  - Make
  - C++17 Compiler
  - NASM
+ - Python
 
 Building:
  - run `./build.sh Release` in the project root directory to build QINP. The executable can be found in `./bin/Release/`
@@ -27,6 +28,7 @@ Building:
 Prerequisites:
  - Visual Studio ('Desktop development with C++' workflow)
  - NASM
+ - Python
 
 Note: NASM and 'vcvars64.bat' must be added to PATH.
 

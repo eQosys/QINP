@@ -6,6 +6,7 @@ import time
 import shlex
 import pickle
 import subprocess
+import platform
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -18,7 +19,16 @@ def runCmd(cmd: List[str], **kwargs):
 	return subprocess.run(cmd, **kwargs)
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
-	cmd = [ "./bin/Debug/QINP", "-r", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o=/tmp/{testName}.out" ]
+	if platform.system() == "Linux":
+		exePath = "./bin/Debug/QINP"
+		outPath = f"/tmp/{testName}.out"
+	elif platform.system() == "Windows":
+		exePath = ".\\bin\\Debug\\QINP.exe"
+		outPath = f"%Temp%\\{testName}.exe"
+	else:
+		print(f"ERROR: UNKNOWN PLATFORM {platform.system()}!")
+		exit(1)
+	cmd = [ exePath, "-r", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o={outPath}" ]
 	cmd.extend(map(lambda str: "-a=" + str, argv))
 	return cmd
 
@@ -112,7 +122,13 @@ def runTest(testName: str) -> bool:
 
 def buildQINP() -> bool:
 	print("[ INF ] Building QINP...")
-	output = runCmd([ "./build.sh", "Debug" ])
+	if platform.system() == "Linux":
+		output = runCmd([ "./build.sh", "Debug" ])
+	elif platform.system() == "Windows":
+		output = runCmd([ ".\\build.bat", "Debug" ])
+	else:
+		print(f"ERROR: UNKNOWN PLATFORM {platform.system()}!")
+		exit(1)
 	success = output.returncode == 0
 	return success
 
