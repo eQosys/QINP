@@ -2,20 +2,31 @@
 \\ Windows Specific
 
 space std:
+	define __HANDLE u64
+
 	extern void __ExitProcess(i32 status) = "ExitProcess"
 	extern u64 __GetStdHandle(i32 nStdHandle) = "GetStdHandle"
-	extern bool __WriteConsole(u64 handle, void* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
+	extern bool __WriteConsole(__HANDLE handle, void* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
+	extern bool __ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
+	extern void __Sleep(u32 ms) = "Sleep"
 
 	void exit(i32 status):
 		__ExitProcess(status)
 
 	_RESULT print(u8* str, u64 len):
-		static u64 hStdOut = __GetStdHandle(-11)
+		static __HANDLE hStdOut = __GetStdHandle(-11)
 
 		i32 nWritten
 		__WriteConsole(hStdOut, str, len, &nWritten, 0)
 		return nWritten
 
-	\\u8 getchar():
+	u8 getchar():
+		static __HANDLE hStdIn = __GetStdHandle(-10)
+		u8 ch
+		u32 nRead
+		__ReadConsole(hStdIn, &ch, 1, &nRead, 0)
+		return ch
 
-	\\_RESULT sleep(u64 ms):
+	_RESULT sleep(u64 ms):
+		__Sleep(ms)
+		return 0
