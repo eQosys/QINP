@@ -8,7 +8,7 @@ space std:
 	extern u64 __GetStdHandle(i32 nStdHandle) = "GetStdHandle"
 	extern bool __WriteConsole(__HANDLE handle, void* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
 	extern bool __ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
-	extern void __Sleep(u32 ms) = "Sleep"
+	extern void __Sleep(i32 ms) = "Sleep"
 
 	void exit(i32 status):
 		__ExitProcess(status)
