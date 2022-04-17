@@ -23,6 +23,20 @@ define _RESULT i32
 
 
 space std:
+	\\ Returns the smaller of two values
+	\\ @param a The first value
+	\\ @param b The second value
+	\\ @return The smaller of the two values
+	\\ TODO: blueprint support
+	i64 min(i64 a, i64 b)...
+
+	\\ Returns the larger of two values
+	\\ @param a The first value
+	\\ @param b The second value
+	\\ @return The larger of the two values
+	\\ TODO: blueprint support
+	i64 max(i64 a, i64 b)...
+
 	\\ Terminate the calling process and return the specified exit status.
 	\\ @param status The exit status to return to the parent process.
 	void exit(i32 status)...		\\ Platform dependent implementation
@@ -140,6 +154,12 @@ space std:
 	_FILE open(u8* filename, i32 flags, u16 mode)...
 
 
+
+	i64 min(i64 a, i64 b):
+		return a < b ? a : b
+
+	i64 max(i64 a, i64 b):
+		return a > b ? a : b
 
 	u64 strlen(u8* str):
 		u8* begin = str

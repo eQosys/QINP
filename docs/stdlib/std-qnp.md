@@ -6,6 +6,8 @@
  - [Definitions](#definitions)
 
 ## Functions
+ - [i64 min ( i64 a, i64 b )]()
+ - [i64 max ( i64 a, i64 b )]()
  - [void exit ( i32 status ) ...]()
  - [u64 strlen ( u8* str )]()
  - [_RESULT print ( u8* str )]()
