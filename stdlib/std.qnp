@@ -37,6 +37,22 @@ space std:
 	\\ TODO: blueprint support
 	i64 max(i64 a, i64 b)...
 
+	\\ Returns the absolute value of a value
+	\\ @param a The value
+	\\ @return The absolute value of the value
+	i64 abs(i64 a)...
+
+	\\ Returns the sign of a value
+	\\ @param a The value
+	\\ @return The sign of the value
+	i64 sign(i64 a)...
+
+	\\ Returns the value of base raised to the power of exponent.
+	\\ @param base The base
+	\\ @param exponent The exponent (must be greater than or equal to 0)
+	\\ @return The value of base raised to the power of exponent
+	i64 pow(i64 base, i64 exponent)...
+
 	\\ Terminate the calling process and return the specified exit status.
 	\\ @param status The exit status to return to the parent process.
 	void exit(i32 status)...		\\ Platform dependent implementation
@@ -160,6 +176,19 @@ space std:
 
 	i64 max(i64 a, i64 b):
 		return a > b ? a : b
+
+	i64 abs(i64 a):
+		return a < 0 ? -a : a
+
+	i64 sign(i64 a):
+		return a < 0 ? -1 : a > 0 ? 1 : 0
+	
+	i64 pow(i64 base, i64 exponent):
+		i64 result = 1
+		while exponent > 0:
+			result *= base
+			--exponent
+		return result
 
 	u64 strlen(u8* str):
 		u8* begin = str

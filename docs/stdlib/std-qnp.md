@@ -8,6 +8,9 @@
 ## Functions
  - [i64 min ( i64 a, i64 b )]()
  - [i64 max ( i64 a, i64 b )]()
+ - [i64 abs ( i64 a )]()
+ - [i64 sign ( i64 a )]()
+ - [i64 pow ( i64 base, i64 exponent )]()
  - [void exit ( i32 status ) ...]()
  - [u64 strlen ( u8* str )]()
  - [_RESULT print ( u8* str )]()
