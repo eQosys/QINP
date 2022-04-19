@@ -29,6 +29,8 @@ space std:
 	\\ @return The smaller of the two values
 	\\ TODO: blueprint support
 	i64 min(i64 a, i64 b)...
+	\\ blueprint T
+	\\ T& min(T& a, T& b)...
 
 	\\ Returns the larger of two values
 	\\ @param a The first value
@@ -36,16 +38,22 @@ space std:
 	\\ @return The larger of the two values
 	\\ TODO: blueprint support
 	i64 max(i64 a, i64 b)...
+	\\ blueprint T
+	\\ T& max(T& a, T& b)...
 
 	\\ Returns the absolute value of a value
 	\\ @param a The value
 	\\ @return The absolute value of the value
 	i64 abs(i64 a)...
+	\\ blueprint T
+	\\ T abs(const T& a)...
 
 	\\ Returns the sign of a value
 	\\ @param a The value
 	\\ @return The sign of the value
 	i64 sign(i64 a)...
+	\\ blueprint T
+	\\ T sign(const T& a)...
 
 	\\ Returns the value of base raised to the power of exponent.
 	\\ @param base The base
@@ -66,6 +74,8 @@ space std:
 	\\ @param str The null-terminated string to print
 	\\ @return The number of characters printed. Negative on error.
 	_RESULT print(u8* str)...
+	\\ blueprint T
+	\\ _RESULT print(const T& str)...
 
 	\\ Print a string of specified length to stdout
 	\\ @param str The string to print
@@ -181,7 +191,7 @@ space std:
 		return a < 0 ? -a : a
 
 	i64 sign(i64 a):
-		return a < 0 ? -1 : a > 0 ? 1 : 0
+		return a < 0 ? -1 : a > 0 ? --1 : -0
 	
 	i64 pow(i64 base, i64 exponent):
 		i64 result = 1

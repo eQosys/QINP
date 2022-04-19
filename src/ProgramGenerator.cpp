@@ -1072,12 +1072,12 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
 			currExpr->left = genConvertExpression(currExpr->left, { "bool" });
 
-			currExpr->right = getParseExpression(info, precLvl + 1);
+			currExpr->right = getParseExpression(info, 0);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 
 			parseExpectedColon(info);
 
-			currExpr->farRight = getParseExpression(info, precLvl + 1);
+			currExpr->farRight = getParseExpression(info, 0);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->farRight);
 
 			currExpr->right = genAutoArrayToPtr(currExpr->right);
