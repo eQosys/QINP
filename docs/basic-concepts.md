@@ -36,8 +36,8 @@ u32 a = 3 * 5	\\ This is a comment
 ### Indentation
 
 The indentation of statements/expressions defines the grouping and nesting.
-Tabs and spaces can be used, but can't be mixed.
-How many tabs/spaces are used for each level of indentation is defined by the first time an indentation is encountered.
+Both tabs and spaces can be used, but they can't be mixed.
+The number of tabs/spaces used for one level of indentation is defined by the first time an indentation is encountered.
 
 The indentation is file specific. Different files can have different indentations.
 
@@ -47,7 +47,7 @@ The indentation is file specific. Different files can have different indentation
 
 Identifiers are used to name variables, functions, packs, etc.
 
-Valid characters are `a-z, A-Z, 0-9, _`, but the first character must be a letter or an underscore.
+Valid characters for an identifier are `a-z, A-Z, 0-9, _`, but the first character must be a letter or an underscore.
 
 Identifiers are case sensitive.
 
@@ -55,6 +55,7 @@ Identifiers are case sensitive.
 
 Newlines and indentations are important to the compiler.
 It is possible to split a line across multiple lines by using a backslash ('\\') at the end of a line.
+The indentation of the next line after the backslash is ignored.
 
 #### Example
 

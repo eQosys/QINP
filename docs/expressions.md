@@ -40,9 +40,13 @@ They may occur in two forms:
 >
 > The precedence of types is the following:
 > - bool
+> - i8
 > - u8
+> - i16
 > - u16
+> - i32
 > - u32
+> - i64
 > - u64
 >
 > The last type in the list has the highest precedence.
@@ -62,4 +66,4 @@ There are different types of literals:
 
 #### String Literals
 
-String literals are surrounded by double quotes. Their datatype is u8\[n\], while n stands for the number of characters in the string (including the null terminator). Using the [sizeof operator](./operators.md#size-of) on a string literal yields the number of bytes used to store the string.
+String literals are surrounded by double quotes. Their datatype is `u8\[n\]`, while `n` stands for the number of characters in the string (including the null terminator). Using the [sizeof operator](./operators.md#size-of) on a string literal yields the number of bytes used to store the string.

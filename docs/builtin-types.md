@@ -22,18 +22,20 @@ The size of a `bool` is `1` byte.
 ---
 
 ### Signed Integers
+
 All `i*` types are signed integers. The number in the name stands for the number of bits used to represent the type.
 
-Type | Size (in bytes) | Min  | Max
----- | --------------- | ---  | ------
-i8   | 1               | 2^7  | 2^7-1
-i16  | 2               | 2^15 | 2^15-1
-i32  | 4               | 2^31 | 2^31-1
-i64  | 8               | 2^63 | 2^63-1
+Type | Size (in bytes) | Min   | Max
+---- | --------------- | ----- | ------
+i8   | 1               | -2^7  | 2^7-1
+i16  | 2               | -2^15 | 2^15-1
+i32  | 4               | -2^31 | 2^31-1
+i64  | 8               | -2^63 | 2^63-1
 
 ---
 
 ### Unsigned Integers
+
 All `u*` types are unsigned integers. The number in the name stands for the number of bits used to represent the value.
 
 Type | Size (in bytes) | Min | Max
@@ -46,6 +48,7 @@ u64  | 8               | 0   | 2^64-1
 ---
 
 ### Void
+
 The `void` type cannot be used to declare a variable.
 When used as the return type of a function the function will return nothing.
-The `void` type has no size, but pointers to `void` are allowed.
+The `void` type has no size. Pointers to `void` are valid, but cannot be dereferenced.
