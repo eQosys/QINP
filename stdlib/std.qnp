@@ -65,11 +65,6 @@ space std:
 	\\ @param status The exit status to return to the parent process.
 	void exit(i32 status)...		\\ Platform dependent implementation
 
-	\\ Determine the length of a string (without the null terminator)
-	\\ @param str The null-terminated string to measure
-	\\ @return The length of the string
-	u64 strlen(u8* str)...
-
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
 	\\ @return The number of characters printed. Negative on error.
@@ -104,6 +99,115 @@ space std:
 	\\ @return Address of the destination buffer
 	u8* scan(u8* dest, u64 size)...
 
+	\\ Determine the length of a string (without the null terminator)
+	\\ @param str The null-terminated string to measure
+	\\ @return The length of the string
+	u64 strlen(u8* str)...
+
+	\\ Convert a string to lowercase (in place)
+	\\ @param str The string to convert
+	\\ @return The pointer to the passed string
+	u8* strlwr(u8* str)...
+
+	\\ Convert the first num characters of a string to lowercase (in place)
+	\\ Does not check for null terminator
+	\\ @param str The string to convert
+	\\ @param num The number of characters to convert
+	\\ @return The pointer to the passed string
+	u8* strlwr(u8* str, u64 num)...
+
+	\\ Convert a string to uppercase (in place)
+	\\ @param str The string to convert
+	\\ @return The pointer to the passed string
+	u8* strupr(u8* str)...
+
+	\\ Convert the first num characters of a string to uppercase (in place)
+	\\ Does not check for null terminator
+	\\ @param str The string to convert
+	\\ @param num The number of characters to convert
+	\\ @return The pointer to the passed string
+	u8* strupr(u8* str, u64 num)...
+
+	\\ Concatenates two strings
+	\\ @param dest The destination string to concatenate to
+	\\ @param src The source string to concatenate
+	\\ @return The pointer to the destination string
+	u8* strcat(u8* dest, u8* src)...
+	
+	\\ Concatenates two strings
+	\\ @param dest The destination string to concatenate to
+	\\ @param src The source string to concatenate
+	\\ @param len The number of characters to concatenate
+	u8* strcat(u8* dest, u8* src, u64 num)...
+	
+	\\ Copy a null-terminated string
+	\\ @param dest The destination buffer
+	\\ @param src The source string
+	\\ @return The destination buffer
+	u8* strcpy(u8* dest, u8* src)...
+	
+	\\ Compare two null-terminated strings
+	\\ @param str1 The first string
+	\\ @param str2 The second string
+	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
+	i32 strcmp(u8* str1, u8* str2)...
+
+	\\ Compare the first num characters of two strings
+	\\ @param str1 The first string
+	\\ @param str2 The second string
+	\\ @param num The number of characters to compare
+	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
+	i32 strcmp(u8* str1, u8* str2, u64 num)...
+
+	\\ Compare two null-terimated strings without case sensitivity
+	\\ @param str1 The first string
+	\\ @param str2 The second string
+	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
+	i32 strcmpi(u8* str1, u8* str2)...
+
+	\\ Compare the first num characters of two strings without case sensitivity
+	\\ @param str1 The first string
+	\\ @param str2 The second string
+	\\ @param num The number of characters to compare
+	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
+	i32 strcmpi(u8* str1, u8* str2, u64 num)...
+
+	\\ Locate the first occurencce of a character in a string
+	\\ @param str The string to search
+	\\ @param ch The character to search for
+	\\ @return The address of the first occurence of ch in str, or NULL if not found
+	u8* strchr(u8* str, u8 ch)...
+	
+	\\ Locate the last occurence of a character in a string
+	\\ @param str The string to search
+	\\ @param ch The character to search for
+	\\ @return The address of the last occurence of ch in str, or NULL if not found
+	u8* strrchr(u8* str, u8 ch)...
+
+	\\ Locate the first occurence of a substring in a string
+	\\ @param str The string to search
+	\\ @param substr The substring to search for
+	\\ @return The address of the first occurence of substr in str, or NULL if not found
+	u8* strstr(u8* str, u8* substr)...
+
+	\\ Locate the last occurence of a substring in a string
+	\\ @param str The string to search
+	\\ @param substr The substring to search for
+	\\ @return The address of the last occurence of substr in str, or NULL if not found
+	u8* strrstr(u8* str, u8* substr)...
+	
+	\\ Set all characters in a string to a specified character
+	\\ @param str The string to modify
+	\\ @param ch The character to set
+	\\ @return The pointer to the passed string
+	u8* strset(u8* str, u8 ch)...
+
+	\\ Set the first num characters of a string to a specified character
+	\\ @param str The string to modify
+	\\ @param ch The character to set
+	\\ @param num The number of characters to set
+	u8* strset(u8* str, u8 ch, u64 num)...
+
 	\\ Reverse a null-terminated string
 	\\ @param str The null-terminated string to reverse
 	\\ @return The reversed string
@@ -114,18 +218,6 @@ space std:
 	\\ @param end Pointer to the character after the last character of the string to reverse (usually the null-terminator)
 	\\ @return The reversed string
 	u8* strrev(u8* begin, u8* end)...
-
-	\\ Copy a null-terminated string
-	\\ @param dest The destination buffer
-	\\ @param src The source string
-	\\ @return The destination buffer
-	u8* strcpy(u8* dest, u8* src)...
-
-	\\ Compare two null-terminated strings
-	\\ @param str1 The first string
-	\\ @param str2 The second string
-	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmp(u8* str1, u8* str2)...
 
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
@@ -206,12 +298,6 @@ space std:
 			--exponent
 		return result
 
-	u64 strlen(u8* str):
-		u8* begin = str
-		while *str:
-			++str
-		return str - begin
-
 	_RESULT print(u8* str):
 		return print(str, strlen(str))
 
@@ -230,19 +316,11 @@ space std:
 		*dest = '\0'
 		return begin
 
-	u8* strrev(u8* str):
-		return strrev(str, str + strlen(str))
-
-	u8* strrev(u8* begin, u8* end):
-		u8* str = begin
-		u8 temp
-
-		while begin < end:
-			temp = *begin
-			*begin++ = *--end
-			*end = temp
-
-		return str
+	u64 strlen(u8* str):
+		u8* begin = str
+		while *str:
+			++str
+		return str - begin
 
 	u8* strcpy(u8* dest, u8* src):
 		u8* begin = dest
@@ -258,6 +336,20 @@ space std:
 			++str1
 			++str2
 		return (i32)*str1 - (i32)*str2
+
+	u8* strrev(u8* str):
+		return strrev(str, str + strlen(str))
+
+	u8* strrev(u8* begin, u8* end):
+		u8* str = begin
+		u8 temp
+
+		while begin < end:
+			temp = *begin
+			*begin++ = *--end
+			*end = temp
+
+		return str
 
 	u8* itos(i64 num, u8* str, i64 base):
 		u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
