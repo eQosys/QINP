@@ -5,6 +5,7 @@
 #if defined QINP_PLATFORM_UNIX
 
 #include <sys/wait.h>
+#include <unistd.h>
 
 int execCmd(const std::string& command)
 {

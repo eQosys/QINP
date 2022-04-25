@@ -41,7 +41,7 @@ class TestInfo:
 
 DEF_TEST_INFO = TestInfo([], b"", b"", 0)
 
-def runTestCmd(testName: str, testInfo: TestInfo) -> subprocess.CompletedProcess[str]:
+def runTestCmd(testName: str, testInfo: TestInfo) -> subprocess.CompletedProcess:
 	output = None
 	try:
 		output = runCmd(makeTestCmd(testName, testInfo.argv), input=testInfo.stdin, capture_output=True, timeout=5)
