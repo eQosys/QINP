@@ -19,7 +19,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/Debug/QINP",
-            "args": [ "-v", "-k", "-r", "-i=stdlib/", "examples/gameoflife.qnp" ],
+            "args": [ "-v", "-k", "-r", "-i=stdlib/", "tests/stdlib-string.qnp" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
         }

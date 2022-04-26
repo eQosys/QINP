@@ -230,7 +230,7 @@ space std:
 				break
 			++str1
 			++str2
-		return (i32)*str1 - (i32)*str2
+		return num == -1 ? (i32)0 : (i32)*str1 - (i32)*str2
 
 	i32 strcmpi(u8* str1, u8* str2):
 		while *str1 && *str2:
@@ -246,7 +246,7 @@ space std:
 				break
 			++str1
 			++str2
-		return (i32)tolower(*str1) - (i32)tolower(*str2)
+		return num == -1 ? (i32)0 : (i32)tolower(*str1) - (i32)tolower(*str2)
 
 	u8* strchr(u8* str, u8 ch):
 		while *str:
@@ -264,18 +264,24 @@ space std:
 		return last
 
 	u8* strstr(u8* str, u8* substr):
-		while *str:
-			if !strcmp(str, substr):
+		u64 mainlen = strlen(str)
+		u64 sublen = strlen(substr)
+		while mainlen >= sublen:
+			if !strcmp(str, substr, sublen):
 				return str
 			++str
+			--mainlen
 		return null
 
 	u8* strrstr(u8* str, u8* substr):
+		u64 mainlen = strlen(str)
+		u64 sublen = strlen(substr)
 		u8* last = null
-		while *str:
-			if !strcmp(str, substr):
+		while mainlen >= sublen:
+			if !strcmp(str, substr, sublen):
 				last = str
 			++str
+			--mainlen
 		return last
 
 	u8* strset(u8* str, u8 ch):
