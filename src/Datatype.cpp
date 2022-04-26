@@ -44,6 +44,13 @@ bool isBool(const Datatype& datatype)
 		datatype.name == "bool";
 }
 
+bool isNull(const Datatype& datatype)
+{
+	return
+		datatype.ptrDepth == 0 &&
+		datatype.name == "null";
+}
+
 bool isInteger(const Datatype& datatype)
 {
 	return isUnsignedInt(datatype) || isSignedInt(datatype);

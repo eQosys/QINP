@@ -120,6 +120,7 @@ bool isKeyword(const std::string& name)
 		"extern",
 		"if",
 		"import",
+		"null",
 		"pack",
 		"pass",
 		"return",
@@ -195,6 +196,7 @@ bool isLiteral(const Token& token)
 		token.type == Token::Type::LiteralInteger ||
 		token.type == Token::Type::LiteralChar ||
 		token.type == Token::Type::LiteralBoolean ||
+		token.type == Token::Type::LiteralNull ||
 		token.type == Token::Type::String;
 }
 

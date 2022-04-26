@@ -114,8 +114,11 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 				token.type = Token::Type::LiteralInteger;
 				token.value = std::to_string(token.pos.line);
 			}
+			else if (token.value == "null")
+			{
+				token.type = Token::Type::LiteralNull;
+			}
 		}
-
 
 		tokens->push_back(token);
 	};

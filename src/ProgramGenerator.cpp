@@ -719,6 +719,11 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	if (expToConvert->datatype == newDatatype)
 		return expToConvert;
 
+	if (isNull(expToConvert->datatype))
+	{
+		expToConvert->datatype = newDatatype;
+		return expToConvert;
+	}
 
 	if (isBool(expToConvert->datatype))
 	{
@@ -884,6 +889,11 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	case Token::Type::LiteralBoolean:
 		exp->valStr = std::to_string(litToken.value == "true" ? 1 : 0);
 		exp->datatype = { "bool" };
+		exp->isObject = true;
+		break;
+	case Token::Type::LiteralNull:
+		exp->valStr = "0";
+		exp->datatype = { "null" };
 		exp->isObject = true;
 		break;
 	case Token::Type::String:

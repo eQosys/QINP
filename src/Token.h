@@ -28,6 +28,7 @@ struct Token
 		LiteralInteger,
 		LiteralChar,
 		LiteralBoolean,
+		LiteralNull,
 		EndOfCode,
 	} type;
 	std::string value;
