@@ -153,6 +153,8 @@ space std:
 	u8 tolower(u8 c)...
 
 
+	u8* __baseCharsLower = "0123456789abcdefghijklmnopqrstuvwxyz"
+
 
 	u64 strlen(u8* str):
 		u8* begin = str
@@ -303,8 +305,6 @@ space std:
 		return str
 
 	u8* itos(i64 num, u8* str, i64 base):
-		u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
-
 		u8* begin = str
 		bool negative = num < 0
 
@@ -312,7 +312,7 @@ space std:
 			num *= -1
 
 		do:
-			*str++ = baseChars[num % base]
+			*str++ = __baseCharsLower[num % base]
 			num /= base
 		while num
 
@@ -324,18 +324,13 @@ space std:
 		return strrev(begin, str)
 
 	i64 stoi(u8* str, i64 base):
-		u8* baseChars = "0123456789abcdefghijklmnopqrstuvwxyz"
-
 		i64 num = 0
 		bool negative = *str == '-'
 		if negative:
 			++str
 
 		while *str:
-			u8 ch = tolower(*str++)
-			i64 index = 0
-			while baseChars[index] != ch:
-				++index
+			i64 index = (i64)(strchr(__baseCharsLower, tolower(*str++)) - __baseCharsLower)
 			num = num * base + index
 
 		if negative:

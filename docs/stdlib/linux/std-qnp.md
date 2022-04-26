@@ -3,6 +3,7 @@
 ## Overview
  - [Functions](#functions)
  - [Packs](#packs)
+ - [Globals](#globals)
  - [Definitions](#definitions)
 
 ## Functions
@@ -15,6 +16,9 @@
 
 ## Packs
  - [__timespec]()
+
+## Globals
+ - _None_
 
 ## Definitions
  - _None_

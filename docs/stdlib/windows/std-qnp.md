@@ -3,6 +3,7 @@
 ## Overview
  - [Functions](#functions)
  - [Packs](#packs)
+ - [Globals](#globals)
  - [Definitions](#definitions)
 
 ## Functions
@@ -18,6 +19,9 @@
  - [_RESULT sleep( u64 ms )]()
 
 ## Packs
+ - _None_
+
+## Globals
  - _None_
 
 ## Definitions
