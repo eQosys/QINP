@@ -3,7 +3,10 @@
 The Standard Library is a collection of functions, packs and definitions that are available to all QINP programs and are essential to the language.
 
 All files building the Standard Library can be found in the [stdlib](../../stdlib/):
+ - [./math.qnp](./math-qnp.md)
+ - [./memory.qnp](./memory-qnp.md)
  - [./std.qnp](./std-qnp.md)
+ - [./string.qnp](./string-qnp.md)
  - [./linux/std.qnp](./linux/std-qnp.md)
  - [./linux/syscall.qnp](./linux/syscall-qnp.md)
  - [./windows/std.qnp](./windows/std-qnp.md)

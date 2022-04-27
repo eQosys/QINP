@@ -3,6 +3,7 @@
 
 
 import "math.qnp"
+import "memory.qnp"
 import "string.qnp"
 
 
@@ -62,13 +63,6 @@ space std:
 	\\ @return Address of the destination buffer
 	u8* scan(u8* dest, u64 size)...
 
-	\\ Copy data from one buffer to another
-	\\ @param dest The destination buffer
-	\\ @param src The source buffer
-	\\ @param len The number of bytes to copy
-	\\ @return The destination buffer
-	void* memcpy(void* dest, void* src, u64 len)...
-
 	\\ Get the arguments passed to the program
 	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
 	\\ @return The number of arguments passed to the program
@@ -116,14 +110,6 @@ space std:
 
 		*dest = '\0'
 		return begin
-
-	void* memcpy(void* dest, void* src, u64 len):
-		u8* d = (u8*)dest
-		u8* s = (u8*)src
-
-		while len--:
-			*d++ = *s++
-		return dest
 
 	u64 getargs(u8*** pargv):
 		u64 argc

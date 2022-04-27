@@ -1,4 +1,4 @@
-# Stdlib - math.qnp
+# Stdlib - memory.qnp
 
 ## Overview
  - [Functions](#functions)
@@ -7,11 +7,8 @@
  - [Definitions](#definitions)
 
 ## Functions
- - [i64 min ( i64 a, i64 b )]()
- - [i64 max ( i64 a, i64 b )]()
- - [i64 abs ( i64 a )]()
- - [i64 sign ( i64 a )]()
- - [i64 pow ( i64 base, i64 exponent )]()
+ - [void* memcpy ( void* dest, void* src, u64 num )]()
+ - [void* memset ( void* dest, u8 value, u64 num )]()
 
 ## Packs
  - _None_

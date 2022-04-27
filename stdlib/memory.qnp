@@ -1,0 +1,35 @@
+\\ QINP Standard Library
+\\ Memory
+
+space std:
+	\\ Copy data from one buffer to another
+	\\ @param dest The destination buffer
+	\\ @param src The source buffer
+	\\ @param num The number of bytes to copy
+	\\ @return The destination buffer
+	void* memcpy(void* dest, void* src, u64 num)...
+
+	\\ Set every byte in a buffer to a value
+	\\ @param dest The destination buffer
+	\\ @param val The value to set every byte to
+	\\ @param num The number of bytes to set
+	\\ @return The destination buffer
+	void* memset(void* dest, u8 val, u64 num)...
+
+
+
+	void* memcpy(void* dest, void* src, u64 len):
+		u8* d = (u8*)dest
+		u8* s = (u8*)src
+
+		while len--:
+			*d++ = *s++
+		return dest
+
+	void* memset(void* dest, u8 val, u64 len):
+		u8* d = (u8*)dest
+
+		while len--:
+			*d++ = val
+
+		return dest
