@@ -108,7 +108,7 @@ space std:
 		while --size:
 			*dest++ = getchar()
 
-		*dest = '\0'
+		*dest = null
 		return begin
 
 	u64 getargs(u8*** pargv):

@@ -206,14 +206,14 @@ space std:
 		u8* begin = dest
 		while *src:
 			*dest++ = *src++
-		*dest = '\0'
+		*dest = null
 		return begin
 
 	u8* strcpy(u8* dest, u8* src, u64 num):
 		u8* begin = dest
 		while num--:
 			*dest++ = *src++
-		*dest = '\0'
+		*dest = null
 		return begin
 	
 	i32 strcmp(u8* str1, u8* str2):
@@ -325,7 +325,7 @@ space std:
 		if negative:
 			*str++ = '-'
 
-		*str = '\0'
+		*str = null
 
 		return strrev(begin, str)
 

@@ -18,6 +18,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [extern](#extern)
  - [_if_](./control-flow.md#if-elif-else)
  - [import](#import)
+ - [null](#null)
  - [_pack_](./declarations.md#packs)
  - [pass](#pass)
  - [return](#return)
@@ -146,6 +147,22 @@ Possible platform values are:
 > ```qinp
 > import.linux "linux/std.qnp"
 > ```
+
+---
+
+### Null
+
+The `null` keyword is used to represent 0 of any builtin type.
+It can be implicitely converted to any builtin type.
+
+#### Example
+
+```qinp
+void* p = null
+u8* pu = null
+i32 i = null
+bool b = null
+```
 
 ---
 
