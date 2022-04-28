@@ -1630,6 +1630,16 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	parseExpected(info, Token::Type::Separator, ")");
 
+	if (isOperator(peekToken(info), "!"))
+	{
+		nextToken(info);
+		auto sym = getSymbol(currSym(info), name, true);
+		if (sym)
+			sym = getSymbol(sym, getSignatureNoRet(funcSym), true);
+		if (!sym)
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Missing pre-declaration before explicit function declaration/definition!");
+	}
+
 	funcSym->state = SymState::Defined;
 	if (isSeparator(peekToken(info), "..."))
 	{

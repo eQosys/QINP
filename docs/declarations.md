@@ -62,16 +62,20 @@ Arrays can not be initialized.
 A function declaration associates a name with a return type and a list of zero or more parameters.
 A function definition additionally associates a list of statements.
 
+It is possible to give a function definition or declaration a pre-declaration requirement. This can be done via a `!` after the parenthesised parameter list.
+This can be useful for functions that have different definitions depending on the platform.
+They are heavily used in the QINP standard library.
+
 #### Usage
 
 > Declaration
 > ```qinp
-> [return-type] [name] ( [parameter-list] )...
+> [return-type] [name] ( [parameter-list] ) [!*]...
 > ```
 
 > Definition
 > ```qinp
-> [return-type] [name] ( [parameter-list] ):
+> [return-type] [name] ( [parameter-list] ) [!*]:
 > 	[body]
 
 #### Examples
@@ -80,11 +84,18 @@ A function definition additionally associates a list of statements.
 > ```qinp
 > u8 foo(u32 a, u16* b)...
 > ```
+> ```qinp
+> void func()!...
+> ```
 
 > Definition
 > ```qinp
 > u64 square(u64 x):
 >    return x * x
+> ```
+> ```qinp
+> void func()!:
+>    return
 > ```
 
 ---

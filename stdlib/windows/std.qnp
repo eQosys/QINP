@@ -10,23 +10,23 @@ space std:
 	extern bool __ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
 	extern void __Sleep(i32 ms) = "Sleep"
 
-	void exit(i32 status):
+	void exit(i32 status)!:
 		__ExitProcess(status)
 
-	_RESULT print(u8* str, u64 len):
+	_RESULT print(u8* str, u64 len)!:
 		static __HANDLE hStdOut = __GetStdHandle(-11)
 
 		i32 nWritten
 		__WriteConsole(hStdOut, str, len, &nWritten, (void*)0)
 		return nWritten
 
-	u8 getchar():
+	u8 getchar()!:
 		static __HANDLE hStdIn = __GetStdHandle(-10)
 		u8 ch
 		i32 nRead
 		__ReadConsole(hStdIn, &ch, 1, &nRead, (void*)0)
 		return ch
 
-	_RESULT sleep(u64 ms):
+	_RESULT sleep(u64 ms)!:
 		__Sleep(ms)
 		return 0

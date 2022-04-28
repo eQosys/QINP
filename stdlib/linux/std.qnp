@@ -4,13 +4,13 @@
 import "syscall.qnp"
 
 space std:
-	void exit(i32 status):
+	void exit(i32 status)!:
 		assembly:
 			"mov rax, $(SYS_EXIT)"
 			"mov edi, [rbp $(status)]"
 			"syscall"
 
-	_RESULT print(u8* str, u64 len):
+	_RESULT print(u8* str, u64 len)!:
 		_RESULT result
 		assembly:
 			"mov rax, $(SYS_WRITE)"
@@ -21,7 +21,7 @@ space std:
 			"mov [rbp $(result)], eax"
 		return result
 
-	u8 getchar():
+	u8 getchar()!:
 		u8 ch
 
 		assembly:
@@ -38,7 +38,7 @@ space std:
 		i64 seconds
 		i64 nanoseconds
 
-	_RESULT sleep(u64 ms):
+	_RESULT sleep(u64 ms)!:
 		__timespec ts
 		ts.seconds = ms / 1000
 		ts.nanoseconds = (ms % 1000) * 1000000

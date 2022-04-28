@@ -18,7 +18,7 @@ space std:
 
 
 
-	void* memcpy(void* dest, void* src, u64 len):
+	void* memcpy(void* dest, void* src, u64 len)!:
 		u8* d = (u8*)dest
 		u8* s = (u8*)src
 
@@ -26,7 +26,7 @@ space std:
 			*d++ = *s++
 		return dest
 
-	void* memset(void* dest, u8 val, u64 len):
+	void* memset(void* dest, u8 val, u64 len)!:
 		u8* d = (u8*)dest
 
 		while len--:

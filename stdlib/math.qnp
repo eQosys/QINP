@@ -42,19 +42,19 @@ space std:
 
 
 
-	i64 min(i64 a, i64 b):
+	i64 min(i64 a, i64 b)!:
 		return a < b ? a : b
 
-	i64 max(i64 a, i64 b):
+	i64 max(i64 a, i64 b)!:
 		return a > b ? a : b
 
-	i64 abs(i64 a):
+	i64 abs(i64 a)!:
 		return a < 0 ? -a : a
 
-	i64 sign(i64 a):
+	i64 sign(i64 a)!:
 		return a < 0 ? -1 : a > 0 ? 1 : 0
 	
-	i64 pow(i64 base, i64 exponent):
+	i64 pow(i64 base, i64 exponent)!:
 		i64 result = 1
 		while exponent > 0:
 			result *= base
