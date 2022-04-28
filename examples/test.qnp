@@ -1,5 +1,3 @@
 import "std.qnp"
 
-std::print("Hello world!\n")
-std::print("NASM IS BEAUTIFUL!\n")
-std::exit(std::getargs((u8***)0))
+std::sign(1)

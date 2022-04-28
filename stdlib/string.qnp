@@ -41,6 +41,7 @@ space std:
 	\\ @param dest The destination string to concatenate to
 	\\ @param src The source string to concatenate
 	\\ @param len The number of characters to concatenate (excluding the null terminator)
+	\\ @return The pointer to the destination string
 	u8* strcat(u8* dest, u8* src, u64 num)...
 	
 	\\ Copy a null-terminated string
@@ -116,6 +117,7 @@ space std:
 	\\ @param str The string to modify
 	\\ @param ch The character to set
 	\\ @param num The number of characters to set
+	\\ @return The pointer to the passed string
 	u8* strset(u8* str, u8 ch, u64 num)...
 
 	\\ Reverse a null-terminated string
@@ -336,8 +338,8 @@ space std:
 			++str
 
 		while *str:
-			i64 index = (i64)(strchr(__baseCharsLower, tolower(*str++)) - __baseCharsLower)
-			num = num * base + index
+			num *= base
+			num += (i64)(strchr(__baseCharsLower, tolower(*str++)) - __baseCharsLower)
 
 		if negative:
 			num = -num

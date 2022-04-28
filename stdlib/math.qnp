@@ -52,7 +52,7 @@ space std:
 		return a < 0 ? -a : a
 
 	i64 sign(i64 a):
-		return a < 0 ? -1 : a > 0 ? --1 : -0
+		return a < 0 ? -1 : a > 0 ? 1 : 0
 	
 	i64 pow(i64 base, i64 exponent):
 		i64 result = 1
