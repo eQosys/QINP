@@ -51,25 +51,3 @@ space std:
 			"syscall"
 			"mov [rbp $(result)], eax"
 		return result
-
-	_RESULT ioctl(_FILE fd, u32 request, void* parg):
-		_RESULT result
-		assembly:
-			"mov rax, $(SYS_IOCTL)"
-			"mov edi, [rbp $(fd)]"
-			"mov esi, [rbp $(request)]"
-			"mov rdx, [rbp $(parg)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
-
-	_FILE open(u8* filename, i32 flags, u16 mode):
-		_RESULT result
-		assembly:
-			"mov rax, $(SYS_OPEN)"
-			"mov rdi, [rbp $(filename)]"
-			"mov esi, [rbp $(flags)]"
-			"mov edx, [rbp $(mode)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result

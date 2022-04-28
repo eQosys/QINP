@@ -21,7 +21,6 @@ define ushort u16
 define uint u32
 define ulong u64
 
-define _FILE i32
 define _RESULT i32
 
 space std:
@@ -76,20 +75,6 @@ space std:
 	\\ @param ms The number of milliseconds to sleep
 	\\ @return Zero on success, negative on error
 	_RESULT sleep(u64 ms)...		\\ Platform dependent implementation
-
-	\\ Control device
-	\\ @param fd An open file descriptor
-	\\ @param request The request to perform
-	\\ @param arg The argument to the request
-	\\ @return The result of the request
-	_RESULT ioctl(_FILE fd, u32 request, void* parg)...
-
-	\\ Open a file
-	\\ @param filename The path to the file to open
-	\\ @param flags The flags to use when opening the file
-	\\ @param mode The mode to use when opening the file
-	\\ @return An open file descriptor
-	_FILE open(u8* filename, i32 flags, u16 mode)...
 
 
 
