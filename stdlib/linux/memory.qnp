@@ -1,0 +1,20 @@
+\\ QINP Standard Library
+\\ Memory - Linux Specific
+
+import "syscall.qnp"
+
+space std:
+	u64 __brk(u64 addr):
+		u64 result
+		assembly:
+			"mov rax, $(SYS_BRK)"
+			"mov rdi, [rbp $(addr)]"
+			"syscall"
+			"mov [rbp $(result)], rax"
+		return result
+
+	void* malloc(u64 size)!:
+		return null
+
+	void free(void* ptr)!:
+		return

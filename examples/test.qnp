@@ -1,3 +1,15 @@
 import "std.qnp"
 
-std::sign(1)
+u64 curr_size = std::__brk(0)
+u64 new_size = curr_size + (1024 * 1024 * 1024 * 4)
+std::__brk(new_size)
+
+std::print("curr_size: ")
+std::print(curr_size)
+std::print("\nnew_size: ")
+std::print(new_size)
+std::print("\n__brk: ")
+std::print(std::__brk(0))
+std::print("\n")
+
+std::sleep(10000)

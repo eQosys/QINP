@@ -16,6 +16,15 @@ space std:
 	\\ @return The destination buffer
 	void* memset(void* dest, u8 val, u64 num)...
 
+	\\ Allocate a buffer of a given siz
+	\\ @param size The size of the buffer to allocate
+	\\ @return The allocated buffer (null if failed)
+	void* malloc(u64 size)...		\\ Platform dependent implementation
+
+	\\ Free a buffer
+	\\ @param buffer The buffer to free
+	void free(void* buffer)...		\\ Platform dependent implementation
+
 
 
 	void* memcpy(void* dest, void* src, u64 len)!:
@@ -33,3 +42,6 @@ space std:
 			*d++ = val
 
 		return dest
+
+import.linux "linux/memory.qnp"
+import.windows "windows/memory.qnp"

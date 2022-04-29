@@ -1,4 +1,4 @@
-# Stdlib - memory.qnp
+# Stdlib - linux/memory.qnp
 
 ## Overview
  - [Functions](#functions)
@@ -7,8 +7,7 @@
  - [Definitions](#definitions)
 
 ## Functions
- - [void* memcpy ( void* dest, void* src, u64 num )]()
- - [void* memset ( void* dest, u8 value, u64 num )]()
+ - [u64 __brk ( u64 addr)]()
  - [void* malloc ( u64 size ) ...]()
  - [void free ( void* ptr ) ...]()
 
