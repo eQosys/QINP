@@ -1,15 +1,15 @@
 import "std.qnp"
 
-u64 curr_size = std::__brk(0)
-u64 new_size = curr_size + (1024 * 1024 * 1024 * 4)
-std::__brk(new_size)
+define HELLO_WORLD "Hello, World!\n"
 
-std::print("curr_size: ")
-std::print(curr_size)
-std::print("\nnew_size: ")
-std::print(new_size)
-std::print("\n__brk: ")
 std::print(std::__brk(0))
 std::print("\n")
 
-std::sleep(10000)
+void* buff = std::malloc(sizeof(HELLO_WORLD))
+std::print((u64)buff)
+std::print("\n")
+
+u8* str = (u8*)buff
+
+std::strcpy(str, HELLO_WORLD)
+std::print(str)

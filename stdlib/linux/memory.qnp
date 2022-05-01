@@ -13,7 +13,85 @@ space std:
 			"mov [rbp $(result)], rax"
 		return result
 
+	void* __sbrk(u64 increment):
+		u64 curr_size = __brk(0)
+		u64 new_size = curr_size + increment
+		if __brk(new_size) == curr_size:
+			return null
+		return (void*)curr_size
+
+	pack __ChunkHeader:
+		__ChunkHeader* prev
+		__ChunkHeader* next
+		u64 sizeAvail
+
+	__ChunkHeader* __chunkList = (__ChunkHeader*)__sbrk(sizeof(__ChunkHeader))
+	if (__chunkList != null):
+		__chunkList->prev = null
+		__chunkList->next = null
+		__chunkList->sizeAvail = 0
+
+
+	__ChunkHeader* getAvailChunk(u64 sizeAvailMin):
+		__ChunkHeader* curr = __chunkList
+		while (curr != null):
+			if curr->sizeAvail >= sizeAvailMin:
+				return curr
+			curr = curr->next
+		return null
+
+	void __insertAvailChunk(__ChunkHeader* chunk):
+		__ChunkHeader* curr = __chunkList
+		if curr == null: \\ Should never happen atm
+			__chunkList = chunk
+			chunk->prev = null
+			chunk->next = null
+			return
+		
+		while curr->next != null:
+			if curr->next->sizeAvail >= chunk->sizeAvail:
+				break
+			curr = curr->next
+
+		chunk->prev = curr
+		chunk->next = curr->next
+
+		curr->next = chunk
+		if chunk->next != null:
+			chunk->next->prev = chunk
+
+
+	void __shrinkChunk(__ChunkHeader* chunk, u64 newSizeAvail):
+		if chunk->sizeAvail - newSizeAvail <= sizeof(__ChunkHeader):
+			return
+
+		__ChunkHeader* newChunk = (__ChunkHeader*)((u8*)(chunk + 1) + newSizeAvail)
+		newChunk->sizeAvail = chunk->sizeAvail - newSizeAvail - sizeof(__ChunkHeader)
+		chunk->sizeAvail = newSizeAvail
+
+		__insertAvailChunk(newChunk)
+
+	__ChunkHeader* __allocChunk(u64 sizeAvail):
+		__ChunkHeader* chunk = (__ChunkHeader*)__sbrk(sizeAvail + sizeof(__ChunkHeader))
+		if chunk == null:
+			return null
+
+		chunk->prev = null
+		chunk->next = null
+		chunk->sizeAvail = sizeAvail
+		
+		return chunk
+
 	void* malloc(u64 size)!:
+		__ChunkHeader* chunk = getAvailChunk(size)
+		if chunk != null:
+			__shrinkChunk(chunk, size)
+			return chunk + 1
+		
+		chunk = __allocChunk(size)
+		if chunk != null:
+			return chunk + 1
+
 		return null
 
 	void free(void* ptr)!:

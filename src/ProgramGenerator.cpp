@@ -674,6 +674,11 @@ void popTempBody(ProgGenInfo& info)
 
 Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 {
+	if (isNull(left))
+		return right;
+	if (isNull(right))
+		return left;
+
 	if (left.ptrDepth > 0 || right.ptrDepth > 0)
 		return Datatype();
 
@@ -792,7 +797,7 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 		case Expression::ExprType::Assign_Sum:
 		case Expression::ExprType::Assign_Difference:
 			exp->right = genConvertExpression(exp->right, { "u64" });
-			if (isArray(exp->left->datatype))
+			//if (isArray(exp->left->datatype))
 			{
 				auto temp = std::make_shared<Expression>(exp->pos);
 				temp->eType = Expression::ExprType::Product;
