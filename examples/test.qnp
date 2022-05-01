@@ -1,7 +1,7 @@
 import "std.qnp"
 
 space std:
-	void printChunkList():
+	void printBlockList():
 		print("ChunkList:\n")
 		__MemBlockHeader* curr = __memBlocks
 		while curr != null:
@@ -33,34 +33,18 @@ space std:
 			curr = curr->next
 		print("-----------------\n")
 
-std::printChunkList()
+std::printBlockList()
 
-std::print("Allocating buff1...")
-void* buff1 = std::malloc(1024)
-std::printChunkList()
+void* buff1 = std::malloc(100)
+std::printBlockList()
+void* buff2 = std::malloc(10000)
+std::printBlockList()
 
-std::print("Allocating buff2...\n")
-void* buff2 = std::malloc(1024 * 4)
-std::printChunkList()
-std::print("Allocating buff3...\n")
-void* buff3 = std::malloc(1024 * 4)
-std::printChunkList()
-std::print("Allocating buff4...\n")
-void* buff4 = std::malloc(1024 * 4)
-std::printChunkList()
+std::free(buff2)
+std::printBlockList()
 
-std::print(" -> ")
-std::print((u64)buff1)
-std::print("\n")
-
-if buff1 == null:
-	std::exit(1)
-
-std::print("Clearing buffer...")
-std::memset(buff1, 0, 1024)
-std::print(" DONE\n")
-
-std::print("Freeing buff3...")
 std::free(buff1)
-std::print(" DONE\n")
-std::printChunkList()
+std::printBlockList()
+
+buff1 = std::malloc(12000)
+std::printBlockList()

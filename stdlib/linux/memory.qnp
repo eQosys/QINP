@@ -66,7 +66,8 @@ space std:
 			prev->next = block
 		if curr != null:
 			curr->prev = block
-		if __memBlocks == null:
+		
+		if curr == __memBlocks:
 			__memBlocks = block
 
 	\\ Removes a block of memory from the list of free blocks.
@@ -92,6 +93,25 @@ space std:
 		block->sizeAvail = newSizeAvail
 
 		__insertAvailBlock(newBlock)
+
+	\\ Merges the given blocks of memory into a single block.
+	\\ Both blocks must be adjacent.
+	\\ @param block1 The first block of memory to merge
+	\\ @param block2 The second block of memory to merge
+	void __mergeBlocks(__MemBlockHeader* block1, __MemBlockHeader* block2):
+		block1->sizeAvail += sizeof(__MemBlockHeader) + block2->sizeAvail
+		block1->next = block2->next
+		if block2->next != null:
+			block2->next->prev = block1
+
+	\\ Merges the given block with the previous and next blocks if they are adjacent.
+	\\ @param block The block of memory to merge
+	void __mergeBlockWithNeighbors(__MemBlockHeader* block):
+		if block->prev != null && (u64)block->prev + block->prev->sizeAvail + sizeof(__MemBlockHeader) == (u64)block:
+			block = block->prev
+			__mergeBlocks(block, block->next)
+		if block->next != null && (u64)block + block->sizeAvail + sizeof(__MemBlockHeader) == (u64)block->next:
+			__mergeBlocks(block, block->next)
 
 	\\ Allocates a block of memory padded to a page size while being big enough to hold the given available size and the block header.
 	\\ @param sizeAvail The size of the block to allocate
@@ -129,3 +149,4 @@ space std:
 			
 		__MemBlockHeader* block = (__MemBlockHeader*)ptr - 1
 		__insertAvailBlock(block)
+		__mergeBlockWithNeighbors(block)
