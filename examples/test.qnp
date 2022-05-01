@@ -7,7 +7,7 @@ space std:
 		while curr != null:
 			print(" This: ")
 			print((u64)curr)
-			
+
 			print("\n Prev: ")
 			print((u64)curr->prev)
 
@@ -59,3 +59,8 @@ if buff1 == null:
 std::print("Clearing buffer...")
 std::memset(buff1, 0, 1024)
 std::print(" DONE\n")
+
+std::print("Freeing buff3...")
+std::free(buff1)
+std::print(" DONE\n")
+std::printChunkList()

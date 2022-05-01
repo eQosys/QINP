@@ -108,6 +108,9 @@ space std:
 		return block
 
 	void* malloc(u64 size)!:
+		if size == 0:
+			return null
+
 		__MemBlockHeader* block = __getAvailBlock(size)
 		if block != null:
 			__removeAvailBlock(block)
@@ -121,4 +124,8 @@ space std:
 		return block + 1
 
 	void free(void* ptr)!:
-		return
+		if ptr == null:
+			return
+			
+		__MemBlockHeader* block = (__MemBlockHeader*)ptr - 1
+		__insertAvailBlock(block)
