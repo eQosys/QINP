@@ -6,103 +6,119 @@ import "syscall.qnp"
 space std:
 	define PAGE_SIZE 4096
 
-	u64 __brk(u64 addr):
+	\\ Changes the data segment size to the given size and returns the new size.
+	\\ @param size The new size
+	\\ @return The size after the change (Current size on failure)
+	u64 __brk(u64 size):
 		u64 result
 		assembly:
 			"mov rax, $(SYS_BRK)"
-			"mov rdi, [rbp $(addr)]"
+			"mov rdi, [rbp $(size)]"
 			"syscall"
 			"mov [rbp $(result)], rax"
 		return result
 
+	\\ Changes the data segment size by the given amount and returns a pointer to the newly allocated memory.
+	\\ @param increment The amount to increase the data segment size by
+	\\ @return A pointer to the newly allocated memory (null on failure)
 	void* __sbrk(u64 increment):
-		u64 curr_size = __brk(0)
-		u64 new_size = curr_size + increment
-		if __brk(new_size) == curr_size:
+		u64 currSize = __brk(0)
+		u64 newSize = currSize + increment
+		if __brk(newSize) == currSize:
 			return null
-		return (void*)curr_size
+		return (void*)currSize
 
-	pack __ChunkHeader:
-		__ChunkHeader* prev
-		__ChunkHeader* next
+	\\ The header for every allocated block of memory (used for freeing/keeping track of allocated, unused memory)
+	pack __MemBlockHeader:
+		__MemBlockHeader* prev
+		__MemBlockHeader* next
 		u64 sizeAvail
 
+	\\ First node in the list of allocated data blocks sorted by address
+	__MemBlockHeader* __memBlocks = null
 
-	__ChunkHeader* __chunkList = null
-
-
-	__ChunkHeader* __getAvailChunk(u64 minSizeAvail):
-		__ChunkHeader* match = null
-		__ChunkHeader* curr = __chunkList
+	\\ Returns the smallest block of memory that is large enough to hold the given size.
+	\\ @param sizeAvail The available size of the block to find
+	\\ @return The smallest block of memory that is large enough to hold the given size (null on failure)
+	__MemBlockHeader* __getAvailBlock(u64 sizeAvail):
+		__MemBlockHeader* smallest = null
+		__MemBlockHeader* curr = __memBlocks
 		while curr != null:
-			if curr->sizeAvail >= minSizeAvail && (match == null || curr->sizeAvail < match->sizeAvail):
-				match = curr
+			if curr->sizeAvail >= sizeAvail:
+				if smallest == null || curr->sizeAvail < smallest->sizeAvail:
+					smallest = curr
 			curr = curr->next
+		return smallest
 
-		return match
-
-	void __insertAvailChunk(__ChunkHeader* chunk):
-		__ChunkHeader* curr = __chunkList
-		if curr == null:
-			__chunkList = chunk
-			chunk->prev = null
-			chunk->next = null
-			return
-		
-		while curr != null && curr > chunk:
+	\\ Inserts a new block of memory into the list of free blocks at the correct location.
+	\\ @param block The block of memory to insert
+	void __insertAvailBlock(__MemBlockHeader* block):
+		__MemBlockHeader* prev = null
+		__MemBlockHeader* curr = __memBlocks
+		while curr != null:
+			if block < curr:
+				break
+			prev = curr
 			curr = curr->next
+		block->prev = prev
+		block->next = curr
+		if prev != null:
+			prev->next = block
+		if curr != null:
+			curr->prev = block
+		if __memBlocks == null:
+			__memBlocks = block
 
-		chunk->prev = curr
-		chunk->next = curr->next
+	\\ Removes a block of memory from the list of free blocks.
+	\\ @param block The block of memory to remove
+	void __removeAvailBlock(__MemBlockHeader* block):
+		if block->prev != null:
+			block->prev->next = block->next
+		if block->next != null:
+			block->next->prev = block->prev
+		if block == __memBlocks:
+			__memBlocks = block->next
 
-		curr->next = chunk
-		if chunk->next != null:
-			chunk->next->prev = chunk
-
-	void __removeAvailChunk(__ChunkHeader* chunk):
-		if chunk->prev != null:
-			chunk->prev->next = chunk->next
-		if chunk->next != null:
-			chunk->next->prev = chunk->prev
-		if chunk == __chunkList:
-			__chunkList = chunk->next
-
-	void __shrinkChunk(__ChunkHeader* chunk, u64 newSizeAvail):
-		if newSizeAvail + sizeof(__ChunkHeader) >= chunk->sizeAvail:
+	\\ Shrinks the given block of memory to the given available size.
+	\\ Does not change the size of the block if it is already smaller.
+	\\ @param block The block of memory to shrink
+	\\ @param newSizeAvail The new available size of the block
+	void __shrinkBlock(__MemBlockHeader* block, u64 newSizeAvail):
+		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
 			return
 
-		u64 newSize = newSizeAvail + sizeof(__ChunkHeader)
+		__MemBlockHeader* newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
+		newBlock->sizeAvail = block->sizeAvail - newSizeAvail - sizeof(__MemBlockHeader)
+		block->sizeAvail = newSizeAvail
 
-		__ChunkHeader* newChunk = (__ChunkHeader*)((u8*)chunk + newSize)
-		newChunk->sizeAvail = chunk->sizeAvail - newSize - sizeof(__ChunkHeader)
-		chunk->sizeAvail = newSizeAvail
+		__insertAvailBlock(newBlock)
 
-		__insertAvailChunk(newChunk)
-
-	__ChunkHeader* __allocChunk(u64 sizeAvail):
-		u64 size = ((sizeof(__ChunkHeader) + sizeAvail + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE
-		__ChunkHeader* chunk = (__ChunkHeader*)__sbrk(size)
-		if chunk == null:
+	\\ Allocates a block of memory padded to a page size while being big enough to hold the given available size and the block header.
+	\\ @param sizeAvail The size of the block to allocate
+	\\ @return A pointer to the header of the allocated block (null on failure)
+	__MemBlockHeader* __allocBlock(u64 sizeAvail):
+		u64 size = sizeAvail + sizeof(__MemBlockHeader)
+		size = size + PAGE_SIZE - (size % PAGE_SIZE)
+		__MemBlockHeader* block = (__MemBlockHeader*)__sbrk(size)
+		if block == null:
 			return null
 
-		chunk->prev = null
-		chunk->next = null
-		chunk->sizeAvail = size - sizeof(__ChunkHeader)
+		block->sizeAvail = size - sizeof(__MemBlockHeader)
 		
-		return chunk
+		return block
 
 	void* malloc(u64 size)!:
-		__ChunkHeader* chunk = __getAvailChunk(size)
-		if chunk != null:
-			__removeAvailChunk(chunk)
+		__MemBlockHeader* block = __getAvailBlock(size)
+		if block != null:
+			__removeAvailBlock(block)
 		else:
-			chunk = __allocChunk(size)
+			block = __allocBlock(size)
 
-		if chunk == null:
+		if block == null:
 			return null
 
-		__shrinkChunk(chunk, size)
-		return chunk + 1
+		__shrinkBlock(block, size)
+		return block + 1
 
 	void free(void* ptr)!:
 		return

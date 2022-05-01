@@ -3,20 +3,32 @@ import "std.qnp"
 space std:
 	void printChunkList():
 		print("ChunkList:\n")
-		__ChunkHeader* curr = __chunkList
+		__MemBlockHeader* curr = __memBlocks
 		while curr != null:
 			print(" This: ")
 			print((u64)curr)
+			
 			print("\n Prev: ")
 			print((u64)curr->prev)
+
 			print("\n Next: ")
 			print((u64)curr->next)
+
 			print("\n Size: ")
 			print(curr->sizeAvail)
+
 			print("\n DiffToPrev: ")
-			print((u64)curr - (u64)curr->prev)
+			if curr->prev != null:
+				print((u64)curr - (u64)curr->prev)
+			else:
+				print("--")
+
 			print("\n DiffToNext: ")
-			print((u64)curr->next - (u64)curr)
+			if curr->next != null:
+				print((u64)curr->next - (u64)curr)
+			else:
+				print("--")
+
 			print("\n\n")
 			curr = curr->next
 		print("-----------------\n")
