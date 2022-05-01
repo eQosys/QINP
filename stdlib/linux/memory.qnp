@@ -4,6 +4,8 @@
 import "syscall.qnp"
 
 space std:
+	define PAGE_SIZE 4096
+
 	u64 __brk(u64 addr):
 		u64 result
 		assembly:
@@ -25,32 +27,29 @@ space std:
 		__ChunkHeader* next
 		u64 sizeAvail
 
-	__ChunkHeader* __chunkList = (__ChunkHeader*)__sbrk(sizeof(__ChunkHeader))
-	if (__chunkList != null):
-		__chunkList->prev = null
-		__chunkList->next = null
-		__chunkList->sizeAvail = 0
+
+	__ChunkHeader* __chunkList = null
 
 
-	__ChunkHeader* getAvailChunk(u64 sizeAvailMin):
+	__ChunkHeader* __getAvailChunk(u64 minSizeAvail):
+		__ChunkHeader* match = null
 		__ChunkHeader* curr = __chunkList
-		while (curr != null):
-			if curr->sizeAvail >= sizeAvailMin:
-				return curr
+		while curr != null:
+			if curr->sizeAvail >= minSizeAvail && (match == null || curr->sizeAvail < match->sizeAvail):
+				match = curr
 			curr = curr->next
-		return null
+
+		return match
 
 	void __insertAvailChunk(__ChunkHeader* chunk):
 		__ChunkHeader* curr = __chunkList
-		if curr == null: \\ Should never happen atm
+		if curr == null:
 			__chunkList = chunk
 			chunk->prev = null
 			chunk->next = null
 			return
 		
-		while curr->next != null:
-			if curr->next->sizeAvail >= chunk->sizeAvail:
-				break
+		while curr != null && curr > chunk:
 			curr = curr->next
 
 		chunk->prev = curr
@@ -60,39 +59,50 @@ space std:
 		if chunk->next != null:
 			chunk->next->prev = chunk
 
+	void __removeAvailChunk(__ChunkHeader* chunk):
+		if chunk->prev != null:
+			chunk->prev->next = chunk->next
+		if chunk->next != null:
+			chunk->next->prev = chunk->prev
+		if chunk == __chunkList:
+			__chunkList = chunk->next
 
 	void __shrinkChunk(__ChunkHeader* chunk, u64 newSizeAvail):
-		if chunk->sizeAvail - newSizeAvail <= sizeof(__ChunkHeader):
+		if newSizeAvail + sizeof(__ChunkHeader) >= chunk->sizeAvail:
 			return
 
-		__ChunkHeader* newChunk = (__ChunkHeader*)((u8*)(chunk + 1) + newSizeAvail)
-		newChunk->sizeAvail = chunk->sizeAvail - newSizeAvail - sizeof(__ChunkHeader)
+		u64 newSize = newSizeAvail + sizeof(__ChunkHeader)
+
+		__ChunkHeader* newChunk = (__ChunkHeader*)((u8*)chunk + newSize)
+		newChunk->sizeAvail = chunk->sizeAvail - newSize - sizeof(__ChunkHeader)
 		chunk->sizeAvail = newSizeAvail
 
 		__insertAvailChunk(newChunk)
 
 	__ChunkHeader* __allocChunk(u64 sizeAvail):
-		__ChunkHeader* chunk = (__ChunkHeader*)__sbrk(sizeAvail + sizeof(__ChunkHeader))
+		u64 size = ((sizeof(__ChunkHeader) + sizeAvail + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE
+		__ChunkHeader* chunk = (__ChunkHeader*)__sbrk(size)
 		if chunk == null:
 			return null
 
 		chunk->prev = null
 		chunk->next = null
-		chunk->sizeAvail = sizeAvail
+		chunk->sizeAvail = size - sizeof(__ChunkHeader)
 		
 		return chunk
 
 	void* malloc(u64 size)!:
-		__ChunkHeader* chunk = getAvailChunk(size)
+		__ChunkHeader* chunk = __getAvailChunk(size)
 		if chunk != null:
-			__shrinkChunk(chunk, size)
-			return chunk + 1
-		
-		chunk = __allocChunk(size)
-		if chunk != null:
-			return chunk + 1
+			__removeAvailChunk(chunk)
+		else:
+			chunk = __allocChunk(size)
 
-		return null
+		if chunk == null:
+			return null
+
+		__shrinkChunk(chunk, size)
+		return chunk + 1
 
 	void free(void* ptr)!:
 		return

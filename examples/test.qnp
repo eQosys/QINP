@@ -1,15 +1,49 @@
 import "std.qnp"
 
-define HELLO_WORLD "Hello, World!\n"
+space std:
+	void printChunkList():
+		print("ChunkList:\n")
+		__ChunkHeader* curr = __chunkList
+		while curr != null:
+			print(" This: ")
+			print((u64)curr)
+			print("\n Prev: ")
+			print((u64)curr->prev)
+			print("\n Next: ")
+			print((u64)curr->next)
+			print("\n Size: ")
+			print(curr->sizeAvail)
+			print("\n DiffToPrev: ")
+			print((u64)curr - (u64)curr->prev)
+			print("\n DiffToNext: ")
+			print((u64)curr->next - (u64)curr)
+			print("\n\n")
+			curr = curr->next
+		print("-----------------\n")
 
-std::print(std::__brk(0))
+std::printChunkList()
+
+std::print("Allocating buff1...")
+void* buff1 = std::malloc(1024)
+std::printChunkList()
+
+std::print("Allocating buff2...\n")
+void* buff2 = std::malloc(1024 * 4)
+std::printChunkList()
+std::print("Allocating buff3...\n")
+void* buff3 = std::malloc(1024 * 4)
+std::printChunkList()
+std::print("Allocating buff4...\n")
+void* buff4 = std::malloc(1024 * 4)
+std::printChunkList()
+
+std::print(" -> ")
+std::print((u64)buff1)
 std::print("\n")
 
-void* buff = std::malloc(sizeof(HELLO_WORLD))
-std::print((u64)buff)
-std::print("\n")
+if buff1 == null:
+	std::exit(1)
 
-u8* str = (u8*)buff
-
-std::strcpy(str, HELLO_WORLD)
-std::print(str)
+std::print("Clearing buffer...")
+std::memset(buff1, 0, 1024)
+std::print(" DONE\n")
