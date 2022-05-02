@@ -5,6 +5,7 @@ import "syscall.qnp"
 
 space std:
 	define PAGE_SIZE 4096
+	define FREE_PAGES_COUNT_MAX 1
 
 	\\ Changes the data segment size to the given size and returns the new size.
 	\\ @param size The new size
@@ -22,11 +23,11 @@ space std:
 	\\ @param increment The amount to increase the data segment size by
 	\\ @return A pointer to the newly allocated memory (null on failure)
 	void* __sbrk(u64 increment):
-		u64 currSize = __brk(0)
-		u64 newSize = currSize + increment
-		if __brk(newSize) == currSize:
+		u64 oldSize = __brk(0)
+		u64 newSize = oldSize + increment
+		if __brk(newSize) == oldSize:
 			return null
-		return (void*)currSize
+		return (void*)oldSize
 
 	\\ The header for every allocated block of memory (used for freeing/keeping track of allocated, unused memory)
 	pack __MemBlockHeader:
@@ -73,15 +74,19 @@ space std:
 	\\ Removes a block of memory from the list of free blocks.
 	\\ @param block The block of memory to remove
 	void __removeAvailBlock(__MemBlockHeader* block):
+		if block == __memBlocks:
+			__memBlocks = block->next
+		
 		if block->prev != null:
 			block->prev->next = block->next
 		if block->next != null:
 			block->next->prev = block->prev
-		if block == __memBlocks:
-			__memBlocks = block->next
+
+		block->prev = null
+		block->next = null
 
 	\\ Shrinks the given block of memory to the given available size.
-	\\ Does not change the size of the block if it is already smaller.
+	\\ Does not shrink the block if the newly created block would have an available size of 0 or less.
 	\\ @param block The block of memory to shrink
 	\\ @param newSizeAvail The new available size of the block
 	void __shrinkBlock(__MemBlockHeader* block, u64 newSizeAvail):
@@ -98,20 +103,33 @@ space std:
 	\\ Both blocks must be adjacent.
 	\\ @param block1 The first block of memory to merge
 	\\ @param block2 The second block of memory to merge
-	void __mergeBlocks(__MemBlockHeader* block1, __MemBlockHeader* block2):
+	\\ @return The merged block of memory
+	__MemBlockHeader* __mergeBlocks(__MemBlockHeader* block1, __MemBlockHeader* block2):
 		block1->sizeAvail += sizeof(__MemBlockHeader) + block2->sizeAvail
 		block1->next = block2->next
 		if block2->next != null:
 			block2->next->prev = block1
+		return block1
+
+	\\ Checks whether the given block of memory is adjacent to the next one.
+	\\ @param block The block of memory to check
+	\\ @return True if the block is adjacent to the next one, otherwise false
+	bool __isAdjacentToNext(__MemBlockHeader* block):
+		if block == null || block->next == null:
+			return false
+		return (u64)block + sizeof(__MemBlockHeader) + block->sizeAvail == (u64)block->next
 
 	\\ Merges the given block with the previous and next blocks if they are adjacent.
 	\\ @param block The block of memory to merge
-	void __mergeBlockWithNeighbors(__MemBlockHeader* block):
-		if block->prev != null && (u64)block->prev + block->prev->sizeAvail + sizeof(__MemBlockHeader) == (u64)block:
-			block = block->prev
-			__mergeBlocks(block, block->next)
-		if block->next != null && (u64)block + block->sizeAvail + sizeof(__MemBlockHeader) == (u64)block->next:
-			__mergeBlocks(block, block->next)
+	\\ @return Pointer to the merged block
+	__MemBlockHeader* __mergeBlockWithNeighbors(__MemBlockHeader* block):
+		if block == null:
+			return null
+		if __isAdjacentToNext(block->prev):
+			block = __mergeBlocks(block->prev, block)
+		if __isAdjacentToNext(block):
+			block = __mergeBlocks(block, block->next)
+		return block
 
 	\\ Allocates a block of memory padded to a page size while being big enough to hold the given available size and the block header.
 	\\ @param sizeAvail The size of the block to allocate
@@ -149,4 +167,10 @@ space std:
 			
 		__MemBlockHeader* block = (__MemBlockHeader*)ptr - 1
 		__insertAvailBlock(block)
-		__mergeBlockWithNeighbors(block)
+		block = __mergeBlockWithNeighbors(block)
+		if block->next == null: \\ Block is the last one in the list
+			u64 size = block->sizeAvail
+			if size > PAGE_SIZE * FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
+				size = size / PAGE_SIZE * PAGE_SIZE
+				__sbrk(-size)
+				block->sizeAvail -= size

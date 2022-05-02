@@ -33,18 +33,46 @@ space std:
 			curr = curr->next
 		print("-----------------\n")
 
+	i64 brkDiff():
+		static i64 lastBrk = 0
+		i64 currBrk = __brk(0)
+		i64 diff = currBrk - lastBrk
+		lastBrk = currBrk
+		return diff
+	brkDiff()
+	
+	void printBrkDiff():
+		print("BrkDiff: ")
+		print(brkDiff())
+		print("\n")
+
 std::printBlockList()
 
+std::print("Allocating 100 bytes\n")
 void* buff1 = std::malloc(100)
+std::printBrkDiff()
 std::printBlockList()
+std::print("Allocating 10000 bytes\n")
 void* buff2 = std::malloc(10000)
+std::printBrkDiff()
 std::printBlockList()
 
+std::print("Freeing 10000 bytes\n")
 std::free(buff2)
+std::printBrkDiff()
 std::printBlockList()
 
+std::print("Freeing 100 bytes\n")
 std::free(buff1)
+std::printBrkDiff()
 std::printBlockList()
 
+std::print("Allocating 12000 bytes\n")
 buff1 = std::malloc(12000)
+std::printBrkDiff()
+std::printBlockList()
+
+std::print("Freeing 12000 bytes\n")
+std::free(buff1)
+std::printBrkDiff()
 std::printBlockList()
