@@ -6,6 +6,7 @@ import "syscall.qnp"
 space std:
 	define __PAGE_SIZE 4096
 	define __FREE_PAGES_COUNT_MAX 256
+	define __MEM_ALIGNMENT_SIZE 8
 
 	\\ Changes the data segment size to the given size and returns the new size.
 	\\ @param size The new size
@@ -38,11 +39,19 @@ space std:
 	\\ First node in the list of allocated data blocks sorted by address
 	__MemBlockHeader* __memBlocks = null
 
-	\\ Rounds the given size up to the nearest page size
-	\\ @param size The size to round
-	\\ @return The rounded size
-	u64 __roundToPageSize(u64 size):
-		return size + __PAGE_SIZE - (size % __PAGE_SIZE)
+	\\ Rounds the given value up to the nearest multiple of the given alignment
+	\\ @param value The value to round
+	\\ @param alignment The alignment to round to
+	\\ @return The rounded value
+	u64 __roundUp(u64 value, u64 alignment):
+		return ((value + alignment - 1) / alignment) * alignment
+
+	\\ Rounds the given value down to the nearest multiple of the given alignment
+	\\ @param value The value to round
+	\\ @param alignment The alignment to round to
+	\\ @return The rounded value
+	u64 __roundDown(u64 value, u64 alignment):
+		return (value / alignment) * alignment
 
 	\\ Returns the smallest block of memory that is large enough to hold the given size.
 	\\ If no block is large enough, returns the last block in the list.
@@ -97,11 +106,13 @@ space std:
 		block->prev = null
 		block->next = null
 
-	\\ Splits the given block of memory into two. The first block gets the given size and the second block gets the remaining size.
+	\\ Splits the given block of memory into two. The first block gets the given size (and a possible padding for alignment) and the second block gets the remaining size.
 	\\ If the new block would have an available size of 0 or less, the block is not split and null is returned.
+	\\ The new block is always aligned to __MEM_ALIGNMENT_SIZE.
 	\\ @param block The block of memory to shrink
 	\\ @param newSizeAvail The new available size of the block
 	__MemBlockHeader* __splitBlock(__MemBlockHeader* block, u64 newSizeAvail):
+		newSizeAvail = __roundUp(newSizeAvail, __MEM_ALIGNMENT_SIZE)
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
 			return null
 
@@ -147,7 +158,7 @@ space std:
 	\\ @param sizeAvail The size of the block to allocate
 	\\ @return A pointer to the header of the allocated block (null on failure)
 	__MemBlockHeader* __allocBlock(u64 sizeAvail):
-		u64 size = __roundToPageSize(sizeAvail + sizeof(__MemBlockHeader))
+		u64 size = __roundUp(sizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
 		__MemBlockHeader* block = (__MemBlockHeader*)__sbrk(size)
 		if block == null:
 			return null
@@ -163,7 +174,7 @@ space std:
 		__MemBlockHeader* block = __getAvailBlock(size)
 		if block != null:
 			if block->sizeAvail < size: \\ Expand the last block if it is not big enough
-				u64 newAllocatedSize = __roundToPageSize(size - block->sizeAvail)
+				u64 newAllocatedSize = __roundUp(size - block->sizeAvail, __PAGE_SIZE)
 				if __sbrk(newAllocatedSize) == null:
 					return null
 				block->sizeAvail += newAllocatedSize
@@ -190,6 +201,6 @@ space std:
 		if block->next == null: \\ Block is the last one in the list
 			u64 size = block->sizeAvail
 			if size > __PAGE_SIZE * __FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
-				size = size / __PAGE_SIZE * __PAGE_SIZE
+				size = __roundDown(size, __PAGE_SIZE)
 				__sbrk(-size)
 				block->sizeAvail -= size

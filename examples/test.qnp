@@ -103,3 +103,6 @@ while tok != null:
 	std::print(tok)
 	std::print("\n")
 	tok = std::strtok(null, " ")
+
+void* addr1 = std::malloc(3)
+void* addr2 = std::malloc(3)
