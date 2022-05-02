@@ -5,6 +5,7 @@
 import "math.qnp"
 import "memory.qnp"
 import "string.qnp"
+import "time.qnp"
 
 
 \\ Convenience definitions
@@ -21,7 +22,6 @@ define ushort u16
 define uint u32
 define ulong u64
 
-define _RESULT i32
 
 space std:
 	\\ Terminate the calling process and return the specified exit status.
@@ -31,26 +31,26 @@ space std:
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
 	\\ @return The number of characters printed. Negative on error.
-	_RESULT print(u8* str)...
+	i32 print(u8* str)...
 	\\ blueprint T
-	\\ _RESULT print(const T& str)...
+	\\ i32 print(const T& str)...
 
 	\\ Formatted print
 	\\ blueprint T,
-	\\ _RESULT print(const T& str, const T& value)...
+	\\ i32 print(const T& str, const T& value)...
 	\\ blueprint T, ...
-	\\ _RESULT print(const u8* str, const T& value, ...)...
+	\\ i32 print(const u8* str, const T& value, ...)...
 
 	\\ Print a string of specified length to stdout
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
 	\\ @return The number of characters printed. Negative on error.
-	_RESULT print(u8* str, u64 len)...		\\ Platform dependent implementation
+	i32 print(u8* str, u64 len)...		\\ Platform dependent implementation
 
 	\\ Print a base-10 integer to stdout
 	\\ @param num The integer to print
 	\\ @return The number of characters printed. Negative on error.
-	_RESULT print(i64 num)...
+	i32 print(i64 num)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read from stdin
@@ -71,17 +71,12 @@ space std:
 	\\ @return The pointer to an array of environment variables
 	u8** getenv()...
 
-	\\ Sleep for the specified number of milliseconds
-	\\ @param ms The number of milliseconds to sleep
-	\\ @return Zero on success, negative on error
-	_RESULT sleep(u64 ms)...		\\ Platform dependent implementation
 
 
-
-	_RESULT print(u8* str)!:
+	i32 print(u8* str)!:
 		return print(str, strlen(str))
 
-	_RESULT print(i64 num)!:
+	i32 print(i64 num)!:
 		u8 str[32]
 		return print(itos(num, str, 10))
 

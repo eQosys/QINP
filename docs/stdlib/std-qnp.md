@@ -16,7 +16,6 @@
  - [void* memcpy ( void* dest, void* src, u64 size )]()
  - [u64 getargs ( u8*** pargv )]()
  - [u8** getenv ( )]()
- - [_RESULT sleep( u64 ms ) ...]()
 
 ## Packs
  - _None_
@@ -36,4 +35,3 @@
  - [uint]()
  - [ulong]()
  - [_FILE]()
- - [_RESULT]()

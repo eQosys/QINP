@@ -1,0 +1,43 @@
+\\ QINP Standard Library
+\\ Time - Linux Specific
+
+space std:
+	define __CLOCK_REALTIME 0
+	define __CLOCK_MONOTONIC 1
+	define __CLOCK_PROCESS_CPUTIME_ID 2
+	define __CLOCK_THREAD_CPUTIME_ID 3
+
+	pack __timespec:
+		i64 seconds
+		i64 nanoseconds
+
+	i32 __clock_gettime(i32 clockID, __timespec* t):
+		i32 result
+		assembly:
+			"mov rax, $(SYS_CLOCK_GETTIME)"
+			"mov rdi, [rbp + $(clockID)]"
+			"mov rsi, [rbp + $(t)]"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result
+
+
+	u64 getTime():
+		__timespec t
+		if __clock_gettime(__CLOCK_REALTIME, &t) < 0:
+			return -1
+		return t.seconds * 1000 + t.nanoseconds / 1000000
+
+	i32 sleep(u64 ms)!:
+		__timespec ts
+		ts.seconds = ms / 1000
+		ts.nanoseconds = (ms % 1000) * 1000000
+		i32 result
+		assembly:
+			"mov rax, $(SYS_NANOSLEEP)"
+			"mov rdi, rbp"
+			"add rdi, $(ts)"
+			"xor rsi, rsi"
+			"syscall"
+			"mov [rbp $(result)], eax"
+		return result

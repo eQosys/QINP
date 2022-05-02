@@ -83,8 +83,13 @@ printBrkDiff()
 printBlockList()
 
 std::print("Clearing buff1... ")
+u64 begin = std::getTime()
 std::memset(buff1, 0, 1024 * 1024 * 1024)
+u64 end = std::getTime()
 std::print(" DONE\n")
+std::print(" -> Time: ")
+std::print(end - begin)
+std::print(" ms\n")
 
 u8* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std::memcpy(str, "..................", 9)

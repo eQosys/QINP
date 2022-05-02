@@ -1,0 +1,15 @@
+\\ QINP Standard Library
+\\ Time
+
+space std:
+	\\ Returns the current time in milliseconds since the epoch.
+	\\ @return Current time in milliseconds
+	u64 getTime()...
+
+	\\ Sleep for the specified number of milliseconds
+	\\ @param ms The number of milliseconds to sleep
+	\\ @return Zero on success, negative on error
+	i32 sleep(u64 ms)...		\\ Platform dependent implementation
+
+import.linux "linux/time.qnp"
+import.windows "windows/time.qnp"

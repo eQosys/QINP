@@ -1,4 +1,4 @@
-# Stdlib - linux/std.qnp
+# Stdlib - time.qnp
 
 ## Overview
  - [Functions](#functions)
@@ -7,9 +7,8 @@
  - [Definitions](#definitions)
 
 ## Functions
- - [void exit ( i32 status )]()
- - [_RESULT print ( u8* str, u64 len )]()
- - [u8 getchar ( )]()
+ - [u64 getTime ( ) ...]()
+ - [i32 sleep ( u64 ms ) ...]()
 
 ## Packs
  - _None_
