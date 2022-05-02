@@ -7,10 +7,11 @@
  - [Definitions](#definitions)
 
 ## Functions
- - [void* memcpy ( void* dest, void* src, u64 num )]()
- - [void* memset ( void* dest, u8 value, u64 num )]()
- - [void* malloc ( u64 size ) ...]()
  - [void free ( void* ptr ) ...]()
+ - [void* malloc ( u64 size ) ...]()
+ - [void* memcpy ( void* dest, void* src, u64 num )]()
+ - [i32 memcmp ( void* a, void* b, u64 num )]()
+ - [void* memset ( void* dest, u8 value, u64 num )]()
 
 ## Packs
  - _None_

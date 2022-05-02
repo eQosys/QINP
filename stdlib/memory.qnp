@@ -5,6 +5,7 @@ space std:
 	define MIN_MEM_LEN_USE_ALIGN 32 \\ minimum length of memory to use aligned algorithms on
 
 	\\ Copy data from one buffer to another
+	\\ Undefined behavior if the buffers overlap
 	\\ @param dest The destination buffer
 	\\ @param src The source buffer
 	\\ @param num The number of bytes to copy
@@ -17,6 +18,13 @@ space std:
 	\\ @param num The number of bytes to set
 	\\ @return The destination buffer
 	void* memset(void* dest, u8 val, u64 num)...
+
+	\\ Compare two buffers
+	\\ @param a The first buffer
+	\\ @param b The second buffer
+	\\ @param num The number of bytes to compare
+	\\ @return 0 if the buffers are equal, < 0 if the first byte that differs in a is less than in b, > 0 if the first byte that differs in a is greater than in b
+	i32 memcmp(void* a, void* b, u64 num)...
 
 	\\ Allocate a buffer of a given siz
 	\\ @param size The size of the buffer to allocate
@@ -41,7 +49,7 @@ space std:
 
 			u64* d64 = (u64*)d8
 			u64* s64 = (u64*)s8
-
+			
 			while (void*)(d64 + 1) < dEnd: \\ Copy 8 bytes at a time
 				*d64++ = *s64++
 			
@@ -50,6 +58,7 @@ space std:
 
 		while (void*)d8 < dEnd: \\ Copy remaining bytes
 			*d8++ = *s8++
+
 		return dest
 
 	void* memset(void* dest, u8 val, u64 len)!:
@@ -67,6 +76,7 @@ space std:
 			v64 |= (v64 << 32)
 
 			u64* d64 = (u64*)d8
+
 			while (void*)(d64 + 1) < end: \\ Set 8 bytes at a time
 				*d64++ = v64
 		
@@ -76,6 +86,32 @@ space std:
 			*d8++ = val
 
 		return dest
+
+	i32 memcmp(void* a, void* b, u64 len)!:
+		void* aEnd = (u8*)a + len
+		u8* a8 = (u8*)a
+		u8* b8 = (u8*)b
+
+		if len >= MIN_MEM_LEN_USE_ALIGN:
+			while (u64)a8 % sizeof(u64): \\ Align to 8 bytes, testing for a8 < end would be redundant
+				if *a8++ != *b8++:
+					return *(a8 - 1) - *(b8 - 1)
+			
+			u64* a64 = (u64*)a8
+			u64* b64 = (u64*)b8
+
+			while (void*)(a64 + 1) < aEnd: \\ Compare 8 bytes at a time
+				if *a64++ != *b64++:
+					return *(a64 - 1) - *(b64 - 1)
+			
+			a8 = (u8*)a64
+			b8 = (u8*)b64
+		
+		while (void*)a8 < aEnd: \\ Compare remaining bytes
+			if *a8++ != *b8++:
+				return *(a8 - 1) - *(b8 - 1)
+
+		return 0
 
 import.linux "linux/memory.qnp"
 import.windows "windows/memory.qnp"

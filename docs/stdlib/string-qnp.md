@@ -28,6 +28,7 @@
  - [u8* strset ( u8* str, u8 ch, u64 num )]()
  - [u8* strrev ( u8* str )]()
  - [u8* strrev ( u8* begin, u8* end )]()
+ - [u8* strtok ( u8* str, u8* delimiters )]()
  - [u8* itos ( i64 num, u8* str, i64 base )]()
  - [i64 stoi ( u8* str, i64 base )]()
  - [u8 toupper ( u8 ch )]()

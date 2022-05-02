@@ -96,3 +96,10 @@ std::free(buff1)
 std::print(" DONE\n")
 printBrkDiff()
 printBlockList()
+
+u8* str1 = "Hello world, my name is TecStylos!"
+u8* tok = std::strtok(str1, " ")
+while tok != null:
+	std::print(tok)
+	std::print("\n")
+	tok = std::strtok(null, " ")

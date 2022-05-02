@@ -131,6 +131,15 @@ space std:
 	\\ @return The reversed string
 	u8* strrev(u8* begin, u8* end)...
 
+	\\ Split a string into tokens
+	\\ On the first call pass the string to split, on subsequent calls pass null.
+	\\ The returned string is the next token in the string, or null if there are no more tokens.
+	\\ All found delimiters are replaced with null terminators.
+	\\ @param str The string to split
+	\\ @param delimiters The delimiters to split on
+	\\ @return A pointer to the next token
+	u8* strtok(u8* str, u8* delimiters)...
+
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
 	\\ @param str The string to store the converted integer in
@@ -311,6 +320,24 @@ space std:
 			*end = temp
 
 		return str
+	
+	u8* strtok(u8* str, u8* delimiters):
+		static u8* next = null
+		if str:
+			next = str
+		
+		if !next:
+			return null
+
+		u8* begin = next
+		while *next:
+			if strchr(delimiters, *next):
+				*next++ = null
+				return begin
+			++next
+		
+		next = null
+		return begin
 
 	u8* itos(i64 num, u8* str, i64 base)!:
 		u8* begin = str
