@@ -1487,11 +1487,14 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	}
 	else
 	{
+		bool localOnly = false;
+
 		if (isOperator(peekToken(info), "::"))
 		{
 			nextToken(info);
 			++nEntered;
 			enterSymbol(info, info.program->symbols);
+			localOnly = true;
 		}
 
 		auto pNameToken = &nextToken(info);
@@ -1500,7 +1503,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 		while (isOperator(peekToken(info), "::"))
 		{
 			nextToken(info);
-			auto sym = getSymbol(currSym(info), pNameToken->value, true);
+			auto sym = getSymbol(currSym(info), pNameToken->value, localOnly);
 			if (!sym)
 				return exitEntered({}, true);
 			++nEntered;
@@ -1508,6 +1511,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 			pNameToken = &nextToken(info);
 			if (!isIdentifier(*pNameToken))
 				return exitEntered({}, true);
+			localOnly = true;
 		}
 
 		if (!isPackType(info, *pNameToken))

@@ -1,87 +1,86 @@
 import "std.qnp"
 
-space std:
-	void printBlockList():
-		print("ChunkList:\n")
-		__MemBlockHeader* curr = __memBlocks
-		while curr != null:
-			print(" This: ")
-			print((u64)curr)
+void printBlockList():
+	std::print("ChunkList:\n")
+	std::__MemBlockHeader* curr = std::__memBlocks
+	while curr != null:
+		std::print(" This: ")
+		std::print((u64)curr)
 
-			print("\n Prev: ")
-			print((u64)curr->prev)
+		std::print("\n Prev: ")
+		std::print((u64)curr->prev)
 
-			print("\n Next: ")
-			print((u64)curr->next)
+		std::print("\n Next: ")
+		std::print((u64)curr->next)
 
-			print("\n Size: ")
-			print(curr->sizeAvail)
+		std::print("\n Size: ")
+		std::print(curr->sizeAvail)
 
-			print("\n DiffToPrev: ")
-			if curr->prev != null:
-				print((u64)curr - (u64)curr->prev)
-			else:
-				print("--")
+		std::print("\n DiffToPrev: ")
+		if curr->prev != null:
+			std::print((u64)curr - (u64)curr->prev)
+		else:
+			std::print("--")
 
-			print("\n DiffToNext: ")
-			if curr->next != null:
-				print((u64)curr->next - (u64)curr)
-			else:
-				print("--")
+		std::print("\n DiffToNext: ")
+		if curr->next != null:
+			std::print((u64)curr->next - (u64)curr)
+		else:
+			std::print("--")
 
-			print("\n\n")
-			curr = curr->next
-		print("-----------------\n")
+		std::print("\n\n")
+		curr = curr->next
+	std::print("-----------------\n")
 
-	i64 brkDiff():
-		static i64 lastBrk = 0
-		i64 currBrk = __brk(0)
-		i64 diff = currBrk - lastBrk
-		lastBrk = currBrk
-		return diff
-	brkDiff()
-	
-	void printBrkDiff():
-		print("BrkDiff: ")
-		print(brkDiff())
-		print("\n")
+i64 brkDiff():
+	static i64 lastBrk = 0
+	i64 currBrk = std::__brk(0)
+	i64 diff = currBrk - lastBrk
+	lastBrk = currBrk
+	return diff
+brkDiff()
 
-std::printBlockList()
+void printBrkDiff():
+	std::print("BrkDiff: ")
+	std::print(brkDiff())
+	std::print("\n")
+
+printBlockList()
 
 std::print("Allocating 100 bytes\n")
 void* buff1 = std::malloc(100)
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 std::print("Allocating 10000 bytes\n")
 void* buff2 = std::malloc(10000)
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 
 std::print("Freeing 100 bytes\n")
 std::free(buff1)
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 
 std::print("Freeing 10000 bytes\n")
 std::free(buff2)
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 
 std::print("Allocating 12000 bytes\n")
 buff1 = std::malloc(12000)
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 
 std::print("Freeing 12000 bytes\n")
 std::free(buff1)
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 
 std::print("Allocating 1024 megabytes...")
 buff1 = std::malloc(1024 * 1024 * 1024)
 std::print(" DONE\n")
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
 
 std::print("Clearing buff1... ")
 std::memset(buff1, 0, 1024 * 1024 * 1024)
@@ -95,5 +94,5 @@ std::print("-----------------\n")
 std::print("Freeing 1024 megabytes...")
 std::free(buff1)
 std::print(" DONE\n")
-std::printBrkDiff()
-std::printBlockList()
+printBrkDiff()
+printBlockList()
