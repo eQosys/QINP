@@ -2,6 +2,8 @@
 \\ Memory
 
 space std:
+	define MIN_MEM_LEN_USE_ALIGN 32 \\ minimum length of memory to use aligned algorithms on
+
 	\\ Copy data from one buffer to another
 	\\ @param dest The destination buffer
 	\\ @param src The source buffer
@@ -36,10 +38,27 @@ space std:
 		return dest
 
 	void* memset(void* dest, u8 val, u64 len)!:
-		u8* d = (u8*)dest
+		void* end = (u8*)dest + len
 
-		while len--:
-			*d++ = val
+		u8* d8 = (u8*)dest
+
+		if len >= MIN_MEM_LEN_USE_ALIGN:
+			while (u64)d8 % sizeof(u64) && (void*)d8 < end:
+				*d8++ = val
+
+			u64 v64 = val
+			v64 |= (v64 << 8)
+			v64 |= (v64 << 16)
+			v64 |= (v64 << 32)
+
+			u64* d64 = (u64*)d8
+			while (void*)(d64 + 1) < end:
+				*d64++ = v64
+		
+			d8 = (u8*)d64
+
+		while (void*)d8 < end:
+			*d8++ = val
 
 		return dest
 

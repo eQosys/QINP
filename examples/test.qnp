@@ -76,3 +76,17 @@ std::print("Freeing 12000 bytes\n")
 std::free(buff1)
 std::printBrkDiff()
 std::printBlockList()
+
+std::print("Allocating 1024 megabytes...")
+buff1 = std::malloc(1024 * 1024 * 1024)
+std::print(" DONE\n")
+std::printBrkDiff()
+std::printBlockList()
+
+std::print("Clearing buff1... ")
+std::memset(buff1, 0, 1024 * 1024 * 1024)
+std::print(" DONE\n")
+
+u8* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+std::memset(str, 'A', 9)
+std::print(str)
