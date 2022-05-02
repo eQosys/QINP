@@ -90,3 +90,10 @@ std::print(" DONE\n")
 u8* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std::memset(str, 'A', 9)
 std::print(str)
+std::print("-----------------\n")
+
+std::print("Freeing 1024 megabytes...")
+std::free(buff1)
+std::print(" DONE\n")
+std::printBrkDiff()
+std::printBlockList()

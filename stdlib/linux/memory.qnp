@@ -4,8 +4,8 @@
 import "syscall.qnp"
 
 space std:
-	define PAGE_SIZE 4096
-	define FREE_PAGES_COUNT_MAX 256
+	define __PAGE_SIZE 4096
+	define __FREE_PAGES_COUNT_MAX 256
 
 	\\ Changes the data segment size to the given size and returns the new size.
 	\\ @param size The new size
@@ -22,7 +22,7 @@ space std:
 	\\ Changes the data segment size by the given amount and returns a pointer to the newly allocated memory.
 	\\ @param increment The amount to increase the data segment size by
 	\\ @return A pointer to the newly allocated memory (null on failure)
-	void* __sbrk(u64 increment):
+	void* __sbrk(i64 increment):
 		u64 oldSize = __brk(0)
 		u64 newSize = oldSize + increment
 		if __brk(newSize) == oldSize:
@@ -42,7 +42,7 @@ space std:
 	\\ @param size The size to round
 	\\ @return The rounded size
 	u64 __roundToPageSize(u64 size):
-		return size + PAGE_SIZE - (size % PAGE_SIZE)
+		return size + __PAGE_SIZE - (size % __PAGE_SIZE)
 
 	\\ Returns the smallest block of memory that is large enough to hold the given size.
 	\\ If no block is large enough, returns the last block in the list.
@@ -60,9 +60,10 @@ space std:
 			curr = curr->next
 		return smallest != null ? smallest : last
 
-	\\ Inserts a new block of memory into the list of free blocks at the correct location.
+	\\ Inserts a new block of memory into the list (sorted by address)
 	\\ @param block The block of memory to insert
-	void __insertAvailBlock(__MemBlockHeader* block):
+	\\ @return The block before the inserted block (null if the block was inserted at the beginning of the list)
+	__MemBlockHeader* __insertAvailBlock(__MemBlockHeader* block):
 		__MemBlockHeader* prev = null
 		__MemBlockHeader* curr = __memBlocks
 		while curr != null:
@@ -80,6 +81,8 @@ space std:
 		if curr == __memBlocks:
 			__memBlocks = block
 
+		return prev
+
 	\\ Removes a block of memory from the list of free blocks.
 	\\ @param block The block of memory to remove
 	void __removeAvailBlock(__MemBlockHeader* block):
@@ -94,19 +97,19 @@ space std:
 		block->prev = null
 		block->next = null
 
-	\\ Shrinks the given block of memory to the given available size.
-	\\ Does not shrink the block if the newly created block would have an available size of 0 or less.
+	\\ Splits the given block of memory into two. The first block gets the given size and the second block gets the remaining size.
+	\\ If the new block would have an available size of 0 or less, the block is not split and null is returned.
 	\\ @param block The block of memory to shrink
 	\\ @param newSizeAvail The new available size of the block
-	void __shrinkBlock(__MemBlockHeader* block, u64 newSizeAvail):
+	__MemBlockHeader* __splitBlock(__MemBlockHeader* block, u64 newSizeAvail):
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
-			return
+			return null
 
 		__MemBlockHeader* newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
 		newBlock->sizeAvail = block->sizeAvail - newSizeAvail - sizeof(__MemBlockHeader)
 		block->sizeAvail = newSizeAvail
 
-		__insertAvailBlock(newBlock)
+		return newBlock
 
 	\\ Merges the given blocks of memory into a single block.
 	\\ Both blocks must be adjacent.
@@ -171,7 +174,10 @@ space std:
 		if block == null:
 			return null
 
-		__shrinkBlock(block, size)
+		__MemBlockHeader* newBlock = __splitBlock(block, size)
+		if newBlock != null:
+			__insertAvailBlock(newBlock)
+
 		return block + 1
 
 	void free(void* ptr)!:
@@ -183,7 +189,7 @@ space std:
 		block = __mergeBlockWithNeighbors(block)
 		if block->next == null: \\ Block is the last one in the list
 			u64 size = block->sizeAvail
-			if size > PAGE_SIZE * FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
-				size = size / PAGE_SIZE * PAGE_SIZE
+			if size > __PAGE_SIZE * __FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
+				size = size / __PAGE_SIZE * __PAGE_SIZE
 				__sbrk(-size)
 				block->sizeAvail -= size
