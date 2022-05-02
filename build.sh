@@ -34,6 +34,8 @@ mkdir -p ${BIN_DIR}
 echo "Changing directory to '${BIN_DIR}'..."
 cd ${BIN_DIR}
 
+NUM_PROCESSORS=$(nproc --all)
+
 if [ "${CONFIG}" = "" ]; then
     echo "Running CMake without a build type..."
     cmake ../.. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -42,5 +44,5 @@ else
     cmake ../.. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=${CONFIG}
 fi
 
-echo "Running make..."
-make
+echo "Building project..."
+cmake --build . -j ${NUM_PROCESSORS}
