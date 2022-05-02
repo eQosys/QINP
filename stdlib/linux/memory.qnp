@@ -38,18 +38,27 @@ space std:
 	\\ First node in the list of allocated data blocks sorted by address
 	__MemBlockHeader* __memBlocks = null
 
+	\\ Rounds the given size up to the nearest page size
+	\\ @param size The size to round
+	\\ @return The rounded size
+	u64 __roundToPageSize(u64 size):
+		return size + PAGE_SIZE - (size % PAGE_SIZE)
+
 	\\ Returns the smallest block of memory that is large enough to hold the given size.
+	\\ If no block is large enough, returns the last block in the list.
 	\\ @param sizeAvail The available size of the block to find
-	\\ @return The smallest block of memory that is large enough to hold the given size (null on failure)
+	\\ @return The smallest block of memory that is large enough to hold the given size or the last block in the list
 	__MemBlockHeader* __getAvailBlock(u64 sizeAvail):
 		__MemBlockHeader* smallest = null
+		__MemBlockHeader* last = null
 		__MemBlockHeader* curr = __memBlocks
 		while curr != null:
 			if curr->sizeAvail >= sizeAvail:
 				if smallest == null || curr->sizeAvail < smallest->sizeAvail:
 					smallest = curr
+			last = curr
 			curr = curr->next
-		return smallest
+		return smallest != null ? smallest : last
 
 	\\ Inserts a new block of memory into the list of free blocks at the correct location.
 	\\ @param block The block of memory to insert
@@ -135,8 +144,7 @@ space std:
 	\\ @param sizeAvail The size of the block to allocate
 	\\ @return A pointer to the header of the allocated block (null on failure)
 	__MemBlockHeader* __allocBlock(u64 sizeAvail):
-		u64 size = sizeAvail + sizeof(__MemBlockHeader)
-		size = size + PAGE_SIZE - (size % PAGE_SIZE)
+		u64 size = __roundToPageSize(sizeAvail + sizeof(__MemBlockHeader))
 		__MemBlockHeader* block = (__MemBlockHeader*)__sbrk(size)
 		if block == null:
 			return null
@@ -151,6 +159,11 @@ space std:
 
 		__MemBlockHeader* block = __getAvailBlock(size)
 		if block != null:
+			if block->sizeAvail < size: \\ Expand the last block if it is not big enough
+				u64 newAllocatedSize = __roundToPageSize(size - block->sizeAvail)
+				if __sbrk(newAllocatedSize) == null:
+					return null
+				block->sizeAvail += newAllocatedSize
 			__removeAvailBlock(block)
 		else:
 			block = __allocBlock(size)
@@ -164,7 +177,7 @@ space std:
 	void free(void* ptr)!:
 		if ptr == null:
 			return
-			
+
 		__MemBlockHeader* block = (__MemBlockHeader*)ptr - 1
 		__insertAvailBlock(block)
 		block = __mergeBlockWithNeighbors(block)

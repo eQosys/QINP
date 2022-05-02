@@ -57,13 +57,13 @@ void* buff2 = std::malloc(10000)
 std::printBrkDiff()
 std::printBlockList()
 
-std::print("Freeing 10000 bytes\n")
-std::free(buff2)
+std::print("Freeing 100 bytes\n")
+std::free(buff1)
 std::printBrkDiff()
 std::printBlockList()
 
-std::print("Freeing 100 bytes\n")
-std::free(buff1)
+std::print("Freeing 10000 bytes\n")
+std::free(buff2)
 std::printBrkDiff()
 std::printBlockList()
 
