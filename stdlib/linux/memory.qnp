@@ -58,9 +58,11 @@ space std:
 	\\ @param sizeAvail The available size of the block to find
 	\\ @return The smallest block of memory that is large enough to hold the given size or the last block in the list
 	__MemBlockHeader* __getAvailBlock(u64 sizeAvail):
+		\\ No check for sizeAvail == 0 because a block may have 0 bytes of available space
 		__MemBlockHeader* smallest = null
 		__MemBlockHeader* last = null
 		__MemBlockHeader* curr = __memBlocks
+
 		while curr != null:
 			if curr->sizeAvail >= sizeAvail:
 				if smallest == null || curr->sizeAvail < smallest->sizeAvail:
@@ -73,15 +75,21 @@ space std:
 	\\ @param block The block of memory to insert
 	\\ @return The block before the inserted block (null if the block was inserted at the beginning of the list)
 	__MemBlockHeader* __insertAvailBlock(__MemBlockHeader* block):
+		if block == null:
+			return null
+
 		__MemBlockHeader* prev = null
 		__MemBlockHeader* curr = __memBlocks
+
 		while curr != null:
 			if block < curr:
 				break
 			prev = curr
 			curr = curr->next
+
 		block->prev = prev
 		block->next = curr
+
 		if prev != null:
 			prev->next = block
 		if curr != null:
@@ -95,6 +103,9 @@ space std:
 	\\ Removes a block of memory from the list of free blocks.
 	\\ @param block The block of memory to remove
 	void __removeAvailBlock(__MemBlockHeader* block):
+		if block == null:
+			return
+
 		if block == __memBlocks:
 			__memBlocks = block->next
 		
@@ -111,7 +122,11 @@ space std:
 	\\ The new block is always aligned to __MEM_ALIGNMENT_SIZE.
 	\\ @param block The block of memory to shrink
 	\\ @param newSizeAvail The new available size of the block
+	\\ @return The new block of memory (null if the block was not split)
 	__MemBlockHeader* __splitBlock(__MemBlockHeader* block, u64 newSizeAvail):
+		if block == null || newSizeAvail == 0:
+			return null
+
 		newSizeAvail = __roundUp(newSizeAvail, __MEM_ALIGNMENT_SIZE)
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
 			return null
@@ -128,10 +143,14 @@ space std:
 	\\ @param block2 The second block of memory to merge
 	\\ @return The merged block of memory
 	__MemBlockHeader* __mergeBlocks(__MemBlockHeader* block1, __MemBlockHeader* block2):
+		if block1 == null || block2 == null:
+			return null
+
 		block1->sizeAvail += sizeof(__MemBlockHeader) + block2->sizeAvail
 		block1->next = block2->next
 		if block2->next != null:
 			block2->next->prev = block1
+
 		return block1
 
 	\\ Checks whether the given block of memory is adjacent to the next one.
@@ -140,6 +159,7 @@ space std:
 	bool __isAdjacentToNext(__MemBlockHeader* block):
 		if block == null || block->next == null:
 			return false
+
 		return (u64)block + sizeof(__MemBlockHeader) + block->sizeAvail == (u64)block->next
 
 	\\ Merges the given block with the previous and next blocks if they are adjacent.
@@ -148,16 +168,21 @@ space std:
 	__MemBlockHeader* __mergeBlockWithNeighbors(__MemBlockHeader* block):
 		if block == null:
 			return null
+
 		if __isAdjacentToNext(block->prev):
 			block = __mergeBlocks(block->prev, block)
 		if __isAdjacentToNext(block):
 			block = __mergeBlocks(block, block->next)
+
 		return block
 
 	\\ Allocates a block of memory padded to a page size while being big enough to hold the given available size and the block header.
 	\\ @param sizeAvail The size of the block to allocate
 	\\ @return A pointer to the header of the allocated block (null on failure)
 	__MemBlockHeader* __allocBlock(u64 sizeAvail):
+		if sizeAvail == 0:
+			return null
+
 		u64 size = __roundUp(sizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
 		__MemBlockHeader* block = (__MemBlockHeader*)__sbrk(size)
 		if block == null:
@@ -198,6 +223,7 @@ space std:
 		__MemBlockHeader* block = (__MemBlockHeader*)ptr - 1
 		__insertAvailBlock(block)
 		block = __mergeBlockWithNeighbors(block)
+
 		if block->next == null: \\ Block is the last one in the list
 			u64 size = block->sizeAvail
 			if size > __PAGE_SIZE * __FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
