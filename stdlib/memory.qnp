@@ -30,11 +30,26 @@ space std:
 
 
 	void* memcpy(void* dest, void* src, u64 len)!:
-		u8* d = (u8*)dest
-		u8* s = (u8*)src
+		void* dEnd = (u8*)dest + len
 
-		while len--:
-			*d++ = *s++
+		u8* d8 = (u8*)dest
+		u8* s8 = (u8*)src
+
+		if len >= MIN_MEM_LEN_USE_ALIGN:
+			while (u64)d8 % sizeof(u64): \\ Align to 8 bytes, testing for d8 < dEnd would be redundant
+				*d8++ = *s8++
+
+			u64* d64 = (u64*)d8
+			u64* s64 = (u64*)s8
+
+			while (void*)(d64 + 1) < dEnd: \\ Copy 8 bytes at a time
+				*d64++ = *s64++
+			
+			d8 = (u8*)d64
+			s8 = (u8*)s64
+
+		while (void*)d8 < dEnd: \\ Copy remaining bytes
+			*d8++ = *s8++
 		return dest
 
 	void* memset(void* dest, u8 val, u64 len)!:
@@ -43,7 +58,7 @@ space std:
 		u8* d8 = (u8*)dest
 
 		if len >= MIN_MEM_LEN_USE_ALIGN:
-			while (u64)d8 % sizeof(u64) && (void*)d8 < end:
+			while (u64)d8 % sizeof(u64): \\ Align to 8 bytes, testing for d8 < end would be redundant
 				*d8++ = val
 
 			u64 v64 = val
@@ -52,12 +67,12 @@ space std:
 			v64 |= (v64 << 32)
 
 			u64* d64 = (u64*)d8
-			while (void*)(d64 + 1) < end:
+			while (void*)(d64 + 1) < end: \\ Set 8 bytes at a time
 				*d64++ = v64
 		
 			d8 = (u8*)d64
 
-		while (void*)d8 < end:
+		while (void*)d8 < end: \\ Set remaining bytes
 			*d8++ = val
 
 		return dest

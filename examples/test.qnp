@@ -87,7 +87,7 @@ std::memset(buff1, 0, 1024 * 1024 * 1024)
 std::print(" DONE\n")
 
 u8* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
-std::memset(str, 'A', 9)
+std::memcpy(str, "..................", 9)
 std::print(str)
 std::print("-----------------\n")
 
