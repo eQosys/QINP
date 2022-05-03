@@ -1823,33 +1823,10 @@ bool parseStatementReturn(ProgGenInfo& info)
 	return true;
 }
 
-bool parseSinglelineAssembly(ProgGenInfo& info)
+bool parseInlineAssembly(ProgGenInfo& info)
 {
 	auto& asmToken = peekToken(info);
-	if (!isKeyword(asmToken, "asm"))
-		return false;
-	nextToken(info);
-	
-	parseExpectedColon(info);
-	
-	auto& strToken = nextToken(info);
-
-	if (!isString(strToken))
-		THROW_PROG_GEN_ERROR(strToken.pos, "Expected assembly string!");
-
-	parseExpectedNewline(info);
-
-	pushStatement(info, std::make_shared<Statement>(asmToken.pos, Statement::Type::Assembly));
-	lastStatement(info)->asmLines.push_back(preprocessAsmCode(info, strToken));
-
-
-	return true;
-}
-
-bool parseMultilineAssembly(ProgGenInfo& info)
-{
-	auto& asmToken = peekToken(info);
-	if (!isKeyword(asmToken, "assembly"))
+	if (!isKeyword(asmToken, "asm") && !isKeyword(asmToken, "assembly"))
 		return false;
 	nextToken(info);
 	
@@ -1858,10 +1835,9 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 
 	increaseIndent(info.indent);
 
-	while (true)
+	while (!doParseIndent || parseIndent(info))
 	{
-		if (doParseIndent && !parseIndent(info))
-			break;
+		doParseIndent = true;
 		auto& strToken = nextToken(info);
 		if (!isString(strToken))
 			THROW_PROG_GEN_ERROR(strToken.pos, "Expected assembly string!");
@@ -1936,8 +1912,7 @@ void parseBody(ProgGenInfo& info, bool doParseIndent)
 		if (parseStatementBreak(info)) continue;
 		if (parseDeclDef(info)) continue;
 		if (parseStatementReturn(info)) continue;
-		if (parseSinglelineAssembly(info)) continue;
-		if (parseMultilineAssembly(info)) continue;
+		if (parseInlineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
 		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
 	}
@@ -2413,8 +2388,8 @@ bool parseSingleGlobalCode(ProgGenInfo& info)
 	if (parseEnum(info)) return true;
 	if (parseDeclDef(info)) return true;
 	if (parseDeclExtFunc(info)) return true;
-	if (parseSinglelineAssembly(info)) return true;
-	if (parseMultilineAssembly(info)) return true;
+	if (parseInlineAssembly(info)) return true; 
+	if (parseInlineAssembly(info)) return true;
 	if (parseExpression(info)) return true;
 	return false;
 }
