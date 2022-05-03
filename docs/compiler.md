@@ -44,3 +44,7 @@
  - -x, --extern
   
     Specifies a library/object file to link against.
+
+ - -s, --print-symbols
+
+    Prints the symbols (including unused ones) of the parsed program code.

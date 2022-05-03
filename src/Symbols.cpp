@@ -250,6 +250,24 @@ SymbolRef getParent(SymbolRef curr, Symbol::Type type)
 	return curr;
 }
 
+std::string SymTypeToString(SymType type)
+{
+	switch (type)
+	{
+		case SymType::None: return "None";
+		case SymType::Namespace: return "Namespace";
+		case SymType::Global: return "Global";
+		case SymType::Variable: return "Variable";
+		case SymType::FunctionName: return "FuncName";
+		case SymType::FunctionSpec: return "FuncSpec";
+		case SymType::ExtFunc: return "ExtFunc";
+		case SymType::Pack: return "Pack";
+		case SymType::Enum: return "Enum";
+		case SymType::EnumMember: return "EnumMember";
+	}
+
+	return "Unknown";
+}
 SymbolIterator::SymbolIterator(Symbol* symbol, InitPos iPos)
 {
 	switch (iPos)

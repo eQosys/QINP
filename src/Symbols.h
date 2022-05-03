@@ -141,6 +141,8 @@ SymbolRef replaceSymbol(SymbolRef curr, SymbolRef newSym);
 SymbolRef getParent(const SymbolRef symbol);
 SymbolRef getParent(SymbolRef curr, Symbol::Type type);
 
+std::string SymTypeToString(SymType type);
+
 class SymbolIterator
 {
 public:
