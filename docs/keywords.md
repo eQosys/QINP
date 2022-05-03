@@ -31,7 +31,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
 ---
 
 ### Inline Assembly
-Inline Assembly can marked through the `asm` and `assembly` keywords as single-line or multiline code respectively.
+Inline assembly can written through the `asm` and `assembly` keywords. The former is usually used to write single line assembly code, while the latter is mostly used to write longer blocks of inline assembly
 
 Variables can also be used in inline assembly. Global variables are replaced with their mangled name, local variables are replaced by their offset to the base pointer (including a +/- sign).
 
@@ -40,10 +40,15 @@ Variables can also be used in inline assembly. Global variables are replaced wit
 > Single-line assembly:
 > ```qinp
 > asm: [assembly string]
+> assembly: [assembly string]
 > ```
 
 > Multiline assembly:
 > ```qinp
+> asm:
+>   [assembly string1]
+>   [assembly string2]
+>   ...
 > assembly:
 >   [assembly string1]
 >   [assembly string2]
@@ -59,16 +64,17 @@ Variables can also be used in inline assembly. Global variables are replaced wit
 
 ```qinp
 asm: "mov rax, [$(global_var)]"
-asm: "add rax, [rbp $(local_var)]"
+assembly: "add rax, [rbp $(local_var)]"
 ```
 
 ```qinp
+asm:
+	"mov rax, 1"
+	"add rax, 3"
 assembly:
 	"mov rax, 1"
 	"add rax, 3"
 ```
-
-Both examples are equivalent.
 
 ---
 
