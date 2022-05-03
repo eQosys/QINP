@@ -50,8 +50,8 @@ space std:
 			u64* d64 = (u64*)d8
 			u64* s64 = (u64*)s8
 			
-			while (void*)(d64 + 1) < dEnd: \\ Copy 8 bytes at a time
-				*d64++ = *s64++
+			while (void*)(d64 + 1) < dEnd:
+				*d64++ = *s64++ \\ Copy 8 bytes at a time
 			
 			d8 = (u8*)d64
 			s8 = (u8*)s64

@@ -109,9 +109,6 @@ while tok != null:
 	std::print("\n")
 	tok = std::strtok(null, " ")
 
-void* addr1 = std::malloc(3)
-void* addr2 = std::malloc(3)
-
 u8* str2 = \
 	"Hello world, " \
 	"my name is TecStylos!\n"

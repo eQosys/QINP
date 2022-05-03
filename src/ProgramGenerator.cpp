@@ -383,6 +383,15 @@ void parseExpectedNewline(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(token.pos, "Expected newline!");
 }
 
+bool parseOptionalNewline(ProgGenInfo& info)
+{
+	bool newlineFound = false;
+	auto& token = peekToken(info);
+	if (newlineFound = isNewline(token) || isEndOfCode(token))
+		nextToken(info);
+	return newlineFound;
+}
+
 void parseExpectedColon(ProgGenInfo& info)
 {
 	parseExpected(info, Token::Type::Separator, ":");
@@ -1529,7 +1538,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	return exitEntered(datatype, false);
 }
 
-void parseFunctionBody(ProgGenInfo& info);
+void parseFunctionBody(ProgGenInfo& info, bool doParseIndent);
 
 ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
@@ -1663,7 +1672,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	if (isDefined(funcSym))
 	{
 		parseExpectedColon(info);
-		parseExpectedNewline(info);
+		bool parsedNewline = parseOptionalNewline(info);
 
 		increaseIndent(info.indent);
 		pushTempBody(info, funcSym->func.body);
@@ -1676,7 +1685,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		for (auto& param : funcSym->func.params)
 			addSymbol(funcSym, param);
 
-		parseFunctionBody(info);
+		parseFunctionBody(info, parsedNewline);
 		funcSym->frame.size = info.funcFrameSize;
 		
 		exitSymbol(info);
@@ -1845,13 +1854,13 @@ bool parseMultilineAssembly(ProgGenInfo& info)
 	nextToken(info);
 	
 	parseExpectedColon(info);
-	parseExpectedNewline(info);
+	bool doParseIndent = parseOptionalNewline(info);
 
 	increaseIndent(info.indent);
 
 	while (true)
 	{
-		if (!parseIndent(info))
+		if (doParseIndent && !parseIndent(info))
 			break;
 		auto& strToken = nextToken(info);
 		if (!isString(strToken))
@@ -1909,14 +1918,15 @@ bool parseStatementBreak(ProgGenInfo& info)
 	return true;
 }
 
-void parseBody(ProgGenInfo& info)
+void parseBody(ProgGenInfo& info, bool doParseIndent)
 {
 	int numStatements = 0;
 
 	auto& bodyBeginToken = peekToken(info, -1);
 
-	while (parseIndent(info))
+	while (!doParseIndent || parseIndent(info))
 	{
+		doParseIndent = true;
 		++numStatements;
 		auto token = (*info.tokens)[info.currToken];
 		if (parseEmptyLine(info)) continue;
@@ -1936,13 +1946,13 @@ void parseBody(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(bodyBeginToken.pos, "Expected non-empty body!");
 }
 
-void parseBodyEx(ProgGenInfo& info, BodyRef body)
+void parseBodyEx(ProgGenInfo& info, BodyRef body, bool doParseIndent)
 {
 	increaseIndent(info.indent);
 	pushTempBody(info, body);
 	enterSymbol(info, addShadowSpace(info));
 
-	parseBody(info);
+	parseBody(info, doParseIndent);
 
 	exitSymbol(info);
 	popTempBody(info);
@@ -1971,9 +1981,10 @@ bool parseStatementIf(ProgGenInfo& info)
 		condBody.body = std::make_shared<Body>();
 
 		parseExpectedColon(info);
-		parseExpectedNewline(info);
 
-		parseBodyEx(info, condBody.body);
+		bool parsedNewline = parseOptionalNewline(info);
+
+		parseBodyEx(info, condBody.body, parsedNewline);
 
 		parsedIndent = parseIndent(info);
 		if (!parsedIndent)
@@ -1990,9 +2001,9 @@ bool parseStatementIf(ProgGenInfo& info)
 
 			nextToken(info);
 			parseExpectedColon(info);
-			parseExpectedNewline(info);
+			bool parsedNewline = parseOptionalNewline(info);
 
-			parseBodyEx(info, statement->elseBody);
+			parseBodyEx(info, statement->elseBody, parsedNewline);
 		}
 		else
 		{
@@ -2018,9 +2029,9 @@ bool parseStatementWhile(ProgGenInfo& info)
 	statement->whileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
 
 	parseExpectedColon(info);
-	parseExpectedNewline(info);
+	bool parsedNewline = parseOptionalNewline(info);
 
-	parseBodyEx(info, statement->whileConditionalBody.body);
+	parseBodyEx(info, statement->whileConditionalBody.body, parsedNewline);
 
 	pushStatement(info, statement);
 
@@ -2038,9 +2049,9 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 	statement->doWhileConditionalBody.body = std::make_shared<Body>();
 
 	parseExpectedColon(info);
-	parseExpectedNewline(info);
+	bool parsedNewline = parseOptionalNewline(info);
 
-	parseBodyEx(info, statement->doWhileConditionalBody.body);
+	parseBodyEx(info, statement->doWhileConditionalBody.body, parsedNewline);
 
 	if (!parseIndent(info))
 		THROW_PROG_GEN_ERROR(doToken.pos, "Expected 'while'!");
@@ -2064,11 +2075,11 @@ bool parseControlFlow(ProgGenInfo& info)
 	return false;
 }
 
-void parseFunctionBody(ProgGenInfo& info)
+void parseFunctionBody(ProgGenInfo& info, bool doParseIndent)
 {
 	auto& bodyBeginToken = peekToken(info, -1);
 	
-	parseBody(info);
+	parseBody(info, doParseIndent);
 
 	if (info.program->body->statements.empty() || lastStatement(info)->type != Statement::Type::Return)
 	{
@@ -2126,7 +2137,7 @@ bool parseStatementSpace(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 
 	parseExpectedColon(info);
-	parseExpectedNewline(info);
+	bool doParseIndent = parseOptionalNewline(info);
 
 	auto spaceSym = getSymbol(currSym(info), nameToken.value, true);
 	if (!spaceSym)
@@ -2143,8 +2154,9 @@ bool parseStatementSpace(ProgGenInfo& info)
 
 	int codeCount = 0;
 
-	while (parseIndent(info))
+	while (!doParseIndent || parseIndent(info))
 	{
+		doParseIndent = true;
 		auto token = (*info.tokens)[info.currToken];
 		if (!parseSingleGlobalCode(info))
 			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
@@ -2181,6 +2193,8 @@ bool parsePackUnion(ProgGenInfo& info)
 
 	packSym->state = isSeparator(peekToken(info), "...") ? SymState::Declared : SymState::Defined;
 
+	bool doParseIndent = false;
+
 	if (isDeclared(packSym))
 	{
 		nextToken(info);
@@ -2191,7 +2205,7 @@ bool parsePackUnion(ProgGenInfo& info)
 	else if (isDefined(packSym))
 	{
 		parseExpectedColon(info);
-		parseExpectedNewline(info);
+		doParseIndent = parseOptionalNewline(info);
 		packSym = addPack(info, packSym);
 	}
 	else
@@ -2200,8 +2214,9 @@ bool parsePackUnion(ProgGenInfo& info)
 	increaseIndent(info.indent);
 	enterSymbol(info, packSym);
 
-	while (parseIndent(info))
+	while (!doParseIndent || parseIndent(info))
 	{
+		doParseIndent = true;
 		if (!parseDeclDef(info))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected member definition!");
 	}
@@ -2230,7 +2245,7 @@ bool parseEnum(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol with name '" + nameToken.value + "' already exists!");
 
 	parseExpectedColon(info);
-	parseExpectedNewline(info);
+	bool doParseIndent = parseOptionalNewline(info);
 
 	auto enumSym = std::make_shared<Symbol>();
 	enumSym->pos = nameToken.pos;
@@ -2242,8 +2257,9 @@ bool parseEnum(ProgGenInfo& info)
 
 	int currIndex = 0;
 	increaseIndent(info.indent);
-	while (parseIndent(info))
+	while (!doParseIndent || parseIndent(info))
 	{
+		doParseIndent = true;
 		while (isIdentifier(peekToken(info))) {
 			auto& memberToken = nextToken(info);
 
@@ -2286,7 +2302,7 @@ void parseGlobalCode(ProgGenInfo& info)
 	while (info.currToken < info.tokens->size())
 	{
 		if (!parseIndent(info))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected indent!");
+			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected indentation!");
 		auto token = (*info.tokens)[info.currToken];
 		if (!parseSingleGlobalCode(info))
 			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
