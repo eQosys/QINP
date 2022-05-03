@@ -470,7 +470,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		if (
 			(isUnsignedInt(oldType) && isInteger(newType)) ||
 			(isInteger(oldType) && isPointer(newType)) ||
-			(isBool(oldType) && (isInteger || isPointer(newType)))
+			(isBool(oldType) && (isInteger(newType) || isPointer(newType)))
 			)
 		{
 			if (oldSize == 4 && newSize == 8)
