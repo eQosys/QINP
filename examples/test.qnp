@@ -111,3 +111,8 @@ while tok != null:
 
 void* addr1 = std::malloc(3)
 void* addr2 = std::malloc(3)
+
+u8* str2 = \
+	"Hello world, " \
+	"my name is TecStylos!\n"
+std::print(str2)

@@ -93,16 +93,19 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			if (tokens->empty() || tokens->back().type == Token::Type::Newline)
 				return;
 		}
-		if (token.type == Token::Type::Whitespace &&
+		
+		if (
+			token.type == Token::Type::Comment ||
 			(
+				token.type == Token::Type::Whitespace &&
 				tokens->back().type != Token::Type::Newline &&
 				tokens->back().type != Token::Type::Whitespace
-			))
+			)
+			)
+		{
 			return;
-		if (token.type == Token::Type::Comment)
-			return;
-		
-		if (token.type == Token::Type::Keyword)
+		}
+		else if (token.type == Token::Type::Keyword)
 		{
 			if (token.value == "__file__")
 			{
@@ -118,6 +121,14 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			{
 				token.type = Token::Type::LiteralNull;
 			}
+		}
+		else if (
+			token.type == Token::Type::String &&
+			tokens->back().type == Token::Type::String
+			)
+		{
+			tokens->back().value += token.value;
+			return;
 		}
 
 		tokens->push_back(token);
