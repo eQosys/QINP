@@ -38,7 +38,7 @@ space std:
 
 
 	void* memcpy(void* dest, void* src, u64 len)!:
-		void* dEnd = (u8*)dest + len
+		u8* d8End = (u8*)dest + len
 
 		u8* d8 = (u8*)dest
 		u8* s8 = (u8*)src
@@ -49,20 +49,21 @@ space std:
 
 			u64* d64 = (u64*)d8
 			u64* s64 = (u64*)s8
+			u64* d64End = (u64*)d8End - 1
 			
-			while (void*)(d64 + 1) < dEnd:
+			while d64 < d64End:
 				*d64++ = *s64++ \\ Copy 8 bytes at a time
 			
 			d8 = (u8*)d64
 			s8 = (u8*)s64
 
-		while (void*)d8 < dEnd: \\ Copy remaining bytes
+		while d8 < d8End: \\ Copy remaining bytes
 			*d8++ = *s8++
 
 		return dest
 
 	void* memset(void* dest, u8 val, u64 len)!:
-		void* end = (u8*)dest + len
+		u8* d8End = (u8*)dest + len
 
 		u8* d8 = (u8*)dest
 
@@ -76,19 +77,20 @@ space std:
 			v64 |= (v64 << 32)
 
 			u64* d64 = (u64*)d8
-
-			while (void*)(d64 + 1) < end: \\ Set 8 bytes at a time
-				*d64++ = v64
+			u64* d64End = (u64*)d8End - 1
+			
+			while d64 < d64End:
+				*d64++ = v64 \\ Set 8 bytes at a time
 		
 			d8 = (u8*)d64
 
-		while (void*)d8 < end: \\ Set remaining bytes
+		while d8 < d8End: \\ Set remaining bytes
 			*d8++ = val
 
 		return dest
 
 	i32 memcmp(void* a, void* b, u64 len)!:
-		void* aEnd = (u8*)a + len
+		u8* a8End = (u8*)a + len
 		u8* a8 = (u8*)a
 		u8* b8 = (u8*)b
 
@@ -99,15 +101,16 @@ space std:
 			
 			u64* a64 = (u64*)a8
 			u64* b64 = (u64*)b8
+			u64* a64End = (u64*)a8End - 1
 
-			while (void*)(a64 + 1) < aEnd: \\ Compare 8 bytes at a time
+			while a64 < a64End: \\ Compare 8 bytes at a time
 				if *a64++ != *b64++:
 					return *(a64 - 1) - *(b64 - 1)
 			
 			a8 = (u8*)a64
 			b8 = (u8*)b64
 		
-		while (void*)a8 < aEnd: \\ Compare remaining bytes
+		while a8 < a8End: \\ Compare remaining bytes
 			if *a8++ != *b8++:
 				return *(a8 - 1) - *(b8 - 1)
 
