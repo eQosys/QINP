@@ -81,12 +81,9 @@ space std:
 		return print(itos(num, str, 10))
 
 	u8* scan(u8* dest, u64 size)!:
-		if !size:
-			return dest
 		u8* begin = dest
 
-		while --size:
-			*dest++ = getchar()
+		while size--: *dest++ = getchar()
 
 		*dest = null
 		return begin
@@ -97,8 +94,7 @@ space std:
 			"mov rcx, [__##__argc]"
 			"mov [rbp $(argc)], rcx"
 
-		if !pargv:
-			return argc
+		if !pargv: return argc
 
 		u8** argv
 		assembly:

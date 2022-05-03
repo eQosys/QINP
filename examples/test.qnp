@@ -17,16 +17,12 @@ void printBlockList():
 		std::print(curr->sizeAvail)
 
 		std::print("\n DiffToPrev: ")
-		if curr->prev != null:
-			std::print((u64)curr - (u64)curr->prev)
-		else:
-			std::print("--")
+		if curr->prev != null: std::print((u64)curr - (u64)curr->prev)
+		else: std::print("--")
 
 		std::print("\n DiffToNext: ")
-		if curr->next != null:
-			std::print((u64)curr->next - (u64)curr)
-		else:
-			std::print("--")
+		if curr->next != null: std::print((u64)curr->next - (u64)curr)
+		else: std::print("--")
 
 		std::print("\n\n")
 		curr = curr->next

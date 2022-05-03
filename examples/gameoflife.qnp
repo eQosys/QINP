@@ -4,8 +4,7 @@ define WIDTH 20
 define HEIGHT 10
 define N_ITERATIONS 50
 
-pack Grid:
-	bool cells[WIDTH][HEIGHT]
+pack Grid: bool cells[WIDTH][HEIGHT]
 
 Grid grids[2]
 
@@ -20,8 +19,8 @@ void flip():
 void printBorder():
 	std::print("+")
 	i64 i = 0
-	while i++ < WIDTH:
-		std::print("-")
+	while i++ < WIDTH: std::print("-")
+	
 	std::print("+\n")
 
 void show():

@@ -169,36 +169,27 @@ space std:
 
 	u64 strlen(u8* str)!:
 		u8* begin = str
-		while *str:
-			++str
+		while *str: ++str
 		return str - begin
 
 	u8* strlwr(u8* str)!:
 		u8* begin = str
-		while *str:
-			*str = tolower(*str)
-			++str
+		while *str: *str++ = tolower(*str)
 		return begin
 
 	u8* strlwr(u8* str, u64 num)!:
 		u8* begin = str
-		while num--:
-			*str = tolower(*str)
-			++str
+		while num--: *str++ = tolower(*str)
 		return begin
 
 	u8* strupr(u8* str)!:
 		u8* begin = str
-		while *str:
-			*str = toupper(*str)
-			++str
+		while *str: *str++ = toupper(*str)
 		return begin
 
 	u8* strupr(u8* str, u64 num)!:
 		u8* begin = str
-		while num--:
-			*str = toupper(*str)
-			++str
+		while num--: *str++ = toupper(*str)
 		return begin
 	
 	u8* strcat(u8* dest, u8* src)!:
@@ -215,56 +206,43 @@ space std:
 
 	u8* strcpy(u8* dest, u8* src)!:
 		u8* begin = dest
-		while *src:
-			*dest++ = *src++
+		while *src: *dest++ = *src++
 		*dest = null
 		return begin
 
 	u8* strcpy(u8* dest, u8* src, u64 num)!:
 		u8* begin = dest
-		while num--:
-			*dest++ = *src++
+		while num--: *dest++ = *src++
 		*dest = null
 		return begin
 	
 	i32 strcmp(u8* str1, u8* str2)!:
-		while *str1 && *str2:
-			if *str1 != *str2:
-				break
+		while *str1 && *str2 && *str1 == *str2:
 			++str1
 			++str2
 		return (i32)*str1 - (i32)*str2
 
 	i32 strcmp(u8* str1, u8* str2, u64 num)!:
-		while num--:
-			if *str1 != *str2:
-				break
+		while num-- && *str1 == *str2:
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)*str1 - (i32)*str2
 
 	i32 strcmpi(u8* str1, u8* str2)!:
-		while *str1 && *str2:
-			if tolower(*str1) != tolower(*str2):
-				break
+		while *str1 && *str2 && tolower(*str1) == tolower(*str2):
 			++str1
 			++str2
 		return (i32)tolower(*str1) - (i32)tolower(*str2)
 
 	i32 strcmpi(u8* str1, u8* str2, u64 num)!:
-		while num--:
-			if tolower(*str1) != tolower(*str2):
-				break
+		while num-- && tolower(*str1) == tolower(*str2):
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)tolower(*str1) - (i32)tolower(*str2)
 
 	u8* strchr(u8* str, u8 ch)!:
-		while *str:
-			if *str == ch:
-				return str
-			++str
-		return null
+		while *str && *str != ch: ++str
+		return *str == ch ? str : (u8*)null
 
 	u8* strrchr(u8* str, u8 ch)!:
 		u8* last = null
@@ -297,14 +275,12 @@ space std:
 
 	u8* strset(u8* str, u8 ch)!:
 		u8* begin = str
-		while *str:
-			*str++ = ch
+		while *str: *str++ = ch
 		return begin
 
 	u8* strset(u8* str, u8 ch, u64 num)!:
 		u8* begin = str
-		while num--:
-			*str++ = ch
+		while num--: *str++ = ch
 		return begin
 
 	u8* strrev(u8* str)!:
@@ -323,11 +299,9 @@ space std:
 	
 	u8* strtok(u8* str, u8* delimiters):
 		static u8* next = null
-		if str:
-			next = str
 		
-		if !next:
-			return null
+		if str: next = str
+		if !next: return null
 
 		u8* begin = next
 		while *next:
@@ -343,16 +317,14 @@ space std:
 		u8* begin = str
 		bool negative = num < 0
 
-		if negative:
-			num *= -1
+		if negative: num *= -1
 
 		do:
 			*str++ = __baseCharsLower[num % base]
 			num /= base
 		while num
 
-		if negative:
-			*str++ = '-'
+		if negative: *str++ = '-'
 
 		*str = null
 
@@ -361,24 +333,17 @@ space std:
 	i64 stoi(u8* str, i64 base)!:
 		i64 num = 0
 		bool negative = *str == '-'
-		if negative:
-			++str
+
+		if negative: ++str
 
 		while *str:
 			num *= base
 			num += (i64)(strchr(__baseCharsLower, tolower(*str++)) - __baseCharsLower)
 
-		if negative:
-			num = -num
-
-		return num
+		return negative ? -num : num
 
 	u8 toupper(u8 c)!:
-		if c < 'a' || c > 'z':
-			return c
-		return c - 'a' + 'A'
+		return 'a' <= c && c <= 'z' ? c - 'a' + 'A' : c
 
 	u8 tolower(u8 c)!:
-		if c < 'A' || c > 'Z':
-			return c
-		return c - 'A' + 'a'
+		return 'A' <= c && c <= 'Z' ? c - 'A' + 'a' : c

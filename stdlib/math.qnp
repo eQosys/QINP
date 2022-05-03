@@ -56,7 +56,5 @@ space std:
 	
 	i64 pow(i64 base, i64 exponent)!:
 		i64 result = 1
-		while exponent > 0:
-			result *= base
-			--exponent
+		while exponent-- > 0: result *= base
 		return result

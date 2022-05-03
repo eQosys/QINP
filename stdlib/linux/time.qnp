@@ -24,9 +24,9 @@ space std:
 
 	u64 getTime():
 		__timespec t
-		if __clock_gettime(__CLOCK_REALTIME, &t) < 0:
-			return -1
-		return t.seconds * 1000 + t.nanoseconds / 1000000
+		return __clock_gettime(__CLOCK_REALTIME, &t) < 0 ? \
+			-1 : \
+			t.seconds * 1000 + t.nanoseconds / 1000000
 
 	i32 sleep(u64 ms)!:
 		__timespec ts
