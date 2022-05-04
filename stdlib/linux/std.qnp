@@ -5,31 +5,12 @@ import "syscall.qnp"
 
 space std:
 	void exit(i32 status)!:
-		assembly:
-			"mov rax, $(SYS_EXIT)"
-			"mov edi, [rbp $(status)]"
-			"syscall"
+		__syscall(__SYS_EXIT, status)
 
 	i32 print(u8* str, u64 len)!:
-		i32 result
-		assembly:
-			"mov rax, $(SYS_WRITE)"
-			"mov rdi, 1"
-			"mov rsi, [rbp $(str)]"
-			"mov rdx, [rbp $(len)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
+		return __syscall(__SYS_WRITE, 1, str, len)
 
 	u8 getchar()!:
 		u8 ch
-
-		assembly:
-			"mov rax, $(SYS_READ)"
-			"mov rdi, 0"
-			"mov rsi, rbp"
-			"add rsi, $(ch)"
-			"mov rdx, 1"
-			"syscall"
-
+		u64 result = __syscall(__SYS_READ, 0, &ch, 1)
 		return ch

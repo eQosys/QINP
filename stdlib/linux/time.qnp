@@ -12,15 +12,7 @@ space std:
 		i64 nanoseconds
 
 	i32 __clock_gettime(i32 clockID, __timespec* t):
-		i32 result
-		assembly:
-			"mov rax, $(SYS_CLOCK_GETTIME)"
-			"mov rdi, [rbp + $(clockID)]"
-			"mov rsi, [rbp + $(t)]"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
-
+		return __syscall(__SYS_CLOCK_GETTIME, clockID, t)
 
 	u64 getTime():
 		__timespec t
@@ -32,12 +24,5 @@ space std:
 		__timespec ts
 		ts.seconds = ms / 1000
 		ts.nanoseconds = (ms % 1000) * 1000000
-		i32 result
-		assembly:
-			"mov rax, $(SYS_NANOSLEEP)"
-			"mov rdi, rbp"
-			"add rdi, $(ts)"
-			"xor rsi, rsi"
-			"syscall"
-			"mov [rbp $(result)], eax"
-		return result
+		\\asm: "xor rsi, rsi"
+		return __syscall(__SYS_NANOSLEEP, &ts, &ts)

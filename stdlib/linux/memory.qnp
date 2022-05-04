@@ -12,13 +12,7 @@ space std:
 	\\ @param size The new size
 	\\ @return The size after the change (Current size on failure)
 	u64 __brk(u64 size):
-		u64 result
-		assembly:
-			"mov rax, $(SYS_BRK)"
-			"mov rdi, [rbp $(size)]"
-			"syscall"
-			"mov [rbp $(result)], rax"
-		return result
+		return __syscall(__SYS_BRK, size)
 
 	\\ Changes the data segment size by the given amount and returns a pointer to the newly allocated memory.
 	\\ @param increment The amount to increase the data segment size by
