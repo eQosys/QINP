@@ -12,6 +12,8 @@ out/
 *.asm
 *.exe
 
+tests/__failed.txt
+
 .vscode/settings.json
 
 CMakeSettings.json

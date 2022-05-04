@@ -192,11 +192,24 @@ if __name__ == "__main__":
 						numFailed += 1
 						failNames.append(testName)
 					numTests += 1
+		elif testName == "failed":
+			# Load the names of the failed tests from test/failed.txt
+			with open("tests/__failed.txt", "r") as f:
+				for testName in f.read().splitlines():
+					if not runTest(testName):
+						numFailed += 1
+						failNames.append(testName)
+					numTests += 1
 		else:
 			if not runTest(testName):
 				numFailed += 1
 				failNames.append(testName)
 			numTests += 1
+
+		# Store the names of the failed tests in tests/failed.txt
+		with open("tests/__failed.txt", "w") as f:
+			for name in failNames:
+				f.write(f"{name}\n")
 
 		if numFailed == 0:
 			print(f"[ INF ] {numTests}/{numTests} tests passed!")
