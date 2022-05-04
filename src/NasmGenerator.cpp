@@ -340,7 +340,17 @@ void generateComparison(NasmGenInfo& ngi, const Expression* expr)
 
 void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& srcReg, int size)
 {
-	auto func = getSymbol(getSymbol(ngi.program->symbols, "memcpy"), getSignatureNoRet({ { "void", 1 }, { "void", 1 }, { "u64" } }), true);
+	auto func = getSymbol(
+		getSymbol(ngi.program->symbols, "memcpy"),
+		getSignatureNoRet(
+			{
+				Datatype(DTType::Pointer, Datatype("void")), 
+				Datatype(DTType::Pointer, Datatype("void")),
+				Datatype("u64")
+			}
+			),
+		true
+		);
 	func->func.isReachable = true;
 
 	ngi.ss << "  push " << size << "\n";
@@ -383,7 +393,7 @@ void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
 	}
 
 	genExpr(ngi, expr->left.get());
-	bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
+	bool typesMatch = (ngi.primReg.datatype == Datatype(DTType::Pointer, Datatype(getSignature(expr))));
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
 	ngi.ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
@@ -422,7 +432,7 @@ void genExtCall(NasmGenInfo& ngi, const Expression* expr)
 		ngi.ss << "  pop " << paramRegs[i] << "\n";
 
 	genExpr(ngi, expr->left.get());
-	bool typesMatch = ngi.primReg.datatype == Datatype{ getSignature(expr), 1 };
+	bool typesMatch = (ngi.primReg.datatype == Datatype(DTType::Pointer, Datatype(getSignature(expr))));
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
 
@@ -906,7 +916,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Dereference:
 		genExpr(ngi, expr->left.get());
-		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot dereference non-pointer!");
+		assert(isDereferenceable(ngi.primReg.datatype) && "Cannot dereference non-pointer!");
 		ngi.primReg.datatype = expr->datatype;
 		
 		switch (ngi.primReg.state)
@@ -984,7 +994,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		break;
 	case Expression::ExprType::Subscript:
 		genExpr(ngi, expr->left.get());
-		assert(ngi.primReg.datatype.ptrDepth != 0 && "Cannot subscript non-pointer!");
+		assert(isDereferenceable(ngi.primReg.datatype) != 0 && "Cannot subscript non-pointer!");
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
 		genExpr(ngi, expr->right.get());

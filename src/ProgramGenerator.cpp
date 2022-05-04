@@ -688,7 +688,7 @@ Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 	if (isNull(right))
 		return left;
 
-	if (left.ptrDepth > 0 || right.ptrDepth > 0)
+	if (isDereferenceable(left) || isDereferenceable(right))
 		return Datatype();
 
 	if (!isBuiltinType(left.name) || !isBuiltinType(right.name))
@@ -723,7 +723,7 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
 	if (!isArray(expToConvert->datatype))
 		return expToConvert;
 
-	return makeConvertExpression(expToConvert, { expToConvert->datatype.name, 1 });
+	return makeConvertExpression(expToConvert, Datatype(DTType::Pointer, *expToConvert->datatype.subType));
 }
 
 ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
@@ -771,7 +771,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	{
 		if (isBool(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
-		else if (expToConvert->datatype.ptrDepth == 1 && isVoidPtr(newDatatype))
+		else if (isPointer(expToConvert->datatype) && isOfType(expToConvert->datatype, DTType::Name) && isVoidPtr(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
 		else if (newDatatype == Datatype{ "u64" })
 			return makeConvertExpression(expToConvert, newDatatype);
@@ -1532,7 +1532,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	while (isOperator(peekToken(info), "*"))
 	{
 		nextToken(info);
-		++datatype.ptrDepth;
+		datatype = Datatype(DTType::Pointer, datatype);
 	}
 
 	return exitEntered(datatype, false);
@@ -1561,10 +1561,7 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	{
 		nextToken(info);
 		parseExpected(info, Token::Type::LiteralInteger);
-		++sym->var.datatype.ptrDepth;
-		sym->var.datatype.arraySizes.push_back(std::stoull(peekToken(info, -1).value));
-		if (sym->var.datatype.arraySizes.back() <= 0)
-			THROW_PROG_GEN_ERROR(peekToken(info, -1).pos, "Array size must be greater than zero!");
+		sym->var.datatype = Datatype(DTType::Array, sym->var.datatype, std::stoull(peekToken(info, -1).value));
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 

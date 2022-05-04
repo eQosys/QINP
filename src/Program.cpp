@@ -81,7 +81,7 @@ bool isPackType(const ProgramRef program, const std::string& name)
 
 bool isPackType(const ProgramRef program, const Datatype& datatype)
 {
-	return datatype.ptrDepth == 0 && isPackType(program, datatype.name);
+	return isOfType(datatype, DTType::Name) && isPackType(program, datatype.name);
 }
 
 int getPackSize(const ProgramRef program, const std::string& packName)
@@ -103,7 +103,7 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 	
 	if (isArray(datatype))
 	{
-		int elemSize = getDatatypeSize(program, { datatype.name, 0 });
+		int elemSize = getDatatypeSize(program, { datatype.name });
 		return elemSize * getDatatypeNumElements(datatype);
 	}
 

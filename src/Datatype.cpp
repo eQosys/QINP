@@ -6,10 +6,30 @@
 
 bool operator==(const Datatype& left, const Datatype& right)
 {
-	return
-		left.ptrDepth == right.ptrDepth &&
-		left.name == right.name &&
-		left.arraySizes == right.arraySizes;
+	if (left.isConst != right.isConst)
+		return false;
+	if (left.type != right.type)
+		return false;
+	if (left.type == Datatype::Type::Name)
+	{
+		if (left.name != right.name)
+			return false;
+	}
+	else
+	{
+		if (left.type == Datatype::Type::Array)
+		{
+			if (left.arraySize != right.arraySize)
+				return false;
+		}
+
+		if (!left.subType || !right.subType)
+			return false;
+		if (*left.subType != *right.subType)
+			return false;
+	}
+	
+	return true;
 }
 
 bool operator!=(const Datatype& left, const Datatype& right)
@@ -22,32 +42,50 @@ bool operator!(const Datatype& datatype)
 	return datatype.name.empty();
 }
 
+bool hasSubtype(const Datatype& datatype)
+{
+	return
+		datatype.type != DTType::Name;
+}
+
+bool isOfType(const Datatype& datatype, DTType type)
+{
+	return datatype.type == type;
+}
+
 bool isPointer(const Datatype& datatype)
 {
-	return datatype.ptrDepth > datatype.arraySizes.size();
+	return isOfType(datatype, DTType::Pointer);
 }
 
 bool isArray(const Datatype& datatype)
 {
-	return !datatype.arraySizes.empty() && !isPointer(datatype);
+	return isOfType(datatype, DTType::Array);
+}
+
+bool isDereferenceable(const Datatype& datatype)
+{
+	return isPointer(datatype) || isArray(datatype);
 }
 
 bool isVoidPtr(const Datatype& datatype)
 {
-	return datatype == Datatype{ "void", 1 };
+	return
+		isOfType(datatype, DTType::Pointer) &&
+		datatype.subType->name == "void";
 }
 
 bool isBool(const Datatype& datatype)
 {
-	return 
-		datatype.ptrDepth == 0 &&
+	return
+		isOfType(datatype, DTType::Name) &&
 		datatype.name == "bool";
 }
 
 bool isNull(const Datatype& datatype)
 {
 	return
-		datatype.ptrDepth == 0 &&
+		isOfType(datatype, DTType::Name) &&
 		datatype.name == "null";
 }
 
@@ -58,7 +96,8 @@ bool isInteger(const Datatype& datatype)
 
 bool isUnsignedInt(const Datatype& datatype)
 {
-	return datatype.ptrDepth == 0 &&
+	return 
+		isOfType(datatype, DTType::Name) &&
 		(
 			datatype.name == "u8" ||
 			datatype.name == "u16" ||
@@ -69,7 +108,7 @@ bool isUnsignedInt(const Datatype& datatype)
 
 bool isSignedInt(const Datatype& datatype)
 {
-	return datatype.ptrDepth == 0 &&
+	return isOfType(datatype, DTType::Name) &&
 		(
 			datatype.name == "i8" ||
 			datatype.name == "i16" ||
@@ -80,31 +119,17 @@ bool isSignedInt(const Datatype& datatype)
 
 void dereferenceDatatype(Datatype& datatype)
 {
-	if (isPointer(datatype))
-	{
-		--datatype.ptrDepth;
-	}
-	else if (isArray(datatype))
-	{
-		--datatype.ptrDepth;
-		datatype.arraySizes.erase(datatype.arraySizes.begin());
-	}
+	if (isDereferenceable(datatype))
+		datatype = *datatype.subType;
 	else
-	{
 		THROW_QINP_ERROR("Cannot dereference non-pointer or non-array datatype");
-	}
 }
 
 int getDatatypeNumElements(const Datatype& datatype)
-{
+{;
 	if (!isArray(datatype))
 		return 1;
-	
-	int numElements = 1;
-	for (int arraySize : datatype.arraySizes)
-		numElements *= arraySize;
-
-	return numElements;
+	return datatype.arraySize * getDatatypeNumElements(*datatype.subType);
 }
 
 int getBuiltinTypeSize(const std::string& name)
@@ -131,5 +156,17 @@ int getBuiltinTypeSize(const std::string& name)
 
 std::string getDatatypeStr(const Datatype& datatype)
 {
-	return datatype.name + "~" + std::to_string(datatype.ptrDepth);
+	// TODO: Generates names not suitable for NASM
+	std::string result;
+	if (datatype.isConst)
+		result += "c@";
+	if (isOfType(datatype, DTType::Name))
+		result += datatype.name;
+	else if (isOfType(datatype, DTType::Array))
+		result += "[" + std::to_string(datatype.arraySize) + "]" + getDatatypeStr(*datatype.subType);
+	else if (isOfType(datatype, DTType::Pointer))
+		result += "*" + getDatatypeStr(*datatype.subType);
+	else if (isOfType(datatype, DTType::Reference))
+		result += "&" + getDatatypeStr(*datatype.subType);
+	return result;
 }
