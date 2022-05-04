@@ -387,7 +387,7 @@ bool parseOptionalNewline(ProgGenInfo& info)
 {
 	bool newlineFound = false;
 	auto& token = peekToken(info);
-	if (newlineFound = isNewline(token) || isEndOfCode(token))
+	if ((newlineFound = (isNewline(token) || isEndOfCode(token))))
 		nextToken(info);
 	return newlineFound;
 }
