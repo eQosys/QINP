@@ -56,7 +56,7 @@ The QINP language is a work in progress. It is not yet stable and may be subject
 
 Next steps (Not in order):
  - [ ] Self hosted
- - [ ] Dynamic memory management
+ - [x] Dynamic memory management
  - [ ] General optimization
  - [ ] Inline functions
  - [ ] Object oriented programming
