@@ -217,31 +217,31 @@ space std:
 		return begin
 	
 	i32 strcmp(u8* str1, u8* str2)!:
-		while *str1 && *str2 && *str1 == *str2:
+		while *str1 == *str2 && *str1 && *str2:
 			++str1
 			++str2
 		return (i32)*str1 - (i32)*str2
 
 	i32 strcmp(u8* str1, u8* str2, u64 num)!:
-		while num-- && *str1 == *str2:
+		while num-- && *str1 == *str2 && *str:
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)*str1 - (i32)*str2
 
 	i32 strcmpi(u8* str1, u8* str2)!:
-		while *str1 && *str2 && tolower(*str1) == tolower(*str2):
+		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
 			++str1
 			++str2
 		return (i32)tolower(*str1) - (i32)tolower(*str2)
 
 	i32 strcmpi(u8* str1, u8* str2, u64 num)!:
-		while num-- && tolower(*str1) == tolower(*str2):
+		while num-- && tolower(*str1) == tolower(*str2) && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)tolower(*str1) - (i32)tolower(*str2)
 
 	u8* strchr(u8* str, u8 ch)!:
-		while *str && *str != ch: ++str
+		while *str != ch && *str: ++str
 		return *str == ch ? str : (u8*)null
 
 	u8* strrchr(u8* str, u8 ch)!:
