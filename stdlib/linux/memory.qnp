@@ -66,7 +66,7 @@ space std:
 	\\ Checks whether the given block of memory is adjacent to the next one.
 	\\ @param block The block of memory to check
 	\\ @return True if the block is adjacent to the next one, otherwise false
-	bool __isAdjacentToNext(__MemBlockHeader* block)...
+	bool __isAdjacentToNext(__MemBlockHeader const* block)...
 
 	\\ Merges the given block with the previous and next blocks if they are adjacent.
 	\\ @param block The block of memory to merge
@@ -170,7 +170,7 @@ space std:
 
 		return block1
 
-	bool __isAdjacentToNext(__MemBlockHeader* block)!:
+	bool __isAdjacentToNext(__MemBlockHeader const* block)!:
 		if !block || !block->next: return false
 
 		return (u64)block + sizeof(__MemBlockHeader) + block->sizeAvail == (u64)block->next

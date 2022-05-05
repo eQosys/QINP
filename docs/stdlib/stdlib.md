@@ -7,9 +7,11 @@ All files building the Standard Library can be found in the [stdlib](../../stdli
  - [./memory.qnp](./memory-qnp.md)
  - [./std.qnp](./std-qnp.md)
  - [./string.qnp](./string-qnp.md)
+ - [./time.qnp](./time-qnp.md)
  - [./linux/memory.qnp](./linux/memory-qnp.md)
  - [./linux/std.qnp](./linux/std-qnp.md)
  - [./linux/syscall.qnp](./linux/syscall-qnp.md)
+ - [./linux/time.qnp](./linux/time-qnp.md)
  - [./windows/std.qnp](./windows/std-qnp.md)
 
 The main file for the Standard Library is [./std.qnp](./std-qnp.md). It imports the most fundamental functions, definitions and packs.

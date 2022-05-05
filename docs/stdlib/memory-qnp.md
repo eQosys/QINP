@@ -9,8 +9,8 @@
 ## Functions
  - [void free ( void* ptr ) ...]()
  - [void* malloc ( u64 size ) ...]()
- - [void* memcpy ( void* dest, void* src, u64 num )]()
- - [i32 memcmp ( void* a, void* b, u64 num )]()
+ - [void* memcpy ( void* dest, void const* src, u64 num )]()
+ - [i32 memcmp ( void const* a, void const* b, u64 num )]()
  - [void* memset ( void* dest, u8 value, u64 num )]()
 
 ## Packs

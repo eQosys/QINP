@@ -8,14 +8,14 @@
 
 ## Functions
  - [void exit ( i32 status ) ...]()
- - [_RESULT print ( u8* str )]()
- - [_RESULT print ( u8* str, u64 len ) ...]()
+ - [_RESULT print ( u8 const* str )]()
+ - [_RESULT print ( u8 const* str, u64 len ) ...]()
  - [_RESULT print ( i64 num )]()
  - [u8 getchar ( ) ...]()
  - [u8* scan ( u8* dest, u64 size )]()
- - [void* memcpy ( void* dest, void* src, u64 size )]()
- - [u64 getargs ( u8*** pargv )]()
- - [u8** getenv ( )]()
+ - [void* memcpy ( void* dest, void const* src, u64 size )]()
+ - [u64 getargs ( u8 const*const** pargv )]()
+ - [u8 const*const* getenv ( )]()
 
 ## Packs
  - _None_

@@ -6,14 +6,14 @@ space std:
 
 	extern void __ExitProcess(i32 status) = "ExitProcess"
 	extern u64 __GetStdHandle(i32 nStdHandle) = "GetStdHandle"
-	extern bool __WriteConsole(__HANDLE handle, void* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
+	extern bool __WriteConsole(__HANDLE handle, void const* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
 	extern bool __ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
 	extern void __Sleep(i32 ms) = "Sleep"
 
 	void exit(i32 status)!:
 		__ExitProcess(status)
 
-	_RESULT print(u8* str, u64 len)!:
+	_RESULT print(u8 const* str, u64 len)!:
 		static __HANDLE hStdOut = __GetStdHandle(-11)
 
 		i32 nWritten

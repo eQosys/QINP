@@ -8,9 +8,9 @@ space std:
 		__syscall(__SYS_EXIT, status)
 
 	i32 print(u8 const* str, u64 len)!:
-		return __syscall(__SYS_WRITE, 1, (u64)str, len)
+		return __syscall(__SYS_WRITE, 1, str, len)
 
 	u8 getchar()!:
 		u8 ch
-		u64 result = __syscall(__SYS_READ, 0, (u64)&ch, 1)
+		u64 result = __syscall(__SYS_READ, 0, &ch, 1)
 		return ch

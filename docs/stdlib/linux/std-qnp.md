@@ -8,7 +8,7 @@
 
 ## Functions
  - [void exit ( i32 status )]()
- - [_RESULT print ( u8* str, u64 len )]()
+ - [_RESULT print ( u8 const* str, u64 len )]()
  - [u8 getchar ( )]()
 
 ## Packs

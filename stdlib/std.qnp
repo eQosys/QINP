@@ -65,11 +65,11 @@ space std:
 	\\ Get the arguments passed to the program
 	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
 	\\ @return The number of arguments passed to the program
-	u64 getargs(u8*** pargv)...
+	u64 getargs(u8 const*const** pargv)...
 
 	\\ Get the environment variables passed to the program
 	\\ @return The pointer to an array of environment variables
-	u8** getenv()...
+	u8 const*const* getenv()...
 
 
 
@@ -88,7 +88,7 @@ space std:
 		*dest = null
 		return begin
 
-	u64 getargs(u8*** pargv)!:
+	u64 getargs(u8 const*const** pargv)!:
 		u64 argc
 		assembly:
 			"mov rcx, [__#argc]"
@@ -96,7 +96,7 @@ space std:
 
 		if !pargv: return argc
 
-		u8** argv
+		u8 const*const* argv
 		assembly:
 			"mov rcx, [__#argv]"
 			"mov [rbp $(argv)], rcx"
@@ -105,8 +105,8 @@ space std:
 
 		return argc
 
-	u8** getenv()!:
-		u8** env
+	u8 const*const* getenv()!:
+		u8 const*const* env
 		assembly:
 			"mov rcx, [__#envp]"
 			"mov [rbp $(env)], rcx"

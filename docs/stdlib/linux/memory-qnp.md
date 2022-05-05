@@ -12,7 +12,7 @@
  - [__MemBlockHeader* __getAvailBlock ( u64 sizeAvail )]()
  - [void* __sbrk ( i64 increment )]()
  - [__MemBlockHeader* __insertAvailBlock ( __MemBlockHeader* block )]()
- - [bool __isAdjacentToNext( __MemBlockHeader* block )]()
+ - [bool __isAdjacentToNext( __MemBlockHeader const* block )]()
  - [__MemBlockHeader* __mergeBlockWithNeighbors( __MemBlockHeader* block )]()
  - [__MemBlockHeader* __mergeBlocks( __MemBlockHeader* block1, __MemBlockHeader* block2 )]()
  - [void __removeAvailBlock ( __MemBlockHeader* block )]()
