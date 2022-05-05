@@ -5,7 +5,7 @@ space std:
 	\\ Determine the length of a string (without the null terminator)
 	\\ @param str The null-terminated string to measure
 	\\ @return The length of the string
-	u64 strlen(u8* str)...
+	u64 strlen(u8 const* str)...
 
 	\\ Convert a string to lowercase (in place)
 	\\ @param str The string to convert
@@ -35,77 +35,77 @@ space std:
 	\\ @param dest The destination string to concatenate to
 	\\ @param src The source string to concatenate
 	\\ @return The pointer to the destination string
-	u8* strcat(u8* dest, u8* src)...
+	u8* strcat(u8* dest, u8 const* src)...
 	
 	\\ Concatenates two strings
 	\\ @param dest The destination string to concatenate to
 	\\ @param src The source string to concatenate
 	\\ @param len The number of characters to concatenate (excluding the null terminator)
 	\\ @return The pointer to the destination string
-	u8* strcat(u8* dest, u8* src, u64 num)...
+	u8* strcat(u8* dest, u8 const* src, u64 num)...
 	
 	\\ Copy a null-terminated string
 	\\ @param dest The destination buffer
 	\\ @param src The source string
 	\\ @return The destination buffer
-	u8* strcpy(u8* dest, u8* src)...
+	u8* strcpy(u8* dest, u8 const* src)...
 
 	\\ Copy the first num characters of a string
 	\\ @param dest The destination buffer
 	\\ @param src The source string
 	\\ @param len The number of characters to copy (excluding the null terminator)
 	\\ @return The destination buffer
-	u8* strcpy(u8* dest, u8* src, u64 num)...
+	u8* strcpy(u8* dest, u8 const* src, u64 num)...
 	
 	\\ Compare two null-terminated strings
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmp(u8* str1, u8* str2)...
+	i32 strcmp(u8 const* str1, u8 const* str2)...
 
 	\\ Compare the first num characters of two strings
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @param num The number of characters to compare
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmp(u8* str1, u8* str2, u64 num)...
+	i32 strcmp(u8 const* str1, u8 const* str2, u64 num)...
 
 	\\ Compare two null-terimated strings without case sensitivity
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmpi(u8* str1, u8* str2)...
+	i32 strcmpi(u8 const* str1, u8 const* str2)...
 
 	\\ Compare the first num characters of two strings without case sensitivity
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @param num The number of characters to compare
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmpi(u8* str1, u8* str2, u64 num)...
+	i32 strcmpi(u8 const* str1, u8 const* str2, u64 num)...
 
 	\\ Locate the first occurencce of a character in a string
 	\\ @param str The string to search
 	\\ @param ch The character to search for
 	\\ @return The address of the first occurence of ch in str, or NULL if not found
-	u8* strchr(u8* str, u8 ch)...
+	u8 const* strchr(u8 const* str, u8 ch)...
 	
 	\\ Locate the last occurence of a character in a string
 	\\ @param str The string to search
 	\\ @param ch The character to search for
 	\\ @return The address of the last occurence of ch in str, or NULL if not found
-	u8* strrchr(u8* str, u8 ch)...
+	u8 const* strrchr(u8 const* str, u8 ch)...
 
 	\\ Locate the first occurence of a substring in a string
 	\\ @param str The string to search
 	\\ @param substr The substring to search for
 	\\ @return The address of the first occurence of substr in str, or NULL if not found
-	u8* strstr(u8* str, u8* substr)...
+	u8 const* strstr(u8 const* str, u8 const* substr)...
 
 	\\ Locate the last occurence of a substring in a string
 	\\ @param str The string to search
 	\\ @param substr The substring to search for
 	\\ @return The address of the last occurence of substr in str, or NULL if not found
-	u8* strrstr(u8* str, u8* substr)...
+	u8 const* strrstr(u8 const* str, u8 const* substr)...
 	
 	\\ Set all characters in a string to a specified character
 	\\ @param str The string to modify
@@ -138,7 +138,7 @@ space std:
 	\\ @param str The string to split
 	\\ @param delimiters The delimiters to split on
 	\\ @return A pointer to the next token
-	u8* strtok(u8* str, u8* delimiters)...
+	u8* strtok(u8* str, u8 const* delimiters)...
 
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
@@ -151,7 +151,7 @@ space std:
 	\\ @param str The string to convert
 	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
 	\\ @return The integer represented by the string
-	i64 stoi(u8* str, i64 base)...
+	i64 stoi(u8 const* str, i64 base)...
 
 	\\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
 	\\ @param c The character to convert
@@ -164,13 +164,13 @@ space std:
 	u8 tolower(u8 c)...
 
 
-	u8* __baseCharsLower = "0123456789abcdefghijklmnopqrstuvwxyz"
+	u8 const* __baseCharsLower = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
-	u64 strlen(u8* str)!:
-		u8* begin = str
+	u64 strlen(u8 const* str)!:
+		u8 const* begin = str
 		while *str: ++str
-		return str - begin
+		return (u64)(str - begin)
 
 	u8* strlwr(u8* str)!:
 		u8* begin = str
@@ -192,67 +192,67 @@ space std:
 		while num--: *str++ = toupper(*str)
 		return begin
 	
-	u8* strcat(u8* dest, u8* src)!:
+	u8* strcat(u8* dest, u8 const* src)!:
 		u8* begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src)
 		return begin
 
-	u8* strcat(u8* dest, u8* src, u64 num)!:
+	u8* strcat(u8* dest, u8 const* src, u64 num)!:
 		u8* begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src, num)
 		return begin
 
-	u8* strcpy(u8* dest, u8* src)!:
+	u8* strcpy(u8* dest, u8 const* src)!:
 		u8* begin = dest
 		while *src: *dest++ = *src++
 		*dest = null
 		return begin
 
-	u8* strcpy(u8* dest, u8* src, u64 num)!:
+	u8* strcpy(u8* dest, u8 const* src, u64 num)!:
 		u8* begin = dest
 		while num--: *dest++ = *src++
 		*dest = null
 		return begin
 	
-	i32 strcmp(u8* str1, u8* str2)!:
+	i32 strcmp(u8 const* str1, u8 const* str2)!:
 		while *str1 == *str2 && *str1 && *str2:
 			++str1
 			++str2
 		return (i32)*str1 - (i32)*str2
 
-	i32 strcmp(u8* str1, u8* str2, u64 num)!:
+	i32 strcmp(u8 const* str1, u8 const* str2, u64 num)!:
 		while num-- && *str1 == *str2 && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)*str1 - (i32)*str2
 
-	i32 strcmpi(u8* str1, u8* str2)!:
+	i32 strcmpi(u8 const* str1, u8 const* str2)!:
 		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
 			++str1
 			++str2
 		return (i32)tolower(*str1) - (i32)tolower(*str2)
 
-	i32 strcmpi(u8* str1, u8* str2, u64 num)!:
+	i32 strcmpi(u8 const* str1, u8 const* str2, u64 num)!:
 		while num-- && tolower(*str1) == tolower(*str2) && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)tolower(*str1) - (i32)tolower(*str2)
 
-	u8* strchr(u8* str, u8 ch)!:
+	u8 const* strchr(u8 const* str, u8 ch)!:
 		while *str != ch && *str: ++str
-		return *str == ch ? str : (u8*)null
+		return *str == ch ? str : (u8 const*)null
 
-	u8* strrchr(u8* str, u8 ch)!:
-		u8* last = null
+	u8 const* strrchr(u8 const* str, u8 ch)!:
+		u8 const* last = null
 		while *str:
 			if *str == ch:
 				last = str
 			++str
 		return last
 
-	u8* strstr(u8* str, u8* substr)!:
+	u8 const* strstr(u8 const* str, u8 const* substr)!:
 		u64 mainlen = strlen(str)
 		u64 sublen = strlen(substr)
 		while mainlen >= sublen:
@@ -262,10 +262,10 @@ space std:
 			--mainlen
 		return null
 
-	u8* strrstr(u8* str, u8* substr)!:
+	u8 const* strrstr(u8 const* str, u8 const* substr)!:
 		u64 mainlen = strlen(str)
 		u64 sublen = strlen(substr)
-		u8* last = null
+		u8 const* last = null
 		while mainlen >= sublen:
 			if !strcmp(str, substr, sublen):
 				last = str
@@ -297,7 +297,7 @@ space std:
 
 		return str
 	
-	u8* strtok(u8* str, u8* delimiters)!:
+	u8* strtok(u8* str, u8 const* delimiters)!:
 		static u8* next = null
 		
 		if str: next = str
@@ -330,7 +330,7 @@ space std:
 
 		return strrev(begin, str)
 
-	i64 stoi(u8* str, i64 base)!:
+	i64 stoi(u8 const* str, i64 base)!:
 		i64 num = 0
 		bool negative = *str == '-'
 

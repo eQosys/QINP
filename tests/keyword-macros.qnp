@@ -1,6 +1,6 @@
 import "std.qnp"
 
-void nothing(u8* str):
+void nothing(u8 const* str):
 	pass
 
 nothing(__file__)

@@ -2,10 +2,10 @@ import "std.qnp"
 
 std::print(std::strlen("Hello, World!\n"))
 std::print("\n")
-std::print(std::strlwr("Hello, World!\n"))
-std::print(std::strlwr("Hello, World!\n", 4))
-std::print(std::strupr("Hello, World!\n"))
-std::print(std::strupr("Hello, World!\n", 4))
+std::print(std::strlwr((u8*)"Hello, World!\n"))
+std::print(std::strlwr((u8*)"Hello, World!\n", 4))
+std::print(std::strupr((u8*)"Hello, World!\n"))
+std::print(std::strupr((u8*)"Hello, World!\n", 4))
 u8 buff[1024]
 std::strcpy(buff, "Hello, ")
 std::print(std::strcat(buff, "World!"))

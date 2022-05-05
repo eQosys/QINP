@@ -12,7 +12,7 @@ space std:
 		i64 nanoseconds
 
 	i32 __clock_gettime(i32 clockID, __timespec* t):
-		return __syscall(__SYS_CLOCK_GETTIME, clockID, t)
+		return __syscall(__SYS_CLOCK_GETTIME, clockID, (u64)t)
 
 	u64 getTime()!:
 		__timespec t
@@ -24,4 +24,4 @@ space std:
 		__timespec ts
 		ts.seconds = ms / 1000
 		ts.nanoseconds = (ms % 1000) * 1000000
-		return __syscall(__SYS_NANOSLEEP, &ts, &ts)
+		return __syscall(__SYS_NANOSLEEP, (u64)&ts, (u64)&ts)

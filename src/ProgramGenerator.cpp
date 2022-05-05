@@ -15,6 +15,7 @@
 
 #define ENABLE_EXPR_ONLY_FOR_OBJ(expr) if (!expr->isObject) THROW_PROG_GEN_ERROR(expr->pos, "Expected object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR(expr->pos, "Expected non-object!")
+#define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) if (expr->datatype.isConst) THROW_PROG_GEN_ERROR(expr->pos, "Expected non-constant!")
 
 struct LocalStackFrame
 {
@@ -277,7 +278,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		bool isExactMatch = true;
 		for (int i = 0; i < paramExpr.size() && matchFound; ++i)
 		{
-			if (paramExpr[i]->datatype != func->func.params[i]->var.datatype)
+			if (!dtEqual(paramExpr[i]->datatype, func->func.params[i]->var.datatype))
 				isExactMatch = false;
 			matchFound = !!genConvertExpression(paramExpr[i], func->func.params[i]->var.datatype, false, false);
 		}
@@ -472,7 +473,7 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 		return func;
 	}
 	
-	if (existingOverload->func.retType != func->func.retType)
+	if (!dtEqual(existingOverload->func.retType, func->func.retType))
 		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
 	if (!isDefined(func))
 		return existingOverload;
@@ -689,6 +690,14 @@ Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 	if (isNull(right))
 		return left;
 
+	if (dtEqualNoConst(left, right))
+	{
+		if (preservesConstness(left, right))
+			return right;
+		if (preservesConstness(right, left))
+			return left;
+	}
+
 	if (isDereferenceable(left) || isDereferenceable(right))
 		return Datatype();
 
@@ -724,14 +733,58 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
 	if (!isArray(expToConvert->datatype))
 		return expToConvert;
 
-	return makeConvertExpression(expToConvert, Datatype(DTType::Pointer, *expToConvert->datatype.subType));
+	auto newDt = expToConvert->datatype;
+	newDt.type = DTType::Pointer;
+	return makeConvertExpression(expToConvert, newDt);
+}
+
+bool isConvPossible(const Datatype& oldDt, const Datatype& newDt, bool isExplicit)
+{
+	if (isBool(newDt))
+	{
+		if (isBool(oldDt))
+			return true;
+		if (isInteger(oldDt))
+			return true;
+		if (isPointer(oldDt))
+			return true;
+		return false;
+	}
+	if (isInteger(newDt))
+	{
+		if (isBool(oldDt))
+			return true;
+		if (isInteger(oldDt))
+			return true;
+		if (isPointer(oldDt) && isExplicit)
+			return true;
+		if (isPointer(oldDt) && dtEqual(newDt, Datatype("u64")))
+			return true;
+		return false;
+	}
+	if (isPointer(newDt))
+	{
+		if (isBool(oldDt) && isExplicit)
+			return true;
+		if (isInteger(oldDt) && isExplicit)
+			return true;
+		if (isPointer(oldDt) && isExplicit)
+			return true;
+		if (dtEqualNoConst(oldDt, newDt) && preservesConstness(oldDt, newDt))
+			return true;
+		if (isPointer(oldDt) && isVoidPtr(newDt) && preservesConstness(oldDt, newDt))
+			return true;
+		return false;
+	}
+
+	return false;
 }
 
 ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
 {
 	expToConvert = genAutoArrayToPtr(expToConvert);
 
-	if (expToConvert->datatype == newDatatype)
+	if (dtEqual(expToConvert->datatype, newDatatype))
 		return expToConvert;
 
 	if (isNull(expToConvert->datatype))
@@ -740,53 +793,13 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 		return expToConvert;
 	}
 
-	if (isBool(expToConvert->datatype))
-	{
-		if (isInteger(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		
-		else if (isExplicit && isPointer(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
+	if (isConvPossible(expToConvert->datatype, newDatatype, isExplicit))
+		return makeConvertExpression(expToConvert, newDatatype);
 
-		else if (doThrow)
-			THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
-		else
-			return nullptr;
-	}
-	if (isInteger(expToConvert->datatype))
-	{
-		if (isBool(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		if (isInteger(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
+	if (doThrow)
+		THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
 
-		else if (isExplicit && isPointer(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		
-		else if (doThrow)
-			THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
-		else
-			return nullptr;
-	}
-	if (isPointer(expToConvert->datatype))
-	{
-		if (isBool(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		else if (isPointer(expToConvert->datatype) && !isDereferenceable(*expToConvert->datatype.subType) && isVoidPtr(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		else if (newDatatype == Datatype{ "u64" })
-			return makeConvertExpression(expToConvert, newDatatype);
-		
-		else if (isExplicit && isInteger(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		else if (isExplicit && isPointer(newDatatype))
-			return makeConvertExpression(expToConvert, newDatatype);
-		
-		else if (doThrow)
-			THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
-		else
-			return nullptr;
-	}
+	return nullptr;
 
 	if (doThrow)
 		THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
@@ -795,7 +808,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 
 void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 {
-	if (exp->left->datatype == exp->right->datatype)
+	if (dtEqual(exp->left->datatype, exp->right->datatype))
 		return;
 
 	if (isPointer(exp->left->datatype) || isArray(exp->left->datatype))
@@ -807,7 +820,6 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 		case Expression::ExprType::Assign_Sum:
 		case Expression::ExprType::Assign_Difference:
 			exp->right = genConvertExpression(exp->right, { "u64" });
-			//if (isArray(exp->left->datatype))
 			{
 				auto temp = std::make_shared<Expression>(exp->pos);
 				temp->eType = Expression::ExprType::Product;
@@ -917,6 +929,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->valStr = getLiteralStringName(strID);
 		info.program->strings.insert({ strID, { 1, litToken.value } });
 		exp->datatype = Datatype(DTType::Array, Datatype("u8"), litToken.value.size() + 1);
+		exp->datatype.subType->isConst = true;
 		exp->isObject = true;
 		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code
 			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
@@ -1083,6 +1096,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Assign_Bw_XOR:
 		case Expression::ExprType::Assign_Bw_OR:
 			currExpr->right = getParseExpression(info, precLvl + 1);
+			ENABLE_EXPR_ONLY_FOR_NON_CONST(currExpr->left);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
@@ -1108,7 +1122,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->right = genAutoArrayToPtr(currExpr->right);
 			currExpr->farRight = genAutoArrayToPtr(currExpr->farRight);
 
-			if (currExpr->right->datatype != currExpr->farRight->datatype)
+			if (!dtEqual(currExpr->right->datatype, currExpr->farRight->datatype))
 				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same datatype!");
 
 			currExpr->datatype = currExpr->right->datatype;
@@ -1255,7 +1269,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->datatype = func->func.retType;
 			exp->left->datatype = Datatype(DTType::Pointer, Datatype(getSignature(func)));
 			exp->left->symbol = func;
-			exp->isObject = func->func.retType != Datatype{ "void" };
+			exp->isObject = !isVoid(func->func.retType);
 
 			info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
 
@@ -1266,6 +1280,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			break;
 		case Expression::ExprType::Suffix_Increment:
 		case Expression::ExprType::Suffix_Decrement:
+			ENABLE_EXPR_ONLY_FOR_NON_CONST(exp->left);
 			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 			exp->datatype = exp->left->datatype;
 			exp->isLValue = false;
@@ -1384,10 +1399,17 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->isLValue = false;
 		exp->isObject = true;
 		break;
-	case Expression::ExprType::Prefix_Plus:
-	case Expression::ExprType::Prefix_Minus:
 	case Expression::ExprType::Prefix_Increment:
 	case Expression::ExprType::Prefix_Decrement:
+		exp->left = getParseExpression(info, precLvl);
+		ENABLE_EXPR_ONLY_FOR_NON_CONST(exp->left);
+		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
+		exp->datatype = exp->left->datatype;
+		exp->isLValue = false;
+		exp->isObject = true;
+		break;
+	case Expression::ExprType::Prefix_Plus:
+	case Expression::ExprType::Prefix_Minus:
 		exp->left = getParseExpression(info, precLvl);
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = exp->left->datatype;
@@ -1468,7 +1490,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 	if (!expr)
 		return false;
 
-	if (expr->datatype != targetType)
+	if (!dtEqual(expr->datatype, targetType))
 		expr = genConvertExpression(expr, targetType);
 	pushStatement(info, expr);
 
@@ -1532,10 +1554,22 @@ Datatype getParseDatatype(ProgGenInfo& info)
 		datatype.type = DTType::Name;
 	}
 
+	if (isKeyword(peekToken(info), "const"))
+	{
+		nextToken(info);
+		datatype.isConst = true;
+	}
+
 	while (isOperator(peekToken(info), "*"))
 	{
 		nextToken(info);
 		datatype = Datatype(DTType::Pointer, datatype);
+
+		if (isKeyword(peekToken(info), "const"))
+		{
+			nextToken(info);
+			datatype.isConst = true;
+		}
 	}
 
 	return exitEntered(datatype, false);
@@ -1591,7 +1625,7 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 
 void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
-	if (datatype == Datatype{ "void" })
+	if (isVoid(datatype))
 		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot declare variable of type void!");
 
 	auto initExpr = getParseDeclDefVariable(info, datatype, isStatic, name);
@@ -1816,7 +1850,7 @@ bool parseStatementReturn(ProgGenInfo& info)
 	pushStatement(info, std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
 	lastStatement(info)->funcRetOffset = info.funcRetOffset;
 
-	if (info.funcRetType != Datatype{ "void" })
+	if (!isVoid(info.funcRetType))
 		lastStatement(info)->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
 	else if (!isNewline(peekToken(info)))
 		THROW_PROG_GEN_ERROR(exprBegin.pos, "Return statement in void function must be followed by a newline!");
@@ -2060,7 +2094,7 @@ void parseFunctionBody(ProgGenInfo& info, bool doParseIndent)
 
 	if (info.program->body->statements.empty() || lastStatement(info)->type != Statement::Type::Return)
 	{
-		if (info.funcRetType == Datatype{ "void" })
+		if (isVoid(info.funcRetType))
 			pushStatement(info, std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
 			THROW_PROG_GEN_ERROR(info.program->body->statements.empty() ? bodyBeginToken.pos : lastStatement(info)->pos, "Missing return statement!");

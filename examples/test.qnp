@@ -87,7 +87,7 @@ std::print(" -> Time: ")
 std::print(end - begin)
 std::print(" ms\n")
 
-u8* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+u8* str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std::memcpy(str, "..................", 9)
 std::print(str)
 std::print("-----------------\n")
@@ -98,14 +98,14 @@ std::print(" DONE\n")
 printBrkDiff()
 printBlockList()
 
-u8* str1 = "Hello world, my name is TecStylos!"
+u8* str1 = (u8*)"Hello world, my name is TecStylos!"
 u8* tok = std::strtok(str1, " ")
 while tok:
 	std::print(tok)
 	std::print("\n")
 	tok = std::strtok(null, " ")
 
-u8* str2 = \
+u8 const* str2 = \
 	"Hello world, " \
 	"my name is TecStylos!\n"
 std::print(str2)

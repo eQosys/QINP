@@ -1,6 +1,7 @@
 #include "Datatype.h"
 
 #include <map>
+#include <cassert>
 
 #include "Errors/QinpError.h"
 
@@ -12,37 +13,58 @@ Datatype::Datatype(Type type, const Datatype& subType, int arraySize)
 	: type(type), subType(std::make_shared<Datatype>(subType)), arraySize(arraySize)
 {}
 
-bool operator==(const Datatype& left, const Datatype& right)
+bool dtEqual(const Datatype& a, const Datatype& b)
 {
-	if (left.isConst != right.isConst)
+	if (!dtEqualNoConst(a, b))
 		return false;
-	if (left.type != right.type)
-		return false;
-	if (left.type == Datatype::Type::Name)
-	{
-		if (left.name != right.name)
-			return false;
-	}
-	else
-	{
-		if (left.type == Datatype::Type::Array)
-		{
-			if (left.arraySize != right.arraySize)
-				return false;
-		}
 
-		if (!left.subType || !right.subType)
-			return false;
-		if (*left.subType != *right.subType)
-			return false;
-	}
+	if (a.isConst != b.isConst)
+		return false;
 	
+	auto sta = a.subType;
+	auto stb = b.subType;
+	while (sta && stb)
+	{
+		if (sta->isConst != stb->isConst)
+			return false;
+		sta = sta->subType;
+		stb = stb->subType;
+	}
+
 	return true;
 }
 
-bool operator!=(const Datatype& left, const Datatype& right)
+bool dtEqualNoConst(const Datatype& a, const Datatype& b)
 {
-	return !(left == right);
+	if (a.type != b.type)
+		return false;
+
+	switch (a.type)
+	{
+	case DTType::None:
+		return true;
+	case DTType::Name:
+		return a.name == b.name;
+	case DTType::Array:
+		if (a.arraySize != b.arraySize)
+			return false; // Fallthrough to subtype check
+	case DTType::Pointer:
+	case DTType::Reference:
+		return dtEqualNoConst(*a.subType, *b.subType);
+	default:
+		assert(false && "Unhandled datatype type");
+	}
+}
+
+bool preservesConstness(const Datatype& oldDt, const Datatype& newDt)
+{
+	if (oldDt.isConst && !newDt.isConst)
+		return false;
+	
+	if (hasSubtype(oldDt) && hasSubtype(newDt))
+		return preservesConstness(*oldDt.subType, *newDt.subType);
+	
+	return true;
 }
 
 bool operator!(const Datatype& datatype)
@@ -76,11 +98,18 @@ bool isDereferenceable(const Datatype& datatype)
 	return isPointer(datatype) || isArray(datatype);
 }
 
+bool isVoid(const Datatype& datatype)
+{
+	return
+		isOfType(datatype, DTType::Name) &&
+		datatype.name == "void";
+}
+
 bool isVoidPtr(const Datatype& datatype)
 {
 	return
 		isOfType(datatype, DTType::Pointer) &&
-		datatype.subType->name == "void";
+		isVoid(*datatype.subType);
 }
 
 bool isBool(const Datatype& datatype)

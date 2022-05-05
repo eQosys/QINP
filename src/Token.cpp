@@ -111,6 +111,7 @@ bool isKeyword(const std::string& name)
 		"asm",
 		"assembly",
 		"break",
+		"const",
 		"continue",
 		"define",
 		"do",
@@ -129,7 +130,6 @@ bool isKeyword(const std::string& name)
 		"sizeof",
 		"space",
 		"static",
-		// "const"
 		// "default",
 		// "offsetof",
 		// "for",

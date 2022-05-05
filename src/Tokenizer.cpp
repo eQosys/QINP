@@ -244,8 +244,9 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 			state = State::EndToken;
 			break;
 		case State::TokenizeNewlineIgnore:
-			if (c == '\n')
+			if (isNewline(c))
 			{
+				++pos.line;
 				token.type = Token::Type::Whitespace;
 				token.value = " ";
 				state = State::EndToken;

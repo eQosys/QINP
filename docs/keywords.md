@@ -9,6 +9,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [asm](#inline-assembly)
  - [assembly](#inline-assembly)
  - [_break_](./control-flow.md#break)
+ - [const](#const)
  - [_continue_](./control-flow.md#continue)
  - [define](#define)
  - [_do_](./control-flow.md#do-while-loop)
@@ -75,6 +76,12 @@ assembly:
 	"mov rax, 1"
 	"add rax, 3"
 ```
+
+---
+
+### Const
+
+TODO
 
 ---
 

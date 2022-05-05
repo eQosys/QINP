@@ -10,7 +10,7 @@ space std:
 	\\ @param src The source buffer
 	\\ @param num The number of bytes to copy
 	\\ @return The destination buffer
-	void* memcpy(void* dest, void* src, u64 num)...
+	void* memcpy(void* dest, void const* src, u64 num)...
 
 	\\ Set every byte in a buffer to a value
 	\\ @param dest The destination buffer
@@ -24,7 +24,7 @@ space std:
 	\\ @param b The second buffer
 	\\ @param num The number of bytes to compare
 	\\ @return 0 if the buffers are equal, < 0 if the first byte that differs in a is less than in b, > 0 if the first byte that differs in a is greater than in b
-	i32 memcmp(void* a, void* b, u64 num)...
+	i32 memcmp(void const* a, void const* b, u64 num)...
 
 	\\ Allocate a buffer of a given siz
 	\\ @param size The size of the buffer to allocate
@@ -37,7 +37,7 @@ space std:
 
 
 
-	void* memcpy(void* dest, void* src, u64 len)!:
+	void* memcpy(void* dest, void const* src, u64 len)!:
 		u8* d8End = (u8*)dest + len
 
 		u8* d8 = (u8*)dest
@@ -89,7 +89,7 @@ space std:
 
 		return dest
 
-	i32 memcmp(void* a, void* b, u64 len)!:
+	i32 memcmp(void const* a, void const* b, u64 len)!:
 		u8* a8End = (u8*)a + len
 		u8* a8 = (u8*)a
 		u8* b8 = (u8*)b

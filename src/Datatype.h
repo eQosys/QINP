@@ -32,8 +32,10 @@ struct Datatype
 };
 typedef Datatype::Type DTType;
 
-bool operator==(const Datatype& left, const Datatype& right);
-bool operator!=(const Datatype& left, const Datatype& right);
+bool dtEqual(const Datatype& a, const Datatype& b);
+bool dtEqualNoConst(const Datatype& a, const Datatype& b);
+bool preservesConstness(const Datatype& oldDt, const Datatype& newDt);
+
 bool operator!(const Datatype& datatype);
 
 bool hasSubtype(const Datatype& datatype);
@@ -41,6 +43,7 @@ bool isOfType(const Datatype& datatype, DTType type);
 bool isPointer(const Datatype& datatype);
 bool isArray(const Datatype& datatype);
 bool isDereferenceable(const Datatype& datatype);
+bool isVoid(const Datatype& datatype);
 bool isVoidPtr(const Datatype& datatype);
 bool isBool(const Datatype& datatype);
 bool isNull(const Datatype& datatype);

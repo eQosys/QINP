@@ -365,7 +365,7 @@ void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& 
 
 void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
 {
-	bool isVoidFunc = expr->datatype == Datatype{ "void" };
+	bool isVoidFunc = dtEqual(expr->datatype, Datatype{ "void" });
 	if (!isVoidFunc)
 	{
 		if (isPackType(ngi.program, expr->datatype))
@@ -393,7 +393,7 @@ void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
 	}
 
 	genExpr(ngi, expr->left.get());
-	bool typesMatch = (ngi.primReg.datatype == Datatype(DTType::Pointer, Datatype(getSignature(expr))));
+	bool typesMatch = dtEqual(ngi.primReg.datatype, Datatype(DTType::Pointer, Datatype(getSignature(expr))));
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
 	ngi.ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
@@ -432,7 +432,7 @@ void genExtCall(NasmGenInfo& ngi, const Expression* expr)
 		ngi.ss << "  pop " << paramRegs[i] << "\n";
 
 	genExpr(ngi, expr->left.get());
-	bool typesMatch = (ngi.primReg.datatype == Datatype(DTType::Pointer, Datatype(getSignature(expr))));
+	bool typesMatch = dtEqual(ngi.primReg.datatype, Datatype(DTType::Pointer, Datatype(getSignature(expr))));
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
 
@@ -513,7 +513,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		bool isPack = isPackType(ngi.program, expr->left->datatype);
 		pushPrimReg(ngi);
 		genExpr(ngi, expr->left.get());
-		assert(ngi.primReg.datatype == expr->right->datatype && "Assign: datatype mismatch!");
+		assert(dtEqual(ngi.primReg.datatype, expr->right->datatype) && "Assign: datatype mismatch!");
 		assert(isLValue(ngi.primReg) && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
 
