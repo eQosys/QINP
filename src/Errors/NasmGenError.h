@@ -12,4 +12,5 @@ public:
 	{}
 };
 
-#define THROW_NASM_GEN_ERROR(pos, what) throw NasmGenError(pos, what, __FILE__, __LINE__)
+#define MAKE_NASM_GEN_ERROR(pos, what) NasmGenError(pos, what, __FILE__, __LINE__)
+#define THROW_NASM_GEN_ERROR(pos, what) throw MAKE_NASM_GEN_ERROR(pos, what)

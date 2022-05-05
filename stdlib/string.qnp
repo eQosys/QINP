@@ -297,7 +297,7 @@ space std:
 
 		return str
 	
-	u8* strtok(u8* str, u8* delimiters):
+	u8* strtok(u8* str, u8* delimiters)!:
 		static u8* next = null
 		
 		if str: next = str

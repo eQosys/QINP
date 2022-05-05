@@ -159,12 +159,19 @@ if __name__ == "__main__":
 				sys.exit(1)
 			testName, *argv = argv
 			if testName == "all":
-				answer = input("Are you sure you want to update all tests? (y/N) ").lower()
+				answer = input("Are you sure you want to update the output of all tests? (y/N) ").lower()
 				if answer != "y":
 					sys.exit(0)
 				for testName in os.listdir(TEST_DIR):
 					if testName.endswith(QINP_EXT):
 						updateOutput(testName[:-len(QINP_EXT)])
+			elif testName == "failed":
+				answer = input("Are you sure you want to update the output of all failed tests? (y/N) ").lower()
+				if answer != "y":
+					sys.exit(0)
+				with open("tests/__failed.txt", "r") as f:
+					for testName in f.read().splitlines():
+						updateOutput(testName)
 			else:
 				updateOutput(testName)
 		else:
@@ -224,6 +231,7 @@ if __name__ == "__main__":
 		print("      [test-name]   Name of the test to update.")
 		print("    output")
 		print("      all           Update the output of all tests.")
+		print("      failed        Update the output of all failed tests.")
 		print("      [test-name]   Name of the test to update.")
 		print("  run")
 		print("    all             Run all tests.")

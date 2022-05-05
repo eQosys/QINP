@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <cassert>
 
+#include "Warning.h"
 #include "Errors/ProgGenError.h"
 
 #include "Tokenizer.h"
@@ -1647,15 +1648,17 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	parseExpected(info, Token::Type::Separator, ")");
 
-	if (isOperator(peekToken(info), "!"))
-	{
+	bool reqPreDecl = isOperator(peekToken(info), "!");
+	if (reqPreDecl)
 		nextToken(info);
-		auto sym = getSymbol(currSym(info), name, true);
-		if (sym)
-			sym = getSymbol(sym, getSignatureNoRet(funcSym), true);
-		if (!sym)
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Missing pre-declaration before explicit function declaration/definition!");
-	}
+
+	auto preDeclSym = getSymbol(currSym(info), name, true);
+	if (preDeclSym)
+		preDeclSym = getSymbol(preDeclSym, getSignatureNoRet(funcSym), true);
+	if (reqPreDecl && !preDeclSym)
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Missing pre-declaration before explicit function definition!");
+	else if (!reqPreDecl && preDeclSym)
+		PRINT_WARNING(MAKE_PROG_GEN_ERROR(peekToken(info).pos, "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
 
 	funcSym->state = SymState::Defined;
 	if (isSeparator(peekToken(info), "..."))

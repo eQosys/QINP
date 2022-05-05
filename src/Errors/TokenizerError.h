@@ -12,4 +12,5 @@ public:
     {}
 };
 
-#define THROW_TOKENIZER_ERROR(pos, what) throw TokenizerError(pos, what, __FILE__, __LINE__)
+#define MAKE_TOKENIZER_ERROR(pos, what) TokenizerError(pos, what, __FILE__, __LINE__)
+#define THROW_TOKENIZER_ERROR(pos, what) throw MAKE_TOKENIZER_ERROR(pos, what)

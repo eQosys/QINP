@@ -25,7 +25,7 @@ show(i <<= 1)
 
 show(i >>= 2)
 
-void show(i32 var):
+void show(i32 var)!:
 	std::print("var = ")
 	std::print(var)
 	std::print("\n")

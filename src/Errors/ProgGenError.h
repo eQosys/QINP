@@ -12,4 +12,5 @@ public:
 	{}
 };
 
-#define THROW_PROG_GEN_ERROR(pos, what) throw ProgGenError(pos, what, __FILE__, __LINE__)
+#define MAKE_PROG_GEN_ERROR(pos, what) ProgGenError(pos, what, __FILE__, __LINE__)
+#define THROW_PROG_GEN_ERROR(pos, what) throw MAKE_PROG_GEN_ERROR(pos, what)

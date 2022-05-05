@@ -6,6 +6,7 @@
 #include <fstream>
 
 #include "Errors/QinpError.h"
+#include "Warning.h"
 #include "Tokenizer.h"
 #include "ArgsParser.h"
 #include "ProgramGenerator.h"
@@ -174,7 +175,7 @@ int main(int argc, char** argv, char** _env)
 		if (verbose)
 			for (auto sym : *program->symbols)
 				if (isFuncSpec(sym) && !isDefined(sym))
-					std::cout << "WARN: Undefined function '" << getMangledName(sym) << "' declared at " << getPosStr(sym->pos) << "!" << std::endl;
+					PRINT_WARNING(MAKE_QINP_ERROR("Undefined function '" + getMangledName(sym) + "' declared at " + getPosStr(sym->pos) + "!"));
 
 		std::string output = genAsm(program);
 	
@@ -243,19 +244,19 @@ int main(int argc, char** argv, char** _env)
 	}
 	catch (const QinpError& e)
 	{
-		std::cout << "QNP ERROR: " << e.what() << std::endl;
+		std::cout << "[ ERR ]: QNP: " << e.what() << std::endl;
 		if (verbose)
 			std::cout << "WHERE: " << e.where() << std::endl;
 		return -1;
 	}
 	catch (const std::exception& e)
 	{
-		std::cout << "STD ERROR: " << e.what() << std::endl;
+		std::cout << "[ ERR ]: STD: " << e.what() << std::endl;
 		return -1;
 	}
 	catch (...)
 	{
-		std::cout << "ERROR: Unknown error!" << std::endl;
+		std::cout << "[ ERR ]: Unknown error!" << std::endl;
 		return -1;
 	}
 

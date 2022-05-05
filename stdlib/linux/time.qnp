@@ -14,7 +14,7 @@ space std:
 	i32 __clock_gettime(i32 clockID, __timespec* t):
 		return __syscall(__SYS_CLOCK_GETTIME, clockID, t)
 
-	u64 getTime():
+	u64 getTime()!:
 		__timespec t
 		return __clock_gettime(__CLOCK_REALTIME, &t) < 0 ? \
 			-1 : \
@@ -24,5 +24,4 @@ space std:
 		__timespec ts
 		ts.seconds = ms / 1000
 		ts.nanoseconds = (ms % 1000) * 1000000
-		\\asm: "xor rsi, rsi"
 		return __syscall(__SYS_NANOSLEEP, &ts, &ts)

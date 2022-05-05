@@ -16,4 +16,5 @@ private:
     std::string m_where;
 };
 
-#define THROW_QINP_ERROR(what) throw QinpError(what, __FILE__, __LINE__)
+#define MAKE_QINP_ERROR(what) QinpError(what, __FILE__, __LINE__)
+#define THROW_QINP_ERROR(what) throw MAKE_QINP_ERROR(what)
