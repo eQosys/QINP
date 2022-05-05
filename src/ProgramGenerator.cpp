@@ -427,10 +427,10 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 
 	static int staticID = 0;
 	if (isVarStatic(sym))
-		var.modName = "static_" + std::to_string(staticID++) + "~" + sym->name;
+		var.modName = "__#static_" + std::to_string(staticID++) + "~" + sym->name;
 	static int globVarID = 0;
 	if (isInGlobal(currSym(info)))
-		var.modName.append("~" + std::to_string(globVarID++));
+		var.modName.append("_#" + std::to_string(globVarID++));
 
 	if (isVarLocal(sym) || isVarStatic(sym))
 	{
@@ -771,7 +771,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	{
 		if (isBool(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
-		else if (isPointer(expToConvert->datatype) && isOfType(expToConvert->datatype, DTType::Name) && isVoidPtr(newDatatype))
+		else if (isPointer(expToConvert->datatype) && !isDereferenceable(*expToConvert->datatype.subType) && isVoidPtr(newDatatype))
 			return makeConvertExpression(expToConvert, newDatatype);
 		else if (newDatatype == Datatype{ "u64" })
 			return makeConvertExpression(expToConvert, newDatatype);
@@ -915,7 +915,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		int strID = info.program->strings.size();
 		exp->valStr = getLiteralStringName(strID);
 		info.program->strings.insert({ strID, { 1, litToken.value } });
-		exp->datatype = { "u8", 1, { (int)litToken.value.size() + 1 } };
+		exp->datatype = Datatype(DTType::Array, Datatype("u8"), litToken.value.size() + 1);
 		exp->isObject = true;
 		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code
 			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
@@ -1210,11 +1210,11 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Subscript:
 			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 			exp->datatype = exp->left->datatype;
-			if (exp->datatype.ptrDepth == 0)
+			if (!isDereferenceable(exp->datatype))
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
-			if (exp->datatype == Datatype{ "void", 1 })
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			dereferenceDatatype(exp->datatype);
+			if (!isDereferenceable(exp->datatype) && exp->datatype.name == "void")
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			exp->isLValue = isArray(exp->datatype) ? false : true;
 			exp->isObject = true;
 			exp->right = genConvertExpression(getParseExpression(info), { "u64" });
@@ -1252,7 +1252,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			}
 			
 			exp->datatype = func->func.retType;
-			exp->left->datatype = { getSignature(func), 1 };
+			exp->left->datatype = Datatype(DTType::Pointer, Datatype(getSignature(func)));
 			exp->left->symbol = func;
 			exp->isObject = func->func.retType != Datatype{ "void" };
 
@@ -1288,11 +1288,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			case Expression::ExprType::MemberAccessDereference:
 			{
 				exp->eType = Expression::ExprType::MemberAccess;
-				exp->left = genAutoArrayToPtr(exp->left);
-				if (!isPointer(exp->left->datatype))
+				if (!isDereferenceable(exp->left->datatype))
 					THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer!");
-				if (exp->left->datatype.ptrDepth > 1)
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
+				exp->left = genAutoArrayToPtr(exp->left);
 
 				auto temp = std::make_shared<Expression>(exp->pos);
 				temp->eType = Expression::ExprType::Dereference;
@@ -1300,6 +1298,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 				temp->datatype = temp->left->datatype;
 				dereferenceDatatype(temp->datatype);
+				if (isDereferenceable(temp->datatype))
+					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
 				temp->isLValue = isArray(temp->datatype) ? false : true;
 
 				exp->left = temp;
@@ -1353,7 +1353,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		if (!exp->left->isLValue)
 			THROW_PROG_GEN_ERROR(exp->pos, "Cannot take address of non-lvalue!");
 		exp->datatype = exp->left->datatype;
-		++exp->datatype.ptrDepth;
+		exp->datatype = Datatype(DTType::Pointer, exp->datatype);
 		exp->isLValue = false;
 		exp->isObject = true;
 		break;
@@ -1361,16 +1361,16 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->left = getParseExpression(info, precLvl);
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = exp->left->datatype;
-		if (exp->datatype.ptrDepth == 0)
-			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference a non-pointer!");
-		if (exp->datatype == Datatype{ "void", 1 })
-			THROW_PROG_GEN_ERROR(opToken.pos, "Cannot dereference pointer to void!");
+		if (!isDereferenceable(exp->datatype))
+			THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer type!");
 		dereferenceDatatype(exp->datatype);
+		if (!isDereferenceable(exp->datatype) && exp->datatype.name == "void")
+			THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference pointer to void type!");
 		exp->isLValue = isArray(exp->datatype) ? false : true;
 		exp->isObject = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
-		exp->left = genConvertExpression(getParseExpression(info, precLvl), Datatype{ "bool", 0 });
+		exp->left = genConvertExpression(getParseExpression(info, precLvl), Datatype("bool"));
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = { "bool" };
 		exp->isLValue = false;
@@ -1493,6 +1493,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	if (isBuiltinType(peekToken(info)))
 	{
 		datatype.name = nextToken(info).value;
+		datatype.type = DTType::Name;
 	}
 	else
 	{
@@ -1527,6 +1528,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 			return exitEntered({}, true);
 
 		datatype.name = SymPathToString(getSymbolPath(nullptr, getSymbol(currSym(info), pNameToken->value, nEntered != 0)));
+		datatype.type = DTType::Name;
 	}
 
 	while (isOperator(peekToken(info), "*"))

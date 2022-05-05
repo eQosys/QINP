@@ -223,7 +223,7 @@ space std:
 		return (i32)*str1 - (i32)*str2
 
 	i32 strcmp(u8* str1, u8* str2, u64 num)!:
-		while num-- && *str1 == *str2 && *str:
+		while num-- && *str1 == *str2 && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i32)0 : (i32)*str1 - (i32)*str2

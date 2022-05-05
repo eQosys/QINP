@@ -4,6 +4,14 @@
 
 #include "Errors/QinpError.h"
 
+Datatype::Datatype(const std::string& name)
+	: name(name), type(Type::Name)
+{}
+
+Datatype::Datatype(Type type, const Datatype& subType, int arraySize)
+	: type(type), subType(std::make_shared<Datatype>(subType)), arraySize(arraySize)
+{}
+
 bool operator==(const Datatype& left, const Datatype& right)
 {
 	if (left.isConst != right.isConst)
@@ -39,7 +47,7 @@ bool operator!=(const Datatype& left, const Datatype& right)
 
 bool operator!(const Datatype& datatype)
 {
-	return datatype.name.empty();
+	return isOfType(datatype, DTType::None);
 }
 
 bool hasSubtype(const Datatype& datatype)
@@ -159,14 +167,14 @@ std::string getDatatypeStr(const Datatype& datatype)
 	// TODO: Generates names not suitable for NASM
 	std::string result;
 	if (datatype.isConst)
-		result += "c@";
+		result += "c";
 	if (isOfType(datatype, DTType::Name))
-		result += datatype.name;
+		result += "?" + datatype.name;
 	else if (isOfType(datatype, DTType::Array))
-		result += "[" + std::to_string(datatype.arraySize) + "]" + getDatatypeStr(*datatype.subType);
+		result += "a" + std::to_string(datatype.arraySize) + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Pointer))
-		result += "*" + getDatatypeStr(*datatype.subType);
+		result += "p" + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Reference))
-		result += "&" + getDatatypeStr(*datatype.subType);
+		result += "r" + getDatatypeStr(*datatype.subType);
 	return result;
 }

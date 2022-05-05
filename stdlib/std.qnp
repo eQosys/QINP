@@ -91,14 +91,14 @@ space std:
 	u64 getargs(u8*** pargv)!:
 		u64 argc
 		assembly:
-			"mov rcx, [__##__argc]"
+			"mov rcx, [__#argc]"
 			"mov [rbp $(argc)], rcx"
 
 		if !pargv: return argc
 
 		u8** argv
 		assembly:
-			"mov rcx, [__##__argv]"
+			"mov rcx, [__#argv]"
 			"mov [rbp $(argv)], rcx"
 
 		*pargv = argv
@@ -108,7 +108,7 @@ space std:
 	u8** getenv()!:
 		u8** env
 		assembly:
-			"mov rcx, [__##__envp]"
+			"mov rcx, [__#envp]"
 			"mov [rbp $(env)], rcx"
 
 		return env

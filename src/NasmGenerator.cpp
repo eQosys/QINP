@@ -49,7 +49,7 @@ struct NasmGenInfo
 std::string makeUniqueLabel(const std::string& name)
 {
 	static int labelID = 0;
-	return name + "__" + std::to_string(labelID++);
+	return "__#" + std::to_string(labelID++) + "_" + name;
 }
 
 void pushLabel(NasmGenInfo& ngi, const std::string& name)
@@ -1288,14 +1288,14 @@ void genPrologue(NasmGenInfo& ngi)
 		ngi.ss << "section .text\n";
 		ngi.ss << "_start:\n";
 		ngi.ss << "  pop rax\n";
-		ngi.ss << "  mov [__##__argc], rax\n";
-		ngi.ss << "  mov [__##__argv], rsp\n";
+		ngi.ss << "  mov [__#argc], rax\n";
+		ngi.ss << "  mov [__#argv], rsp\n";
 		ngi.ss << "  inc rax\n";
 		ngi.ss << "  mov rcx, 8\n";
 		ngi.ss << "  mul rcx\n";
 		ngi.ss << "  mov rcx, rsp\n";
 		ngi.ss << "  add rcx, rax\n";
-		ngi.ss << "  mov [__##__envp], rcx\n";
+		ngi.ss << "  mov [__#envp], rcx\n";
 	}
 	else if (ngi.program->platform == "windows")
 	{
@@ -1345,9 +1345,9 @@ void genGlobals(NasmGenInfo& ngi)
 {
 	// Global variables
 	ngi.ss << "section .bss\n";
-	ngi.ss << "  __##__argc: resq 1\n";
-	ngi.ss << "  __##__argv: resq 1\n";
-	ngi.ss << "  __##__envp: resq 1\n";
+	ngi.ss << "  __#argc: resq 1\n";
+	ngi.ss << "  __#argv: resq 1\n";
+	ngi.ss << "  __#envp: resq 1\n";
 
 	std::for_each(
 		ngi.program->symbols->begin(),

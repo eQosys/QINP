@@ -227,6 +227,7 @@ if __name__ == "__main__":
 		print("      [test-name]   Name of the test to update.")
 		print("  run")
 		print("    all             Run all tests.")
+		print("    failed          Run all tests that failed last time.")
 		print("    [test-name]     Run a single test.")
 		print("  help")
 	else:

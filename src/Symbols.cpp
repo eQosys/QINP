@@ -193,7 +193,7 @@ std::string SymPathToString(const SymPath& path)
 	std::string str;
 	for (int i = 0; i < path.size(); ++i)
 	{
-		if (i > 0) str += "?";
+		if (i > 0) str += ".";
 		str += path[i];
 	}
 	return str;
@@ -206,7 +206,7 @@ SymPath SymPathFromString(const std::string& pathStr)
 	do
 	{
 		auto begin = end + 1;
-		end = pathStr.find('?', begin);
+		end = pathStr.find('.', begin);
 		path.push_back(pathStr.substr(begin, end - begin));
 	} while (end != std::string::npos);
 	

@@ -8,14 +8,14 @@ std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes)
 {
 	std::string signature;
 	for (const auto& paramType : paramTypes)
-		signature += "." + getDatatypeStr(paramType);
+		signature += "~" + getDatatypeStr(paramType);
 	return signature;
 }
 std::string getSignatureNoRet(const SymbolRef func)
 {
 	std::string signature;
 	for (const auto& param : func->func.params)
-		signature += "." + getDatatypeStr(param->var.datatype);
+		signature += "~" + getDatatypeStr(param->var.datatype);
 	return signature;
 }
 std::string getSignatureNoRet(const Expression* callExpr)
@@ -25,34 +25,34 @@ std::string getSignatureNoRet(const Expression* callExpr)
 
 	std::string signature;
 	for (const auto& param : callExpr->paramExpr)
-		signature += "." + getDatatypeStr(param->datatype);
+		signature += "~" + getDatatypeStr(param->datatype);
 	return signature;
 }
 
 std::string getSignature(const Datatype& retType, const std::vector<Datatype>& paramTypes)
 {
-	return getDatatypeStr(retType) + "$" + getSignatureNoRet(paramTypes);
+	return getDatatypeStr(retType) + "~" + getSignatureNoRet(paramTypes);
 }
 std::string getSignature(const SymbolRef func)
 {
-	return getDatatypeStr(func->func.retType) + "$" + getSignatureNoRet(func);
+	return getDatatypeStr(func->func.retType) + "~" + getSignatureNoRet(func);
 }
 std::string getSignature(const Expression* callExpr)
 {
-	return getDatatypeStr(callExpr->datatype) + "$" + getSignatureNoRet(callExpr);
+	return getDatatypeStr(callExpr->datatype) + "~" + getSignatureNoRet(callExpr);
 }
 
 std::string getMangledName(const std::string funcName, const Datatype& retType, const std::vector<Datatype>& paramTypes)
 {
-	return funcName + "#" + getSignature(retType, paramTypes);
+	return funcName + "$" + getSignature(retType, paramTypes);
 }
 std::string getMangledName(const std::string& funcName, const Expression* callExpr)
 {
-	return funcName + "#" + getSignature(callExpr);
+	return funcName + "$" + getSignature(callExpr);
 }
 std::string getMangledName(const std::string& varName, const Datatype& datatype)
 {
-	return varName + "#" + getDatatypeStr(datatype);
+	return varName + "$" + getDatatypeStr(datatype);
 }
 std::string getMangledName(SymbolRef symbol)
 {
@@ -67,11 +67,11 @@ std::string getMangledName(SymbolRef symbol)
 }
 std::string getLiteralStringName(int strID)
 {
-	return "str_##_" + std::to_string(strID);
+	return "__#str_" + std::to_string(strID);
 }
 std::string getStaticLocalInitName(int initID)
 {
-	return "static_check_##_" + std::to_string(initID);
+	return "__#stck_" + std::to_string(initID);
 }
 
 bool isPackType(const ProgramRef program, const std::string& name)
@@ -103,7 +103,7 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 	
 	if (isArray(datatype))
 	{
-		int elemSize = getDatatypeSize(program, { datatype.name });
+		int elemSize = getDatatypeSize(program, *datatype.subType);
 		return elemSize * getDatatypeNumElements(datatype);
 	}
 

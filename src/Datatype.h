@@ -9,21 +9,26 @@ typedef std::shared_ptr<Datatype> DatatypeRef;
 
 struct Datatype
 {
-	std::string name;
+	std::string name = "";
 	enum class Type
 	{
+		None,
 		Name, // Has no subtype
 		Array, // Has subtype
 		Pointer, // Has subtype
 		Reference, // Has subtype
-	} type = Type::Name;
-	bool isConst;
-	int arraySize;
-	DatatypeRef subType;
+	} type = Type::None;
+	bool isConst = false;
+	DatatypeRef subType = nullptr;
+	int arraySize = 0;
 
-	Datatype();
+	Datatype() = default;
+	Datatype(Datatype&& other) = default;
+	Datatype(const Datatype& other) = default;
 	Datatype(const std::string& name);
-	Datatype(Datatype::Type type, const Datatype& subType, int arraySize = 0);
+	Datatype(Type type, const Datatype& subType, int arraySize = 0);
+	Datatype& operator=(Datatype&& other) = default;
+	Datatype& operator=(const Datatype& other) = default;
 };
 typedef Datatype::Type DTType;
 
