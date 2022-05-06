@@ -100,6 +100,9 @@ int getPackSize(const ProgramRef program, const std::string& packName)
 
 int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool treatArrayAsPointer)
 {
+	if (isNull(datatype))
+		return sizeof(void*);
+
 	if (isPointer(datatype) || (treatArrayAsPointer && isArray(datatype)))
 		return sizeof(void*);
 

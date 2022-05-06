@@ -111,7 +111,6 @@ u8 const* str2 = \
 std::print(str2)
 
 i64 const var = 10
-var = 100
 
 std::print(var)
 std::print("\n")

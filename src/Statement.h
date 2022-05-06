@@ -146,7 +146,21 @@ struct Expression : public Statement
 	ExpressionRef left; // Binary operator
 	ExpressionRef right;
 	ExpressionRef farRight; // Conditional operator
-	std::string valStr; // Literal
+	union Value // Literal
+	{
+		uint64_t u64;
+		float f32;
+		double f64;
+
+		Value() = default;
+		Value(Value&& other) = default;
+		Value(const Value& other) = default;
+		Value& operator=(Value&& other) = default;
+		Value& operator=(const Value& other) = default;
+		Value(uint64_t u64) : u64(u64) {}
+		Value(float f32) : f32(f32) {}
+		Value(double f64) : f64(f64) {}
+	} value = {};
 	std::vector<ExpressionRef> paramExpr; // Function call
 	int paramSizeSum;
 	bool isExtCall = false;
@@ -155,6 +169,8 @@ struct Expression : public Statement
 
 	bool ignoreConstness = false; // Assignment (initialization of const variables)
 };
+
+typedef Expression::Value EValue;
 
 std::string StatementTypeToString(Statement::Type type);
 

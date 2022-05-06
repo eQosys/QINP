@@ -466,6 +466,9 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		if (isArray(oldType) && isPointer(newType))
 			break;
 
+		if (isNull(oldType))
+			break;
+
 		if (isBool(newType))
 		{
 			ss << "  cmp " << primRegName(oldSize) << ", 0\n";
@@ -1056,7 +1059,18 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 	case Expression::ExprType::Literal:
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = CellState::rValue;
-		ss << "  mov " << primRegUsage(ngi) << ", " << expr->valStr << "\n";
+		ss << "  mov " << primRegUsage(ngi) << ", ";
+		if (isInteger(expr->datatype))
+			ss << expr->value.u64;
+		else if (isBool(expr->datatype))
+			ss << expr->value.u64;
+		else if (isNull(expr->datatype))
+			ss << "0";
+		else if (isEnum(ngi.program, expr->datatype))
+			ss << expr->value.u64;
+		else // is literal string
+			ss << getLiteralStringName(expr->value.u64);
+		ss  << "\n";
 		break;
 	case Expression::ExprType::Symbol:
 	{

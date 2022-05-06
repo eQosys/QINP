@@ -176,6 +176,30 @@ void pushStatement(ProgGenInfo& info, StatementRef statement)
 	info.program->body->statements.push_back(statement);
 }
 
+ExpressionRef makeSymbolExpression(Token::Position pos, SymbolRef symbol)
+{
+	ExpressionRef exp = std::make_shared<Expression>(pos);
+	exp->eType = Expression::ExprType::Symbol;
+	exp->symbol = symbol;
+	exp->isLValue = true;
+	exp->isObject = true;
+	exp->datatype = symbol->var.datatype;
+
+	return exp;
+}
+
+ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype& datatype, EValue value)
+{
+	ExpressionRef exp = std::make_shared<Expression>(pos);
+	exp->eType = Expression::ExprType::Literal;
+	exp->isLValue = false;
+	exp->isObject = true;
+	exp->datatype = datatype;
+	exp->value = value;
+
+	return exp;
+}
+
 void addVariable(ProgGenInfo& info, SymbolRef sym);
 
 void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
@@ -194,26 +218,14 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 
 	addVariable(info, statSym);
 
-	condBody.condition = std::make_shared<Expression>(initExpr->pos);
-	condBody.condition->eType = Expression::ExprType::Symbol;
-	condBody.condition->symbol = statSym;
-	condBody.condition->isLValue = true;
-	condBody.condition->datatype = { "bool" };
+	condBody.condition = makeSymbolExpression(initExpr->pos, statSym);
 
 	auto assignExpr = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->eType = Expression::ExprType::Assign;
-	
-	assignExpr->left = std::make_shared<Expression>(initExpr->pos);
-	assignExpr->left->eType = Expression::ExprType::Symbol;
-	assignExpr->left->symbol = statSym;
-	assignExpr->left->isLValue = true;
-	assignExpr->left->datatype = { "bool" };
-	
-	assignExpr->right = std::make_shared<Expression>(initExpr->pos);
-	assignExpr->right->eType = Expression::ExprType::Literal;
-	assignExpr->right->isLValue = false;
-	assignExpr->right->datatype = { "bool" };
-	assignExpr->right->valStr = "0";
+	assignExpr->isObject = true;
+	assignExpr->datatype = { "bool" };
+	assignExpr->left = makeSymbolExpression(initExpr->pos, statSym);
+	assignExpr->right = makeLiteralExpression(initExpr->pos, { "bool" }, { (uint64_t)0 });
 
 	condBody.body = std::make_shared<Body>();
 	condBody.body->statements.push_back(assignExpr);
@@ -722,9 +734,10 @@ ExpressionRef makeConvertExpression(ExpressionRef expToConvert, const Datatype& 
 	ENABLE_EXPR_ONLY_FOR_OBJ(expToConvert);
 	auto exp = std::make_shared<Expression>(expToConvert->pos);
 	exp->eType = Expression::ExprType::Conversion;
-	exp->left = expToConvert;
-	exp->datatype = newDatatype;
+	exp->isLValue = false;
 	exp->isObject = true;
+	exp->datatype = newDatatype;
+	exp->left = expToConvert;
 	return exp;
 }
 
@@ -806,10 +819,7 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 		return expToConvert;
 
 	if (isNull(expToConvert->datatype))
-	{
-		expToConvert->datatype = newDatatype;
-		return expToConvert;
-	}
+		return makeConvertExpression(expToConvert, newDatatype);
 
 	if (isConvPossible(info, expToConvert->datatype, newDatatype, isExplicit))
 	{
@@ -852,12 +862,8 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 				temp->eType = Expression::ExprType::Product;
 				temp->right = exp->right;
 				temp->datatype = { "u64" };
-				
-				temp->left = std::make_shared<Expression>(exp->pos);
-				temp->left->eType = Expression::ExprType::Literal;
-				temp->left->valStr = std::to_string(getDatatypePointedToSize(info.program, exp->left->datatype));
-				temp->left->datatype = { "u64" };
-				temp->left->isLValue = false;
+
+				temp->left = makeLiteralExpression(exp->pos, { "u64" }, { (uint64_t)getDatatypePointedToSize(info.program, exp->left->datatype) });
 
 				exp->right = temp;
 			}
@@ -907,14 +913,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	if (value == ERR_ENUM_VALUE_NOT_FOUND)
 		THROW_PROG_GEN_ERROR(memberToken.pos, "Enum member '" + memberToken.value + "' not found in enum '" + enumToken.value + "'!");
 
-	auto expr = std::make_shared<Expression>(memberToken.pos);
-	expr->eType = Expression::ExprType::Literal;
-	expr->datatype = getMangledName(getEnum(info, enumToken.value));
-	expr->valStr = std::to_string(value);
-	expr->isLValue = false;
-	expr->isObject = true;
-
-	return expr;
+	return makeLiteralExpression(memberToken.pos, getMangledName(getEnum(info, enumToken.value)), EValue((uint64_t)value));
 }
 
 ExpressionRef getParseLiteral(ProgGenInfo& info)
@@ -927,37 +926,34 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	ExpressionRef exp = std::make_shared<Expression>(litToken.pos);
 
 	exp->eType = Expression::ExprType::Literal;
+	exp->isObject = true;
 
 	switch (litToken.type)
 	{
 	case Token::Type::LiteralInteger:
-		exp->valStr = litToken.value;
-		exp->datatype = { (std::stoull(exp->valStr) >> 63) ? "u64" : "i64" };
-		exp->isObject = true;
+		exp->datatype = { "u64" };
+		exp->value = EValue((uint64_t)std::stoull(litToken.value));
 		break;
 	case Token::Type::LiteralChar:
-		exp->valStr = std::to_string(litToken.value[0]);
 		exp->datatype = { "u8" };
-		exp->isObject = true;
+		exp->value = EValue((uint64_t)litToken.value[0]);
 		break;
 	case Token::Type::LiteralBoolean:
-		exp->valStr = std::to_string(litToken.value == "true" ? 1 : 0);
 		exp->datatype = { "bool" };
-		exp->isObject = true;
+		exp->value = EValue((uint64_t)(litToken.value == "true" ? 1 : 0));
 		break;
 	case Token::Type::LiteralNull:
-		exp->valStr = "0";
 		exp->datatype = { "null" };
-		exp->isObject = true;
+		exp->value = EValue((uint64_t)0);
 		break;
 	case Token::Type::String:
 	{
 		int strID = info.program->strings.size();
-		exp->valStr = getLiteralStringName(strID);
+		//exp->valStr = getLiteralStringName(strID);
+		exp->value = EValue((uint64_t)strID);
 		info.program->strings.insert({ strID, { 1, litToken.value } });
 		exp->datatype = Datatype(DTType::Array, Datatype("u8"), litToken.value.size() + 1);
 		exp->datatype.subType->isConst = true;
-		exp->isObject = true;
 		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code
 			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
 	}
@@ -991,7 +987,7 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 	}
 	else if (isFuncName(sym))
 	{
-		;
+		bool x = true;
 	}
 
 	switch (sym->type)
@@ -1468,10 +1464,11 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 			nextToken(info, -1);
 			datatype = getParseParenthesized(info)->datatype;
 		}
-		exp->valStr = std::to_string(getDatatypeSize(info.program, datatype));
 		exp->eType = Expression::ExprType::Literal;
-		exp->datatype = { "u64" };
+		exp->isLValue = false;
 		exp->isObject = true;
+		exp->datatype = { "u64" };
+		exp->value = EValue((uint64_t)getDatatypeSize(info.program, datatype));
 	}
 		break;
 	case Expression::ExprType::SpaceAccess:
@@ -1656,12 +1653,7 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 		assignExpr->isLValue = true;
 		assignExpr->isObject = true;
 		assignExpr->datatype = varSym->var.datatype;
-		assignExpr->left = std::make_shared<Expression>(varSym->pos);
-		assignExpr->left->eType = Expression::ExprType::Symbol;
-		assignExpr->left->isLValue = true;
-		assignExpr->left->isObject = true;
-		assignExpr->left->datatype = varSym->var.datatype;
-		assignExpr->left->symbol = varSym;
+		assignExpr->left = makeSymbolExpression(varSym->pos, varSym);
 		assignExpr->right = genConvertExpression(info, initExpr, varSym->var.datatype);
 		assignExpr->ignoreConstness = true;
 
@@ -2478,6 +2470,9 @@ void markReachableFunctions(ProgGenInfo& info, BodyRef body)
 			markReachableFunctions(info, func->func.body);
 	}
 }
+
+void func1();
+void func1(int);
 
 void detectUndefinedFunctions(ProgGenInfo& info)
 {
