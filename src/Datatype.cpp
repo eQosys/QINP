@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include "Errors/QinpError.h"
+#include "Program.h"
 
 Datatype::Datatype(const std::string& name)
 	: name(name), type(Type::Name)
@@ -96,6 +97,13 @@ bool isArray(const Datatype& datatype)
 bool isDereferenceable(const Datatype& datatype)
 {
 	return isPointer(datatype) || isArray(datatype);
+}
+
+bool isEnum(const ProgramRef program, const Datatype& datatype)
+{
+	return
+		isOfType(datatype, DTType::Name) &&
+		isEnum(getSymbolFromPath(program->symbols, SymPathFromString(datatype.name)));
 }
 
 bool isVoid(const Datatype& datatype)

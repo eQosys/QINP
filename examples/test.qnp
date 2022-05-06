@@ -109,3 +109,10 @@ u8 const* str2 = \
 	"Hello world, " \
 	"my name is TecStylos!\n"
 std::print(str2)
+
+enum Color:
+	Red, Green, Blue
+
+Color col = Color::Red
+
+std::print((u64)col)

@@ -194,16 +194,20 @@ void foo():
 
 The `enum` keyword can be used to declare an enumeration.
 Every member is associated with an unsigned integer value.
-The members of enums are mostly treated as literals.
-The members of an enum are accessed via the [enum operator](./operators.md#namespace).
+The members of enums are treated as literals.
+A variable of an enum type can not be converted to another enum or builtin type.
+The members of an enum are accessed via the [space operator](./operators.md#namespace).
 
-Reserved values are -1 and -2.
+The first element of an enum is 0 by default. The following elements are incremented by 1.
+This behavior can be overridden by specifying a custom value for an element.
+Internally, enums are represented as the [u64](./builtin-types.md#unsigned-integers) type.
+Therefore negative values are not supported.
 
 #### Usage
 ```qinp
 enum [enumName]:
 	[memberName1], [memberName2]
-	[memberName3], [memberName4], [...]
+	[memberName3] = [value], [memberName4], [...]
 	[memberNameN]
 
 [enumName]::[memberNameX]
@@ -213,6 +217,8 @@ enum [enumName]:
 ```qinp
 enum Color:
 	red, green, blue,
-	black, white, yellow		\\ The comma after the last member of a row is optional
-	cyan, magenta, orange
+	black = 5, white, yellow		\\ The comma after the last member of a row is optional
+	cyan = 3, magenta, orange
+
+Color col = Color::red
 ```

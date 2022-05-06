@@ -797,12 +797,8 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 		return makeConvertExpression(expToConvert, newDatatype);
 
 	if (doThrow)
-		THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+		THROW_PROG_GEN_ERROR(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
 
-	return nullptr;
-
-	if (doThrow)
-		THROW_PROG_GEN_ERROR(expToConvert->pos, "Cannot implicitly convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
 	return nullptr;
 }
 
@@ -882,7 +878,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 
 	auto expr = std::make_shared<Expression>(memberToken.pos);
 	expr->eType = Expression::ExprType::Literal;
-	expr->datatype = { "u32" };
+	expr->datatype = getMangledName(getEnum(info, enumToken.value));
 	expr->valStr = std::to_string(value);
 	expr->isLValue = false;
 	expr->isObject = true;
@@ -1502,14 +1498,11 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	Datatype datatype;
 
 	int prevTokId = info.currToken;
-	int nEntered = 0;
 
 	auto exitEntered = [&](const Datatype& dt, bool resetTokId)
 	{
 		if (resetTokId)
 			info.currToken = prevTokId;
-		while (nEntered--)
-			exitSymbol(info);
 		return dt;
 	};
 
@@ -1521,36 +1514,32 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	else
 	{
 		bool localOnly = false;
-
+		SymbolRef sym = currSym(info);
 		if (isOperator(peekToken(info), "::"))
 		{
 			nextToken(info);
-			++nEntered;
-			enterSymbol(info, info.program->symbols);
+			sym = info.program->symbols;
 			localOnly = true;
 		}
 
-		auto pNameToken = &nextToken(info);
-		if (!isIdentifier(*pNameToken))
-			return exitEntered({}, true);
-		while (isOperator(peekToken(info), "::"))
+		const Token* pNameToken = nullptr;
+		do
 		{
-			nextToken(info);
-			auto sym = getSymbol(currSym(info), pNameToken->value, localOnly);
-			if (!sym)
-				return exitEntered({}, true);
-			++nEntered;
-			enterSymbol(info, sym);
 			pNameToken = &nextToken(info);
 			if (!isIdentifier(*pNameToken))
 				return exitEntered({}, true);
+			sym = getSymbol(sym, pNameToken->value, localOnly);
+			if (!sym)
+				return exitEntered({}, true);
 			localOnly = true;
-		}
+		} while (isOperator(nextToken(info), "::"));
+		nextToken(info, -1);
+		
 
-		if (!isPackType(info, *pNameToken))
+		if (!isPack(sym) && !isEnum(sym))
 			return exitEntered({}, true);
 
-		datatype.name = SymPathToString(getSymbolPath(nullptr, getSymbol(currSym(info), pNameToken->value, nEntered != 0)));
+		datatype.name = SymPathToString(getSymbolPath(nullptr, sym));
 		datatype.type = DTType::Name;
 	}
 

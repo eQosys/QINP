@@ -62,6 +62,8 @@ std::string getMangledName(SymbolRef symbol)
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isFuncName(symbol))
 		return symbol->name;
+	if (isEnum(symbol))
+		return SymPathToString(getSymbolPath(nullptr, symbol));
 	assert(false && "Unhandled symbol type!");
 	return "";
 }
@@ -100,6 +102,9 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 {
 	if (isPointer(datatype) || (treatArrayAsPointer && isArray(datatype)))
 		return sizeof(void*);
+
+	if (isEnum(program, datatype))
+		return sizeof(int64_t);
 	
 	if (isArray(datatype))
 	{

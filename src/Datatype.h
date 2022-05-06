@@ -6,6 +6,8 @@
 
 struct Datatype;
 typedef std::shared_ptr<Datatype> DatatypeRef;
+struct Program;
+typedef std::shared_ptr<Program> ProgramRef;
 
 struct Datatype
 {
@@ -43,6 +45,7 @@ bool isOfType(const Datatype& datatype, DTType type);
 bool isPointer(const Datatype& datatype);
 bool isArray(const Datatype& datatype);
 bool isDereferenceable(const Datatype& datatype);
+bool isEnum(const ProgramRef program, const Datatype& datatype);
 bool isVoid(const Datatype& datatype);
 bool isVoidPtr(const Datatype& datatype);
 bool isBool(const Datatype& datatype);
