@@ -468,19 +468,16 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 
 		if (isBool(newType))
 		{
-			if (isInteger(oldType) || isPointer(oldType))
-			{
-				ss << "  cmp " << primRegName(oldSize) << ", 0\n";
-				ss << "  setne " << primRegName(newSize) << "\n";
-				break;
-			}
-			assert("Invalid conversion!" && false);
+			ss << "  cmp " << primRegName(oldSize) << ", 0\n";
+			ss << "  setne " << primRegName(newSize) << "\n";
+			break;
 		}
 
 		if (
 			(isUnsignedInt(oldType) && isInteger(newType)) ||
 			(isInteger(oldType) && isPointer(newType)) ||
-			(isBool(oldType) && (isInteger(newType) || isPointer(newType)))
+			(isBool(oldType) && (isInteger(newType) || isPointer(newType))) ||
+			(isEnum(ngi.program, oldType))
 			)
 		{
 			if (oldSize == 4 && newSize == 8)

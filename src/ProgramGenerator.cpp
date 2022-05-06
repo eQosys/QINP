@@ -261,7 +261,7 @@ bool leftConversionIsProhibited(Expression::ExprType eType)
 	return prohibitedTypes.find(eType) != prohibitedTypes.end();
 }
 
-ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
+ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
 
 SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
 {
@@ -280,7 +280,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		{
 			if (!dtEqual(paramExpr[i]->datatype, func->func.params[i]->var.datatype))
 				isExactMatch = false;
-			matchFound = !!genConvertExpression(paramExpr[i], func->func.params[i]->var.datatype, false, false);
+			matchFound = !!genConvertExpression(info, paramExpr[i], func->func.params[i]->var.datatype, false, false);
 		}
 
 		if (isExactMatch)
@@ -297,7 +297,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 	if (match)
 	{
 		for (int i = 0; i < paramExpr.size(); ++i)
-			paramExpr[i] = genConvertExpression(paramExpr[i], match->func.params[i]->var.datatype, false);
+			paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false);
 	}
 
 	return match;
@@ -738,7 +738,7 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
 	return makeConvertExpression(expToConvert, newDt);
 }
 
-bool isConvPossible(const Datatype& oldDt, const Datatype& newDt, bool isExplicit)
+bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& newDt, bool isExplicit)
 {
 	if (isBool(newDt))
 	{
@@ -747,6 +747,8 @@ bool isConvPossible(const Datatype& oldDt, const Datatype& newDt, bool isExplici
 		if (isInteger(oldDt))
 			return true;
 		if (isPointer(oldDt))
+			return true;
+		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;
 		return false;
 	}
@@ -759,6 +761,8 @@ bool isConvPossible(const Datatype& oldDt, const Datatype& newDt, bool isExplici
 		if (isPointer(oldDt) && isExplicit)
 			return true;
 		if (isPointer(oldDt) && dtEqual(newDt, Datatype("u64")))
+			return true;
+		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;
 		return false;
 	}
@@ -774,13 +778,27 @@ bool isConvPossible(const Datatype& oldDt, const Datatype& newDt, bool isExplici
 			return true;
 		if (isPointer(oldDt) && isVoidPtr(newDt) && preservesConstness(oldDt, newDt))
 			return true;
+		if (isEnum(info.program, oldDt) && isExplicit)
+			return true;
+		return false;
+	}
+	if (isEnum(info.program, newDt))
+	{
+		if (isBool(oldDt) && isExplicit)
+			return true;
+		if (isInteger(oldDt) && isExplicit)
+			return true;
+		if (isPointer(oldDt) && isExplicit)
+			return true;
+		if (isEnum(info.program, oldDt) && isExplicit)
+			return true;
 		return false;
 	}
 
 	return false;
 }
 
-ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
+ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
 {
 	expToConvert = genAutoArrayToPtr(expToConvert);
 
@@ -793,7 +811,7 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 		return expToConvert;
 	}
 
-	if (isConvPossible(expToConvert->datatype, newDatatype, isExplicit))
+	if (isConvPossible(info, expToConvert->datatype, newDatatype, isExplicit))
 	{
 		if (
 			isPointer(expToConvert->datatype) &&
@@ -828,7 +846,7 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 		case Expression::ExprType::Difference:
 		case Expression::ExprType::Assign_Sum:
 		case Expression::ExprType::Assign_Difference:
-			exp->right = genConvertExpression(exp->right, { "u64" });
+			exp->right = genConvertExpression(info, exp->right, { "u64" });
 			{
 				auto temp = std::make_shared<Expression>(exp->pos);
 				temp->eType = Expression::ExprType::Product;
@@ -859,8 +877,8 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 			getDatatypeStr(exp->left->datatype) + " and " +
 			getDatatypeStr(exp->right->datatype) + " to a common datatype!");
 	
-	exp->left = genConvertExpression(exp->left, newDatatype);
-	exp->right = genConvertExpression(exp->right, newDatatype);
+	exp->left = genConvertExpression(info, exp->left, newDatatype);
+	exp->right = genConvertExpression(info, exp->right, newDatatype);
 }
 
 ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl = 0);
@@ -1118,7 +1136,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Conditional_Op:
 		{
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
-			currExpr->left = genConvertExpression(currExpr->left, { "bool" });
+			currExpr->left = genConvertExpression(info, currExpr->left, { "bool" });
 
 			currExpr->right = getParseExpression(info, 0);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
@@ -1144,8 +1162,8 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->right = getParseExpression(info, precLvl + 1);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
-			currExpr->left = genConvertExpression(currExpr->left, { "bool" });
-			currExpr->right = genConvertExpression(currExpr->right, { "bool" });
+			currExpr->left = genConvertExpression(info, currExpr->left, { "bool" });
+			currExpr->right = genConvertExpression(info, currExpr->right, { "bool" });
 			currExpr->datatype = { "bool" };
 			currExpr->isLValue = false;
 			currExpr->isObject = true;
@@ -1241,7 +1259,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
 			exp->isLValue = isArray(exp->datatype) ? false : true;
 			exp->isObject = true;
-			exp->right = genConvertExpression(getParseExpression(info), { "u64" });
+			exp->right = genConvertExpression(info, getParseExpression(info), { "u64" });
 			ENABLE_EXPR_ONLY_FOR_OBJ(exp->right);
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
@@ -1266,7 +1284,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			{
 				func = exp->left->symbol;
 				for (int i = 0; i < exp->paramExpr.size(); ++i)
-					exp->paramExpr[i] = genConvertExpression(exp->paramExpr[i], exp->left->symbol->func.params[i]->var.datatype);
+					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->symbol->func.params[i]->var.datatype);
 			}
 			else
 			{
@@ -1395,7 +1413,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->isObject = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
-		exp->left = genConvertExpression(getParseExpression(info, precLvl), Datatype("bool"));
+		exp->left = genConvertExpression(info, getParseExpression(info, precLvl), Datatype("bool"));
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = { "bool" };
 		exp->isLValue = false;
@@ -1434,7 +1452,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 			return getParseExpression(info, precLvl + 1);
 		}
 		parseExpected(info, Token::Type::Separator, ")");
-		exp = genConvertExpression(getParseExpression(info, precLvl), newDatatype, true);
+		exp = genConvertExpression(info, getParseExpression(info, precLvl), newDatatype, true);
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp);
 		exp->isObject = true;
 	}
@@ -1500,7 +1518,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 		return false;
 
 	if (!dtEqual(expr->datatype, targetType))
-		expr = genConvertExpression(expr, targetType);
+		expr = genConvertExpression(info, expr, targetType);
 	pushStatement(info, expr);
 
 	return true;
@@ -1853,7 +1871,7 @@ bool parseStatementReturn(ProgGenInfo& info)
 	lastStatement(info)->funcRetOffset = info.funcRetOffset;
 
 	if (!isVoid(info.funcRetType))
-		lastStatement(info)->subExpr = genConvertExpression(getParseExpression(info), info.funcRetType);
+		lastStatement(info)->subExpr = genConvertExpression(info, getParseExpression(info), info.funcRetType);
 	else if (!isNewline(peekToken(info)))
 		THROW_PROG_GEN_ERROR(exprBegin.pos, "Return statement in void function must be followed by a newline!");
 	parseExpectedNewline(info);
@@ -1990,7 +2008,7 @@ bool parseStatementIf(ProgGenInfo& info)
 
 		statement->ifConditionalBodies.push_back({});
 		auto& condBody = statement->ifConditionalBodies.back();
-		condBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+		condBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
 		condBody.body = std::make_shared<Body>();
 
 		parseExpectedColon(info);
@@ -2039,7 +2057,7 @@ bool parseStatementWhile(ProgGenInfo& info)
 	auto statement = std::make_shared<Statement>(whileToken.pos, Statement::Type::While_Loop);
 	statement->whileConditionalBody.body = std::make_shared<Body>();
 
-	statement->whileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+	statement->whileConditionalBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
 
 	parseExpectedColon(info);
 	bool parsedNewline = parseOptionalNewline(info);
@@ -2070,7 +2088,7 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(doToken.pos, "Expected 'while'!");
 	parseExpected(info, Token::Type::Keyword, "while");
 	
-	statement->doWhileConditionalBody.condition = genConvertExpression(getParseExpression(info), { "bool" });
+	statement->doWhileConditionalBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
 
 	parseExpectedNewline(info);
 
