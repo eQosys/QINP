@@ -1597,7 +1597,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 
 void parseFunctionBody(ProgGenInfo& info, bool doParseIndent);
 
-ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
+std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Variable;
@@ -1633,14 +1633,14 @@ ExpressionRef getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatyp
 	{
 		if (isOperator(peekToken(info), "="))
 		{
-			nextToken(info, -1);
+			nextToken(info);
 			initExpr = getParseExpression(info);
 		}
 	}
 	
 	parseExpectedNewline(info);
 
-	return initExpr;
+	return { sym, initExpr };
 }
 
 void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
@@ -1648,13 +1648,27 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 	if (isVoid(datatype))
 		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot declare variable of type void!");
 
-	auto initExpr = getParseDeclDefVariable(info, datatype, isStatic, name);
+	auto [varSym, initExpr] = getParseDeclDefVariable(info, datatype, isStatic, name);
 	if (initExpr)
 	{
+		auto assignExpr = std::make_shared<Expression>(initExpr->pos);
+		assignExpr->eType = Expression::ExprType::Assign;
+		assignExpr->isLValue = true;
+		assignExpr->isObject = true;
+		assignExpr->datatype = varSym->var.datatype;
+		assignExpr->left = std::make_shared<Expression>(varSym->pos);
+		assignExpr->left->eType = Expression::ExprType::Symbol;
+		assignExpr->left->isLValue = true;
+		assignExpr->left->isObject = true;
+		assignExpr->left->datatype = varSym->var.datatype;
+		assignExpr->left->symbol = varSym;
+		assignExpr->right = genConvertExpression(info, initExpr, varSym->var.datatype);
+		assignExpr->ignoreConstness = true;
+
 		if (isStatic)
-			pushStaticLocalInit(info, initExpr);
+			pushStaticLocalInit(info, assignExpr);
 		else
-			pushStatement(info, initExpr);
+			pushStatement(info, assignExpr);
 	}
 }
 

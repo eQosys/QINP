@@ -152,6 +152,8 @@ struct Expression : public Statement
 	bool isExtCall = false;
 
 	SymbolRef symbol;
+
+	bool ignoreConstness = false; // Assignment (initialization of const variables)
 };
 
 std::string StatementTypeToString(Statement::Type type);

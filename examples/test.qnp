@@ -110,12 +110,14 @@ u8 const* str2 = \
 	"my name is TecStylos!\n"
 std::print(str2)
 
-i64 const var
-*(i64*)&var = 10
+i64 const var = 10
+var = 100
 
 std::print(var)
+std::print("\n")
 
 enum Color:
 	Red, Green, Blue
 
-std::print((u64)Color::Red)
+std::print((u64)Color::Green)
+std::print("\n")

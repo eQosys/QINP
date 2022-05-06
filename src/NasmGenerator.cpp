@@ -510,7 +510,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		bool isPack = isPackType(ngi.program, expr->left->datatype);
 		pushPrimReg(ngi);
 		genExpr(ngi, expr->left.get());
-		assert(dtEqual(ngi.primReg.datatype, expr->right->datatype) && "Assign: datatype mismatch!");
+		assert((dtEqual(ngi.primReg.datatype, expr->right->datatype) || (dtEqualNoConst(ngi.primReg.datatype, expr->right->datatype) && expr->ignoreConstness)) && "Assign: datatype mismatch!");
 		assert(isLValue(ngi.primReg) && "Cannot assign to non-lvalue!");
 		popSecReg(ngi);
 
