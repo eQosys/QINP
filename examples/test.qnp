@@ -115,4 +115,7 @@ enum Color:
 
 Color col = Color::Red
 
-std::print((u64)col)
+i64 const var
+*(i64*)&var = 10
+
+std::print(var)

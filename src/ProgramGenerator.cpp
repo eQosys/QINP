@@ -794,7 +794,20 @@ ExpressionRef genConvertExpression(ExpressionRef expToConvert, const Datatype& n
 	}
 
 	if (isConvPossible(expToConvert->datatype, newDatatype, isExplicit))
+	{
+		if (
+			isPointer(expToConvert->datatype) &&
+			isPointer(newDatatype) &&
+			!preservesConstness(expToConvert->datatype, newDatatype)
+			)
+			PRINT_WARNING(
+				MAKE_PROG_GEN_ERROR(
+					expToConvert->pos,
+					"Conversion from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "' does not preserve the constness of the old type!"
+				)
+			);
 		return makeConvertExpression(expToConvert, newDatatype);
+	}
 
 	if (doThrow)
 		THROW_PROG_GEN_ERROR(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
