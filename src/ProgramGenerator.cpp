@@ -1060,6 +1060,39 @@ ExpressionRef getParseParenthesized(ProgGenInfo& info)
 	return exp;
 }
 
+ExpressionRef autoSimplifyExpression(ExpressionRef expr)
+{
+	switch (expr->eType)
+	{
+	case Expression::ExprType::Conversion:
+		return expr;
+	case Expression::ExprType::Logical_OR:
+	case Expression::ExprType::Logical_AND:
+	case Expression::ExprType::Bitwise_OR:
+	case Expression::ExprType::Bitwise_XOR:
+	case Expression::ExprType::Bitwise_AND:
+	case Expression::ExprType::Comparison_Equal:
+	case Expression::ExprType::Comparison_NotEqual:
+	case Expression::ExprType::Comparison_Less:
+	case Expression::ExprType::Comparison_LessEqual:
+	case Expression::ExprType::Comparison_Greater:
+	case Expression::ExprType::Comparison_GreaterEqual:
+	case Expression::ExprType::Shift_Left:
+	case Expression::ExprType::Shift_Right:
+	case Expression::ExprType::Sum:
+	case Expression::ExprType::Difference:
+	case Expression::ExprType::Product:
+	case Expression::ExprType::Quotient:
+	case Expression::ExprType::Remainder:
+	case Expression::ExprType::Logical_NOT:
+	case Expression::ExprType::Bitwise_NOT:
+	case Expression::ExprType::Prefix_Plus:
+	case Expression::ExprType::Prefix_Minus:
+		break;
+	}
+	return expr;
+}
+
 ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 {
 	auto& opsLvl = opPrecLvls[precLvl];
@@ -1222,7 +1255,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		}
 	}
 
-	return baseExpr ? baseExpr : currExpr;
+	return autoSimplifyExpression(baseExpr ? baseExpr : currExpr);
 }
 
 ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
@@ -1368,7 +1401,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		}
 	}
 
-	return exp;
+	return autoSimplifyExpression(exp);
 }
 
 ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
@@ -1480,7 +1513,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");
 	}
 
-	return exp;
+	return autoSimplifyExpression(exp);
 }
 
 ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)

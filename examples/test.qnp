@@ -110,7 +110,7 @@ u8 const* str2 = \
 	"my name is TecStylos!\n"
 std::print(str2)
 
-i64 const var = 10
+i64 const var = 10 * 12 + 100
 
 std::print(var)
 std::print("\n")
