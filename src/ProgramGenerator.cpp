@@ -1062,32 +1062,125 @@ ExpressionRef getParseParenthesized(ProgGenInfo& info)
 
 ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 {
+	if (expr->eType == Expression::ExprType::Literal)
+		return expr;
+
+	bool leftLiteral = false;
+	bool rightLiteral = false;
+	bool farRightLiteral = false;
+
+	if (expr->left)
+	{
+		expr->left = autoSimplifyExpression(expr->left);
+		if (expr->left->eType == Expression::ExprType::Literal)
+			leftLiteral = true;
+	}
+	if (expr->right)
+	{
+		expr->right = autoSimplifyExpression(expr->right);
+		if (expr->right->eType == Expression::ExprType::Literal)
+			rightLiteral = true;
+	}
+	if (expr->farRight)
+	{
+		expr->farRight = autoSimplifyExpression(expr->farRight);
+		if (expr->farRight->eType == Expression::ExprType::Literal)
+			farRightLiteral = true;
+	}
+
+	// TODO: Handle floating point expressions
+	// TODO: Handle signed integer expressions
+	// TODO: Masking
+
 	switch (expr->eType)
 	{
 	case Expression::ExprType::Conversion:
-		return expr;
+		break;
 	case Expression::ExprType::Logical_OR:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 || expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Logical_AND:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 && expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Bitwise_OR:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 | expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Bitwise_XOR:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 ^ expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Bitwise_AND:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 & expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Comparison_Equal:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 == expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Comparison_NotEqual:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 != expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Comparison_Less:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 < expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Comparison_LessEqual:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 <= expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Comparison_Greater:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 > expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Comparison_GreaterEqual:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 >= expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Shift_Left:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 << expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Shift_Right:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 >> expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Sum:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 + expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Difference:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 - expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Product:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 * expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Quotient:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 / expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Remainder:
+		if (leftLiteral && rightLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 % expr->right->value.u64)));
+		break;
 	case Expression::ExprType::Logical_NOT:
+		if (leftLiteral)
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(!expr->left->value.u64)));
+		break;
 	case Expression::ExprType::Bitwise_NOT:
+		if (leftLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(~expr->left->value.u64)));
+		break;
 	case Expression::ExprType::Prefix_Plus:
+		break; // Nothing to do
 	case Expression::ExprType::Prefix_Minus:
+		if (leftLiteral)
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(-expr->left->value.u64)));
 		break;
 	}
 	return expr;
@@ -1255,7 +1348,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		}
 	}
 
-	return autoSimplifyExpression(baseExpr ? baseExpr : currExpr);
+	return baseExpr ? baseExpr : currExpr;
 }
 
 ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
@@ -1401,7 +1494,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		}
 	}
 
-	return autoSimplifyExpression(exp);
+	return exp;
 }
 
 ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
@@ -1513,7 +1606,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");
 	}
 
-	return autoSimplifyExpression(exp);
+	return exp;
 }
 
 ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
@@ -1523,13 +1616,16 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
 	if (precLvl > maxPrecLvl)
 		return getParseParenthesized(info);
 
+	ExpressionRef expr = nullptr;;
 	switch (opPrecLvls[precLvl].type)
 	{
-	case OpPrecLvl::Type::Binary: return getParseBinaryExpression(info, precLvl);
-	case OpPrecLvl::Type::Unary_Suffix: return getParseUnarySuffixExpression(info, precLvl);
-	case OpPrecLvl::Type::Unary_Prefix: return getParseUnaryPrefixExpression(info, precLvl);
+	case OpPrecLvl::Type::Binary: expr = getParseBinaryExpression(info, precLvl); break;
+	case OpPrecLvl::Type::Unary_Suffix: expr = getParseUnarySuffixExpression(info, precLvl); break;
+	case OpPrecLvl::Type::Unary_Prefix: expr = getParseUnaryPrefixExpression(info, precLvl); break;
 	default: THROW_PROG_GEN_ERROR(peekToken(info).pos, "Unknown operator precedence level type!");
 	}
+
+	return autoSimplifyExpression(expr);
 }
 
 bool parseExpression(ProgGenInfo& info)
