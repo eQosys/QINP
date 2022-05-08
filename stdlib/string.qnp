@@ -164,7 +164,7 @@ space std:
 	u8 tolower(u8 c)...
 
 
-	u8 const* __baseCharsLower = "0123456789abcdefghijklmnopqrstuvwxyz"
+	u8 const*const __baseCharsLower = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
 	u64 strlen(u8 const* str)!:
@@ -343,7 +343,7 @@ space std:
 		return negative ? -num : num
 
 	u8 toupper(u8 c)!:
-		return 'a' <= c && c <= 'z' ? c - 'a' + 'A' : c
+		return 'a' <= c && c <= 'z' ? 'A' - 'a' + c : c
 
 	u8 tolower(u8 c)!:
-		return 'A' <= c && c <= 'Z' ? c - 'A' + 'a' : c
+		return 'A' <= c && c <= 'Z' ? 'a' - 'A' + c : c

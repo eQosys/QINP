@@ -36,7 +36,7 @@ typedef Datatype::Type DTType;
 
 bool dtEqual(const Datatype& a, const Datatype& b);
 bool dtEqualNoConst(const Datatype& a, const Datatype& b);
-bool preservesConstness(const Datatype& oldDt, const Datatype& newDt);
+bool preservesConstness(const Datatype& oldDt, const Datatype& newDt, bool ignoreFirst = true);
 
 bool operator!(const Datatype& datatype);
 

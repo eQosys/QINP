@@ -120,3 +120,6 @@ enum Color:
 
 std::print((u64)Color::Green)
 std::print("\n")
+
+std::toupper('a')
+std::tolower('A')

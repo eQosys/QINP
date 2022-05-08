@@ -57,9 +57,9 @@ bool dtEqualNoConst(const Datatype& a, const Datatype& b)
 	}
 }
 
-bool preservesConstness(const Datatype& oldDt, const Datatype& newDt)
+bool preservesConstness(const Datatype& oldDt, const Datatype& newDt, bool ignoreFirst)
 {
-	if (oldDt.isConst && !newDt.isConst)
+	if (!ignoreFirst && oldDt.isConst && !newDt.isConst)
 		return false;
 	
 	if (hasSubtype(oldDt) && hasSubtype(newDt))
