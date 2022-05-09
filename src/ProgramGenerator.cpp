@@ -1182,6 +1182,10 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 		if (leftLiteral)
 			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(-expr->left->value.u64)));
 		break;
+	case Expression::ExprType::Conditional_Op:
+		if (leftLiteral)
+			expr = expr->left->value.u64 ? expr->left : expr->right;
+		break;
 	}
 	return expr;
 }

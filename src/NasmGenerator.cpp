@@ -993,19 +993,25 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		// Datatype & state don't change
 		break;
 	case Expression::ExprType::Subscript:
+	{
 		genExpr(ngi, expr->left.get());
 		assert(isDereferenceable(ngi.primReg.datatype) != 0 && "Cannot subscript non-pointer!");
 		primRegLToRVal(ngi);
 		pushPrimReg(ngi);
 		genExpr(ngi, expr->right.get());
 		primRegLToRVal(ngi);
-		ss << "  mov " << secRegName(8) << ", " << getDatatypeSize(ngi.program, expr->datatype) << "\n";
-		ss << "  mul " << secRegName(8) << "\n";
+		int dtSize = getDatatypeSize(ngi.program, expr->datatype);
+		if (dtSize != 1)
+		{
+			ss << "  mov " << secRegName(8) << ", " << dtSize << "\n";
+			ss << "  mul " << secRegName(8) << "\n";
+		}
 		popSecReg(ngi);
 		ss << "  add " << primRegUsage(ngi) << ", " << secRegUsage(ngi) << "\n";
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);
 		break;
+	}
 	case Expression::ExprType::FunctionCall:
 	{
 		if (expr->isExtCall)
