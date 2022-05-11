@@ -253,24 +253,22 @@ space std:
 		return last
 
 	u8 const* strstr(u8 const* str, u8 const* substr)!:
-		u64 mainlen = strlen(str)
 		u64 sublen = strlen(substr)
-		while mainlen >= sublen:
+		u8 const* lastToCheck = str + strlen(str) - subLen
+		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
 				return str
 			++str
-			--mainlen
 		return null
 
 	u8 const* strrstr(u8 const* str, u8 const* substr)!:
-		u64 mainlen = strlen(str)
 		u64 sublen = strlen(substr)
+		u8 const* lastToCheck = str + strlen(str) - sublen
 		u8 const* last = null
-		while mainlen >= sublen:
+		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
 				last = str
 			++str
-			--mainlen
 		return last
 
 	u8* strset(u8* str, u8 ch)!:
@@ -288,10 +286,9 @@ space std:
 
 	u8* strrev(u8* begin, u8* end)!:
 		u8* str = begin
-		u8 temp
 
 		while begin < end:
-			temp = *begin
+			u8 temp = *begin
 			*begin++ = *--end
 			*end = temp
 
@@ -300,7 +297,10 @@ space std:
 	u8* strtok(u8* str, u8 const* delimiters)!:
 		static u8* next = null
 		
-		if str: next = str
+		if str:
+			next = str
+			return null
+
 		if !next: return null
 
 		u8* begin = next
