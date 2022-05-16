@@ -38,7 +38,7 @@
  - _None_
 
 ## Globals
- - [u8 const* __baseCharsLower]()
+ - [u8 const*const __baseCharsLower]()
 
 ## Definitions
  - _None_
