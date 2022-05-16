@@ -254,7 +254,7 @@ space std:
 
 	u8 const* strstr(u8 const* str, u8 const* substr)!:
 		u64 sublen = strlen(substr)
-		u8 const* lastToCheck = str + strlen(str) - subLen
+		u8 const* lastToCheck = str + strlen(str) - sublen
 		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
 				return str
