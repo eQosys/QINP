@@ -753,6 +753,9 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
 
 bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& newDt, bool isExplicit)
 {
+	if (dtEqualNoConst(oldDt, newDt) && preservesConstness(oldDt, newDt))
+		return true;
+
 	if (isBool(newDt))
 	{
 		if (isBool(oldDt))
@@ -786,8 +789,6 @@ bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& ne
 		if (isInteger(oldDt) && isExplicit)
 			return true;
 		if (isPointer(oldDt) && isExplicit)
-			return true;
-		if (dtEqualNoConst(oldDt, newDt) && preservesConstness(oldDt, newDt))
 			return true;
 		if (isPointer(oldDt) && isVoidPtr(newDt) && preservesConstness(oldDt, newDt))
 			return true;

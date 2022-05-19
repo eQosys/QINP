@@ -348,9 +348,9 @@ void genMemcpy(NasmGenInfo& ngi, const std::string& destReg, const std::string& 
 				Datatype(DTType::Pointer, Datatype("void")),
 				Datatype("u64")
 			}
-			),
+		),
 		true
-		);
+	);
 	func->func.isReachable = true;
 
 	ngi.ss << "  push " << size << "\n";
