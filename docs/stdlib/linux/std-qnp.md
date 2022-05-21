@@ -18,4 +18,6 @@
  - _None_
 
 ## Definitions
- - _None_
+ - [__STDIN]()
+ - [__STDOUT]()
+ - [__STDERR]()
