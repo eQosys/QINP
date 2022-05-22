@@ -8,9 +8,6 @@ space std:
 	define __STDOUT 1
 	define __STDERR 2
 
-	void exit(i32 status)!:
-		__syscall(__SYS_EXIT, status)
-
 	i32 print(u8 const* str, u64 len)!:
 		return __syscall(__SYS_WRITE, __STDOUT, str, len)
 
