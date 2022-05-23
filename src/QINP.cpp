@@ -59,6 +59,7 @@ std::map<std::string, OptionInfo> argNames =
 	"    Prints this help message.\n" \
 	"  -v, --verbose\n" \
 	"    Prints verbose output.\n" \
+	"    Generates informational comments in the assembly code.\n" \
 	"  -i, --import=[path]\n" \
 	"    Specifies an import directory.\n" \
 	"  -o, --output=[path]\n" \
@@ -177,7 +178,7 @@ int main(int argc, char** argv, char** _env)
 				if (isFuncSpec(sym) && !isDefined(sym))
 					PRINT_WARNING(MAKE_QINP_ERROR("Undefined function '" + getMangledName(sym) + "' declared at " + getPosStr(sym->pos) + "!"));
 
-		std::string output = genAsm(program);
+		std::string output = genAsm(program, args.hasOption("verbose") && args.hasOption("keep"));
 	
 		std::string asmFilename = std::filesystem::path(inFilename).replace_extension(".asm").string();
 		writeTextFileOverwrite(asmFilename, output);

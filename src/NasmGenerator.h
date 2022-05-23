@@ -2,4 +2,4 @@
 
 #include "Program.h"
 
-std::string genAsm(const ProgramRef program);
+std::string genAsm(const ProgramRef program, bool generateComments);

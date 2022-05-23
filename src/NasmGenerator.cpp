@@ -44,7 +44,18 @@ struct NasmGenInfo
 	std::vector<std::string> labelStack; // Used for control flow statements
 
 	std::stack<int> loopLabelMarks;
+
+	bool generateComments;
 };
+
+std::string hexString(int64_t val)
+{
+	if (val < 0)
+		return "-" + hexString(-val);
+	std::stringstream ss;
+	ss << "0x" << std::hex << val;
+	return ss.str();
+}
 
 std::string makeUniqueLabel(const std::string& name)
 {
@@ -114,7 +125,7 @@ std::string basePtrOffset(int offset)
 {
 	bool isNeg = offset < 0;
 	if (isNeg) offset = -offset;
-	return std::string("[rbp") + (isNeg ? "-" : "+") + std::to_string(offset) + "]";
+	return std::string("[rbp ") + (isNeg ? "- " : "+ ") + hexString(offset) + "]";
 }
 
 std::string regName(char baseChar, int size)
@@ -396,7 +407,7 @@ void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
 	bool typesMatch = dtEqual(ngi.primReg.datatype, Datatype(DTType::Pointer, Datatype(getSignature(expr))));
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
-	ngi.ss << "  add rsp, " << std::to_string(expr->paramSizeSum) << "\n";
+	ngi.ss << "  add rsp, " << hexString(expr->paramSizeSum) << "\n";
 
 	ngi.primReg.datatype = expr->datatype;
 	ngi.primReg.state = CellState::rValue;
@@ -1067,13 +1078,13 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		ngi.primReg.state = CellState::rValue;
 		ss << "  mov " << primRegUsage(ngi) << ", ";
 		if (isInteger(expr->datatype))
-			ss << expr->value.u64;
+			ss << hexString(expr->value.u64);
 		else if (isBool(expr->datatype))
-			ss << expr->value.u64;
+			ss << (bool)expr->value.u64;
 		else if (isNull(expr->datatype))
 			ss << "0";
 		else if (isEnum(ngi.program, expr->datatype))
-			ss << expr->value.u64;
+			ss << hexString(expr->value.u64);
 		else // is literal string
 			ss << getLiteralStringName(expr->value.u64);
 		ss  << "\n";
@@ -1089,7 +1100,8 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		else if (isVarOffset(expr->symbol))
 		{
 			ss << "  mov " << primRegName(8) << ", rbp\n";
-			ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << " ; local '" << expr->symbol->var.modName << "'\n";
+			ss << "  add " << primRegName(8) << ", " << hexString(expr->symbol->var.offset)
+				<< (ngi.generateComments ? " ; local '" + expr->symbol->var.modName + "'\n" : "\n");
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		}
@@ -1131,11 +1143,15 @@ void genStatementAsm(NasmGenInfo& ngi, StatementRef statement)
 {
 	auto& ss = ngi.ss;
 
-	ss << "; " << getPosStr(statement->pos) << "  ->  ";
-	if (statement->type != Statement::Type::Expression)
-		ss << StatementTypeToString(statement->type) << "\n";
-	else
-		ss << ExpressionTypeToString(((Expression*)statement.get())->eType) << "\n";
+	if (ngi.generateComments)
+	{
+		ss << "; " << getPosStr(statement->pos) << "  ->  ";
+
+		if (statement->type != Statement::Type::Expression)
+			ss << StatementTypeToString(statement->type) << "\n";
+		else
+			ss << ExpressionTypeToString(((Expression*)statement.get())->eType) << "\n";
+	}
 
 	switch (statement->type)
 	{
@@ -1276,7 +1292,7 @@ void genFuncAsm(NasmGenInfo& ngi, const std::string& name, SymbolRef func)
 	ngi.ss << "  mov rbp, rsp\n";
 
 	if (func->frame.size > 0)
-		ngi.ss << "  sub rsp, " << std::to_string(func->frame.size) << "\n";
+		ngi.ss << "  sub rsp, " << hexString(func->frame.size) << "\n";
 
 	genBodyAsm(ngi, func->func.body);
 }
@@ -1373,7 +1389,8 @@ void genGlobals(NasmGenInfo& ngi)
 			if (!isVarLabeled(sym))
 				return;
 
-			ngi.ss << "  " << getMangledName(sym) << ": resb " << getDatatypeSize(ngi.program, sym->var.datatype) << "\t\t; " << getPosStr(sym->pos) << "\n";
+			ngi.ss << "  " << getMangledName(sym) << ": resb " << getDatatypeSize(ngi.program, sym->var.datatype)
+				<< (ngi.generateComments ? "\t\t; " + getPosStr(sym->pos) : "") << "\n";
 		}
 	);
 }
@@ -1395,10 +1412,11 @@ void genStrings(NasmGenInfo& ngi)
 }
 
 // Generates Nasm code for the entire program
-std::string genAsm(ProgramRef program)
+std::string genAsm(ProgramRef program, bool generateComments)
 {
 	NasmGenInfo ngi;
 	ngi.program = program;
+	ngi.generateComments = generateComments;
 
 	genPrologue(ngi);
 	genBodyAsm(ngi, program->body);

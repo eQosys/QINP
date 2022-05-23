@@ -24,16 +24,14 @@ void printBorder():
 	std::print("+\n")
 
 void show():
-	i64 i = 0
+	i64 i = -1
 	printBorder()
-	while i < HEIGHT:
-		i64 j = 0
+	while ++i < HEIGHT:
+		i64 j = -1
 		std::print("|")
-		while j < WIDTH:
+		while ++j < WIDTH:
 			std::print(pMain->cells[j][i] ? "#" : " ")
-			++j
 		std::print("|\n")
-		++i
 	printBorder()
 
 void clear():
@@ -43,33 +41,28 @@ void clear():
 		std::print("\e[1F")
 
 void update():
-	i64 i = 0
-	while i < WIDTH:
-		i64 j = 0
-		while j < HEIGHT:
+	i64 i = -1
+	while ++i < WIDTH:
+		i64 j = -1
+		while ++j < HEIGHT:
 			i64 count = 0
-			i64 k = i-1
-			while k < i+2:
+			i64 k = i-2
+			while ++k < i+2:
 				i64 l = j-2
 				while ++l < j+2:
 					if (k >= 0 && k < WIDTH) && \
 						(l >= 0 && l < HEIGHT) && \
 						(k != i || l != j):
 						count += pMain->cells[k][l]
-				++k
 			pBack->cells[i][j] = pMain->cells[i][j] ? 2 <= count && count <= 3 : count == 3
-			++j
-		++i
 
 bool hasChanged():
-	i64 i = 0
-	while i < WIDTH:
-		i64 j = 0
-		while j < HEIGHT:
+	i64 i = -1
+	while ++i < WIDTH:
+		i64 j = -1
+		while ++j < HEIGHT:
 			if pMain->cells[i][j] != pBack->cells[i][j]:
 				return true
-			++j
-		++i
 	return false
 
 grids[0].cells[0][2] = true
