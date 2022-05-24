@@ -1,0 +1,14 @@
+\\ QINP Standard Library
+\\ File input/output
+
+space std:
+	pack File:
+		pass
+
+	File* fopen(u8 const* filename, u8 const* mode)...
+
+	u64 fread(File* pFile, void* dest, u64 num)...
+
+	u64 fwrite(File* pFile, void const* src, u64 num)...
+
+	void fclose(File* file)...
