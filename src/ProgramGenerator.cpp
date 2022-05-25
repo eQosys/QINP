@@ -2362,25 +2362,34 @@ bool parsePackUnion(ProgGenInfo& info)
 	packSym->pack.isUnion = isKeyword(packToken, "union");
 	auto& pack = packSym->pack;
 
-	packSym->state = isSeparator(peekToken(info), "...") ? SymState::Declared : SymState::Defined;
+	bool reqPreDecl = isOperator(peekToken(info), "!");
+	if (reqPreDecl)
+		nextToken(info);
+
+	auto preDeclSym = getSymbol(currSym(info), nameToken.value, true);
+	if (reqPreDecl && !preDeclSym)
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Missing pre-declaration before explicit pack/union definition!");
+	else if (!reqPreDecl && preDeclSym)
+		PRINT_WARNING(MAKE_PROG_GEN_ERROR(peekToken(info).pos, "Pack/Union: '" + nameToken.value + "' was pre-declared but not marked as such. You may want to do so."));
 
 	bool doParseIndent = false;
-
-	if (isDeclared(packSym))
+	if (isSeparator(peekToken(info), "..."))
 	{
-		nextToken(info);
+		packSym->state = SymState::Declared;
+		parseExpected(info, Token::Type::Separator, "...");
 		parseExpectedNewline(info);
-		packSym = addPack(info, packSym);
+		addPack(info, packSym);
 		return true;
 	}
-	else if (isDefined(packSym))
+	else if (isSeparator(peekToken(info), ":"))
 	{
+		packSym->state = SymState::Defined;
 		parseExpectedColon(info);
 		doParseIndent = parseOptionalNewline(info);
 		packSym = addPack(info, packSym);
 	}
 	else
-		assert(false && "Unknown symbol state!");
+		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected '...' or ':'!");
 
 	increaseIndent(info.indent);
 	enterSymbol(info, packSym);
@@ -2388,6 +2397,8 @@ bool parsePackUnion(ProgGenInfo& info)
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
+		if (parseStatementPass(info))
+			continue;
 		if (!parseDeclDef(info))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected member definition!");
 	}

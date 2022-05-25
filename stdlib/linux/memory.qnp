@@ -93,7 +93,7 @@ space std:
 		u64 newSize = oldSize + increment
 		return __brk(newSize) == oldSize ? (void*)null : (void*)oldSize
 
-	pack __MemBlockHeader:
+	pack __MemBlockHeader!:
 		__MemBlockHeader* prev
 		__MemBlockHeader* next
 		u64 sizeAvail

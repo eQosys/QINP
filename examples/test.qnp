@@ -1,5 +1,7 @@
 import "std.qnp"
 
+import "fileio.qnp"
+
 void printBlockList():
 	std::print("ChunkList:\n")
 	std::__MemBlockHeader* curr = std::__memBlocks

@@ -2,8 +2,7 @@
 \\ File input/output
 
 space std:
-	pack File:
-		pass
+	pack File...
 
 	File* fopen(u8 const* filename, u8 const* mode)...
 
@@ -12,3 +11,6 @@ space std:
 	u64 fwrite(File* pFile, void const* src, u64 num)...
 
 	void fclose(File* file)...
+
+import.linux "linux/fileio.qnp"
+import.windows "windows/fileio.qnp"
