@@ -11,10 +11,10 @@ space std:
 		return null
 
 	u64 fread(File* pFile, void* dest, u64 num)!:
-		return 0
+		return __syscall(__SYS_READ, pFile, dest, num)
 
 	u64 fwrite(File* pFile, void const* src, u64 num)!:
-		return 0
+		return __syscall(__SYS_WRITE, pFile, src, num)
 
 	void fclose(File* file)!:
 		return
