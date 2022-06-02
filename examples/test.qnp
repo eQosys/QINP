@@ -125,3 +125,12 @@ std::print("\n")
 
 std::toupper('a')
 std::tolower('A')
+
+u8 buff[6]
+
+std::File* f = std::fopen("examples/test.qnp", "r")
+std::fread(f, buff, 5)
+std::fclose(f)
+buff[5] = 0
+std::print(buff)
+std::print("\n")
