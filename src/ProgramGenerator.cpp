@@ -47,6 +47,8 @@ struct ProgGenInfo
 
 	std::map<std::string, Token> defSymbols;
 
+	std::vector<Token> deferredImports;
+
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
 };
@@ -2491,36 +2493,8 @@ void parseGlobalCode(ProgGenInfo& info)
 	}
 }
 
-bool parseStatementImport(ProgGenInfo& info)
+void importFile(ProgGenInfo& info, const Token& fileToken)
 {
-	auto& importToken = peekToken(info);
-	if (!isKeyword(importToken, "import"))
-		return false;
-	nextToken(info);
-
-	bool platformMatch = true;
-
-	if (isOperator(peekToken(info), "."))
-	{
-		nextToken(info);
-		auto& platformToken = nextToken(info);
-		if (!isIdentifier(platformToken))
-			THROW_PROG_GEN_ERROR(platformToken.pos, "Expected platform identifier!");
-
-		static const std::set<std::string> platformNames = { "windows", "linux", "macos" };
-		if (platformNames.find(platformToken.value) == platformNames.end())
-			THROW_PROG_GEN_ERROR(platformToken.pos, "Unknown platform identifier: '" + platformToken.value + "'!");
-		if (platformToken.value != info.program->platform)
-			platformMatch = false;
-	}
-
-	auto& fileToken = nextToken(info);
-	if (!isString(fileToken))
-		THROW_PROG_GEN_ERROR(fileToken.pos, "Expected file path!");
-
-	if (!platformMatch)
-		return true;
-
 	auto getImportFile = [&](const std::string& dir) -> std::string
 	{
 		std::string path = (std::filesystem::path(dir) / fileToken.value).string();
@@ -2548,7 +2522,7 @@ bool parseStatementImport(ProgGenInfo& info)
 	std::string path = getImportFile(std::filesystem::path(info.progPath).parent_path().string());
 
 	if (path == "<alreadyImported>")
-		return true;
+		return;
 	
 	if (path == "<notFound>")
 	{
@@ -2557,7 +2531,7 @@ bool parseStatementImport(ProgGenInfo& info)
 			path = getImportFile(dir);
 
 			if (path == "<alreadyImported>")
-				return true;
+				return;
 
 			if (path != "<notFound>")
 				break;
@@ -2577,6 +2551,52 @@ bool parseStatementImport(ProgGenInfo& info)
 	parseGlobalCode(info);
 
 	loadProgGenInfoBackup(info, backup);
+}
+
+bool parseStatementImport(ProgGenInfo& info)
+{
+	auto& importToken = peekToken(info);
+	if (!isKeyword(importToken, "import"))
+		return false;
+	nextToken(info);
+
+	bool platformMatch = true;
+	bool isDeferred = false;
+
+	while (isOperator(peekToken(info), "."))
+	{
+		nextToken(info);
+		auto& specToken = nextToken(info);
+		if (!isIdentifier(specToken))
+			THROW_PROG_GEN_ERROR(specToken.pos, "Expected platform identifier!");
+
+		if (specToken.value == "defer")
+		{
+			isDeferred = true;
+			continue;
+		}
+
+		static const std::set<std::string> platformNames = { "windows", "linux", "macos" };
+		if (platformNames.find(specToken.value) == platformNames.end())
+			THROW_PROG_GEN_ERROR(specToken.pos, "Unknown platform identifier: '" + specToken.value + "'!");
+		if (specToken.value != info.program->platform)
+		{
+			platformMatch = false;
+			continue;
+		}
+	}
+
+	auto& fileToken = nextToken(info);
+	if (!isString(fileToken))
+		THROW_PROG_GEN_ERROR(fileToken.pos, "Expected file path!");
+
+	if (!platformMatch)
+		return true;
+
+	if (isDeferred)
+		info.deferredImports.push_back(fileToken);
+	else
+		importFile(info, fileToken);
 
 	return true;
 }
@@ -2616,9 +2636,6 @@ void markReachableFunctions(ProgGenInfo& info, BodyRef body)
 	}
 }
 
-void func1();
-void func1(int);
-
 void detectUndefinedFunctions(ProgGenInfo& info)
 {
 	for (auto sym : *info.program->symbols)
@@ -2626,6 +2643,12 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 		if (isFuncSpec(sym) && !isDefined(sym) && isReachable(sym))
 			THROW_PROG_GEN_ERROR(sym->pos, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
 	}
+}
+
+void importDeferredImports(ProgGenInfo& info)
+{
+	for (int i = 0; i < info.deferredImports.size(); ++i)
+		importFile(info, info.deferredImports[i]);
 }
 
 ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform, const std::string& progPath)
@@ -2642,6 +2665,8 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 	sym->type = Symbol::Type::Global;
 
 	parseGlobalCode(info);
+
+	importDeferredImports(info);
 
 	markReachableFunctions(info, info.program->body);
 	detectUndefinedFunctions(info);

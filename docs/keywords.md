@@ -129,13 +129,20 @@ A single file is imported once and all other imports of the same file are ignore
 
 The compiler tries to resolve imports in the following order:
  1. Relative to the current file
- 2. Directories specified via compiler option [`-i`](./compiler.md#commandline-arguments) (checked in the order given)
+ 2. Directories specified via compiler option [`-i`](./compiler.md#commandline-arguments) (checked in the order provided)
+
+An import may have zero or more specifiers. Their primary usage are conditional imports.
 
 Conditional imports can be used to import a file only if the specified platform matches the compiler platform.
 Possible platform values are:
  - `linux`
  - `windows`
  - `macos`
+
+Only the first given platform is checked.
+
+The `defer` specifier can be used to import a file after all other imports.
+It can be used to mimic the behavior of C/C++'s header and source file inclusion.
 
 #### Usage
 

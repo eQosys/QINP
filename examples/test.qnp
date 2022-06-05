@@ -126,11 +126,14 @@ std::print("\n")
 std::toupper('a')
 std::tolower('A')
 
-u8 buff[6]
+u8 buff[10000]
 
 std::File* f = std::fopen("examples/test.qnp", "r")
-std::fread(f, buff, 5)
+std::print("Read ")
+std::print(std::fread(f, buff, sizeof(buff) - 1))
+std::print(" bytes\n")
 std::fclose(f)
-buff[5] = 0
+buff[sizeof(buff) - 1] = 0
+std::print("Text read: ")
 std::print(buff)
 std::print("\n")
