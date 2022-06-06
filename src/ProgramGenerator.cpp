@@ -2300,7 +2300,7 @@ bool parseStatementDefine(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol '" + sym->name + "' already exists in the same scope!");
 
 	while (!isNewline(peekToken(info)))
-		sym->macroTokens.push_back(nextToken(info));
+		sym->macroTokens.push_back(nextToken(info, 1, true));
 
 	parseExpectedNewline(info);
 
