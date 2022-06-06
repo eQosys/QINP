@@ -111,9 +111,27 @@ SymbolRef addShadowSpace(ProgGenInfo& info)
 	return symbol;
 }
 
-TokenList::iterator moveTokenIterator(TokenList::iterator it, int offset)
+TokenList::iterator moveTokenIterator(TokenList& list, TokenList::iterator it, int offset)
 {
-	std::advance(it, offset);
+	if (offset > 0)
+	{
+		while (offset-- > 0)
+		{
+			++it;
+			if (it == list.end())
+				it = list.insert(it, list.back());
+		}
+	}
+	else if (offset < 0)
+	{
+		while (offset++ < 0)
+		{
+			--it;
+			if (it == list.begin())
+				return it;
+		}
+	}
+	
 	return it;
 }
 
@@ -129,9 +147,7 @@ void autoResizeTokenList(ProgGenInfo& info, int offset)
 
 const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
 {
-	autoResizeTokenList(info, offset);
-
-	auto tokIt = moveTokenIterator(info.currToken, offset);
+	auto tokIt = moveTokenIterator(*info.tokens, info.currToken, offset);
 
 	auto pTok = &*tokIt;
 
@@ -159,11 +175,9 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 
 const Token& nextToken(ProgGenInfo& info, int offset = 1, bool ignoreSymDef = false)
 {
-	autoResizeTokenList(info, offset);
-
 	auto& temp = peekToken(info, offset - 1, ignoreSymDef);
 
-	info.currToken = moveTokenIterator(info.currToken, offset);
+	info.currToken = moveTokenIterator(*info.tokens, info.currToken, offset);
 
 	return temp;
 }
