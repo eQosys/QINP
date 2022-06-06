@@ -66,7 +66,7 @@ Next steps (Not in order):
  - [ ] Floating point values/operations
  - [ ] Signal handling
  - [ ] Full Windows support
- - [ ] Literal expressions
+ - [x] Literal expressions
  - [ ] Exceptions
 
 ---
