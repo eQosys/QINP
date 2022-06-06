@@ -58,10 +58,9 @@ space std:
 
 	\\ Merges the given blocks of memory into a single block.
 	\\ Both blocks must be adjacent.
-	\\ @param block1 The first block of memory to merge
-	\\ @param block2 The second block of memory to merge
+	\\ @param block The block to merge with its next block
 	\\ @return The merged block of memory
-	__MemBlockHeader* __mergeBlocks(__MemBlockHeader* block1, __MemBlockHeader* block2)...
+	__MemBlockHeader* __mergeBlockWithNext(__MemBlockHeader* block)...
 
 	\\ Checks whether the given block of memory is adjacent to the next one.
 	\\ @param block The block of memory to check
@@ -161,14 +160,14 @@ space std:
 
 		return newBlock
 
-	__MemBlockHeader* __mergeBlocks(__MemBlockHeader* block1, __MemBlockHeader* block2)!:
-		if !block1 || !block2: return null
+	__MemBlockHeader* __mergeBlockWithNext(__MemBlockHeader* block)!:
+		if !block || !block->next: return null
 
-		block1->sizeAvail += sizeof(__MemBlockHeader) + block2->sizeAvail
-		block1->next = block2->next
-		if block2->next: block2->next->prev = block1
+		block->sizeAvail += sizeof(__MemBlockHeader) + block->next->sizeAvail
+		block->next = block->next->next
+		if block->next: block->next->prev = block
 
-		return block1
+		return block
 
 	bool __isAdjacentToNext(__MemBlockHeader const* block)!:
 		if !block || !block->next: return false
@@ -179,9 +178,9 @@ space std:
 		if !block: return null
 
 		if __isAdjacentToNext(block->prev):
-			block = __mergeBlocks(block->prev, block)
+			block = __mergeBlockWithNext(block->prev)
 		if __isAdjacentToNext(block):
-			block = __mergeBlocks(block, block->next)
+			block = __mergeBlockWithNext(block)
 
 		return block
 
