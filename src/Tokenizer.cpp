@@ -84,9 +84,9 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 		state = State::BeginToken;
 		if (token.type == Token::Type::Newline)
 		{
-			for (int i = tokens->size() - 1; i >= 0; --i)
+			while (!tokens->empty())
 			{
-				if ((*tokens)[i].type != Token::Type::Whitespace)
+				if (tokens->back().type != Token::Type::Whitespace)
 					break;
 				tokens->pop_back();
 			}
@@ -328,5 +328,9 @@ TokenListRef tokenize(const std::string& code, const std::string& name)
 	if (token.value != "\n")
 		THROW_TOKENIZER_ERROR(pos, std::string("Unexpected End-Of-File while tokenizing '" + token.value + "'!"));
 
+	++pos.line;
+	pos.column = 0;
+	tokens->push_back(Token{ pos, Token::Type::EndOfCode, "<end-of-code>" });
+	
 	return tokens;
 }

@@ -17,7 +17,7 @@ space std:
 	u64 __brk(u64 size)...
 
 	\\ Changes the data segment size by the given amount and returns a pointer to the newly allocated memory.
-	\\ @param increment The amount to increase the data segment size by
+	\\ @param increment The amount to increase/decrease the data segment size by
 	\\ @return A pointer pointing to the previous data segment end (null on failure)
 	void* __sbrk(i64 increment)...
 

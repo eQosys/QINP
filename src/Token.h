@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <list>
 #include <string>
 #include <memory>
 #include <map>
@@ -34,7 +35,7 @@ struct Token
 	std::string value;
 };
 
-typedef std::vector<Token> TokenList;
+typedef std::list<Token> TokenList;
 typedef std::shared_ptr<TokenList> TokenListRef;
 
 extern const std::map<std::string, Token::Type> specialKeywords;

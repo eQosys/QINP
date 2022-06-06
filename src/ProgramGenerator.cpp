@@ -30,7 +30,7 @@ struct ProgGenInfo
 	ProgramRef program;
 	std::set<std::string> importDirs;
 	std::string progPath;
-	int currToken = 0;
+	TokenList::iterator currToken;
 	struct Indent
 	{
 		int lvl = 0;
@@ -56,7 +56,7 @@ struct ProgGenInfo
 struct ProgGenInfoBackup
 {
 	TokenListRef tokens;
-	int currToken;
+	TokenList::iterator currToken;
 	ProgGenInfo::Indent indent;
 	std::string progPath;
 };
@@ -111,31 +111,53 @@ SymbolRef addShadowSpace(ProgGenInfo& info)
 	return symbol;
 }
 
-const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
+TokenList::iterator moveTokenIterator(TokenList::iterator it, int offset)
 {
-	static const Token emptyToken = { { "", 0, 0 }, Token::Type::EndOfCode, "" };
-	int index = info.currToken + offset;
-
-	auto tok = (index < info.tokens->size()) ? &(*info.tokens)[index] : &emptyToken;
-
-	if (ignoreSymDef)
-		return *tok;
-
-	while (isIdentifier(*tok))
-	{
-		auto it = info.defSymbols.find(tok->value);
-		if (it == info.defSymbols.end())
-			break;
-		tok = &it->second;
-	}
-
-	return *tok;
+	std::advance(it, offset);
+	return it;
 }
 
-const Token& nextToken(ProgGenInfo& info, int offset = 1)
+void autoResizeTokenList(ProgGenInfo& info, int offset)
 {
-	auto& temp = peekToken(info, offset - 1);
-	info.currToken += offset;
+	if (offset >= 0 && std::distance(info.currToken, info.tokens->end()) <= offset)
+	{
+		int dist = offset - std::distance(info.currToken, info.tokens->end()) + 1;
+		std::cout << "Adding " << dist << " tokens to " << info.progPath << std::endl;
+		while (dist-- > 0)
+			info.tokens->push_back(info.tokens->back());
+	}
+}
+
+const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
+{
+	autoResizeTokenList(info, offset);
+
+	auto it = moveTokenIterator(info.currToken, offset);
+
+	auto pTok = &*it;
+
+	if (ignoreSymDef)
+		return *pTok;
+
+	while (isIdentifier(*pTok))
+	{
+		auto it = info.defSymbols.find(pTok->value);
+		if (it == info.defSymbols.end())
+			break;
+		pTok = &it->second;
+	}
+
+	return *pTok;
+}
+
+const Token& nextToken(ProgGenInfo& info, int offset = 1, bool ignoreSymDef = false)
+{
+	autoResizeTokenList(info, offset);
+
+	auto& temp = peekToken(info, offset - 1, ignoreSymDef);
+
+	info.currToken = moveTokenIterator(info.currToken, offset);
+
 	return temp;
 }
 
@@ -1508,7 +1530,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 {
 	auto& opsLvl = opPrecLvls[precLvl];
 
-	auto opToken = peekToken(info);
+	auto& opToken = peekToken(info);
 	auto it = opsLvl.ops.find(opToken.value);
 	if (it == opsLvl.ops.end() || !isSepOpKey(opToken))
 		return getParseExpression(info, precLvl + 1);
@@ -1661,12 +1683,12 @@ Datatype getParseDatatype(ProgGenInfo& info)
 {
 	Datatype datatype;
 
-	int prevTokId = info.currToken;
+	auto prevTokIt = info.currToken;
 
-	auto exitEntered = [&](const Datatype& dt, bool resetTokId)
+	auto exitEntered = [&](const Datatype& dt, bool resetTokIt)
 	{
-		if (resetTokId)
-			info.currToken = prevTokId;
+		if (resetTokIt)
+			info.currToken = prevTokIt;
 		return dt;
 	};
 
@@ -2102,7 +2124,7 @@ void parseBody(ProgGenInfo& info, bool doParseIndent)
 	{
 		doParseIndent = true;
 		++numStatements;
-		auto token = (*info.tokens)[info.currToken];
+		auto& token = peekToken(info);
 		if (parseEmptyLine(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseControlFlow(info)) continue;
@@ -2272,8 +2294,7 @@ bool parseStatementDefine(ProgGenInfo& info)
 		return false;
 	nextToken(info);
 
-	auto& nameToken = peekToken(info, 0, true);
-	nextToken(info);
+	auto& nameToken = nextToken(info, 1, true);
 
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
@@ -2330,7 +2351,7 @@ bool parseStatementSpace(ProgGenInfo& info)
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
-		auto token = (*info.tokens)[info.currToken];
+		auto& token = peekToken(info);
 		if (!parseSingleGlobalCode(info))
 			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
 		++codeCount;
@@ -2483,11 +2504,13 @@ bool parseEnum(ProgGenInfo& info)
 
 void parseGlobalCode(ProgGenInfo& info)
 {
-	while (info.currToken < info.tokens->size())
+	info.currToken = info.tokens->begin();
+
+	while (!isEndOfCode(peekToken(info)))
 	{
 		if (!parseIndent(info))
 			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected indentation!");
-		auto token = (*info.tokens)[info.currToken];
+		auto& token = peekToken(info);
 		if (!parseSingleGlobalCode(info))
 			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
 	}
@@ -2543,12 +2566,16 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	std::string code = readTextFile(path);
 
+	std::cout << "IMPORTING " << path << std::endl;
+
 	auto backup = makeProgGenInfoBackup(info);
 
 	info.tokens = tokenize(code, path);
-	info.currToken = 0;
 	info.progPath = path;
+	info.indent = {};
 	parseGlobalCode(info);
+
+	std::cout << "IMPORTED " << path << std::endl;
 
 	loadProgGenInfoBackup(info, backup);
 }

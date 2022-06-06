@@ -8,7 +8,7 @@ space std:
 	\\ @param rdi The first argument
 	\\ @param rsi The second argument
 	\\ @param rdx The third argument
-	\\ @result The return value of the syscall (read from rax)
+	\\ @return The return value of the syscall (read from rax)
 
 	u64 __syscall(u64 num):
 		u64 result
