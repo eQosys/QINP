@@ -93,6 +93,11 @@ bool isEnum(const SymbolRef symbol)
 	return isSymType(SymType::Enum, symbol);
 }
 
+bool isMacro(const SymbolRef symbol)
+{
+	return isSymType(SymType::Macro, symbol);
+}
+
 bool isSymState(SymState state, const SymbolRef symbol)
 {
 	return symbol->state == state;

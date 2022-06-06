@@ -122,7 +122,6 @@ void autoResizeTokenList(ProgGenInfo& info, int offset)
 	if (offset >= 0 && std::distance(info.currToken, info.tokens->end()) <= offset)
 	{
 		int dist = offset - std::distance(info.currToken, info.tokens->end()) + 1;
-		std::cout << "Adding " << dist << " tokens to " << info.progPath << std::endl;
 		while (dist-- > 0)
 			info.tokens->push_back(info.tokens->back());
 	}
@@ -132,19 +131,27 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 {
 	autoResizeTokenList(info, offset);
 
-	auto it = moveTokenIterator(info.currToken, offset);
+	auto tokIt = moveTokenIterator(info.currToken, offset);
 
-	auto pTok = &*it;
+	auto pTok = &*tokIt;
 
 	if (ignoreSymDef)
 		return *pTok;
 
 	while (isIdentifier(*pTok))
 	{
-		auto it = info.defSymbols.find(pTok->value);
-		if (it == info.defSymbols.end())
+		auto sym = getSymbol(currSym(info), pTok->value);
+		if (!sym || !isMacro(sym))
 			break;
-		pTok = &it->second;
+
+		bool updateCurrToken = (tokIt == info.currToken);
+
+		tokIt = info.tokens->erase(tokIt);
+		tokIt = info.tokens->insert(tokIt, sym->macroTokens.begin(), sym->macroTokens.end());
+		pTok = &*tokIt;
+
+		if (updateCurrToken)
+			info.currToken = tokIt;
 	}
 
 	return *pTok;
@@ -417,7 +424,7 @@ void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value
 void parseExpectedNewline(ProgGenInfo& info)
 {
 	auto& token = nextToken(info);
-	if (!isNewline(token) && !isEndOfCode(token))
+	if (!isNewline(token))
 		THROW_PROG_GEN_ERROR(token.pos, "Expected newline!");
 }
 
@@ -566,54 +573,23 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 				continue;
 			}
 
-			bool alreadyPlaced = false;
-			auto defIt = info.defSymbols.find(varName);
-			while (!alreadyPlaced && defIt != info.defSymbols.end())
+			auto pVar = getVariable(info, varName);
+			if (!pVar)
+				THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
+				
+			if (isVarOffset(pVar))
 			{
-				auto& tok = defIt->second;
-
-				if (isIdentifier(tok))
-				{
-					varName = tok.value;
-					defIt = info.defSymbols.find(varName);
-					continue;
-				}
-				
-				if (isString(tok))
-				{
-					result += "\"";
-					result += tok.value;
-					result += "\"";
-					alreadyPlaced = true;
-					break;
-				}
-				
-				if (isLiteral(tok))
-				{
-					result += tok.value;
-					alreadyPlaced = true;
-					break;
-				}
-				
-				THROW_PROG_GEN_ERROR(asmToken.pos, "Illegal use of symbol!");
+				int offset = pVar->var.offset;
+				result += (offset < 0) ? "- " : "+ ";
+				result += std::to_string(std::abs(offset));
 			}
-			
-			if (!alreadyPlaced)
+			else if (isMacro(pVar))
 			{
-				auto pVar = getVariable(info, varName);
-				if (!pVar)
-					THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
-				
-				if (isVarOffset(pVar))
-				{
-					int offset = pVar->var.offset;
-					result += (offset < 0) ? "- " : "+ ";
-					result += std::to_string(std::abs(offset));
-				}
-				else
-				{
-					result += getMangledName(pVar);
-				}
+				THROW_PROG_GEN_ERROR(asmToken.pos, "Macros cannot be used in inline assembly!");
+			}
+			else
+			{
+				result += getMangledName(pVar);
 			}
 
 			parseVar = false;
@@ -1024,6 +1000,7 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 	case SymType::Namespace:
 	case SymType::ExtFunc:
 	case SymType::Pack:
+	case SymType::Macro:
 		exp->isObject = false;
 		break;
 	case SymType::FunctionSpec:
@@ -2299,18 +2276,21 @@ bool parseStatementDefine(ProgGenInfo& info)
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
 
-	auto defIt = info.defSymbols.find(nameToken.value);
-	if (defIt != info.defSymbols.end())
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol: '" + nameToken.value + "' already defined here: '" + getPosStr(defIt->second.pos) + "'!");
+	SymbolRef sym = std::make_shared<Symbol>();
+	sym->type = SymType::Macro;
+	sym->pos = nameToken.pos;
+	sym->name = nameToken.value;
 
-	auto& valToken = nextToken(info);
+	auto existingSymbol = getSymbol(currSym(info), sym->name, true);
+	if (existingSymbol)
+		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol '" + sym->name + "' already exists in the same scope!");
 
-	if (isNewline(valToken))
-		THROW_PROG_GEN_ERROR(valToken.pos, "Unexpected newline!");
+	while (!isNewline(peekToken(info)))
+		sym->macroTokens.push_back(nextToken(info));
 
 	parseExpectedNewline(info);
 
-	info.defSymbols.insert({ nameToken.value, valToken });
+	addSymbol(currSym(info), sym);
 
 	return true;
 }
@@ -2566,16 +2546,12 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	std::string code = readTextFile(path);
 
-	std::cout << "IMPORTING " << path << std::endl;
-
 	auto backup = makeProgGenInfoBackup(info);
 
 	info.tokens = tokenize(code, path);
 	info.progPath = path;
 	info.indent = {};
 	parseGlobalCode(info);
-
-	std::cout << "IMPORTED " << path << std::endl;
 
 	loadProgGenInfoBackup(info, backup);
 }

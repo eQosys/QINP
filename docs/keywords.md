@@ -87,19 +87,22 @@ TODO
 
 ### Define
 
-The `define` keyword is used to associate a name with a token.
-The name must be an identifier. The token may be any token other than a newline
-Every usage of the name in the program is replaced with the token.
-The token used may also be the identifier of another defined name.
+The `define` keyword is used to associate a name with a list of tokens.
+The name must be an identifier. The tokens can be of any type except a newline.
+Every occurence of the name in the code is replaced by the tokens.
 
 #### Usage
 ```qinp
-define [name] [token]
+define [name] [token list]
 ```
 
-#### Example
+#### Examples
 ```qinp
 define foo "bar"
+```
+
+```qinp
+define bar foo foo \\ Same as 'define bar "bar" "bar"
 ```
 
 ---

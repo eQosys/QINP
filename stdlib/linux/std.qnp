@@ -4,14 +4,14 @@
 import "../fileio.qnp"
 
 space std:
-	define __STDIN 0
-	define __STDOUT 1
-	define __STDERR 2
+	define __STDIN (File*)0
+	define __STDOUT (File*)1
+	define __STDERR (File*)2
 
 	i32 print(u8 const* str, u64 len)!:
-		return fwrite((File*)__STDOUT, str, len)
+		return fwrite(__STDOUT, str, len)
 
 	u8 getchar()!:
 		u8 ch
-		u64 result = fread((File*)__STDIN, &ch, 1)
+		u64 result = fread(__STDIN, &ch, 1)
 		return ch

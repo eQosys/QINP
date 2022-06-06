@@ -203,7 +203,8 @@ bool isLiteral(const Token& token)
 bool isNewline(const Token& token)
 {
 	return
-		token.type == Token::Type::Newline;
+		token.type == Token::Type::Newline ||
+		token.type == Token::Type::EndOfCode;
 }
 
 bool isEndOfCode(const Token& token)

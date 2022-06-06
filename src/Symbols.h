@@ -35,6 +35,7 @@ struct Symbol
 		Pack,
 		Enum,
 		EnumMember,
+		Macro,
 	} type = Type::None;
 
 	enum class State
@@ -86,6 +87,8 @@ struct Symbol
 
 	int enumValue;
 
+	TokenList macroTokens;
+
 public:
 	SymbolIterator begin();
 	SymbolIterator end();
@@ -112,6 +115,7 @@ bool isExtFunc(const SymbolRef symbol);
 bool isFunction(const SymbolRef symbol);
 bool isPack(const SymbolRef symbol);
 bool isEnum(const SymbolRef symbol);
+bool isMacro(const SymbolRef symbol);
 
 bool isSymState(SymState state, const SymbolRef symbol);
 bool isDeclared(const SymbolRef symbol);
