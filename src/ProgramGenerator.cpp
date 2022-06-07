@@ -396,17 +396,15 @@ SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 	return symbol;
 }
 
-#define ERR_ENUM_NAME_NOT_FOUND -1
-#define ERR_ENUM_VALUE_NOT_FOUND -2
-unsigned int getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
+uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
 {
 	auto enumSymbol = getEnum(info, enumName);
 	if (!enumSymbol)
-		return ERR_ENUM_NAME_NOT_FOUND;
+		THROW_QINP_ERROR("Enum '" + enumName + "' not found!");
 
 	auto memberSymbol = getSymbol(enumSymbol, memberName, true);
 	if (!memberSymbol)
-		return ERR_ENUM_VALUE_NOT_FOUND;
+		THROW_QINP_ERROR("Enum member '" + memberName + "' not found!");
 	
 	return memberSymbol->enumValue;
 }
@@ -921,14 +919,18 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	if (!isIdentifier(memberToken))
 		THROW_PROG_GEN_ERROR(memberToken.pos, "Expected enum member identifier!");
 
-	unsigned int value = getEnumValue(info, enumToken.value, memberToken.value);
+	uint64_t value;
 
-	if (value == ERR_ENUM_NAME_NOT_FOUND)
-		THROW_PROG_GEN_ERROR(enumToken.pos, "Enum '" + enumToken.value + "' not found!");
-	if (value == ERR_ENUM_VALUE_NOT_FOUND)
-		THROW_PROG_GEN_ERROR(memberToken.pos, "Enum member '" + memberToken.value + "' not found in enum '" + enumToken.value + "'!");
+	try
+	{
+		value = getEnumValue(info, enumToken.value, memberToken.value);
+	}
+	catch (const QinpError& e)
+	{
+		THROW_PROG_GEN_ERROR(memberToken.pos, e.what());
+	}
 
-	return makeLiteralExpression(memberToken.pos, getMangledName(getEnum(info, enumToken.value)), EValue((uint64_t)value));
+	return makeLiteralExpression(memberToken.pos, getMangledName(getEnum(info, enumToken.value)), EValue(value));
 }
 
 ExpressionRef getParseLiteral(ProgGenInfo& info)
@@ -2454,7 +2456,7 @@ bool parseEnum(ProgGenInfo& info)
 
 	addSymbol(currSym(info), enumSym);
 
-	int currIndex = 0;
+	int64_t currIndex = 0;
 	increaseIndent(info.indent);
 	while (!doParseIndent || parseIndent(info))
 	{
@@ -2468,11 +2470,14 @@ bool parseEnum(ProgGenInfo& info)
 			if (isOperator(peekToken(info), "="))
 			{
 				nextToken(info);
-				auto& valToken = nextToken(info);
-				if (valToken.type != Token::Type::LiteralInteger)
-					THROW_PROG_GEN_ERROR(valToken.pos, "Expected integer literal!");
 
-				currIndex = std::stoul(valToken.value);
+				auto valExpr = getParseExpression(info);
+				if (valExpr->eType != Expression::ExprType::Literal)
+					THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected literal expression!");
+				if (!isInteger(valExpr->datatype))
+					THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected integer literal!");
+
+				currIndex = valExpr->value.u64;
 			}
 
 			auto memSym = std::make_shared<Symbol>();

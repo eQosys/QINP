@@ -137,3 +137,11 @@ buff[sizeof(buff) - 1] = 0
 std::print("Text read: ")
 std::print(buff)
 std::print("\n")
+
+enum Data:
+	A = -10
+	B
+	C
+	D = 10
+
+std::print((i64)Data::C)

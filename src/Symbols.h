@@ -85,7 +85,7 @@ struct Symbol
 		bool isUnion = false;
 	} pack;
 
-	int enumValue;
+	int64_t enumValue;
 
 	TokenList macroTokens;
 
