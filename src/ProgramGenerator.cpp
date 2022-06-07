@@ -1216,7 +1216,7 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 		break;
 	case Expression::ExprType::Conditional_Op:
 		if (leftLiteral)
-			expr = expr->left->value.u64 ? expr->left : expr->right;
+			expr = expr->left->value.u64 ? expr->right : expr->farRight;
 		break;
 	}
 	return expr;
