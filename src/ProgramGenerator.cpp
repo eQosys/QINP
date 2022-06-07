@@ -318,7 +318,7 @@ bool leftConversionIsProhibited(Expression::ExprType eType)
 	return prohibitedTypes.find(eType) != prohibitedTypes.end();
 }
 
-ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
+ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
 SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
 {
@@ -335,13 +335,16 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		bool isExactMatch = true;
 		for (int i = 0; i < paramExpr.size() && matchFound; ++i)
 		{
-			if (!dtEqual(paramExpr[i]->datatype, func->func.params[i]->var.datatype))
+			if (!dtEqual(paramExpr[i]->datatype, func->func.params[i]->var.datatype, true))
 				isExactMatch = false;
 			matchFound = !!genConvertExpression(info, paramExpr[i], func->func.params[i]->var.datatype, false, false);
 		}
 
 		if (isExactMatch)
-			return func;
+		{
+			match = func;
+			break;
+		}
 		
 		if (matchFound)
 		{
@@ -354,7 +357,8 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 	if (match)
 	{
 		for (int i = 0; i < paramExpr.size(); ++i)
-			paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false);
+			if (!dtEqual(paramExpr[i]->datatype, match->func.params[i]->var.datatype))
+				paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false, true, true);
 	}
 
 	return match;
@@ -824,12 +828,15 @@ bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& ne
 	return false;
 }
 
-ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow)
+ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
 {
 	expToConvert = genAutoArrayToPtr(expToConvert);
 
 	if (dtEqual(expToConvert->datatype, newDatatype))
 		return expToConvert;
+
+	if (dtEqual(expToConvert->datatype, newDatatype, ignoreFirstConstness))
+		return makeConvertExpression(expToConvert, newDatatype);
 
 	if (isNull(expToConvert->datatype))
 		return makeConvertExpression(expToConvert, newDatatype);

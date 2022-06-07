@@ -14,12 +14,12 @@ Datatype::Datatype(Type type, const Datatype& subType, int arraySize)
 	: type(type), subType(std::make_shared<Datatype>(subType)), arraySize(arraySize)
 {}
 
-bool dtEqual(const Datatype& a, const Datatype& b)
+bool dtEqual(const Datatype& a, const Datatype& b, bool ignoreFirstConstness)
 {
 	if (!dtEqualNoConst(a, b))
 		return false;
 
-	if (a.isConst != b.isConst)
+	if (a.isConst != b.isConst && !ignoreFirstConstness)
 		return false;
 	
 	auto sta = a.subType;
@@ -28,6 +28,7 @@ bool dtEqual(const Datatype& a, const Datatype& b)
 	{
 		if (sta->isConst != stb->isConst)
 			return false;
+
 		sta = sta->subType;
 		stb = stb->subType;
 	}
