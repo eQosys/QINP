@@ -2,14 +2,37 @@
 \\ File input/output
 
 space std:
+	\\ The implementation dependent file pack.
+	\\ It should not be used directly/dereferenced outside of the implementation.
 	pack File...
 
+	\\ Opens a file for reading and/or writing.
+	\\ If the file could not be opened, null is returned.
+	\\ @param filename The name of the file to open.
+	\\ @param mode The mode to open the file in. The mode can be one of the following:
+	\\  - "r" for reading.
+	\\  - "w" for writing.
+	\\  - "rw" for appending.
+	\\ @return The file object.
 	File* fopen(u8 const* filename, u8 const* mode)...
 
+	\\ Reads num bytes from the file into the destination buffer.
+	\\ May return less than num bytes if the end of the file is reached.
+	\\ @param pFile The file object.
+	\\ @param dest The destination buffer.
+	\\ @param num The number of bytes to read.
+	\\ @return The number of bytes read.
 	u64 fread(File* pFile, void* dest, u64 num)...
 
+	\\ Writes num bytes from the source buffer to the file.
+	\\ @param pFile The file object.
+	\\ @param src The source buffer.
+	\\ @param num The number of bytes to write.
+	\\ @return The number of bytes written.
 	u64 fwrite(File* pFile, void const* src, u64 num)...
 
+	\\ Closes the file.
+	\\ @param pFile The file object.
 	void fclose(File* file)...
 
 import.linux "linux/fileio.qnp"
