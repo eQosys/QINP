@@ -22,6 +22,7 @@ add_executable(
     "src/Statement.cpp"
     "src/ArgsParser.cpp"
     "src/NasmGenerator.cpp"
+    "src/ExportSymbolInfo.cpp"
     "src/ProgramGenerator.cpp"
     "src/OperatorPrecedence.cpp"
 )

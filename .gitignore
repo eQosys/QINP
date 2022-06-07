@@ -12,6 +12,8 @@ out/
 *.asm
 *.exe
 
+examples/_symbols.json
+
 tests/__failed.txt
 
 .vscode/settings.json

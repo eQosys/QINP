@@ -12,6 +12,7 @@
 #include "ProgramGenerator.h"
 #include "PlatformName.h"
 #include "ExecCmd.h"
+#include "ExportSymbolInfo.h"
 
 #include "NasmGenerator.h"
 
@@ -50,6 +51,7 @@ std::map<std::string, OptionInfo> argNames =
 	{ "a", { "runarg", OptionInfo::Type::Multi } },
 	{ "x", { "extern", OptionInfo::Type::Multi } },
 	{ "s", { "print-symbols", OptionInfo::Type::NoValue } },
+	{ "e", { "export-symbol-info", OptionInfo::Type::Single } },
 };
 
 #define HELP_TEXT \
@@ -77,7 +79,10 @@ std::map<std::string, OptionInfo> argNames =
 	"  -x, --extern=[filepath]\n" \
 	"    Specifies a library/object file to link against.\n" \
 	"  -s, --print-symbols\n" \
-	"    Prints the symbols (including unused ones) of the parsed program code.\n"
+	"    Prints the symbols (including unused ones) of the parsed program code.\n" \
+	"  -e, --export-symbol-info\n" \
+	"    Writes the symbols (including unused ones) of the parsed program code]n" \
+	"    and additional info to the specified file.\n"
 
 class Timer
 {
@@ -171,6 +176,19 @@ int main(int argc, char** argv, char** _env)
 		{
 			std::cout << "Symbol tree:" << std::endl;
 			printSymbolTree(program->symbols, 1);
+		}
+
+		if (args.hasOption("export-symbol-info"))
+		{
+			auto outFilename = args.getOption("export-symbol-info").front();
+			std::ofstream outFile(outFilename);
+			if (!outFile.is_open())
+			{
+				std::cout << "Failed to open file '" << outFilename << "' for writing!\n";
+				return -1;
+			}
+			exportSymbolInfo(program->symbols, outFile);
+			outFile.close();
 		}
 
 		if (verbose)
