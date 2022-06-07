@@ -966,9 +966,16 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	case Token::Type::String:
 	{
 		int strID = info.program->strings.size();
-		//exp->valStr = getLiteralStringName(strID);
+
+		{
+			auto it = info.program->strings.find(litToken.value);
+			if (it == info.program->strings.end())
+				info.program->strings.insert({ litToken.value, strID });
+			else
+				strID = it->second;
+		}
+		
 		exp->value = EValue((uint64_t)strID);
-		info.program->strings.insert({ strID, { 1, litToken.value } });
 		exp->datatype = Datatype(DTType::Array, Datatype("u8"), litToken.value.size() + 1);
 		exp->datatype.subType->isConst = true;
 		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code

@@ -1368,8 +1368,8 @@ void genFunctions(NasmGenInfo& ngi)
 			if (isReachable(sym))
 				genFuncAsm(ngi, getParent(sym)->name, sym);
 			else
-				for (int strID : sym->func.instantiatedStrings)
-					--ngi.program->strings.find(strID)->second.first;
+				for (int strID : sym->func.instantiatedStrings) // TODO: Reimplement this
+					;//--ngi.program->strings.find(strID)->second.second;
 		}
 	);
 }
@@ -1401,11 +1401,8 @@ void genStrings(NasmGenInfo& ngi)
 	ngi.ss << "section .data\n";
 	for (auto& str : ngi.program->strings)
 	{
-		if (str.second.first <= 0)
-			continue;
-
-		ngi.ss << "  " << getLiteralStringName(str.first) << ": db ";
-		for (char c : str.second.second)
+		ngi.ss << "  " << getLiteralStringName(str.second) << ": db "; // Generate unique name from string ID
+		for (char c : str.first) // Generate string literal
 			ngi.ss << (int)c << ",";
 		ngi.ss << "0\n";
 	}

@@ -145,3 +145,16 @@ enum Data:
 	D = 10
 
 std::print((i64)Data::C)
+std::print("\n")
+
+u8* testStr1 = "This is a test string"
+u8* testStr2 = "This is a test string"
+
+testStr1[0] = '.'
+
+std::print("TestStr1: ")
+std::print(testStr1)
+std::print("\n")
+std::print("TestStr2: ")
+std::print(testStr2)
+std::print("\n")

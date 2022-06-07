@@ -67,7 +67,7 @@ struct Program
 {
 	SymbolRef symbols;
 	std::stack<SymbolRef> symStack;
-	std::map<int, std::pair<int, std::string>> strings; // string ID -> (useCount, string)
+	std::map<std::string, int> strings; // string -> stringID
 	BodyRef body;
 	int staticLocalInitCount = 0;
 
