@@ -269,7 +269,10 @@ std::string SymTypeToString(SymType type)
 		case SymType::Pack: return "Pack";
 		case SymType::Enum: return "Enum";
 		case SymType::EnumMember: return "EnumMember";
+		case SymType::Macro: return "Macro";
 	}
+
+	assert(false && "Unknown symbol type");
 
 	return "Unknown";
 }
