@@ -2547,10 +2547,10 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 		if (info.imports.find(absPath) != info.imports.end())
 			return "<alreadyImported>";
 
-		if (std::filesystem::is_regular_file(path))
+		if (std::filesystem::is_regular_file(absPath))
 		{
 			info.imports.insert(absPath);
-			return path;
+			return absPath;
 		}
 		return "<notFound>";
 	};

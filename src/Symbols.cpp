@@ -255,6 +255,19 @@ SymbolRef getParent(SymbolRef curr, Symbol::Type type)
 	return curr;
 }
 
+std::string SymStateToString(SymState state)
+{
+	switch (state)
+	{
+	case SymState::None: return "None";
+	case SymState::Declared: return "Declared";
+	case SymState::Defined: return "Defined";
+	}
+
+	assert(false && "Invalid SymState");
+	return "<unknown>";
+}
+
 std::string SymTypeToString(SymType type)
 {
 	switch (type)
