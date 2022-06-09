@@ -22,17 +22,18 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 
 	out << "\"state\": \"" << SymStateToString(root->state) << "\",";
 
-	out << "\"subSymbols\": [";
+	out << "\"subSymbols\": {";
 	{
 		auto it = root->subSymbols.begin();
 		while (it != root->subSymbols.end())
 		{
+			out << "\"" << it->first << "\": ";
 			exportSymbolInfo(it->second, out);
 			if (++it != root->subSymbols.end())
 				out << ",";
 		}
 	}
-	out << "]";
+	out << "}";
 
 	switch (root->type)
 	{

@@ -2533,11 +2533,10 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 {
 	auto getImportFile = [&](const std::string& dir) -> std::string
 	{
-		std::string path = (std::filesystem::path(dir) / fileToken.value).string();
 		std::string absPath;
 		try
 		{
-			absPath = std::filesystem::canonical(path).string();
+			absPath = std::filesystem::canonical(std::filesystem::path(dir) / fileToken.value);
 		}
 		catch (std::filesystem::filesystem_error&)
 		{
@@ -2555,13 +2554,15 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 		return "<notFound>";
 	};
 
-	std::string path = getImportFile(std::filesystem::path(info.progPath).parent_path().string());
+	// Seach for a matching file relative to the current file's directory
+	std::string path = getImportFile(std::filesystem::path(info.progPath).parent_path());
 
 	if (path == "<alreadyImported>")
 		return;
 	
 	if (path == "<notFound>")
 	{
+		// Search for a matching file in the specified import directories
 		for (auto& dir : info.importDirs)
 		{
 			path = getImportFile(dir);
@@ -2581,7 +2582,7 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	auto backup = makeProgGenInfoBackup(info);
 
-	info.tokens = tokenize(code, fileToken.value);
+	info.tokens = tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()));
 	info.progPath = path;
 	info.indent = {};
 	parseGlobalCode(info);

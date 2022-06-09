@@ -27,4 +27,8 @@ if __name__ == "__main__":
 	with open("/tmp/stdlib-symbols.json", "r") as f:
 		symbols = json.load(f)
 
+	stdSymbols = symbols["subSymbols"]["std"]["subSymbols"]
+
+	print(stdSymbols)
+
 	# TODO: Sort the symbols and generate a reference file for each stdlib file
