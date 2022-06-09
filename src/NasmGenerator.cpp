@@ -45,6 +45,8 @@ struct NasmGenInfo
 
 	std::stack<int> loopLabelMarks;
 
+	std::set<int> usedStringIDs;
+
 	bool generateComments;
 };
 
@@ -1086,7 +1088,10 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		else if (isEnum(ngi.program, expr->datatype))
 			ss << hexString(expr->value.u64);
 		else // is literal string
+		{
 			ss << getLiteralStringName(expr->value.u64);
+			ngi.usedStringIDs.insert(expr->value.u64);
+		}
 		ss  << "\n";
 		break;
 	case Expression::ExprType::Symbol:
@@ -1367,9 +1372,6 @@ void genFunctions(NasmGenInfo& ngi)
 				return;
 			if (isReachable(sym))
 				genFuncAsm(ngi, getParent(sym)->name, sym);
-			else
-				for (int strID : sym->func.instantiatedStrings) // TODO: Reimplement this
-					;//--ngi.program->strings.find(strID)->second.second;
 		}
 	);
 }
@@ -1390,7 +1392,7 @@ void genGlobals(NasmGenInfo& ngi)
 				return;
 
 			ngi.ss << "  " << getMangledName(sym) << ": resb " << getDatatypeSize(ngi.program, sym->var.datatype)
-				<< (ngi.generateComments ? "\t\t; " + getPosStr(sym->pos) : "") << "\n";
+				<< (ngi.generateComments ? "\t\t; " + getPosStr(sym->pos.decl) : "") << "\n";
 		}
 	);
 }
@@ -1399,10 +1401,12 @@ void genStrings(NasmGenInfo& ngi)
 {
 	// C-Strings
 	ngi.ss << "section .data\n";
-	for (auto& str : ngi.program->strings)
+	for (auto& [str, id] : ngi.program->strings)
 	{
-		ngi.ss << "  " << getLiteralStringName(str.second) << ": db "; // Generate unique name from string ID
-		for (char c : str.first) // Generate string literal
+		if (ngi.usedStringIDs.find(id) == ngi.usedStringIDs.end())
+			continue;
+		ngi.ss << "  " << getLiteralStringName(id) << ": db "; // Generate unique name from string ID
+		for (char c : str) // Generate string literal
 			ngi.ss << (int)c << ",";
 		ngi.ss << "0\n";
 	}

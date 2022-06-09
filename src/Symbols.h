@@ -18,7 +18,10 @@ typedef std::map<std::string, SymbolRef> SymbolTable;
 
 struct Symbol
 {
-	Token::Position pos;
+	struct DeclDefPos
+	{
+		Token::Position decl, def;
+	} pos;
 	std::string name;
 	SymbolWeakRef parent;
 	SymbolTable subSymbols;
@@ -69,7 +72,6 @@ struct Symbol
 		std::vector<SymbolRef> params;
 		BodyRef body;
 		bool isReachable = false;
-		std::set<int> instantiatedStrings;
 		std::string asmName;
 	} func;
 
@@ -99,6 +101,8 @@ typedef Symbol::State SymState;
 typedef Symbol::Variable::Context SymVarContext;
 
 void addSymbol(SymbolRef root, SymbolRef symbol);
+
+Token::Position& getBestPos(SymbolRef symbol);
 
 // isIn* functions return true if the symbol itself or any of its parent is of the given type
 bool isInType(const SymbolRef symbol, Symbol::Type type);

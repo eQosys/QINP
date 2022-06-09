@@ -2,9 +2,19 @@
 
 void exportPosition(Token::Position pos, std::ostream& out)
 {
-	out << "\"file\": \"" << pos.file << "\",";
-	out << "\"line\": " << pos.line << ",";
-	out << "\"col\": " << pos.column;
+	out << "{\"file\": \"" << pos.file
+		<< "\",\"line\": " << pos.line
+		<< ",\"col\": " << pos.column 
+		<< "}";
+}
+
+void exportPosition(Symbol::DeclDefPos pos, std::ostream& out)
+{
+	out << "{\"decl\": ";
+	exportPosition(pos.decl, out);
+	out << ",\"def\": ";
+	exportPosition(pos.def, out);
+	out << "}";
 }
 
 // Export the symbol info to a text file with the json format.
@@ -12,17 +22,16 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 {
 	out << "{";
 
-	out << "\"name\": \"" << root->name << "\",";
+	out << "\"name\": \"" << root->name << "\"";
 
-	out << "\"pos\": {";
+	out << ",\"pos\": ";
 	exportPosition(root->pos, out);
-	out << "},";
 
-	out << "\"type\": \"" << SymTypeToString(root->type) << "\",";
+	out << ",\"type\": \"" << SymTypeToString(root->type) << "\"";
 
-	out << "\"state\": \"" << SymStateToString(root->state) << "\",";
+	out << ",\"state\": \"" << SymStateToString(root->state) << "\"";
 
-	out << "\"subSymbols\": {";
+	out << ",\"subSymbols\": {";
 	{
 		auto it = root->subSymbols.begin();
 		while (it != root->subSymbols.end())

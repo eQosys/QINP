@@ -2,13 +2,13 @@
 
 #include "QinpError.h"
 
-#include "Token.h"
+#include "Symbols.h"
 
 class ProgGenError : public QinpError
 {
 public:
 	ProgGenError(const Token::Position& pos, const std::string& what, const std::string& srcFile, int srcLine)
-		: QinpError(pos.file + ":" + std::to_string(pos.line) + ":" + std::to_string(pos.column) + ": " + what, srcFile, srcLine)
+		: QinpError(getPosStr(pos) + ": " + what, srcFile, srcLine)
 	{}
 };
 

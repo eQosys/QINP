@@ -18,9 +18,14 @@ SymbolIterator Symbol::end()
 void addSymbol(SymbolRef root, SymbolRef symbol)
 {
 	if (root->subSymbols.find(symbol->name) != root->subSymbols.end())
-		THROW_PROG_GEN_ERROR(symbol->pos, "Symbol '" + symbol->name + "' already defined");
+		THROW_PROG_GEN_ERROR(symbol->pos.decl, "Symbol with name '" + symbol->name + "' already declared here " + getPosStr(root->subSymbols.at(symbol->name)->pos.decl));
 	symbol->parent = root;
 	root->subSymbols[symbol->name] = symbol;
+}
+
+Token::Position& getBestPos(SymbolRef symbol)
+{
+	return isDefined(symbol) ? symbol->pos.def : symbol->pos.decl;
 }
 
 bool isInType(const SymbolRef symbol, Symbol::Type type)
@@ -235,7 +240,9 @@ SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)
 SymbolRef replaceSymbol(SymbolRef currSym, SymbolRef newSym)
 {
 	newSym->parent = currSym->parent;
+	auto oldPos = currSym->pos;
 	*currSym = *newSym;
+	currSym->pos = oldPos;
 	return currSym;
 }
 

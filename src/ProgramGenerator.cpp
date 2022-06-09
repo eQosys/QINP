@@ -255,7 +255,8 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	auto& condBody = ifStatement->ifConditionalBodies.back();
 
 	auto statSym = std::make_shared<Symbol>();
-	statSym->pos = initExpr->pos;
+	statSym->pos.decl = initExpr->pos;
+	statSym->pos.def = initExpr->pos;
 	statSym->name = getStaticLocalInitName(info.program->staticLocalInitCount++);
 	statSym->type = SymType::Variable;
 	statSym->var.datatype = { "bool" };
@@ -484,7 +485,7 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 
 	auto symbol = getSymbol(currSym(info), sym->name, true);
 	if (symbol)
-		THROW_PROG_GEN_ERROR(sym->pos, "Symbol '" + sym->name + "' already exists in the same scope!");
+		THROW_PROG_GEN_ERROR(sym->pos.decl, "Symbol with name '" + sym->name + "' already declared here: " + getPosStr(symbol->pos.decl));
 
 	static int staticID = 0;
 	if (isVarStatic(sym))
@@ -511,7 +512,7 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 {
 	auto funcs = getSymbol(currSym(info), func->name, true);
 	if (funcs && !isFuncName(funcs))
-		THROW_PROG_GEN_ERROR(func->pos, "Symbol '" + func->name + "' already exists in the same scope!");
+		THROW_PROG_GEN_ERROR(func->pos.decl, "Symbol with name '" + func->name + "' already declared here " + getPosStr(funcs->pos.decl));
 	
 	if (!funcs)
 	{
@@ -533,11 +534,11 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 	}
 	
 	if (!dtEqual(existingOverload->func.retType, func->func.retType))
-		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
+		THROW_PROG_GEN_ERROR(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
 	if (!isDefined(func))
 		return existingOverload;
 	if (isDefined(existingOverload))
-		THROW_PROG_GEN_ERROR(func->pos, "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(existingOverload->pos));
+		THROW_PROG_GEN_ERROR(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
 
 	return replaceSymbol(existingOverload, func);
 }
@@ -552,13 +553,16 @@ SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
 		return pack;
 	}
 
-	if (!isPack(existingPack) || existingPack->pack.isUnion != pack->pack.isUnion)
-		THROW_PROG_GEN_ERROR(pack->pos, "Pack '" + pack->name + "' already exists in the same scope!");
+	if (!isPack(existingPack))
+		THROW_PROG_GEN_ERROR(getBestPos(pack), "Symbol with name '" + pack->name + "' already declared here: " + getPosStr(existingPack->pos.decl));
+
+	if (existingPack->pack.isUnion != pack->pack.isUnion)
+		THROW_PROG_GEN_ERROR(getBestPos(pack), std::string(existingPack->pack.isUnion ? "Union" : "Pack") + " with name '" + pack->name + "' already declared here: " + getPosStr(existingPack->pos.decl));
 
 	if (!isDefined(pack))
 		return existingPack;
 	if (isDefined(existingPack))
-		THROW_PROG_GEN_ERROR(pack->pos, "Pack already defined here: " + getPosStr(existingPack->pos));
+		THROW_PROG_GEN_ERROR(getBestPos(pack), "Pack already defined here: " + getPosStr(getBestPos(existingPack)));
 
 	return replaceSymbol(existingPack, pack);
 }
@@ -985,8 +989,6 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		exp->value = EValue((uint64_t)strID);
 		exp->datatype = Datatype(DTType::Array, Datatype("u8"), litToken.value.size() + 1);
 		exp->datatype.subType->isConst = true;
-		if (isInFunction(currSym(info))) // Makes it possible to strip unused strings from the assembly code
-			getParent(currSym(info), Symbol::Type::FunctionSpec)->func.instantiatedStrings.insert(strID);
 	}
 		break;
 	default:
@@ -1763,7 +1765,7 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, c
 {
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Variable;
-	sym->pos = peekToken(info).pos;
+	sym->pos.decl = peekToken(info).pos;
 	sym->name = name;
 	sym->var.datatype = datatype;
 
@@ -1784,9 +1786,8 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, c
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 
-	if (isPackType(info.program, sym->var.datatype))
-		if (!isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
-			THROW_PROG_GEN_ERROR(sym->pos, "Cannot use declared-only pack type!");
+	if (isPackType(info.program, sym->var.datatype) && !isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
+		THROW_PROG_GEN_ERROR(getBestPos(sym), "Cannot use declared-only pack type!");
 
 	addVariable(info, sym);
 
@@ -1818,7 +1819,7 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 		assignExpr->isLValue = true;
 		assignExpr->isObject = true;
 		assignExpr->datatype = varSym->var.datatype;
-		assignExpr->left = makeSymbolExpression(varSym->pos, varSym);
+		assignExpr->left = makeSymbolExpression(varSym->pos.decl, varSym);
 		assignExpr->right = genConvertExpression(info, initExpr, varSym->var.datatype);
 		assignExpr->ignoreConstness = true;
 
@@ -1833,7 +1834,9 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 {
 	SymbolRef funcSym = std::make_shared<Symbol>();
 
-	funcSym->pos = peekToken(info).pos;
+	auto declDefPos = peekToken(info).pos;
+
+	funcSym->pos.decl = declDefPos;
 	funcSym->type = SymType::FunctionSpec;
 	funcSym->name = name;
 	funcSym->func.body = std::make_shared<Body>();
@@ -1845,7 +1848,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	{
 		SymbolRef paramSym = std::make_shared<Symbol>();
 		paramSym->type = SymType::Variable;
-		paramSym->pos = peekToken(info).pos;
+		paramSym->pos.decl = peekToken(info).pos;
 		paramSym->parent = funcSym;
 		auto& param = paramSym->var;
 		param.context = SymVarContext::Parameter;
@@ -1898,6 +1901,8 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	if (isDefined(funcSym))
 	{
+		funcSym->pos.def = declDefPos;
+
 		parseExpectedColon(info);
 		bool parsedNewline = parseOptionalNewline(info);
 
@@ -1966,7 +1971,7 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 
 	auto funcSym = std::make_shared<Symbol>();
 
-	funcSym->pos = extToken.pos;
+	funcSym->pos.decl = extToken.pos;
 	funcSym->type = SymType::ExtFunc;
 
 	auto& typeToken = peekToken(info);
@@ -1986,7 +1991,7 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 	{
 		SymbolRef paramSym = std::make_shared<Symbol>();
 		paramSym->type = SymType::Variable;
-		paramSym->pos = peekToken(info).pos;
+		paramSym->pos.decl = peekToken(info).pos;
 		paramSym->parent = funcSym;
 		auto& param = paramSym->var;
 		param.context = SymVarContext::Parameter;
@@ -2308,7 +2313,7 @@ bool parseStatementDefine(ProgGenInfo& info)
 
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Macro;
-	sym->pos = nameToken.pos;
+	sym->pos.decl = nameToken.pos;
 	sym->name = nameToken.value;
 
 	auto existingSymbol = getSymbol(currSym(info), sym->name, true);
@@ -2348,7 +2353,7 @@ bool parseStatementSpace(ProgGenInfo& info)
 	{
 		spaceSym = std::make_shared<Symbol>();
 		spaceSym->type = SymType::Namespace;
-		spaceSym->pos = nameToken.pos;
+		spaceSym->pos.decl = nameToken.pos;
 		spaceSym->name = nameToken.value;
 		addSymbol(currSym(info), spaceSym);
 	}
@@ -2390,7 +2395,7 @@ bool parsePackUnion(ProgGenInfo& info)
 
 	SymbolRef packSym = std::make_shared<Symbol>();
 	packSym->type = SymType::Pack;
-	packSym->pos = nameToken.pos;
+	packSym->pos.decl = nameToken.pos;
 	packSym->name = nameToken.value;
 	packSym->pack.isUnion = isKeyword(packToken, "union");
 	auto& pack = packSym->pack;
@@ -2423,6 +2428,9 @@ bool parsePackUnion(ProgGenInfo& info)
 	}
 	else
 		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected '...' or ':'!");
+
+	if (isDefined(packSym))
+		packSym->pos.def = nameToken.pos;
 
 	increaseIndent(info.indent);
 	enterSymbol(info, packSym);
@@ -2463,7 +2471,7 @@ bool parseEnum(ProgGenInfo& info)
 	bool doParseIndent = parseOptionalNewline(info);
 
 	auto enumSym = std::make_shared<Symbol>();
-	enumSym->pos = nameToken.pos;
+	enumSym->pos.decl = nameToken.pos;
 	enumSym->name = nameToken.value;
 	enumSym->type = SymType::Enum;
 	enumSym->state = SymState::Defined;
@@ -2495,7 +2503,7 @@ bool parseEnum(ProgGenInfo& info)
 			}
 
 			auto memSym = std::make_shared<Symbol>();
-			memSym->pos = memberToken.pos;
+			memSym->pos.decl = memberToken.pos;
 			memSym->name = memberToken.value;
 			memSym->type = SymType::EnumMember;
 
@@ -2678,7 +2686,7 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 	for (auto sym : *info.program->symbols)
 	{
 		if (isFuncSpec(sym) && !isDefined(sym) && isReachable(sym))
-			THROW_PROG_GEN_ERROR(sym->pos, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
+			THROW_PROG_GEN_ERROR(sym->pos.decl, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
 	}
 }
 

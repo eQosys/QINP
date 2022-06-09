@@ -56,6 +56,7 @@ bool dtEqualNoConst(const Datatype& a, const Datatype& b)
 	default:
 		assert(false && "Unhandled datatype type");
 	}
+	return false;
 }
 
 bool preservesConstness(const Datatype& oldDt, const Datatype& newDt, bool ignoreFirst)
