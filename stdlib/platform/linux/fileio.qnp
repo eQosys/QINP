@@ -3,7 +3,7 @@
 
 import "syscall.qnp"
 
-import "../string.qnp"
+import "../../string.qnp"
 
 space std:
 	define __OPEN_READONLY 00

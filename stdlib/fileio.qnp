@@ -35,5 +35,5 @@ space std:
 	\\ @param pFile The file object.
 	void fclose(File* file)...
 
-import.linux "linux/fileio.qnp"
-import.windows "windows/fileio.qnp"
+import.linux "platform/linux/fileio.qnp"
+import.windows "platform/windows/fileio.qnp"

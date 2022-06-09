@@ -168,7 +168,7 @@ int main(int argc, char** argv, char** _env)
 			if (verbose) std::cout << "Code gen: ";
 			Timer timer(verbose);
 			auto code = readTextFile(inFilename);
-			auto tokens = tokenize(code, std::filesystem::canonical(inFilename).string());
+			auto tokens = tokenize(code, inFilename);
 			program = generateProgram(tokens, importDirs, platform, inFilename);
 		}
 

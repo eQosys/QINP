@@ -77,5 +77,5 @@ space std:
 		*dest = null
 		return begin
 
-import.linux "linux/std.qnp"
-import.windows "windows/std.qnp"
+import.linux "platform/linux/std.qnp"
+import.windows "platform/windows/std.qnp"

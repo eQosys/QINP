@@ -42,5 +42,5 @@ space std:
 
 		return env
 
-import.linux "linux/system.qnp"
-import.windows "windows/system.qnp"
+import.linux "platform/linux/system.qnp"
+import.windows "platform/windows/system.qnp"

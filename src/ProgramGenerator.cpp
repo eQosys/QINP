@@ -2581,7 +2581,7 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	auto backup = makeProgGenInfoBackup(info);
 
-	info.tokens = tokenize(code, path);
+	info.tokens = tokenize(code, fileToken.value);
 	info.progPath = path;
 	info.indent = {};
 	parseGlobalCode(info);

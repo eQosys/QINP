@@ -51,7 +51,7 @@ char getEscapeChar(char c)
 	}
 }
 
-TokenListRef tokenize(const std::string& code, const std::string& name)
+TokenListRef tokenize(const std::string& code, std::string name)
 {
 	enum class State
 	{

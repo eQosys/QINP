@@ -1,7 +1,7 @@
 \\ QINP Standard Library
 \\ Linux Specific
 
-import "../fileio.qnp"
+import "../../fileio.qnp"
 
 space std:
 	define __STDIN (File*)0
