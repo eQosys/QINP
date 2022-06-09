@@ -61,3 +61,5 @@ int getDatatypeNumElements(const Datatype& datatype);
 int getBuiltinTypeSize(const std::string& name);
 
 std::string getDatatypeStr(const Datatype& datatype);
+
+std::string getReadableDatatypeStr(const Datatype& datatype);
