@@ -272,23 +272,41 @@ std::string SymTypeToString(SymType type)
 {
 	switch (type)
 	{
-		case SymType::None: return "None";
-		case SymType::Namespace: return "Namespace";
-		case SymType::Global: return "Global";
-		case SymType::Variable: return "Variable";
-		case SymType::FunctionName: return "FuncName";
-		case SymType::FunctionSpec: return "FuncSpec";
-		case SymType::ExtFunc: return "ExtFunc";
-		case SymType::Pack: return "Pack";
-		case SymType::Enum: return "Enum";
-		case SymType::EnumMember: return "EnumMember";
-		case SymType::Macro: return "Macro";
+	case SymType::None: return "None";
+	case SymType::Namespace: return "Namespace";
+	case SymType::Global: return "Global";
+	case SymType::Variable: return "Variable";
+	case SymType::FunctionName: return "FuncName";
+	case SymType::FunctionSpec: return "FuncSpec";
+	case SymType::ExtFunc: return "ExtFunc";
+	case SymType::Pack: return "Pack";
+	case SymType::Enum: return "Enum";
+	case SymType::EnumMember: return "EnumMember";
+	case SymType::Macro: return "Macro";
 	}
 
 	assert(false && "Unknown symbol type");
 
 	return "Unknown";
 }
+
+std::string SymVarContextToString(Symbol::Variable::Context context)
+{
+	switch (context)
+	{
+	case Symbol::Variable::Context::None: return "None";
+	case Symbol::Variable::Context::Global: return "Global";
+	case Symbol::Variable::Context::Local: return "Local";
+	case Symbol::Variable::Context::Static: return "Static";
+	case Symbol::Variable::Context::Parameter: return "Parameter";
+	case Symbol::Variable::Context::PackMember: return "PackMember";
+	}
+
+	assert(false && "Unknown variable context");
+
+	return "Unknown";
+}
+
 SymbolIterator::SymbolIterator(Symbol* symbol, InitPos iPos)
 {
 	switch (iPos)

@@ -148,6 +148,7 @@ SymbolRef getParent(SymbolRef curr, Symbol::Type type);
 
 std::string SymStateToString(SymState state);
 std::string SymTypeToString(SymType type);
+std::string SymVarContextToString(SymVarContext context);
 
 class SymbolIterator
 {
