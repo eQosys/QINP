@@ -33,6 +33,7 @@ struct Token
 		EndOfCode,
 	} type;
 	std::string value;
+	std::vector<Position> posHistory;
 };
 
 typedef std::list<Token> TokenList;

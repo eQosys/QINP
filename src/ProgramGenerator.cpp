@@ -13,9 +13,9 @@
 #include "Tokenizer.h"
 #include "OperatorPrecedence.h"
 
-#define ENABLE_EXPR_ONLY_FOR_OBJ(expr) if (!expr->isObject) THROW_PROG_GEN_ERROR(expr->pos, "Expected object!")
-#define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR(expr->pos, "Expected non-object!")
-#define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) if (expr->datatype.isConst) THROW_PROG_GEN_ERROR(expr->pos, "Expected non-constant!")
+#define ENABLE_EXPR_ONLY_FOR_OBJ(expr) if (!expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
+#define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
+#define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) if (expr->datatype.isConst) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
 
 struct LocalStackFrame
 {
@@ -154,6 +154,17 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 	if (ignoreSymDef)
 		return *pTok;
 
+	if (isKeyword(*pTok, "__file__"))
+	{
+		pTok->type = Token::Type::String;
+		pTok->value = std::filesystem::canonical(pTok->pos.file).string();
+	}
+	if (isKeyword(*pTok, "__line__"))
+	{
+		pTok->type = Token::Type::LiteralInteger;
+		pTok->value = std::to_string(pTok->pos.line);
+	}
+	
 	while (isIdentifier(*pTok))
 	{
 		auto sym = getSymbol(currSym(info), pTok->value);
@@ -162,9 +173,19 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 
 		bool updateCurrToken = (tokIt == info.currToken);
 
+		auto newPos = pTok->pos;
+
 		tokIt = info.tokens->erase(tokIt);
 		tokIt = info.tokens->insert(tokIt, sym->macroTokens.begin(), sym->macroTokens.end());
 		pTok = &*tokIt;
+
+		auto it = tokIt;
+		for (int i = 0; i < sym->macroTokens.size(); ++i)
+		{
+			it->posHistory.push_back(it->pos);
+			it->pos = newPos;
+			++it;
+		}
 
 		if (updateCurrToken)
 			info.currToken = tokIt;
@@ -350,7 +371,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		if (matchFound)
 		{
 			if (match)
-				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Multiple overloads found for function call!");
+				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
 			match = func;
 		}
 	}
@@ -428,21 +449,21 @@ void parseExpected(ProgGenInfo& info, Token::Type type)
 {
 	auto& token = nextToken(info);
 	if (token.type != type)
-		THROW_PROG_GEN_ERROR(token.pos, "Expected token of type '" + TokenTypeToString(type) + "', but found '" + TokenTypeToString(token.type) + "'!");
+		THROW_PROG_GEN_ERROR_TOKEN(token, "Expected token of type '" + TokenTypeToString(type) + "', but found '" + TokenTypeToString(token.type) + "'!");
 }
 
 void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
 {
 	auto& token = nextToken(info);
 	if (token.type != type || token.value != value)
-		THROW_PROG_GEN_ERROR(token.pos, "Expected '" + value + "', but found '" + token.value + "'!");
+		THROW_PROG_GEN_ERROR_TOKEN(token, "Expected '" + value + "', but found '" + token.value + "'!");
 }
 
 void parseExpectedNewline(ProgGenInfo& info)
 {
 	auto& token = nextToken(info);
 	if (!isNewline(token))
-		THROW_PROG_GEN_ERROR(token.pos, "Expected newline!");
+		THROW_PROG_GEN_ERROR_TOKEN(token, "Expected newline!");
 }
 
 bool parseOptionalNewline(ProgGenInfo& info)
@@ -485,7 +506,7 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 
 	auto symbol = getSymbol(currSym(info), sym->name, true);
 	if (symbol)
-		THROW_PROG_GEN_ERROR(sym->pos.decl, "Symbol with name '" + sym->name + "' already declared here: " + getPosStr(symbol->pos.decl));
+		THROW_PROG_GEN_ERROR_POS(sym->pos.decl, "Symbol with name '" + sym->name + "' already declared here: " + getPosStr(symbol->pos.decl));
 
 	static int staticID = 0;
 	if (isVarStatic(sym))
@@ -512,7 +533,7 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 {
 	auto funcs = getSymbol(currSym(info), func->name, true);
 	if (funcs && !isFuncName(funcs))
-		THROW_PROG_GEN_ERROR(func->pos.decl, "Symbol with name '" + func->name + "' already declared here " + getPosStr(funcs->pos.decl));
+		THROW_PROG_GEN_ERROR_POS(func->pos.decl, "Symbol with name '" + func->name + "' already declared here " + getPosStr(funcs->pos.decl));
 	
 	if (!funcs)
 	{
@@ -534,11 +555,11 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 	}
 	
 	if (!dtEqual(existingOverload->func.retType, func->func.retType))
-		THROW_PROG_GEN_ERROR(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
 	if (!isDefined(func))
 		return existingOverload;
 	if (isDefined(existingOverload))
-		THROW_PROG_GEN_ERROR(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
 
 	return replaceSymbol(existingOverload, func);
 }
@@ -554,15 +575,15 @@ SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
 	}
 
 	if (!isPack(existingPack))
-		THROW_PROG_GEN_ERROR(getBestPos(pack), "Symbol with name '" + pack->name + "' already declared here: " + getPosStr(existingPack->pos.decl));
+		THROW_PROG_GEN_ERROR_POS(getBestPos(pack), "Symbol with name '" + pack->name + "' already declared here: " + getPosStr(existingPack->pos.decl));
 
 	if (existingPack->pack.isUnion != pack->pack.isUnion)
-		THROW_PROG_GEN_ERROR(getBestPos(pack), std::string(existingPack->pack.isUnion ? "Union" : "Pack") + " with name '" + pack->name + "' already declared here: " + getPosStr(existingPack->pos.decl));
+		THROW_PROG_GEN_ERROR_POS(getBestPos(pack), std::string(existingPack->pack.isUnion ? "Union" : "Pack") + " with name '" + pack->name + "' already declared here: " + getPosStr(existingPack->pos.decl));
 
 	if (!isDefined(pack))
 		return existingPack;
 	if (isDefined(existingPack))
-		THROW_PROG_GEN_ERROR(getBestPos(pack), "Pack already defined here: " + getPosStr(getBestPos(existingPack)));
+		THROW_PROG_GEN_ERROR_POS(getBestPos(pack), "Pack already defined here: " + getPosStr(getBestPos(existingPack)));
 
 	return replaceSymbol(existingPack, pack);
 }
@@ -582,7 +603,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 			if (!parsedParen)
 			{
 				if (c != '(')
-					THROW_PROG_GEN_ERROR(asmToken.pos, "Expected '(' after '$'!");
+					THROW_PROG_GEN_ERROR_TOKEN(asmToken, "Expected '(' after '$'!");
 				parsedParen = true;
 				continue;
 			}
@@ -595,7 +616,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 
 			auto pVar = getVariable(info, varName);
 			if (!pVar)
-				THROW_PROG_GEN_ERROR(asmToken.pos, "Unknown variable '" + varName + "'!");
+				THROW_PROG_GEN_ERROR_TOKEN(asmToken, "Unknown variable '" + varName + "'!");
 				
 			if (isVarOffset(pVar))
 			{
@@ -605,7 +626,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 			}
 			else if (isMacro(pVar))
 			{
-				THROW_PROG_GEN_ERROR(asmToken.pos, "Macros cannot be used in inline assembly!");
+				THROW_PROG_GEN_ERROR_TOKEN(asmToken, "Macros cannot be used in inline assembly!");
 			}
 			else
 			{
@@ -626,7 +647,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 	}
 
 	if (parseVar)
-		THROW_PROG_GEN_ERROR(asmToken.pos, "Missing ')'!");
+		THROW_PROG_GEN_ERROR_TOKEN(asmToken, "Missing ')'!");
 	return result;
 }
 
@@ -642,12 +663,12 @@ bool parseIndent(ProgGenInfo& info)
 		if (info.indent.lvl == 0)
 		{
 			if (isWhitespace(peekToken(info)))
-				THROW_PROG_GEN_ERROR(peekToken(info).pos, "Unexpected indentation!");
+				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Unexpected indentation!");
 			return true;
 		}
 
 		if (info.indent.lvl != 1)
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Indentation level must be 1 for the first used indentation!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Indentation level must be 1 for the first used indentation!");
 
 		auto& firstToken = peekToken(info);
 		if (!isWhitespace(firstToken))
@@ -662,7 +683,7 @@ bool parseIndent(ProgGenInfo& info)
 		while (isWhitespace(*pIndentToken))
 		{
 			if (pIndentToken->value != info.indent.chStr)
-				THROW_PROG_GEN_ERROR(pIndentToken->pos, "Inconsistent indentation!");
+				THROW_PROG_GEN_ERROR_TOKEN(*pIndentToken, "Inconsistent indentation!");
 			nextToken(info);
 			++info.indent.nPerLvl;
 			pIndentToken = &peekToken(info);
@@ -683,7 +704,7 @@ bool parseIndent(ProgGenInfo& info)
 	nextToken(info, indentCount);
 
 	if (peekToken(info).type == Token::Type::Whitespace)
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Inconsistent indentation!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Inconsistent indentation!");
 
 	return true;
 }
@@ -696,7 +717,7 @@ void unparseIndent(ProgGenInfo& info)
 void decreaseIndent(ProgGenInfo::Indent& indent)
 {
 	if (indent.lvl == 0)
-		THROW_PROG_GEN_ERROR(Token::Position(), "Indent level already 0!");
+		THROW_PROG_GEN_ERROR_POS(Token::Position(), "Indent level already 0!");
 	--indent.lvl;
 }
 
@@ -709,7 +730,7 @@ void pushTempBody(ProgGenInfo& info, BodyRef body)
 void popTempBody(ProgGenInfo& info)
 {
 	if (info.mainBodyBackups.empty())
-		THROW_PROG_GEN_ERROR(Token::Position(), "No backup body to pop!");
+		THROW_PROG_GEN_ERROR_POS(Token::Position(), "No backup body to pop!");
 
 	info.program->body = info.mainBodyBackups.top();
 	info.mainBodyBackups.pop();
@@ -853,7 +874,7 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 			!preservesConstness(expToConvert->datatype, newDatatype)
 			)
 			PRINT_WARNING(
-				MAKE_PROG_GEN_ERROR(
+				MAKE_PROG_GEN_ERROR_POS(
 					expToConvert->pos,
 					"Conversion from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "' does not preserve the constness of the old type!"
 				)
@@ -862,7 +883,7 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 	}
 
 	if (doThrow)
-		THROW_PROG_GEN_ERROR(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+		THROW_PROG_GEN_ERROR_POS(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
 
 	return nullptr;
 }
@@ -902,7 +923,7 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 		newDatatype = getBestConvDatatype(exp->left->datatype, exp->right->datatype);
 
 	if (!newDatatype)
-		THROW_PROG_GEN_ERROR(
+		THROW_PROG_GEN_ERROR_POS(
 			exp->pos, "Cannot convert " + 
 			getDatatypeStr(exp->left->datatype) + " and " +
 			getDatatypeStr(exp->right->datatype) + " to a common datatype!");
@@ -928,7 +949,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	auto& memberToken = nextToken(info);
 
 	if (!isIdentifier(memberToken))
-		THROW_PROG_GEN_ERROR(memberToken.pos, "Expected enum member identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(memberToken, "Expected enum member identifier!");
 
 	uint64_t value;
 
@@ -938,7 +959,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	}
 	catch (const QinpError& e)
 	{
-		THROW_PROG_GEN_ERROR(memberToken.pos, e.what());
+		THROW_PROG_GEN_ERROR_TOKEN(memberToken, e.what());
 	}
 
 	return makeLiteralExpression(memberToken.pos, getMangledName(getEnum(info, enumToken.value)), EValue(value));
@@ -992,7 +1013,7 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	}
 		break;
 	default:
-		THROW_PROG_GEN_ERROR(litToken.pos, "Invalid literal type!");
+		THROW_PROG_GEN_ERROR_TOKEN(litToken, "Invalid literal type!");
 	}
 
 	return exp;
@@ -1075,7 +1096,7 @@ ExpressionRef getParseValue(ProgGenInfo& info, bool localOnly)
 	exp = getParseSymbol(info, localOnly);
 	if (exp) return exp;
 
-	THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected symbol name or literal value!");
+	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected symbol name or literal value!");
 }
 
 ExpressionRef getParseParenthesized(ProgGenInfo& info)
@@ -1089,7 +1110,7 @@ ExpressionRef getParseParenthesized(ProgGenInfo& info)
 
 	auto& parenClose = nextToken(info);
 	if (!isSeparator(parenClose, ")"))
-		THROW_PROG_GEN_ERROR(parenClose.pos, "Expected ')'!");
+		THROW_PROG_GEN_ERROR_TOKEN(parenClose, "Expected ')'!");
 
 	return exp;
 }
@@ -1288,7 +1309,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
 			if (!currExpr->left->isLValue)
-				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Cannot assign to non-lvalue!");
+				THROW_PROG_GEN_ERROR_POS(currExpr->left->pos, "Cannot assign to non-lvalue!");
 			currExpr->datatype = currExpr->left->datatype;
 			currExpr->isLValue = true;
 			currExpr->isObject = true;
@@ -1310,7 +1331,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->farRight = genAutoArrayToPtr(currExpr->farRight);
 
 			if (!dtEqual(currExpr->right->datatype, currExpr->farRight->datatype))
-				THROW_PROG_GEN_ERROR(currExpr->pos, "Conditional operator operands must have the same datatype!");
+				THROW_PROG_GEN_ERROR_POS(currExpr->pos, "Conditional operator operands must have the same datatype!");
 
 			currExpr->datatype = currExpr->right->datatype;
 			currExpr->isLValue = currExpr->right->isLValue;
@@ -1369,7 +1390,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->isObject = true;
 			break;
 		default:
-			THROW_PROG_GEN_ERROR(currExpr->pos, "Invalid binary operator!");
+			THROW_PROG_GEN_ERROR_POS(currExpr->pos, "Invalid binary operator!");
 		}
 	}
 
@@ -1400,10 +1421,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 			exp->datatype = exp->left->datatype;
 			if (!isDereferenceable(exp->datatype))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript non-pointer type!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot subscript non-pointer type!");
 			dereferenceDatatype(exp->datatype);
 			if (!isDereferenceable(exp->datatype) && exp->datatype.name == "void")
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot subscript pointer to void type!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot subscript pointer to void type!");
 			exp->isLValue = isArray(exp->datatype) ? false : true;
 			exp->isObject = true;
 			exp->right = genConvertExpression(info, getParseExpression(info), { "u64" });
@@ -1415,7 +1436,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->isExtCall = isExtFunc(exp->left->symbol);
 
 			if (exp->left->eType != Expression::ExprType::Symbol || (!isFuncName(exp->left->symbol) && !exp->isExtCall))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot call non-function!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot call non-function!");
 			exp->isLValue = false;
 
 			while (!isSeparator(peekToken(info), ")"))
@@ -1437,7 +1458,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			{
 				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
 				if (!func)
-					THROW_PROG_GEN_ERROR(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
+					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
 			}
 			
 			exp->datatype = func->func.retType;
@@ -1464,9 +1485,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		{
 			exp->eType = Expression::ExprType::MemberAccess;
 			if (!exp->left->isObject)
-				THROW_PROG_GEN_ERROR(exp->pos, "Expected object!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected object!");
 			if (!isDereferenceable(exp->left->datatype))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot dereference non-pointer!");
 			exp->left = genAutoArrayToPtr(exp->left);
 
 			auto temp = std::make_shared<Expression>(exp->pos);
@@ -1476,7 +1497,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			temp->datatype = temp->left->datatype;
 			dereferenceDatatype(temp->datatype);
 			if (isDereferenceable(temp->datatype))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot access member of pointer to pointer!");
 			temp->isLValue = isArray(temp->datatype) ? false : true;
 			temp->isObject = true;
 
@@ -1486,9 +1507,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::MemberAccess:
 		{
 			if (isPointer(exp->left->datatype))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot access member of pointer!");
 			if (isArray(exp->left->datatype))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of array!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot access member of array!");
 
 			auto baseSymbol = getSymbolFromPath(info.program->symbols, SymPathFromString(exp->left->datatype.name));
 			if (!baseSymbol)
@@ -1500,12 +1521,12 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->right = getParseSymbol(info, !!exp->left->symbol);
 			exitSymbol(info);
 			if (!exp->right)
-				THROW_PROG_GEN_ERROR(exp->pos, "Expected member name!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected member name!");
 
 			if (isPack(baseSymbol) && !isDefined(baseSymbol))
-				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of undefined pack type!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot access member of undefined pack type!");
 			if (isPack(baseSymbol) && !exp->left->isObject)
-				THROW_PROG_GEN_ERROR(exp->pos, "Expected object!");
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected object!");
 
 			exp->datatype = exp->right->symbol->var.datatype;
 			exp->isLValue = exp->right->isLValue;
@@ -1548,7 +1569,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->left = getParseExpression(info, precLvl);
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		if (!exp->left->isLValue)
-			THROW_PROG_GEN_ERROR(exp->pos, "Cannot take address of non-lvalue!");
+			THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot take address of non-lvalue!");
 		exp->datatype = exp->left->datatype;
 		exp->datatype = Datatype(DTType::Pointer, exp->datatype);
 		exp->isLValue = false;
@@ -1559,10 +1580,10 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = exp->left->datatype;
 		if (!isDereferenceable(exp->datatype))
-			THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer type!");
+			THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot dereference non-pointer type!");
 		dereferenceDatatype(exp->datatype);
 		if (!isDereferenceable(exp->datatype) && exp->datatype.name == "void")
-			THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference pointer to void type!");
+			THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot dereference pointer to void type!");
 		exp->isLValue = isArray(exp->datatype) ? false : true;
 		exp->isObject = true;
 		break;
@@ -1635,7 +1656,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exitSymbol(info);
 		break;
 	default:
-		THROW_PROG_GEN_ERROR(opToken.pos, "Unknown unary prefix expression!");
+		THROW_PROG_GEN_ERROR_TOKEN(opToken, "Unknown unary prefix expression!");
 	}
 
 	return exp;
@@ -1654,7 +1675,7 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
 	case OpPrecLvl::Type::Binary: expr = getParseBinaryExpression(info, precLvl); break;
 	case OpPrecLvl::Type::Unary_Suffix: expr = getParseUnarySuffixExpression(info, precLvl); break;
 	case OpPrecLvl::Type::Unary_Prefix: expr = getParseUnaryPrefixExpression(info, precLvl); break;
-	default: THROW_PROG_GEN_ERROR(peekToken(info).pos, "Unknown operator precedence level type!");
+	default: THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Unknown operator precedence level type!");
 	}
 
 	return autoSimplifyExpression(expr);
@@ -1781,7 +1802,7 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, c
 	}
 
 	if (isPackType(info.program, sym->var.datatype) && !isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
-		THROW_PROG_GEN_ERROR(getBestPos(sym), "Cannot use declared-only pack type!");
+		THROW_PROG_GEN_ERROR_POS(getBestPos(sym), "Cannot use declared-only pack type!");
 
 	addVariable(info, sym);
 
@@ -1803,7 +1824,7 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, c
 void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
 	if (isVoid(datatype))
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Cannot declare variable of type void!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
 
 	auto [varSym, initExpr] = getParseDeclDefVariable(info, datatype, isStatic, name);
 	if (initExpr)
@@ -1849,13 +1870,13 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		param.datatype = getParseDatatype(info);
 		if (!param.datatype)
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 		
 		param.offset = funcSym->func.retOffset;
 		funcSym->func.retOffset += getDatatypePushSize(info.program, param.datatype);
 
 		if (!isIdentifier(peekToken(info)))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected identifier!");
 
 		param.modName = nextToken(info).value;
 		paramSym->name = param.modName;
@@ -1878,9 +1899,9 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	if (preDeclSym)
 		preDeclSym = getSymbol(preDeclSym, getSignatureNoRet(funcSym), true);
 	if (reqPreDecl && !preDeclSym)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Missing pre-declaration before explicit function definition!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing pre-declaration before explicit function definition!");
 	else if (!reqPreDecl && preDeclSym)
-		PRINT_WARNING(MAKE_PROG_GEN_ERROR(peekToken(info).pos, "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
+		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
 
 	funcSym->state = SymState::Defined;
 	if (isSeparator(peekToken(info), "..."))
@@ -1928,7 +1949,7 @@ bool parseDeclDef(ProgGenInfo& info)
 	if (isKeyword(typeToken, "static"))
 	{
 		if (!isInFunction(currSym(info)))
-			THROW_PROG_GEN_ERROR(typeToken.pos, "Static keyword can only be used in function definitions!");
+			THROW_PROG_GEN_ERROR_TOKEN(typeToken, "Static keyword can only be used in function definitions!");
 		isStatic = true;
 		nextToken(info);
 	}
@@ -1939,12 +1960,12 @@ bool parseDeclDef(ProgGenInfo& info)
 
 	auto& nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 
 	if (isSeparator(peekToken(info), "("))
 	{
 		if (!isInGlobal(currSym(info)))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Functions are not allowed here!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions are not allowed here!");
 		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
 	}
 	else
@@ -1972,11 +1993,11 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 	funcSym->func.retType = getParseDatatype(info);
 
 	if (!funcSym->func.retType)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 
 	auto& nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 	funcSym->name = nameToken.value;
 
 	parseExpected(info, Token::Type::Separator, "(");
@@ -1992,13 +2013,13 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 
 		param.datatype = getParseDatatype(info);
 		if (!param.datatype)
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected datatype!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 
 		param.offset = funcSym->func.retOffset;
 		funcSym->func.retOffset += getDatatypePushSize(info.program, param.datatype);
 
 		if (!isIdentifier(peekToken(info)))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected identifier!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected identifier!");
 
 		param.modName = nextToken(info).value;
 		paramSym->name = param.modName;
@@ -2018,7 +2039,7 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 	auto& asmNameTok = nextToken(info);
 
 	if (!isString(asmNameTok))
-		THROW_PROG_GEN_ERROR(asmNameTok.pos, "Expected assembly name!");
+		THROW_PROG_GEN_ERROR_TOKEN(asmNameTok, "Expected assembly name!");
 	funcSym->func.asmName = asmNameTok.value;
 
 	parseExpectedNewline(info);
@@ -2043,7 +2064,7 @@ bool parseStatementReturn(ProgGenInfo& info)
 	if (!isVoid(info.funcRetType))
 		lastStatement(info)->subExpr = genConvertExpression(info, getParseExpression(info), info.funcRetType);
 	else if (!isNewline(peekToken(info)))
-		THROW_PROG_GEN_ERROR(exprBegin.pos, "Return statement in void function must be followed by a newline!");
+		THROW_PROG_GEN_ERROR_TOKEN(exprBegin, "Return statement in void function must be followed by a newline!");
 	parseExpectedNewline(info);
 
 	return true;
@@ -2066,7 +2087,7 @@ bool parseInlineAssembly(ProgGenInfo& info)
 		doParseIndent = true;
 		auto& strToken = nextToken(info);
 		if (!isString(strToken))
-			THROW_PROG_GEN_ERROR(strToken.pos, "Expected assembly string!");
+			THROW_PROG_GEN_ERROR_TOKEN(strToken, "Expected assembly string!");
 
 		parseExpectedNewline(info);
 
@@ -2140,11 +2161,11 @@ void parseBody(ProgGenInfo& info, bool doParseIndent)
 		if (parseStatementReturn(info)) continue;
 		if (parseInlineAssembly(info)) continue;
 		if (parseExpression(info)) continue;
-		THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
+		THROW_PROG_GEN_ERROR_TOKEN(token, "Unexpected token: " + token.value + "!");
 	}
 
 	if (numStatements == 0)
-		THROW_PROG_GEN_ERROR(bodyBeginToken.pos, "Expected non-empty body!");
+		THROW_PROG_GEN_ERROR_TOKEN(bodyBeginToken, "Expected non-empty body!");
 }
 
 void parseBodyEx(ProgGenInfo& info, BodyRef body, bool doParseIndent)
@@ -2255,7 +2276,7 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 	parseBodyEx(info, statement->doWhileConditionalBody.body, parsedNewline);
 
 	if (!parseIndent(info))
-		THROW_PROG_GEN_ERROR(doToken.pos, "Expected 'while'!");
+		THROW_PROG_GEN_ERROR_TOKEN(doToken, "Expected 'while'!");
 	parseExpected(info, Token::Type::Keyword, "while");
 	
 	statement->doWhileConditionalBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
@@ -2287,7 +2308,7 @@ void parseFunctionBody(ProgGenInfo& info, bool doParseIndent)
 		if (isVoid(info.funcRetType))
 			pushStatement(info, std::make_shared<Statement>(Token::Position(), Statement::Type::Return));
 		else
-			THROW_PROG_GEN_ERROR(info.program->body->statements.empty() ? bodyBeginToken.pos : lastStatement(info)->pos, "Missing return statement!");
+			THROW_PROG_GEN_ERROR_POS(info.program->body->statements.empty() ? bodyBeginToken.pos : lastStatement(info)->pos, "Missing return statement!");
 	}
 }
 
@@ -2303,7 +2324,7 @@ bool parseStatementDefine(ProgGenInfo& info)
 	auto& nameToken = nextToken(info, 1, true);
 
 	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Macro;
@@ -2312,9 +2333,9 @@ bool parseStatementDefine(ProgGenInfo& info)
 
 	auto existingSymbol = getSymbol(currSym(info), sym->name, true);
 	if (existingSymbol)
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol '" + sym->name + "' already exists in the same scope!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Symbol '" + sym->name + "' already exists in the same scope!");
 
-	while (!isNewline(peekToken(info)))
+	while (!isNewline(peekToken(info, 0, true)))
 		sym->macroTokens.push_back(nextToken(info, 1, true));
 
 	parseExpectedNewline(info);
@@ -2337,7 +2358,7 @@ bool parseStatementSpace(ProgGenInfo& info)
 	nextToken(info);
 
 	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 
 	parseExpectedColon(info);
 	bool doParseIndent = parseOptionalNewline(info);
@@ -2362,12 +2383,12 @@ bool parseStatementSpace(ProgGenInfo& info)
 		doParseIndent = true;
 		auto& token = peekToken(info);
 		if (!parseSingleGlobalCode(info))
-			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
+			THROW_PROG_GEN_ERROR_TOKEN(token, "Unexpected token: " + token.value + "!");
 		++codeCount;
 	}
 
 	if (codeCount == 0)
-		THROW_PROG_GEN_ERROR(spaceToken.pos, "Expected at least one statement!");
+		THROW_PROG_GEN_ERROR_TOKEN(spaceToken, "Expected at least one statement!");
 
 	exitSymbol(info);
 	decreaseIndent(info.indent);
@@ -2384,7 +2405,7 @@ bool parsePackUnion(ProgGenInfo& info)
 
 	auto& nameToken = peekToken(info);
 	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 	nextToken(info);
 
 	SymbolRef packSym = std::make_shared<Symbol>();
@@ -2400,9 +2421,9 @@ bool parsePackUnion(ProgGenInfo& info)
 
 	auto preDeclSym = getSymbol(currSym(info), nameToken.value, true);
 	if (reqPreDecl && !preDeclSym)
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Missing pre-declaration before explicit pack/union definition!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing pre-declaration before explicit pack/union definition!");
 	else if (!reqPreDecl && preDeclSym)
-		PRINT_WARNING(MAKE_PROG_GEN_ERROR(peekToken(info).pos, "Pack/Union: '" + nameToken.value + "' was pre-declared but not marked as such. You may want to do so."));
+		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Pack/Union: '" + nameToken.value + "' was pre-declared but not marked as such. You may want to do so."));
 
 	bool doParseIndent = false;
 	if (isSeparator(peekToken(info), "..."))
@@ -2421,7 +2442,7 @@ bool parsePackUnion(ProgGenInfo& info)
 		packSym = addPack(info, packSym);
 	}
 	else
-		THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected '...' or ':'!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected '...' or ':'!");
 
 	if (isDefined(packSym))
 		packSym->pos.def = nameToken.pos;
@@ -2435,7 +2456,7 @@ bool parsePackUnion(ProgGenInfo& info)
 		if (parseStatementPass(info))
 			continue;
 		if (!parseDeclDef(info))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected member definition!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected member definition!");
 	}
 
 	exitSymbol(info);
@@ -2455,11 +2476,11 @@ bool parseEnum(ProgGenInfo& info)
 
 	auto& nameToken = peekToken(info);
 	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Expected identifier!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 	nextToken(info);
 
 	if (getSymbol(currSym(info), nameToken.value, true))
-		THROW_PROG_GEN_ERROR(nameToken.pos, "Symbol with name '" + nameToken.value + "' already exists!");
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Symbol with name '" + nameToken.value + "' already exists!");
 
 	parseExpectedColon(info);
 	bool doParseIndent = parseOptionalNewline(info);
@@ -2481,7 +2502,7 @@ bool parseEnum(ProgGenInfo& info)
 			auto& memberToken = nextToken(info);
 
 			if (getSymbol(enumSym, memberToken.value, true) != nullptr)
-				THROW_PROG_GEN_ERROR(memberToken.pos, "Enum member '" + memberToken.value + "' already exists!");
+				THROW_PROG_GEN_ERROR_TOKEN(memberToken, "Enum member '" + memberToken.value + "' already exists!");
 
 			if (isOperator(peekToken(info), "="))
 			{
@@ -2489,9 +2510,9 @@ bool parseEnum(ProgGenInfo& info)
 
 				auto valExpr = getParseExpression(info);
 				if (valExpr->eType != Expression::ExprType::Literal)
-					THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected literal expression!");
+					THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected literal expression!");
 				if (!isInteger(valExpr->datatype))
-					THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected integer literal!");
+					THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected integer literal!");
 
 				currIndex = valExpr->value.u64;
 			}
@@ -2524,10 +2545,10 @@ void parseGlobalCode(ProgGenInfo& info)
 	while (!isEndOfCode(peekToken(info)))
 	{
 		if (!parseIndent(info))
-			THROW_PROG_GEN_ERROR(peekToken(info).pos, "Expected indentation!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected indentation!");
 		auto& token = peekToken(info);
 		if (!parseSingleGlobalCode(info))
-			THROW_PROG_GEN_ERROR(token.pos, "Unexpected token: " + token.value + "!");
+			THROW_PROG_GEN_ERROR_TOKEN(token, "Unexpected token: " + token.value + "!");
 	}
 }
 
@@ -2577,7 +2598,7 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 		}
 
 		if (path == "<notFound>")
-			THROW_PROG_GEN_ERROR(fileToken.pos, "Import file not found: '" + fileToken.value + "'!");
+			THROW_PROG_GEN_ERROR_TOKEN(fileToken, "Import file not found: '" + fileToken.value + "'!");
 	}
 
 	std::string code = readTextFile(path);
@@ -2607,7 +2628,7 @@ bool parseStatementImport(ProgGenInfo& info)
 		nextToken(info);
 		auto& specToken = nextToken(info);
 		if (!isIdentifier(specToken))
-			THROW_PROG_GEN_ERROR(specToken.pos, "Expected platform identifier!");
+			THROW_PROG_GEN_ERROR_TOKEN(specToken, "Expected platform identifier!");
 
 		if (specToken.value == "defer")
 		{
@@ -2617,7 +2638,7 @@ bool parseStatementImport(ProgGenInfo& info)
 
 		static const std::set<std::string> platformNames = { "windows", "linux", "macos" };
 		if (platformNames.find(specToken.value) == platformNames.end())
-			THROW_PROG_GEN_ERROR(specToken.pos, "Unknown platform identifier: '" + specToken.value + "'!");
+			THROW_PROG_GEN_ERROR_TOKEN(specToken, "Unknown platform identifier: '" + specToken.value + "'!");
 		if (specToken.value != info.program->platform)
 		{
 			platformMatch = false;
@@ -2627,7 +2648,7 @@ bool parseStatementImport(ProgGenInfo& info)
 
 	auto& fileToken = nextToken(info);
 	if (!isString(fileToken))
-		THROW_PROG_GEN_ERROR(fileToken.pos, "Expected file path!");
+		THROW_PROG_GEN_ERROR_TOKEN(fileToken, "Expected file path!");
 
 	if (!platformMatch)
 		return true;
@@ -2680,7 +2701,7 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 	for (auto sym : *info.program->symbols)
 	{
 		if (isFuncSpec(sym) && !isDefined(sym) && isReachable(sym))
-			THROW_PROG_GEN_ERROR(sym->pos.decl, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
+			THROW_PROG_GEN_ERROR_POS(sym->pos.decl, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
 	}
 }
 

@@ -18,7 +18,7 @@ SymbolIterator Symbol::end()
 void addSymbol(SymbolRef root, SymbolRef symbol)
 {
 	if (root->subSymbols.find(symbol->name) != root->subSymbols.end())
-		THROW_PROG_GEN_ERROR(symbol->pos.decl, "Symbol with name '" + symbol->name + "' already declared here " + getPosStr(root->subSymbols.at(symbol->name)->pos.decl));
+		THROW_PROG_GEN_ERROR_POS(symbol->pos.decl, "Symbol with name '" + symbol->name + "' already declared here " + getPosStr(root->subSymbols.at(symbol->name)->pos.decl));
 	symbol->parent = root;
 	root->subSymbols[symbol->name] = symbol;
 }

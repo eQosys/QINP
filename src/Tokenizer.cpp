@@ -107,17 +107,7 @@ TokenListRef tokenize(const std::string& code, std::string name)
 		}
 		else if (token.type == Token::Type::Keyword)
 		{
-			if (token.value == "__file__")
-			{
-				token.type = Token::Type::String;
-				token.value = std::filesystem::canonical(token.pos.file).string();
-			}
-			else if (token.value == "__line__")
-			{
-				token.type = Token::Type::LiteralInteger;
-				token.value = std::to_string(token.pos.line);
-			}
-			else if (token.value == "null")
+			if (token.value == "null")
 			{
 				token.type = Token::Type::LiteralNull;
 			}
