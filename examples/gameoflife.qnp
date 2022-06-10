@@ -17,28 +17,28 @@ void flip():
 	pBack = pTemp
 
 void printBorder():
-	std::print("+")
+	std.print("+")
 	i64 i = 0
-	while i++ < WIDTH: std::print("-")
+	while i++ < WIDTH: std.print("-")
 	
-	std::print("+\n")
+	std.print("+\n")
 
 void show():
 	i64 i = -1
 	printBorder()
 	while ++i < HEIGHT:
 		i64 j = -1
-		std::print("|")
+		std.print("|")
 		while ++j < WIDTH:
-			std::print(pMain->cells[j][i] ? "#" : " ")
-		std::print("|\n")
+			std.print(pMain->cells[j][i] ? "#" : " ")
+		std.print("|\n")
 	printBorder()
 
 void clear():
-	std::print("\r")
+	std.print("\r")
 	i64 i = 0
 	while i++ < HEIGHT + 2:
-		std::print("\e[1F")
+		std.print("\e[1F")
 
 void update():
 	i64 i = -1
@@ -75,7 +75,7 @@ i64 n = 0
 while n++ < N_ITERATIONS:
 	show()
 	update()
-	std::sleep(100)
+	std.sleep(100)
 	clear()
 	flip()
 
@@ -83,6 +83,6 @@ while n++ < N_ITERATIONS:
 		break
 show()
 
-std::print("Ran for ")
-std::print(n)
-std::print(" iterations\n")
+std.print("Ran for ")
+std.print(n)
+std.print(" iterations\n")

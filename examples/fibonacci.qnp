@@ -5,7 +5,7 @@ u64 fib(u64 n):
 
 u64 i = 0
 while i++ < 10:
-	std::print(i)
-	std::print(" -> ")
-	std::print(fib(i))
-	std::print("\n")
+	std.print(i)
+	std.print(" -> ")
+	std.print(fib(i))
+	std.print("\n")

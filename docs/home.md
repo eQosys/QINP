@@ -38,6 +38,11 @@ Building:
 
 #### Examples
 
+```qinp
+import "std.qnp"
+std.print("Hello, world!")
+```
+
 The [examples](../examples/) can be a good starting point to get to know the QINP language.
 The [tests](../tests/) may also be interesting to some users.
 
