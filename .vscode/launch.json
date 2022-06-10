@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/Debug/QINP",
-            "args": [ "-v", "-k", "-r", "-s", "-e=examples/_symbols.json", "-i=stdlib/", "tests/pack-member-space-no-obj.qnp" ],
+            "args": [ "-v", "-k", "-r", "-s", "-e=examples/_symbols.json", "-i=stdlib/", "examples/test.qnp" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
         },

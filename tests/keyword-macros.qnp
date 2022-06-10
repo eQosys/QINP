@@ -5,5 +5,5 @@ void nothing(u8 const* str):
 
 nothing(__file__)
 
-std::print(__line__)
-std::print("\n")
+std.print(__line__)
+std.print("\n")

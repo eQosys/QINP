@@ -2,26 +2,26 @@ import "std.qnp"
 
 i32 i = 10
 do:
-	std::print(i)
-	std::print("\n")
+	std.print(i)
+	std.print("\n")
 while i-- > 0
 
-std::print("-----------------\n")
+std.print("-----------------\n")
 
 i = 10
 do:
 	if i == 5:
 		break
-	std::print(i)
-	std::print("\n")
+	std.print(i)
+	std.print("\n")
 while i-- > 0
 
-std::print("-----------------\n")
+std.print("-----------------\n")
 
 i = 10
 do:
 	if i == 5:
 		continue
-	std::print(i)
-	std::print("\n")
+	std.print(i)
+	std.print("\n")
 while i-- > 0

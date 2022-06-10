@@ -923,7 +923,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 		return nullptr;
 
 	nextToken(info);
-	parseExpected(info, Token::Type::Operator, "::");
+	parseExpected(info, Token::Type::Operator, ".");
 
 	auto& memberToken = nextToken(info);
 
@@ -1368,19 +1368,6 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->isLValue = false;
 			currExpr->isObject = true;
 			break;
-		case Expression::ExprType::SpaceAccess:
-		{
-			if (currExpr->left->eType != Expression::ExprType::Symbol)
-				THROW_PROG_GEN_ERROR(currExpr->left->pos, "Expected namespace name!");
-			enterSymbol(info, currExpr->left->symbol);
-
-			bool isObject = isSymType(SymType::Namespace, currExpr->left->symbol);
-
-			currExpr = getParseValue(info, true);
-
-			exitSymbol(info);
-		}
-			break;
 		default:
 			THROW_PROG_GEN_ERROR(currExpr->pos, "Invalid binary operator!");
 		}
@@ -1491,6 +1478,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			if (isDereferenceable(temp->datatype))
 				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
 			temp->isLValue = isArray(temp->datatype) ? false : true;
+			temp->isObject = true;
 
 			exp->left = temp;
 			// fallthrough
@@ -1515,14 +1503,22 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR(exp->pos, "Expected member name!");
 
 			if (isPack(baseSymbol) && !isDefined(baseSymbol))
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of undefined pack type!");
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of undefined pack type!");
+			if (isPack(baseSymbol) && !exp->left->isObject)
+				THROW_PROG_GEN_ERROR(exp->pos, "Expected object!");
 
 			exp->datatype = exp->right->symbol->var.datatype;
 			exp->isLValue = exp->right->isLValue;
 			exp->isObject = exp->right->isObject;
 
-			if (isPack(exp->left->symbol))
+			if (isPack(baseSymbol))
+			{
 				exp->isObject = exp->left->isObject;
+				exp->isLValue = true;
+			}
+
+			if (!exp->left->isObject)
+				exp = exp->right;
 		}
 			break;
 		default:
@@ -1633,7 +1629,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->value = EValue((uint64_t)getDatatypeSize(info.program, datatype));
 	}
 		break;
-	case Expression::ExprType::SpaceAccess:
+	case Expression::ExprType::MemberAccess:
 		enterSymbol(info, info.program->symbols);
 		exp = getParseExpression(info, precLvl + 1);
 		exitSymbol(info);
@@ -1708,7 +1704,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 	{
 		bool localOnly = false;
 		SymbolRef sym = currSym(info);
-		if (isOperator(peekToken(info), "::"))
+		if (isOperator(peekToken(info), "."))
 		{
 			nextToken(info);
 			sym = info.program->symbols;
@@ -1725,7 +1721,7 @@ Datatype getParseDatatype(ProgGenInfo& info)
 			if (!sym)
 				return exitEntered({}, true);
 			localOnly = true;
-		} while (isOperator(nextToken(info), "::"));
+		} while (isOperator(nextToken(info), "."));
 		nextToken(info, -1);
 		
 

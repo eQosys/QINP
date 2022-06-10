@@ -3,5 +3,5 @@ import "std.qnp"
 i32 fib(i32 n):
 	return n < 2 ? n : fib(n-1) + fib(n-2)
 
-std::print(fib(10))
-std::print("\n")
+std.print(fib(10))
+std.print("\n")

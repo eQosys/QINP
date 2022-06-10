@@ -40,7 +40,6 @@ const std::map<std::string, Token::Type> specialKeywords =
 	{ ">=",  Token::Type::Operator },
 	{ ".",   Token::Type::Operator },
 	{ "->",  Token::Type::Operator },
-	{ "::",  Token::Type::Operator },
 	{ "?",   Token::Type::Operator },
 
 	{ "(",   Token::Type::Separator },

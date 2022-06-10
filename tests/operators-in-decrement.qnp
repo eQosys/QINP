@@ -1,9 +1,9 @@
 import "std.qnp"
 
 void show(i32 var):
-	std::print("var = ")
-	std::print(var)
-	std::print("\n")
+	std.print("var = ")
+	std.print(var)
+	std.print("\n")
 
 i32 i = 0
 

@@ -3,26 +3,26 @@ import "std.qnp"
 i32 i = 0
 
 if i > 0:
-	std::print("i > 0\n")
+	std.print("i > 0\n")
 elif i < 0:
-	std::print("i < 0\n")
+	std.print("i < 0\n")
 else:
-	std::print("i == 0\n")
+	std.print("i == 0\n")
 
 i = 10
 
 if i > 0:
-	std::print("i > 0\n")
+	std.print("i > 0\n")
 elif i < 0:
-	std::print("i < 0\n")
+	std.print("i < 0\n")
 else:
-	std::print("i == 0\n")
+	std.print("i == 0\n")
 
 i = -10
 
 if i > 0:
-	std::print("i > 0\n")
+	std.print("i > 0\n")
 elif i < 0:
-	std::print("i < 0\n")
+	std.print("i < 0\n")
 else:
-	std::print("i == 0\n")
+	std.print("i == 0\n")

@@ -1,12 +1,12 @@
 import "std.qnp"
 
 void show(bool b):
-	std::print("b = ")
+	std.print("b = ")
 	if b:
-		std::print("true")
+		std.print("true")
 	else:
-		std::print("false")
-	std::print("\n")
+		std.print("false")
+	std.print("\n")
 
 show(1 == 2)
 show(1 == 1)

@@ -128,8 +128,6 @@ struct Expression : public Statement
 		MemberAccess,
 		MemberAccessDereference,
 
-		SpaceAccess,
-
 		Literal,
 		Symbol,
 	};

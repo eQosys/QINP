@@ -11,7 +11,7 @@ assembly:
 	"add eax, [$(a)]"
 	"mov [$(b)], eax"
 
-std::print(a)
-std::print("\n")
-std::print(b)
-std::print("\n")
+std.print(a)
+std.print("\n")
+std.print(b)
+std.print("\n")

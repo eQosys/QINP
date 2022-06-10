@@ -6,7 +6,7 @@ i32 func():
 i32 func(i32 var):
 	return var * 2
 
-std::print(func())
-std::print("\n")
-std::print(func(12))
-std::print("\n")
+std.print(func())
+std.print("\n")
+std.print(func(12))
+std.print("\n")
