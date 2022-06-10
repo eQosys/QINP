@@ -156,7 +156,7 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 
 > Conditional import:
 > ```qinp
-> import.[platform] [file_string]
+> import.[specifier1].... [file_string]
 > ```
 
 #### Example
@@ -168,7 +168,7 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 
 > Conditional import:
 > ```qinp
-> import.linux "linux/std.qnp"
+> import.linux "platform/linux/std.qnp"
 > ```
 
 ---
@@ -226,7 +226,7 @@ u64 square(u64 x):
 
 ```qinp
 void say_hello():
-	print("Hello, world!")
+	std.print("Hello, world!")
 	return		\\ This is optional
 ```
 
@@ -235,7 +235,7 @@ void say_hello():
 Spaces are used to group functions/variables/etc.
 Symbols with the same name may exists in different spaces.
 When resolving a symbol reference. The most local symbol with a matching name is used.
-The preceding `::` operator is used to access a symbo from the global scope.
+The preceding `.` operator is used to access a symbol from the global scope.
 Spaces can be nested.
 
 #### Usage
@@ -248,8 +248,8 @@ Spaces can be nested.
 
 > Accessing a space member:
 > ```qinp
-> [space-name]::[member-name]
-> ::[space-name]::[member-name]
+> [space-name].[member-name]
+> .[space-name].[member-name]
 > ```
 
 #### Examples
@@ -269,11 +269,11 @@ Spaces can be nested.
 > Accessing a space member:
 > ```qinp
 > x			\\ Always resolves to the local x
-> ::x			\\ Always accesses the global x
-> foo::x		\\ In global scope or foo space: ::foo::x, in bar space: ::bar::foo::x
-> bar::x		\\ In this example everywhere ::bar::x
-> ::foo::x
-> ::bar::x
+> .x			\\ Always accesses the global x
+> foo.x		\\ In global scope or foo space: .foo.x, in bar space: .bar.foo.x
+> bar.x		\\ In this example everywhere .bar.x
+> .foo.x
+> .bar.x
 > ```
 
 ### \_\_file\_\_

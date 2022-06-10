@@ -25,7 +25,7 @@
 | a -= b     | a++           | a + b      | a \|\| b | a < b      | &a            | sizeof(a)
 | a *= b     | a--           | a - b      |          | a > b      | a.b           | a ? b : c
 | a /= b     |               | a * b      |          | a <= b     | a->b          |
-| a %= b     |               | a / b      |          | a >= b     | ::            |
+| a %= b     |               | a / b      |          | a >= b     |               |
 | a &= b     |               | a % b      |          |            |               |
 | a \|= b    |               | ~a         |          |            |               |
 | a ^= b     |               | a & b      |          |            |               |
@@ -42,7 +42,6 @@ Operators with a lower precedence are evaluated first.
 
 | Precedence | Operator                                                                               | Associativity
 | ---------- | -------------------------------------------------------------------------------------- | -------------
-| 0          | `::`                                                                                   | left-to-right
 | 1          | `a.b` `a->b`                                                                           | left-to-right
 | 2          | `a++` `a--` `a()` `a[]`                                                                | left-to-right
 | 3          | `++a` `--a` `+a` `-a` `!a` `~a` `(a)b` `*a` `&a`                                       | right-to-left
@@ -144,10 +143,3 @@ For function addresses, the size of the function pointer is returned (usually 8 
 The conditional operator `? :` is used to evaluate one of two expressions depending on the value of another expression.
 The last two expressions must evaluate to the same type.
 Arrays are automatically converted to pointers.
-
----
-
-### Spaces
-
-The `::` operator is used to access members of a space.
-Spaces can be declared using the [space](./keywords.md#spaces) keyword.

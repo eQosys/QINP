@@ -47,10 +47,10 @@ The colon is almost always used to indicate a new scope/deeper indentation level
 ```qinp
 u64 a = 3
 u64 b = 5
-if a < b: print("a is smaller than b")
-	print("I am still part of the if clause!")
-else: print("a is bigger than b")
-print("I am not part of the else clause!") \\ Indentation matters!
+if a < b: std.print("a is smaller than b")
+	std.print("I am still part of the if clause!")
+else: std.print("a is bigger than b")
+std.print("I am not part of the else clause!") \\ Indentation matters!
 ```
 
 ---
@@ -72,7 +72,7 @@ The indentation of the next line after the backslash is ignored.
 #### Example
 
 ```qinp
-std::print(\
+std.print(\
 	"Hello, world!\n" \
 )
 ```

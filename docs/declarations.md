@@ -185,7 +185,7 @@ The `static` keyword can be used to declare/define a variable in a function as s
 ```qinp
 void foo():
 	static u32 x
-	print(++x)
+	std.print(++x)
 ```
 
 ---
@@ -207,7 +207,7 @@ enum [enumName]:
 	[memberName3] = [value], [memberName4], [...]
 	[memberNameN]
 
-[enumName]::[memberNameX]
+[enumName].[memberNameX]
 ```
 
 #### Example
@@ -217,5 +217,5 @@ enum Color:
 	black = 5, white, yellow		\\ The comma after the last member of a row is optional
 	cyan = 3, magenta = -1, orange
 
-Color col = Color::red
+Color col = Color.red
 ```

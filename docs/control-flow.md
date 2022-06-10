@@ -28,11 +28,11 @@ else:
 #### Example:
 ```qinp
 if true:
-	print("Hello")
+	std.print("Hello")
 elif false:
-	print("World")
+	std.print("World")
 else:
-	print("!")
+	std.print("!")
 ```
 
 ---
@@ -51,8 +51,8 @@ while [condition]:
 ```qinp
 u32 i = 0
 while ++i < 10:
-	print(i)	\\ Prints the numbers 1 to 9
-	print("\n")
+	std.print(i)	\\ Prints the numbers 1 to 9
+	std.print("\n")
 ```
 
 ---
@@ -72,8 +72,8 @@ while [condition]
 ```qinp
 u32 i = 0
 do:
-	print(i)	\\ Prints the numbers 0 to 9
-	print("\n")
+	std.print(i)	\\ Prints the numbers 0 to 9
+	std.print("\n")
 while ++i < 10
 ```
 
@@ -89,7 +89,7 @@ u32 i = 0
 while ++i < 10:
 	if i == 5:
 		continue
-	print(i)
+	std.print(i)
 ```
 
 ### break
@@ -103,5 +103,5 @@ u32 i = 0
 while ++i < 10:
 	if i == 5:
 		break
-	print(i)
+	std.print(i)
 ```

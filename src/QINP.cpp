@@ -81,7 +81,7 @@ std::map<std::string, OptionInfo> argNames =
 	"  -s, --print-symbols\n" \
 	"    Prints the symbols (including unused ones) of the parsed program code.\n" \
 	"  -e, --export-symbol-info\n" \
-	"    Writes the symbols (including unused ones) of the parsed program code]n" \
+	"    Writes the symbols (including unused ones) of the parsed program code\n" \
 	"    and additional info to the specified file.\n"
 
 class Timer
