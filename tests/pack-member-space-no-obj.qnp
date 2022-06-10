@@ -1,6 +1,0 @@
-import "std.qnp"
-
-pack Data:
-	i32 var
-
-std::print(Data::var)

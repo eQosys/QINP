@@ -1044,7 +1044,7 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 		{
 		case SymVarContext::None:
 		case SymVarContext::PackMember:
-			exp->isObject = false;
+			exp->isObject = true; // TODO: Should be false
 			break;
 		case SymVarContext::Local:
 		case SymVarContext::Global:
@@ -1473,58 +1473,56 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			exp->isLValue = false;
 			exp->isObject = true;
 			break;
-		case Expression::ExprType::MemberAccess:
 		case Expression::ExprType::MemberAccessDereference:
 		{
-			ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
-			auto& memberToken = nextToken(info);
-			if (!isIdentifier(memberToken))
-				THROW_PROG_GEN_ERROR(pOpToken->pos, "Expected member name!");
-			switch (exp->eType)
-			{
-			case Expression::ExprType::MemberAccess:
-				if (isPointer(exp->left->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer!");
-				if (isArray(exp->left->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of array!");
-				break;
-			case Expression::ExprType::MemberAccessDereference:
-			{
-				exp->eType = Expression::ExprType::MemberAccess;
-				if (!isDereferenceable(exp->left->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer!");
-				exp->left = genAutoArrayToPtr(exp->left);
+			exp->eType = Expression::ExprType::MemberAccess;
+			if (!exp->left->isObject)
+				THROW_PROG_GEN_ERROR(exp->pos, "Expected object!");
+			if (!isDereferenceable(exp->left->datatype))
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot dereference non-pointer!");
+			exp->left = genAutoArrayToPtr(exp->left);
 
-				auto temp = std::make_shared<Expression>(exp->pos);
-				temp->eType = Expression::ExprType::Dereference;
-				temp->left = exp->left;
+			auto temp = std::make_shared<Expression>(exp->pos);
+			temp->eType = Expression::ExprType::Dereference;
+			temp->left = exp->left;
 
-				temp->datatype = temp->left->datatype;
-				dereferenceDatatype(temp->datatype);
-				if (isDereferenceable(temp->datatype))
-					THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
-				temp->isLValue = isArray(temp->datatype) ? false : true;
+			temp->datatype = temp->left->datatype;
+			dereferenceDatatype(temp->datatype);
+			if (isDereferenceable(temp->datatype))
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer to pointer!");
+			temp->isLValue = isArray(temp->datatype) ? false : true;
 
-				exp->left = temp;
-			}
-				break;
-			}
+			exp->left = temp;
+			// fallthrough
+		}
+		case Expression::ExprType::MemberAccess:
+		{
+			if (isPointer(exp->left->datatype))
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of pointer!");
+			if (isArray(exp->left->datatype))
+				THROW_PROG_GEN_ERROR(exp->pos, "Cannot access member of array!");
 
-			auto packSym = getSymbolFromPath(info.program->symbols, SymPathFromString(exp->left->datatype.name));
-			if (!packSym)
-				THROW_PROG_GEN_ERROR(exp->pos, "Unknown type '" + exp->left->datatype.name + "'!");
-			if (!isPack(packSym))
-				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of non-pack symbol!");
-			if (!isDefined(packSym))
+			auto baseSymbol = getSymbolFromPath(info.program->symbols, SymPathFromString(exp->left->datatype.name));
+			if (!baseSymbol)
+				baseSymbol = exp->left->symbol;
+
+			assert(baseSymbol && "Unable to detect base symbol from left symbol and datatype!");
+
+			enterSymbol(info, baseSymbol);
+			exp->right = getParseSymbol(info, !!exp->left->symbol);
+			exitSymbol(info);
+			if (!exp->right)
+				THROW_PROG_GEN_ERROR(exp->pos, "Expected member name!");
+
+			if (isPack(baseSymbol) && !isDefined(baseSymbol))
 				THROW_PROG_GEN_ERROR(exp->left->pos, "Cannot access member of undefined pack type!");
-			auto memberSym = getSymbol(packSym, memberToken.value, true);
-			if (!memberSym)
-				THROW_PROG_GEN_ERROR(exp->pos, "Unknown member '" + memberToken.value + "'!");
 
-			exp->datatype = memberSym->var.datatype;
-			exp->symbol = memberSym;
-			exp->isLValue = true;
-			exp->isObject = true;
+			exp->datatype = exp->right->symbol->var.datatype;
+			exp->isLValue = exp->right->isLValue;
+			exp->isObject = exp->right->isObject;
+
+			if (isPack(exp->left->symbol))
+				exp->isObject = exp->left->isObject;
 		}
 			break;
 		default:

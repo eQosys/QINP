@@ -912,7 +912,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 	{
 		genExpr(ngi, expr->left.get());
 		assert((isLValue(ngi.primReg) || isXValue(ngi.primReg)) && "Left operand of member access must be lValue");
-		ss << "  add " << primRegName(8) << ", " << expr->symbol->var.offset << "\n";
+		ss << "  add " << primRegName(8) << ", " << expr->right->symbol->var.offset << "\n";
 		
 		ngi.primReg.datatype = expr->datatype;
 		ngi.primReg.state = getCellState(ngi, ngi.primReg.datatype);

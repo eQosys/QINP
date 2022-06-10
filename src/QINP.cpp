@@ -216,12 +216,12 @@ int main(int argc, char** argv, char** _env)
 
 		if (platform == "linux")
 		{
-			nasmCmd = "nasm -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
+			nasmCmd = "nasm -g -f elf64 -o '" + objFilename + "' '" + asmFilename + "'";
 			linkCmd = "ld -m elf_x86_64 -o '" + outFilename + "' '" + objFilename + "'";
 		}
 		else if (platform == "windows")
 		{
-			nasmCmd = "nasm -f win64 -o \"" + objFilename + "\" \"" + asmFilename + "\"";
+			nasmCmd = "nasm -g -f win64 -o \"" + objFilename + "\" \"" + asmFilename + "\"";
 			// TODO: Link without LARGEADDRESSAWARE:NO
 			linkCmd = "vcvars64.bat > NUL && link /LARGEADDRESSAWARE:NO /MACHINE:X64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /ENTRY:_start /OUT:\"" + outFilename + "\" \"" + objFilename + "\" kernel32.lib";
 		}
