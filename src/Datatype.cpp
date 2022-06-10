@@ -188,15 +188,15 @@ int getBuiltinTypeSize(const std::string& name)
 	static const std::map<std::string, int> sizes =
 	{
 		{ "void", 0 },
-		{ "bool", 1 },
-		{ "i8", 1 },
-		{ "i16", 2 },
-		{ "i32", 4 },
-		{ "i64", 8 },
-		{ "u8", 1 },
-		{ "u16", 2 },
-		{ "u32", 4 },
-		{ "u64", 8 },
+		{ "bool", sizeof(bool) },
+		{ "i8",   sizeof(int8_t) },
+		{ "i16",  sizeof(int16_t) },
+		{ "i32",  sizeof(int32_t) },
+		{ "i64",  sizeof(int64_t) },
+		{ "u8",   sizeof(uint8_t) },
+		{ "u16",  sizeof(uint16_t) },
+		{ "u32",  sizeof(uint32_t) },
+		{ "u64",  sizeof(uint64_t) },
 		//{ "f32", 4 },
 		//{ "f64", 8 },
 	};
@@ -207,25 +207,28 @@ int getBuiltinTypeSize(const std::string& name)
 
 std::string getDatatypeStr(const Datatype& datatype)
 {
-	// TODO: Generates names not suitable for NASM
 	std::string result;
 	if (datatype.isConst)
 		result += "c";
+
 	if (isOfType(datatype, DTType::Name))
 		result += "?" + datatype.name;
+	else if (isOfType(datatype, DTType::Macro))
+		result += "%"; // On purpose, datatypes of type macro should never be used in nasm generated code. Assembling them throws an error.
 	else if (isOfType(datatype, DTType::Array))
 		result += "a" + std::to_string(datatype.arraySize) + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Pointer))
 		result += "p" + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Reference))
 		result += "r" + getDatatypeStr(*datatype.subType);
+
 	return result;
 }
 
 std::string getReadableDatatypeStr(const Datatype& datatype)
 {
 	std::string result;
-	if (isOfType(datatype, DTType::Name))
+	if (isOfType(datatype, DTType::Name) || isOfType(datatype, DTType::Macro))
 		result += datatype.name;
 	else if (isOfType(datatype, DTType::Array))
 		result += getReadableDatatypeStr(*datatype.subType) + "[" + std::to_string(datatype.arraySize) + "]";
@@ -233,7 +236,9 @@ std::string getReadableDatatypeStr(const Datatype& datatype)
 		result += getReadableDatatypeStr(*datatype.subType) + "*";
 	else if (isOfType(datatype, DTType::Reference))
 		result += getReadableDatatypeStr(*datatype.subType) + "&";
+
 	if (datatype.isConst)
 		result += " const";
+
 	return result;
 }

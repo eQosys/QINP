@@ -19,6 +19,7 @@ struct Datatype
 		Array, // Has subtype
 		Pointer, // Has subtype
 		Reference, // Has subtype
+		Macro, // Has subtype
 	} type = Type::None;
 	bool isConst = false;
 	DatatypeRef subType = nullptr;

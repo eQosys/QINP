@@ -99,7 +99,5 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 		break;
 	}
 
-	// TODO: Export Type specific info.
-
 	out << "}";
 }

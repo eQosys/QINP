@@ -155,6 +155,19 @@ testStr1[0] = '.'
 std.print("TestStr1: ")
 std.print(testStr1)
 std.print("\n")
+
+\\std.print("TestStr1: ", testStr1, "\n")
+
+\\std.print("TestStr1: %\n", testStr1)
+
 std.print("TestStr2: ")
 std.print(testStr2)
 std.print("\n")
+
+\\blueprint T
+\\void printFunc(T t):
+\\	std.print(t)
+\\
+\\printFunc("Hello world!\n")
+\\printFunc(10)
+\\printFunc("\n")

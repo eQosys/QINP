@@ -13,6 +13,8 @@
 #include "Tokenizer.h"
 #include "OperatorPrecedence.h"
 
+#define BLUEPRINT_SYMBOL_NAME "&_BLUEPRINTS_&"
+
 #define ENABLE_EXPR_ONLY_FOR_OBJ(expr) if (!expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) if (expr->datatype.isConst) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
@@ -435,7 +437,7 @@ uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std:
 	return memberSymbol->enumValue;
 }
 
-Datatype getParseDatatype(ProgGenInfo& info);
+Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprintMacros = {});
 
 bool parseEmptyLine(ProgGenInfo& info)
 {
@@ -534,7 +536,7 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 	auto funcs = getSymbol(currSym(info), func->name, true);
 	if (funcs && !isFuncName(funcs))
 		THROW_PROG_GEN_ERROR_POS(func->pos.decl, "Symbol with name '" + func->name + "' already declared here " + getPosStr(funcs->pos.decl));
-	
+
 	if (!funcs)
 	{
 		funcs = std::make_shared<Symbol>();
@@ -542,6 +544,21 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 		funcs->type = SymType::FunctionName;
 
 		addSymbol(currSym(info), funcs);
+	}
+
+	if (func->func.isBlueprint)
+	{
+		auto bpFuncs = getSymbol(funcs, BLUEPRINT_SYMBOL_NAME, true);
+
+		if (!bpFuncs)
+		{
+			bpFuncs = std::make_shared<Symbol>();
+			bpFuncs->name = BLUEPRINT_SYMBOL_NAME;
+			bpFuncs->type = SymType::FunctionName;
+
+			addSymbol(funcs, bpFuncs);
+		}
+		funcs = bpFuncs;
 	}
 
 	func->name = getSignatureNoRet(func);
@@ -876,14 +893,14 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 			PRINT_WARNING(
 				MAKE_PROG_GEN_ERROR_POS(
 					expToConvert->pos,
-					"Conversion from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "' does not preserve the constness of the old type!"
+					"Conversion from '" + getReadableDatatypeStr(expToConvert->datatype) + "' to '" + getReadableDatatypeStr(newDatatype) + "' does not preserve the constness of the old type!"
 				)
 			);
 		return makeConvertExpression(expToConvert, newDatatype);
 	}
 
 	if (doThrow)
-		THROW_PROG_GEN_ERROR_POS(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getDatatypeStr(expToConvert->datatype) + "' to '" + getDatatypeStr(newDatatype) + "'!");
+		THROW_PROG_GEN_ERROR_POS(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getReadableDatatypeStr(expToConvert->datatype) + "' to '" + getReadableDatatypeStr(newDatatype) + "'!");
 
 	return nullptr;
 }
@@ -925,8 +942,8 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 	if (!newDatatype)
 		THROW_PROG_GEN_ERROR_POS(
 			exp->pos, "Cannot convert " + 
-			getDatatypeStr(exp->left->datatype) + " and " +
-			getDatatypeStr(exp->right->datatype) + " to a common datatype!");
+			getReadableDatatypeStr(exp->left->datatype) + " and " +
+			getReadableDatatypeStr(exp->right->datatype) + " to a common datatype!");
 	
 	exp->left = genConvertExpression(info, exp->left, newDatatype);
 	exp->right = genConvertExpression(info, exp->right, newDatatype);
@@ -1703,7 +1720,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 	return true;
 }
 
-Datatype getParseDatatype(ProgGenInfo& info)
+Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprintMacros)
 {
 	Datatype datatype;
 
@@ -1716,7 +1733,26 @@ Datatype getParseDatatype(ProgGenInfo& info)
 		return dt;
 	};
 
-	if (isBuiltinType(peekToken(info)))
+	auto dtBeginTok = peekToken(info);
+
+	if (
+		std::find_if(
+			blueprintMacros.begin(), blueprintMacros.end(),
+			[&](const Token& tok) { return tok.value == dtBeginTok.value; }
+		) != blueprintMacros.end()
+	)
+	{
+		if (!isIdentifier(dtBeginTok))
+			return exitEntered({}, true);
+
+		nextToken(info);
+		datatype.name = dtBeginTok.value;
+		datatype.type = DTType::Macro;
+
+		return exitEntered(datatype, false);
+	}
+
+	if (isBuiltinType(dtBeginTok))
 	{
 		datatype.name = nextToken(info).value;
 		datatype.type = DTType::Name;
@@ -1845,7 +1881,7 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 	}
 }
 
-void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name)
+void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name, bool isBlueprint, const std::vector<Token>& blueprintMacros, TokenList::iterator itFuncBegin)
 {
 	SymbolRef funcSym = std::make_shared<Symbol>();
 
@@ -1856,6 +1892,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	funcSym->name = name;
 	funcSym->func.body = std::make_shared<Body>();
 	funcSym->func.retType = datatype;
+	funcSym->func.isBlueprint = isBlueprint;
 
 	parseExpected(info, Token::Type::Separator, "(");
 
@@ -1868,7 +1905,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		auto& param = paramSym->var;
 		param.context = SymVarContext::Parameter;
 
-		param.datatype = getParseDatatype(info);
+		param.datatype = getParseDatatype(info, blueprintMacros);
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 		
@@ -1896,6 +1933,8 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		nextToken(info);
 
 	auto preDeclSym = getSymbol(currSym(info), name, true);
+	if (preDeclSym && isBlueprint)
+		preDeclSym = getSymbol(preDeclSym, BLUEPRINT_SYMBOL_NAME, true);
 	if (preDeclSym)
 		preDeclSym = getSymbol(preDeclSym, getSignatureNoRet(funcSym), true);
 	if (reqPreDecl && !preDeclSym)
@@ -1913,6 +1952,32 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	}
 
 	funcSym = addFunction(info, funcSym);
+
+	if (isBlueprint)
+	{
+		funcSym->func.blueprintTokens = std::make_shared<TokenList>();
+
+		if (isDefined(funcSym))
+		{
+			parseExpectedColon(info);
+			bool doParseIndent = parseOptionalNewline(info);
+
+			increaseIndent(info.indent);
+
+			while (!doParseIndent || parseIndent(info))
+			{
+				doParseIndent = true;
+
+				while (!isNewline(peekToken(info)))
+					nextToken(info);
+				parseExpectedNewline(info);
+			}
+
+			decreaseIndent(info.indent);
+		}
+
+		*funcSym->func.blueprintTokens = TokenList(itFuncBegin, info.currToken);
+	}
 
 	if (isDefined(funcSym))
 	{
@@ -1949,10 +2014,26 @@ bool parseDeclDef(ProgGenInfo& info)
 	if (isKeyword(typeToken, "static"))
 	{
 		if (!isInFunction(currSym(info)))
-			THROW_PROG_GEN_ERROR_TOKEN(typeToken, "Static keyword can only be used in function definitions!");
+			THROW_PROG_GEN_ERROR_TOKEN(typeToken, "Static keyword can only be used inside of function definitions!");
 		isStatic = true;
 		nextToken(info);
 	}
+
+	bool isBlueprint = false;
+	std::vector<Token> blueprintMacros;
+	if (isKeyword(typeToken, "blueprint"))
+	{
+		isBlueprint = true;
+		nextToken(info);
+
+		while (isIdentifier(peekToken(info)))
+			blueprintMacros.push_back(nextToken(info));
+
+		parseExpectedNewline(info);
+	}
+
+	auto bpBegin = info.currToken;
+	auto dtBpToken = peekToken(info);
 
 	auto datatype = getParseDatatype(info);
 	if (!datatype)
@@ -1966,10 +2047,13 @@ bool parseDeclDef(ProgGenInfo& info)
 	{
 		if (!isInGlobal(currSym(info)))
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions are not allowed here!");
-		parseExpectedDeclDefFunction(info, datatype, nameToken.value);
+
+			parseExpectedDeclDefFunction(info, datatype, nameToken.value, isBlueprint, blueprintMacros, bpBegin);
 	}
 	else
 	{
+		if (isBlueprint)
+			THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Variables cannot be blueprints!");
 		parseExpectedDeclDefVariable(info, datatype, isStatic, nameToken.value);
 	}
 

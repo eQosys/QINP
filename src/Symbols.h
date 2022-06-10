@@ -68,11 +68,13 @@ struct Symbol
 	struct Function
 	{
 		Datatype retType;
-		int retOffset = 16;
+		int retOffset = 16; // Stack pointer + return address (2x 8 bytes)
 		std::vector<SymbolRef> params;
 		BodyRef body;
 		bool isReachable = false;
 		std::string asmName;
+		bool isBlueprint = false;
+		TokenListRef blueprintTokens;
 	} func;
 
 	struct Frame

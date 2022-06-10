@@ -109,6 +109,7 @@ bool isKeyword(const std::string& name)
 		"__line__",
 		"asm",
 		"assembly",
+		"blueprint",
 		"break",
 		"const",
 		"continue",
@@ -134,7 +135,6 @@ bool isKeyword(const std::string& name)
 		// "for",
 		// "new", "delete",
 		// "goto", "operator",
-		// "blueprint",
 		// "switch", "case"
 	};
 
