@@ -178,7 +178,7 @@ printFunc("String: ", "Hello world!")
 printFunc("i64:    ", 10)
 printFunc("Hello")
 
-blueprint A B
+blueprint A, B
 void printMultiple(A a, B b):
 	printFunc("A: ", a)
 	printFunc("B: ", b)

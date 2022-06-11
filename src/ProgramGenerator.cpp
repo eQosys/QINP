@@ -2173,7 +2173,12 @@ bool parseDeclDef(ProgGenInfo& info)
 		nextToken(info);
 
 		while (isIdentifier(peekToken(info)))
+		{
 			blueprintMacros.push_back(nextToken(info));
+
+			if (!isNewline(peekToken(info)))
+				parseExpected(info, Token::Type::Separator, ",");
+		}
 
 		parseExpectedNewline(info);
 	}
