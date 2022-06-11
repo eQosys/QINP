@@ -170,5 +170,15 @@ void printFunc(u8 const* msg, T t):
 	std.print(t)
 	std.print("\n")
 
+void printFunc(u8 const* msg):
+	std.print(msg)
+	std.print("\n")
+
+void printFunc(u8 const* msg, u64 t):
+	std.print(msg)
+	std.print(t)
+	std.print("\n")
+
 printFunc("String: ", "Hello world!")
-printFunc("i64:    ", (i64)10)
+printFunc("i64:    ", 10)
+printFunc("Hello")
