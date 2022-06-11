@@ -43,10 +43,9 @@ struct Symbol
 
 	enum class State
 	{
-		None,
 		Declared,
 		Defined,
-	} state = State::None;
+	} state = State::Declared;
 
 	struct Variable
 	{
@@ -74,6 +73,7 @@ struct Symbol
 		bool isReachable = false;
 		std::string asmName;
 		bool isBlueprint = false;
+		bool isVariadic = false;
 		TokenListRef blueprintTokens;
 	} func;
 

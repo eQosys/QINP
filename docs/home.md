@@ -91,7 +91,7 @@ Next steps (Not in order):
  - [Overloading](./overloading.md)
  - [Control Flow](./control-flow.md)
  - [Packs](./declarations.md#packs)
- - [Blueprints - noimpl]()
+ - [Blueprints](./blueprints.md)
  - [Exceptions - noimpl]()
 
 ---

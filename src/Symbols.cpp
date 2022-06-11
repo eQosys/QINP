@@ -266,7 +266,6 @@ std::string SymStateToString(SymState state)
 {
 	switch (state)
 	{
-	case SymState::None: return "None";
 	case SymState::Declared: return "Declared";
 	case SymState::Defined: return "Defined";
 	}

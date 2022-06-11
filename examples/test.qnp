@@ -165,28 +165,11 @@ std.print(testStr2)
 std.print("\n")
 
 blueprint T
-void printFunc(u8 const* msg, T t):
-	std.print(msg)
-	std.print(t)
-	std.print("\n")
-
-void printFunc(u8 const* msg):
-	std.print(msg)
-	std.print("\n")
-
-printFunc("String: ", "Hello world!")
-printFunc("i64:    ", 10)
-printFunc("Hello")
-
-blueprint A, B
-void printMultiple(A a, B b):
-	printFunc("A: ", a)
-	printFunc("B: ", b)
-
-printMultiple(10, "HELLO")
-
-blueprint T
 T sum(T a, T b):
 	return a + b
 
-printFunc("Sum: ", sum(10, 20))
+blueprint T
+T sum(T a, ...):
+	return a + sum(...)
+
+std.print(sum(1, 2, 3, 4, 5))

@@ -16,6 +16,8 @@ std::string getSignatureNoRet(const SymbolRef func)
 	std::string signature;
 	for (const auto& param : func->func.params)
 		signature += "~" + getDatatypeStr(param->var.datatype);
+	if (func->func.isVariadic)
+		signature += "~...";
 	return signature;
 }
 std::string getSignatureNoRet(const Expression* callExpr)

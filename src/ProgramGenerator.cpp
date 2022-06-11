@@ -53,6 +53,7 @@ struct ProgGenInfo
 	std::vector<Token> deferredImports;
 
 	std::stack<BlueprintMacroMapRef> bpMacroMapStack;
+	std::vector<int> bpVariadicParamIDs;
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
@@ -424,22 +425,68 @@ void popBlueprintMacros(ProgGenInfo& info)
 	info.bpMacroMapStack.pop();
 }
 
+std::string variadicNameFromID(int id)
+{
+	return "_VA_N_#" + std::to_string(id);
+}
+
+std::string variadicTypeFromID(int id)
+{
+	return "_VA_T_#" + std::to_string(id);
+}
+
+TokenList genVariadicParamDeclTokenList(const std::vector<int> varParamIDs)
+{
+	TokenList tokens;
+
+	bool isFirstParam = true;
+
+	for (int id : varParamIDs)
+	{
+		if (!isFirstParam)
+			tokens.push_back(makeToken(Token::Type::Separator, ","));
+		isFirstParam = false;
+
+		tokens.push_back(makeToken(Token::Type::Identifier, variadicTypeFromID(id)));
+		tokens.push_back(makeToken(Token::Type::Identifier, variadicNameFromID(id)));
+	}
+
+	return tokens;
+}
+
 void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr)
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
 	auto resolvedMacros = std::make_shared<BlueprintMacroMap>();
-	for (int i = 0; i < bpSym->func.params.size(); ++i)
+	info.bpVariadicParamIDs.clear();
+	for (int i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
 	{
-		auto& param = bpSym->func.params[i];
+		static int variadicParamID = 0;
 
-		if (param->var.datatype.type != DTType::Macro)
-			continue;
+		SymbolRef param;
 
-		if (resolvedMacros->find(param->var.datatype.name) != resolvedMacros->end())
+		if (i < bpSym->func.params.size()) // If the parameter is not variadic
 		{
-			if (!dtEqual((*resolvedMacros)[param->var.datatype.name].first, paramExpr[i]->datatype))
-				THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
-			continue;
+			param = bpSym->func.params[i];
+
+			if (param->var.datatype.type != DTType::Macro)
+				continue;
+
+			if (resolvedMacros->find(param->var.datatype.name) != resolvedMacros->end())
+			{
+				if (!dtEqual((*resolvedMacros)[param->var.datatype.name].first, paramExpr[i]->datatype))
+					THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
+				continue;
+			}
+		}
+		else // If the parameter is variadic
+		{
+			int varID = ++variadicParamID;
+			info.bpVariadicParamIDs.push_back(varID);
+
+			param = std::make_shared<Symbol>();
+			param->pos.decl = getBestPos(bpSym);
+			param->var.datatype.name = variadicTypeFromID(varID);
 		}
 
 		auto sym = makeMacroSymbol(param->pos.decl, param->var.datatype.name);
@@ -464,6 +511,15 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	auto tokens = std::make_shared<TokenList>();
 	*tokens = *bpSym->func.blueprintTokens;
 	auto bpFilepath = bpSym->func.blueprintTokens->front().pos.file;
+	if (!info.bpVariadicParamIDs.empty())
+	{
+		auto itVar = tokens->begin();
+		while (!isSeparator(*itVar, "..."))
+			++itVar;
+		itVar = tokens->erase(itVar);
+		auto varParamDecl = genVariadicParamDeclTokenList(info.bpVariadicParamIDs);
+		tokens->insert(itVar, varParamDecl.begin(), varParamDecl.end());
+	}
 
 	// Generate the blueprint specialization
 	parseInlineTokens(info, tokens, bpFilepath);
@@ -486,12 +542,12 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		if (fName == BLUEPRINT_SYMBOL_NAME)
 			continue;
 
-		if (fSym->func.params.size() != paramExpr.size())
+		if (fSym->func.params.size() != paramExpr.size() && !fSym->func.isVariadic)
 			continue;
 
 		bool matchFound = true;
 		bool isExactMatch = true;
-		for (int i = 0; i < paramExpr.size() && matchFound; ++i)
+		for (int i = 0; i < fSym->func.params.size() && matchFound; ++i) // Don't check variadic parameters
 		{
 			if (fSym->func.params[i]->var.datatype.type == DTType::Macro)
 				continue;
@@ -1604,7 +1660,17 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 
 			while (!isSeparator(peekToken(info), ")"))
 			{
-				exp->paramExpr.push_back(getParseExpression(info));
+				if (isSeparator(peekToken(info), "..."))
+				{
+					if (info.bpVariadicParamIDs.empty())
+						THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot use variadic expansion outside of variadic blueprint function!");
+					nextToken(info);
+					for (int id : info.bpVariadicParamIDs)
+						exp->paramExpr.push_back(makeSymbolExpression(exp->pos, getSymbol(currSym(info), variadicNameFromID(id))));
+				}
+				else
+					exp->paramExpr.push_back(getParseExpression(info));
+
 				if (!isSeparator(peekToken(info), ")"))
 					parseExpected(info, Token::Type::Separator, ",");
 			}
@@ -2044,6 +2110,13 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 	while (!isSeparator(peekToken(info), ")"))
 	{
+		if (isSeparator(peekToken(info), "..."))
+		{
+			funcSym->func.isVariadic = true;
+			nextToken(info);
+			break;
+		}
+
 		SymbolRef paramSym = std::make_shared<Symbol>();
 		paramSym->type = SymType::Variable;
 		paramSym->pos.decl = peekToken(info).pos;
@@ -2073,6 +2146,9 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	}
 
 	parseExpected(info, Token::Type::Separator, ")");
+
+	if (funcSym->func.isVariadic && !isBlueprint)
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Variadic functions can only be blueprints!");
 
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
