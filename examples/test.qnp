@@ -174,14 +174,16 @@ void printFunc(u8 const* msg):
 	std.print(msg)
 	std.print("\n")
 
-void printFunc(u8 const* msg, u64 t):
-	std.print(msg)
-	std.print(t)
-	std.print("\n")
-
 printFunc("String: ", "Hello world!")
 printFunc("i64:    ", 10)
 printFunc("Hello")
+
+blueprint A B
+void printMultiple(A a, B b):
+	printFunc("A: ", a)
+	printFunc("B: ", b)
+
+printMultiple(10, "HELLO")
 
 blueprint T
 T sum(T a, T b):

@@ -24,15 +24,15 @@ space std:
 		else:
 			return null
 
-		i32 fd = __syscall(__SYS_OPEN, filename, flags)
+		i32 fd = __syscall(__SYS_OPEN, (u64)filename, flags)
 
 		return fd < 0 ? (File*)null : (File*)fd
 
 	u64 fread(File* pFile, void* dest, u64 num)!:
-		return __syscall(__SYS_READ, pFile, dest, num)
+		return __syscall(__SYS_READ, (u64)pFile, (u64)dest, num)
 
 	u64 fwrite(File* pFile, void const* src, u64 num)!:
-		return __syscall(__SYS_WRITE, pFile, src, num)
+		return __syscall(__SYS_WRITE, (u64)pFile, (u64)src, num)
 
-	void fclose(File* file)!:
-		__syscall(__SYS_CLOSE, file)
+	void fclose(File* pFile)!:
+		__syscall(__SYS_CLOSE, (u64)pFile)

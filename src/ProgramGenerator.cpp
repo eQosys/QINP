@@ -980,8 +980,8 @@ bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& ne
 			return true;
 		if (isPointer(oldDt) && isExplicit)
 			return true;
-		if (isPointer(oldDt) && dtEqual(newDt, Datatype("u64")))
-			return true;
+		//if (isPointer(oldDt) && dtEqual(newDt, Datatype("u64")))
+		//	return true;
 		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;
 		return false;
@@ -1064,7 +1064,7 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 		case Expression::ExprType::Difference:
 		case Expression::ExprType::Assign_Sum:
 		case Expression::ExprType::Assign_Difference:
-			exp->right = genConvertExpression(info, exp->right, { "u64" });
+			exp->right = genConvertExpression(info, exp->right, { "u64" }, true);
 			{
 				auto temp = std::make_shared<Expression>(exp->pos);
 				temp->eType = Expression::ExprType::Product;

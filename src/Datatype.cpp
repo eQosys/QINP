@@ -218,8 +218,10 @@ Datatype dtArraysToPointer(const Datatype& datatype)
 			dest->subType &&
 			(
 				dest->type != DTType::Pointer ||
-				src->type != DTType::Pointer ||
-				src->type != DTType::Array
+				(
+					src->type != DTType::Pointer &&
+					src->type != DTType::Array
+				)	
 			)
 		)
 			dest = dest->subType.get();
