@@ -73,7 +73,7 @@ Next steps (Not in order):
  - [ ] Function pointers
  - [ ] Operator overloading
  - [x] Blueprints
- - [ ] Variadic blueprints
+ - [x] Variadic functions
  - [ ] Floating point values/operations
  - [ ] Signal handling
  - [ ] Full Windows support

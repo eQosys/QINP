@@ -463,6 +463,35 @@ TokenList genVariadicParamDeclTokenList(const std::vector<int> varParamIDs)
 	return tokens;
 }
 
+void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
+{
+	if (path.empty())
+		return;
+
+	int nPerIndent = 0;
+	for (auto& token : *tokens)
+	{
+		if (!isWhitespace(token))
+			break;
+		++nPerIndent;
+	}
+	nPerIndent /= path.size();
+
+	auto it = tokens->begin();
+	auto whitespace = makeToken(Token::Type::Whitespace, it->value);
+
+	for (int i = 0; i < path.size(); ++i)
+	{
+		for (int j = 0; j < nPerIndent * i; ++j)
+			it = ++tokens->insert(it, whitespace);
+		
+		it = ++tokens->insert(it, makeToken(Token::Type::Keyword, "space"));
+		it = ++tokens->insert(it, makeToken(Token::Type::Identifier, path[i]));
+		it = ++tokens->insert(it, makeToken(Token::Type::Separator, ":"));
+		it = ++tokens->insert(it, makeToken(Token::Type::Newline, "\n"));
+	}
+}
+
 void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr)
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
@@ -519,6 +548,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	// TODO: Generate 'space [name]:' tokens (currently indentation is not handled correctly)
 	auto tokens = std::make_shared<TokenList>();
 	*tokens = *bpSym->func.blueprintTokens;
+	genBlueprintSpecPreSpace(getSymbolPath(nullptr, getParent(getParent(getParent(bpSym)))), tokens);
 	auto bpFilepath = bpSym->func.blueprintTokens->front().pos.file;
 	if (!info.bpVariadicParamIDs.empty())
 	{
@@ -2270,6 +2300,9 @@ bool parseDeclDef(ProgGenInfo& info)
 
 	auto bpBegin = info.currToken;
 	auto dtBpToken = peekToken(info);
+
+	if (isBlueprint && !parseIndent(info))
+		THROW_PROG_GEN_ERROR_TOKEN(*bpBegin, "Inconsistent indentation!");
 
 	auto datatype = getParseDatatype(info, blueprintMacros);
 	if (!datatype)

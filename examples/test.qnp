@@ -164,18 +164,19 @@ std.print("TestStr2: ")
 std.print(testStr2)
 std.print("\n")
 
-blueprint T
-T sum(T a, T b):
-	return a + b
+space test:
+	blueprint T
+	T sum(T a, T b):
+		return a + b
 
-blueprint T
-T sum(T a, ...):
-	return a + sum(...)
+	blueprint T
+	T sum(T a, ...):
+		return a + sum(...)
 
 blueprint
 void printSum(...):
 	std.print("Sum: ")
-	std.print(sum(...))
+	std.print(test.sum(...))
 	std.print("\n")
 
 printSum(1, 2, 3, 4, 5)
