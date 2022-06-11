@@ -8,8 +8,8 @@ space std:
 	define __STDOUT (File*)1
 	define __STDERR (File*)2
 
-	i32 print(u8 const* str, u64 len)!:
-		return fwrite(__STDOUT, str, len)
+	i32 printn(u8 const* str, u64 num)!:
+		return fwrite(__STDOUT, str, num)
 
 	u8 getchar()!:
 		u8 ch

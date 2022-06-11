@@ -17,6 +17,12 @@ Token makeToken(Token::Type type, const std::string& value)
 	return makeToken(Token::Position(), type, value);
 }
 
+void addPosition(Token& token, const Token::Position& pos)
+{
+	token.posHistory.push_back(token.pos);
+	token.pos = pos;
+}
+
 const std::map<std::string, Token::Type> specialKeywords = 
 {
 	{ "+",   Token::Type::Operator },

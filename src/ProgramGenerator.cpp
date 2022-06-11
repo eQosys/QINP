@@ -53,7 +53,7 @@ struct ProgGenInfo
 	std::vector<Token> deferredImports;
 
 	std::stack<BlueprintMacroMapRef> bpMacroMapStack;
-	std::vector<int> bpVariadicParamIDs;
+	std::stack<std::vector<int>> bpVariadicParamIDStack;
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
@@ -238,11 +238,7 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 
 		auto it = tokIt;
 		for (int i = 0; i < sym->macroTokens.size(); ++i)
-		{
-			it->posHistory.push_back(it->pos);
-			it->pos = newPos;
-			++it;
-		}
+			addPosition(*it++, newPos);
 
 		if (updateCurrToken)
 			info.currToken = tokIt;
@@ -496,7 +492,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
 	auto resolvedMacros = std::make_shared<BlueprintMacroMap>();
-	info.bpVariadicParamIDs.clear();
+	info.bpVariadicParamIDStack.push({});
 	for (int i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
 	{
 		static int variadicParamID = 0;
@@ -520,7 +516,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 		else // If the parameter is variadic
 		{
 			int varID = ++variadicParamID;
-			info.bpVariadicParamIDs.push_back(varID);
+			info.bpVariadicParamIDStack.top().push_back(varID);
 
 			param = std::make_shared<Symbol>();
 			param->pos.decl = getBestPos(bpSym);
@@ -545,18 +541,29 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	// Enter the space the blueprint was defined in
 	enterSymbol(info, info.program->symbols);
 
-	// TODO: Generate 'space [name]:' tokens (currently indentation is not handled correctly)
+	// Copy the blueprint tokens
 	auto tokens = std::make_shared<TokenList>();
 	*tokens = *bpSym->func.blueprintTokens;
+	for (auto& token : *tokens)
+		addPosition(token, bpSym->pos.decl);
+
+	{ // Remove the '!' specifier if it exists
+		auto it = tokens->begin();
+		while (!isSeparator(*it++, ")"))
+			; // Do nothing
+		if (isOperator(*it, "!"))
+			it = tokens->erase(it);
+	}
+	// Generate 'space [name]:' tokens
 	genBlueprintSpecPreSpace(getSymbolPath(nullptr, getParent(getParent(getParent(bpSym)))), tokens);
 	auto bpFilepath = bpSym->func.blueprintTokens->front().pos.file;
-	if (!info.bpVariadicParamIDs.empty())
+	if (!info.bpVariadicParamIDStack.top().empty())
 	{
 		auto itVar = tokens->begin();
 		while (!isSeparator(*itVar, "..."))
 			++itVar;
 		itVar = tokens->erase(itVar);
-		auto varParamDecl = genVariadicParamDeclTokenList(info.bpVariadicParamIDs);
+		auto varParamDecl = genVariadicParamDeclTokenList(info.bpVariadicParamIDStack.top());
 		tokens->insert(itVar, varParamDecl.begin(), varParamDecl.end());
 	}
 
@@ -567,6 +574,8 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 
 	// Remove temporary macros
 	popBlueprintMacros(info);
+
+	info.bpVariadicParamIDStack.pop();
 }
 
 SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false)
@@ -914,7 +923,7 @@ void increaseIndent(ProgGenInfo::Indent& indent)
 	++indent.lvl;
 }
 
-bool parseIndent(ProgGenInfo& info)
+bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces = false)
 {
 	if (info.indent.chStr.empty())
 	{
@@ -961,8 +970,8 @@ bool parseIndent(ProgGenInfo& info)
 
 	nextToken(info, indentCount);
 
-	if (peekToken(info).type == Token::Type::Whitespace)
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Inconsistent indentation!");
+	if (!ignoreLeadingWhitespaces && peekToken(info).type == Token::Type::Whitespace)
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Inconsistent indentation!");
 
 	return true;
 }
@@ -1701,10 +1710,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			{
 				if (isSeparator(peekToken(info), "..."))
 				{
-					if (info.bpVariadicParamIDs.empty())
+					if (info.bpVariadicParamIDStack.empty() || info.bpVariadicParamIDStack.top().empty())
 						THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot use variadic expansion outside of variadic blueprint function!");
 					nextToken(info);
-					for (int id : info.bpVariadicParamIDs)
+					for (int id : info.bpVariadicParamIDStack.top())
 						exp->paramExpr.push_back(makeSymbolExpression(exp->pos, getSymbol(currSym(info), variadicNameFromID(id))));
 				}
 				else
@@ -2225,7 +2234,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 			increaseIndent(info.indent);
 
-			while (!doParseIndent || parseIndent(info))
+			while (!doParseIndent || parseIndent(info, true))
 			{
 				doParseIndent = true;
 

@@ -40,6 +40,8 @@ Token makeToken(Token::Position pos, Token::Type type, const std::string& value)
 
 Token makeToken(Token::Type type, const std::string& value);
 
+void addPosition(Token& token, const Token::Position& pos);
+
 typedef std::list<Token> TokenList;
 typedef std::shared_ptr<TokenList> TokenListRef;
 

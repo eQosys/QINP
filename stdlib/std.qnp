@@ -26,29 +26,39 @@ define ulong u64
 
 space std:
 
+	\\ Print the first num chars of a string to stdout
+	\\ @param str The string to print
+	\\ @param len The length of the string to print
+	\\ @return The number of characters printed. Negative on error.
+	i32 printn(u8 const* str, u64 num)...		\\ Platform dependent implementation
+
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
 	\\ @return The number of characters printed. Negative on error.
 	i32 print(u8 const* str)...
-	\\ blueprint T
-	\\ i32 print(const T& str)...
-
-	\\ Formatted print
-	\\ blueprint T,
-	\\ i32 print(const T& str, const T& value)...
-	\\ blueprint T, ...
-	\\ i32 print(const u8* str, const T& value, ...)...
-
-	\\ Print a string of specified length to stdout
-	\\ @param str The string to print
-	\\ @param len The length of the string to print
-	\\ @return The number of characters printed. Negative on error.
-	i32 print(u8 const* str, u64 len)...		\\ Platform dependent implementation
 
 	\\ Print a base-10 integer to stdout
 	\\ @param num The integer to print
 	\\ @return The number of characters printed. Negative on error.
 	i32 print(i64 num)...
+
+	\\ Format a string and print it to stdout
+	\\ @param str The string to print
+	\\ @param val The first argument placed in the string
+	\\ @return The number of characters printed. Negative on error.
+	blueprint T
+	i32 print(u8 const* str, T val)...
+
+	\\ Format a string and print it to stdout
+	\\ @param str The string to print
+	\\ @param val The first argument placed in the string
+	\\ @param ... The remaining arguments placed in the string
+	\\ @return The number of characters printed. Negative on error.
+	blueprint T
+	i32 print(u8 const* str, T val, ...)...
+
+	blueprint T
+	i32 __print(u8 const** pStr, T val)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read from stdin
@@ -63,11 +73,30 @@ space std:
 
 
 	i32 print(u8 const* str)!:
-		return print(str, strlen(str))
+		return printn(str, strlen(str))
 
 	i32 print(i64 num)!:
 		u8 str[32]
 		return print(itos(num, str, 10))
+
+	blueprint T
+	i32 print(u8 const* str, T val)!:
+		return __print(&str, val) + print(str)
+
+	blueprint T
+	i32 print(u8 const* str, T val, ...)!:
+		return __print(&str, val) + print(str, ...)
+	
+	blueprint T
+	i32 __print(u8 const** pStr, T val)!:
+		u8 const* str = *pStr
+		u8 const* dropIndex = strchr(str, '%')
+		if dropIndex == null:
+			*pStr = str + strlen(str)
+			return print(str) + print(val)
+		
+		*pStr = dropIndex + 1
+		return printn(str, (u64)(dropIndex - str)) + print(val)
 
 	u8* scan(u8* dest, u64 size)!:
 		u8* begin = dest
