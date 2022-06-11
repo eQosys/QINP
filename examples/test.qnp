@@ -164,10 +164,11 @@ std.print("TestStr2: ")
 std.print(testStr2)
 std.print("\n")
 
-\\blueprint T
-\\void printFunc(T t):
-\\	std.print(t)
-\\
-\\printFunc("Hello world!\n")
-\\printFunc(10)
-\\printFunc("\n")
+blueprint T
+void printFunc(u8 const* msg, T t):
+	std.print(msg)
+	std.print(t)
+	std.print("\n")
+
+printFunc("String: ", "Hello world!")
+printFunc("i64:    ", (i64)10)

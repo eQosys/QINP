@@ -205,6 +205,41 @@ int getBuiltinTypeSize(const std::string& name)
 	return (it != sizes.end()) ? it->second : -1;
 }
 
+Datatype dtArraysToPointer(const Datatype& datatype)
+{
+	Datatype base;
+
+	Datatype* dest = &base;
+	const Datatype* src = &datatype;
+
+	while (src)
+	{
+		if (
+			dest->subType &&
+			(
+				dest->type != DTType::Pointer ||
+				src->type != DTType::Pointer ||
+				src->type != DTType::Array
+			)
+		)
+			dest = dest->subType.get();
+
+		dest->name = src->name;
+		dest->type = src->type;
+		dest->isConst = src->isConst;
+
+		if (dest->type == DTType::Array)
+			dest->type = DTType::Pointer;
+
+		src = src->subType.get();
+
+		if (src)
+			dest->subType = std::make_shared<Datatype>();
+	}
+
+	return base;
+}
+
 std::string getDatatypeStr(const Datatype& datatype)
 {
 	std::string result;
@@ -221,6 +256,8 @@ std::string getDatatypeStr(const Datatype& datatype)
 		result += "p" + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Reference))
 		result += "r" + getDatatypeStr(*datatype.subType);
+	else
+		assert(false && "Unknown datatype type!");
 
 	return result;
 }

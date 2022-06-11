@@ -3,6 +3,20 @@
 #include <iostream>
 #include <set>
 
+Token makeToken(Token::Position pos, Token::Type type, const std::string& value)
+{
+	Token token;
+	token.pos = pos;
+	token.type = type;
+	token.value = value;
+	return token;
+}
+
+Token makeToken(Token::Type type, const std::string& value)
+{
+	return makeToken(Token::Position(), type, value);
+}
+
 const std::map<std::string, Token::Type> specialKeywords = 
 {
 	{ "+",   Token::Type::Operator },

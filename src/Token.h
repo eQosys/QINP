@@ -36,6 +36,10 @@ struct Token
 	std::vector<Position> posHistory;
 };
 
+Token makeToken(Token::Position pos, Token::Type type, const std::string& value);
+
+Token makeToken(Token::Type type, const std::string& value);
+
 typedef std::list<Token> TokenList;
 typedef std::shared_ptr<TokenList> TokenListRef;
 

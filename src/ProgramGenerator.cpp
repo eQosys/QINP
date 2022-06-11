@@ -26,6 +26,9 @@ struct LocalStackFrame
 	int frameSize = 0; // The size of the stack frame. (Sum of the push sizes of all locals)
 };
 
+typedef std::map<std::string, std::pair<Datatype, SymbolRef>> BlueprintMacroMap;
+typedef std::shared_ptr<BlueprintMacroMap> BlueprintMacroMapRef;
+
 struct ProgGenInfo
 {
 	TokenListRef tokens;
@@ -47,9 +50,9 @@ struct ProgGenInfo
 
 	std::set<std::string> imports;
 
-	std::map<std::string, Token> defSymbols;
-
 	std::vector<Token> deferredImports;
+
+	std::stack<BlueprintMacroMapRef> bpMacroMapStack;
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
@@ -147,6 +150,38 @@ void autoResizeTokenList(ProgGenInfo& info, int offset)
 	}
 }
 
+TokenList DatatypeToTokenList(const Datatype& datatype)
+{
+	TokenList tokens;
+
+	auto insertToken = [&tokens](const Token::Type type, const std::string& value)
+	{
+		tokens.insert(tokens.begin(), makeToken(type, value));
+	};
+
+	auto pDt = &datatype;
+	while (pDt)
+	{
+		if (pDt->isConst)
+			insertToken(Token::Type::Keyword, "const");
+
+		if (isOfType(*pDt, DTType::Name) || isOfType(*pDt, DTType::Macro))
+			insertToken(isBuiltinType(pDt->name) ? Token::Type::BuiltinType : Token::Type::Identifier, pDt->name);
+		else if (isOfType(*pDt, DTType::Array))
+			assert(false && "Array datatypes not supported!");
+		else if (isOfType(*pDt, DTType::Pointer))
+			insertToken(Token::Type::Operator, "*");
+		else if (isOfType(*pDt, DTType::Reference))
+			assert(false && "Reference datatypes not supported!");
+		else
+			assert(false && "Unknown datatype type!");
+		
+		pDt = pDt->subType.get();
+	}
+
+	return tokens;
+}
+
 const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
 {
 	auto tokIt = moveTokenIterator(*info.tokens, info.currToken, offset);
@@ -169,7 +204,17 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 	
 	while (isIdentifier(*pTok))
 	{
-		auto sym = getSymbol(currSym(info), pTok->value);
+		SymbolRef sym;
+		if (!info.bpMacroMapStack.empty())
+		{
+			auto it = info.bpMacroMapStack.top()->find(pTok->value);
+			if (it != info.bpMacroMapStack.top()->end())
+				sym = it->second.second;
+		}
+
+		if (!sym)
+			sym = getSymbol(currSym(info), pTok->value);
+
 		if (!sym || !isMacro(sym))
 			break;
 
@@ -342,31 +387,123 @@ bool leftConversionIsProhibited(Expression::ExprType eType)
 	return prohibitedTypes.find(eType) != prohibitedTypes.end();
 }
 
+SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
+{
+	SymbolRef sym = std::make_shared<Symbol>();
+	sym->type = SymType::Macro;
+	sym->pos.decl = pos;
+	sym->name = name;
+	return sym;
+}
+
 ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
+void parseGlobalCode(ProgGenInfo& info);
+
+void parseInlineTokens(ProgGenInfo& info, TokenListRef tokens, const std::string& progPath)
 {
+	auto backup = makeProgGenInfoBackup(info);
+
+	info.tokens = tokens;
+	info.progPath = progPath;
+	info.indent = {};
+	parseGlobalCode(info);
+
+	loadProgGenInfoBackup(info, backup);
+}
+
+void pushBlueprintMacros(ProgGenInfo& info, BlueprintMacroMapRef blueprintMacros)
+{
+	assert(blueprintMacros);
+	info.bpMacroMapStack.push(blueprintMacros);
+}
+
+void popBlueprintMacros(ProgGenInfo& info)
+{
+	assert(!info.bpMacroMapStack.empty());
+	info.bpMacroMapStack.pop();
+}
+
+void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr)
+{
+	// Check if the parameters resolve all blueprint macros (+ without conflicts)
+	auto resolvedMacros = std::make_shared<BlueprintMacroMap>();
+	for (int i = 0; i < bpSym->func.params.size(); ++i)
+	{
+		auto& param = bpSym->func.params[i];
+
+		if (param->var.datatype.type != DTType::Macro)
+			continue;
+
+		if (resolvedMacros->find(param->var.datatype.name) != resolvedMacros->end())
+		{
+			if (!dtEqual((*resolvedMacros)[param->var.datatype.name].first, param->var.datatype))
+				THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
+			continue;
+		}
+
+		auto sym = makeMacroSymbol(param->pos.decl, param->var.datatype.name);
+		auto dt = dtArraysToPointer(paramExpr[i]->datatype);
+		sym->macroTokens = DatatypeToTokenList(dt);
+		(*resolvedMacros)[param->var.datatype.name] = { dt, sym };
+	}
+	// Check if the return type is a blueprint macro
+	if (
+		bpSym->func.retType.type == DTType::Macro &&
+		resolvedMacros->find(bpSym->func.retType.name) != resolvedMacros->end()
+	)
+		THROW_PROG_GEN_ERROR_POS(bpSym->pos.decl, "Blueprint return type has not been resolved!");
+
+	// Add temporary macros
+	pushBlueprintMacros(info, resolvedMacros);
+	
+	// Enter the space the blueprint was defined in
+	enterSymbol(info, info.program->symbols);
+
+	// TODO: Generate 'space [name]:' tokens (currently indentation is not handled correctly)
+	auto tokens = std::make_shared<TokenList>();
+	*tokens = *bpSym->func.blueprintTokens;
+	auto bpFilepath = bpSym->func.blueprintTokens->front().pos.file;
+
+	// Generate the blueprint specialization
+	parseInlineTokens(info, tokens, bpFilepath);
+
+	exitSymbol(info);
+
+	// Remove temporary macros
+	popBlueprintMacros(info);
+}
+
+SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false)
+{
+	if (!overloads)
+		return nullptr;
+
 	SymbolRef match = nullptr;
 
-	for (auto overload : overloads->subSymbols)
+	for (auto& [fName, fSym] : overloads->subSymbols)
 	{
-		auto func = overload.second;
+		if (fName == BLUEPRINT_SYMBOL_NAME)
+			continue;
 
-		if (func->func.params.size() != paramExpr.size())
+		if (fSym->func.params.size() != paramExpr.size())
 			continue;
 
 		bool matchFound = true;
 		bool isExactMatch = true;
 		for (int i = 0; i < paramExpr.size() && matchFound; ++i)
 		{
-			if (!dtEqual(paramExpr[i]->datatype, func->func.params[i]->var.datatype, true))
+			if (fSym->func.params[i]->var.datatype.type == DTType::Macro)
+				continue;
+
+			if (!dtEqual(paramExpr[i]->datatype, fSym->func.params[i]->var.datatype, true))
 				isExactMatch = false;
-			matchFound = !!genConvertExpression(info, paramExpr[i], func->func.params[i]->var.datatype, false, false);
+			matchFound = !!genConvertExpression(info, paramExpr[i], fSym->func.params[i]->var.datatype, false, false);
 		}
 
 		if (isExactMatch)
 		{
-			match = func;
+			match = fSym;
 			break;
 		}
 		
@@ -374,12 +511,21 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		{
 			if (match)
 				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
-			match = func;
+			match = fSym;
 		}
 	}
 
+	if (!match && !isBlueprintSearch)
+		match = getMatchingOverload(info, getSymbol(overloads, BLUEPRINT_SYMBOL_NAME, true), paramExpr, true);
+
 	if (match)
 	{
+		if (isBlueprintSearch)
+		{
+			generateBlueprintSpecialization(info, match, paramExpr);
+			return getMatchingOverload(info, getParent(overloads), paramExpr);
+		}
+
 		for (int i = 0; i < paramExpr.size(); ++i)
 			if (!dtEqual(paramExpr[i]->datatype, match->func.params[i]->var.datatype))
 				paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false, true, true);
@@ -1977,9 +2123,9 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		}
 
 		*funcSym->func.blueprintTokens = TokenList(itFuncBegin, info.currToken);
+		funcSym->func.blueprintTokens->push_back(makeToken(Token::Type::EndOfCode, "<end-of-code>"));
 	}
-
-	if (isDefined(funcSym))
+	else if (isDefined(funcSym))
 	{
 		funcSym->pos.def = declDefPos;
 
@@ -2048,7 +2194,7 @@ bool parseDeclDef(ProgGenInfo& info)
 		if (!isInGlobal(currSym(info)))
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions are not allowed here!");
 
-			parseExpectedDeclDefFunction(info, datatype, nameToken.value, isBlueprint, blueprintMacros, bpBegin);
+		parseExpectedDeclDefFunction(info, datatype, nameToken.value, isBlueprint, blueprintMacros, bpBegin);
 	}
 	else
 	{
@@ -2410,10 +2556,7 @@ bool parseStatementDefine(ProgGenInfo& info)
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 
-	SymbolRef sym = std::make_shared<Symbol>();
-	sym->type = SymType::Macro;
-	sym->pos.decl = nameToken.pos;
-	sym->name = nameToken.value;
+	auto sym = makeMacroSymbol(nameToken.pos, nameToken.value);
 
 	auto existingSymbol = getSymbol(currSym(info), sym->name, true);
 	if (existingSymbol)
@@ -2687,14 +2830,11 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	std::string code = readTextFile(path);
 
-	auto backup = makeProgGenInfoBackup(info);
-
-	info.tokens = tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()));
-	info.progPath = path;
-	info.indent = {};
-	parseGlobalCode(info);
-
-	loadProgGenInfoBackup(info, backup);
+	parseInlineTokens(
+		info,
+		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path())),
+		path
+	);
 }
 
 bool parseStatementImport(ProgGenInfo& info)
