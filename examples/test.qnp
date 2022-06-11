@@ -120,8 +120,7 @@ std.print("\n")
 enum Color:
 	Red, Green, Blue
 
-std.print((u64)Color.Green)
-std.print("\n")
+std.print((u64)Color.Green, "\n")
 
 std.toupper('a')
 std.tolower('A')
@@ -129,14 +128,10 @@ std.tolower('A')
 u8 buff[10000]
 
 std.File* f = std.fopen("examples/test.qnp", "r")
-std.print("Read ")
-std.print(std.fread(f, buff, sizeof(buff) - 1))
-std.print(" bytes\n")
+std.print("Read % bytes\n", std.fread(f, buff, sizeof(buff) - 1))
 std.fclose(f)
 buff[sizeof(buff) - 1] = 0
-std.print("Text read: ")
-std.print(buff)
-std.print("\n")
+std.print("Text read:\n%\n", buff)
 
 enum Data:
 	A = -10

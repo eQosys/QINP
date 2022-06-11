@@ -584,6 +584,9 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 		return nullptr;
 
 	SymbolRef match = nullptr;
+	int matchScore = 0;
+
+	// TODO: Implement a better matching algorithm
 
 	for (auto& [fName, fSym] : overloads->subSymbols)
 	{
@@ -595,27 +598,37 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 
 		bool matchFound = true;
 		bool isExactMatch = true;
+		int score = 0;
 		for (int i = 0; i < fSym->func.params.size() && matchFound; ++i) // Don't check variadic parameters
 		{
-			if (fSym->func.params[i]->var.datatype.type == DTType::Macro)
-				continue;
-
-			if (!dtEqual(paramExpr[i]->datatype, fSym->func.params[i]->var.datatype, true))
-				isExactMatch = false;
-			matchFound = !!genConvertExpression(info, paramExpr[i], fSym->func.params[i]->var.datatype, false, false);
+			if (fSym->func.params[i]->var.datatype.type != DTType::Macro)
+			{
+				if (
+					!dtEqual(paramExpr[i]->datatype, fSym->func.params[i]->var.datatype, true) &&
+					!dtEqual(dtArraysToPointer(paramExpr[i]->datatype), fSym->func.params[i]->var.datatype, true)
+				)
+					isExactMatch = false;
+				matchFound = !!genConvertExpression(info, paramExpr[i], fSym->func.params[i]->var.datatype, false, false);
+			}
+			++score;
 		}
 
 		if (isExactMatch)
 		{
 			match = fSym;
+			matchScore = score;
 			break;
 		}
 		
 		if (matchFound)
 		{
-			if (match)
+			if (match && matchScore == score)
 				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
-			match = fSym;
+			if (matchScore < score)
+			{
+				match = fSym;
+				matchScore = score;
+			}
 		}
 	}
 

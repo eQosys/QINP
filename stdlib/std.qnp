@@ -25,7 +25,6 @@ define ulong u64
 
 
 space std:
-
 	\\ Print the first num chars of a string to stdout
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
@@ -41,6 +40,13 @@ space std:
 	\\ @param num The integer to print
 	\\ @return The number of characters printed. Negative on error.
 	i32 print(i64 num)...
+
+	\\ Print two or more values of different types consecutively to stdout
+	\\ @param val The first value to print
+	\\ @param ... The remaining values to print
+	\\ @return The number of characters printed. Negative on error.
+	blueprint T
+	i32 print(T val, ...)...
 
 	\\ Format a string and print it to stdout
 	\\ @param str The string to print
@@ -78,6 +84,10 @@ space std:
 	i32 print(i64 num)!:
 		u8 str[32]
 		return print(itos(num, str, 10))
+
+	blueprint T
+	i32 print(T val, ...)!:
+		return print(val) + print(...)
 
 	blueprint T
 	i32 print(u8 const* str, T val)!:
