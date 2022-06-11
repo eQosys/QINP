@@ -45,9 +45,14 @@ def genLineVariable(symbol):
 
 def genLineFunction(symbol, funcName, isDefine):
 	isExtern = funcName is None
+	line = ""
 	if isExtern:
 		funcName = symbol["name"]
-	return ("", "extern ")[isExtern] + symbol["retType"] + " " + funcName + "(" + ", ".join(map(genLineVariable, symbol["params"])) + ")" + (" ...", "")[isDefine]
+		line = "extern " + line
+	if symbol["isBlueprint"]:
+		line = "blueprint " + line
+		
+	return line + symbol["retType"] + " " + funcName + "(" + ", ".join(map(genLineVariable, symbol["params"])) + ("", ", ...")[symbol["isVariadic"]] + ")" + (" ...", "")[isDefine]
 
 def genLinePack(symbol, isDefine):
 	return ("pack", "union")[symbol["isUnion"]] + " " + symbol["name"] + (" ...", "")[isDefine]
@@ -80,7 +85,10 @@ def generateLines(base, files, funcName = None):
 			case "Variable":
 				files[declFile].globals.append(genLineVariable(symbol))
 			case "FuncName":
-				generateLines(symbol["subSymbols"], files, name)
+				if name == "&_BLUEPRINTS_&":
+					generateLines(symbol["subSymbols"], files, funcName)
+				else:
+					generateLines(symbol["subSymbols"], files, name)
 			case "FuncSpec":
 				if defFile == "<unknown>" or defFile != declFile:
 					files[declFile].functions.append(genLineFunction(symbol, funcName, False))

@@ -73,6 +73,8 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 		out << "]";
 		out << ",\"size\": " << root->frame.size;
 		out << ",\"totalOffset\": " << root->frame.totalOffset;
+		out << ",\"isBlueprint\": " << (root->func.isBlueprint ? "true" : "false");
+		out << ",\"isVariadic\": " << (root->func.isVariadic ? "true" : "false");
 		break;
 	case SymType::Pack:
 		out << ",\"size\": " << root->frame.size;

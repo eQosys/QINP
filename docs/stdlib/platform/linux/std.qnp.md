@@ -8,7 +8,7 @@
 
 ## Functions
  - [u8 getchar()]()
- - [i32 print(u8 const* str, u64 len)]()
+ - [i32 printn(u8 const* str, u64 num)]()
 
 ## Macros
  - [__STDERR]()
