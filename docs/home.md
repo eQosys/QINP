@@ -2,6 +2,8 @@
 
 ## Overview
  - [Getting Started](#getting-started)
+ - [Examples](#examples)
+ - [Tests](#tests)
  - [Development](#development)
  - [Language](#language)
  - [Compiler](#compiler)
@@ -35,8 +37,9 @@ Note: NASM and 'vcvars64.bat' must be added to PATH.
 Building:
  - Use Visual Studio's CMake integration to build QINP.
 
+---
 
-#### Examples
+### Examples
 
 ```qinp
 import "std.qnp"
@@ -46,7 +49,9 @@ std.print("Hello, world!")
 The [examples](../examples/) can be a good starting point to get to know the QINP language.
 The [tests](../tests/) may also be interesting to some users.
 
-#### Tests
+---
+
+### Tests
 
 The [./test.py](../test.py) script can be used to test the QINP language features.
 
@@ -67,7 +72,8 @@ Next steps (Not in order):
  - [ ] Object oriented programming
  - [ ] Function pointers
  - [ ] Operator overloading
- - [ ] Blueprints + Varargs
+ - [x] Blueprints
+ - [ ] Variadic blueprints
  - [ ] Floating point values/operations
  - [ ] Signal handling
  - [ ] Full Windows support
