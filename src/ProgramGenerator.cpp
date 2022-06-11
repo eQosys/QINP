@@ -437,7 +437,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 
 		if (resolvedMacros->find(param->var.datatype.name) != resolvedMacros->end())
 		{
-			if (!dtEqual((*resolvedMacros)[param->var.datatype.name].first, param->var.datatype))
+			if (!dtEqual((*resolvedMacros)[param->var.datatype.name].first, paramExpr[i]->datatype))
 				THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
 			continue;
 		}
@@ -450,7 +450,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	// Check if the return type is a blueprint macro
 	if (
 		bpSym->func.retType.type == DTType::Macro &&
-		resolvedMacros->find(bpSym->func.retType.name) != resolvedMacros->end()
+		resolvedMacros->find(bpSym->func.retType.name) == resolvedMacros->end()
 	)
 		THROW_PROG_GEN_ERROR_POS(bpSym->pos.decl, "Blueprint return type has not been resolved!");
 
@@ -2181,7 +2181,7 @@ bool parseDeclDef(ProgGenInfo& info)
 	auto bpBegin = info.currToken;
 	auto dtBpToken = peekToken(info);
 
-	auto datatype = getParseDatatype(info);
+	auto datatype = getParseDatatype(info, blueprintMacros);
 	if (!datatype)
 		return false;
 

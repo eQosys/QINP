@@ -182,3 +182,9 @@ void printFunc(u8 const* msg, u64 t):
 printFunc("String: ", "Hello world!")
 printFunc("i64:    ", 10)
 printFunc("Hello")
+
+blueprint T
+T sum(T a, T b):
+	return a + b
+
+printFunc("Sum: ", sum(10, 20))
