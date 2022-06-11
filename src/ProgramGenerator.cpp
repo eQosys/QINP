@@ -62,27 +62,36 @@ struct ProgGenInfo
 struct ProgGenInfoBackup
 {
 	TokenListRef tokens;
+	std::string progPath;
 	TokenList::iterator currToken;
 	ProgGenInfo::Indent indent;
-	std::string progPath;
+	int funcRetOffset;
+	int funcFrameSize;
+	Datatype funcRetType;
 };
 
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
 {
 	ProgGenInfoBackup backup;
 	backup.tokens = info.tokens;
+	backup.progPath = info.progPath;
 	backup.currToken = info.currToken;
 	backup.indent = info.indent;
-	backup.progPath = info.progPath;
+	backup.funcRetOffset = info.funcRetOffset;
+	backup.funcFrameSize = info.funcFrameSize;
+	backup.funcRetType = info.funcRetType;
 	return backup;
 }
 
 void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 {
 	info.tokens = backup.tokens;
+	info.progPath = backup.progPath;
 	info.currToken = backup.currToken;
 	info.indent = backup.indent;
-	info.progPath = backup.progPath;
+	info.funcRetOffset = backup.funcRetOffset;
+	info.funcFrameSize = backup.funcFrameSize;
+	info.funcRetType = backup.funcRetType;
 }
 
 SymbolRef currSym(const ProgGenInfo& info)

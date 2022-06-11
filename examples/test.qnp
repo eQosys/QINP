@@ -172,4 +172,10 @@ blueprint T
 T sum(T a, ...):
 	return a + sum(...)
 
-std.print(sum(1, 2, 3, 4, 5))
+blueprint
+void printSum(...):
+	std.print("Sum: ")
+	std.print(sum(...))
+	std.print("\n")
+
+printSum(1, 2, 3, 4, 5)
