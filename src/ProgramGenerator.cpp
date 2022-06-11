@@ -2148,7 +2148,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	parseExpected(info, Token::Type::Separator, ")");
 
 	if (funcSym->func.isVariadic && !isBlueprint)
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Variadic functions can only be blueprints!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Variadic functions must be blueprints!");
 
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
