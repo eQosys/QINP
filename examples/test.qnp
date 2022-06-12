@@ -152,5 +152,6 @@ blueprint
 i32 sum(i32 a, ...):
 	return a + sum(...)
 
-std.print("Sum: ", sum(1, 2))
+std.print("Sum: %\n", sum(1, 2))
 
+std.__assert(sum(1, 2) == 3, "Sum failed", __file__, __line__)

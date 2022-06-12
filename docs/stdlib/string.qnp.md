@@ -2,12 +2,9 @@
 # Stdlib - stdlib/string.qnp
 
 ## Overview
- - [Globals](#globals)
  - [Functions](#functions)
+ - [Macros](#macros)
 
-
-## Globals
- - [u8 const* const __baseCharsLower]()
 
 ## Functions
  - [u8* itos(i64 num, u8* str, i64 base)]()
@@ -36,4 +33,7 @@
  - [u8* strupr(u8* str, u64 num)]()
  - [u8 tolower(u8 c)]()
  - [u8 toupper(u8 c)]()
+
+## Macros
+ - [__BASE_CHARS_LOWER]()
 

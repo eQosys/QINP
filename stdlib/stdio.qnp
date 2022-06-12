@@ -1,0 +1,115 @@
+\\ QINP Standard Library
+\\ Standard Input/Output
+
+import "string.qnp"
+
+space std:
+	\\ Print the first num chars of a string to stdout
+	\\ @param str The string to print
+	\\ @param len The length of the string to print
+	\\ @return The number of characters printed. Negative on error.
+	i32 printn(u8 const* str, u64 num)...		\\ Platform dependent implementation
+
+	\\ Print a null-terminated string to stdout
+	\\ @param str The null-terminated string to print
+	\\ @return The number of characters printed. Negative on error.
+	i32 print(u8 const* str)...
+
+	\\ Print a base-10 integer to stdout
+	\\ @param num The integer to print
+	\\ @return The number of characters printed. Negative on error.
+	i32 print(i64 num)...
+
+	\\ Print two or more values of different types consecutively to stdout
+	\\ @param val The first value to print
+	\\ @param ... The remaining values to print
+	\\ @return Positive on success, negative on error.
+	blueprint T
+	i32 print(T val, ...)...
+
+	\\ Format a string and print it to stdout
+	\\ @param str The string to print
+	\\ @param val The first argument placed in the string
+	\\ @return Positive on success, negative on error.
+	blueprint T
+	i32 print(u8 const* str, T val)...
+
+	\\ Format a string and print it to stdout
+	\\ @param str The string to print
+	\\ @param val The first argument placed in the string
+	\\ @param ... The remaining arguments placed in the string
+	\\ @return Positive on success, negative on error.
+	blueprint T
+	i32 print(u8 const* str, T val, ...)...
+
+	\\ Internal function to print a formatted string to stdout
+	\\ @param pStr A pointer to the string to print
+	\\ @param val The value to place in the string
+	\\ @return Positive on success, negative on error.
+	blueprint T
+	i32 __print(u8 const** pStr, T val)...
+
+	\\ Reads a character from stdin
+	\\ @return The character read from stdin
+	u8 getchar()...		\\ Platform dependent implementation
+
+	\\ Read a null-terminated string from stdin
+	\\ @param dest The destination buffer
+	\\ @param size The size of the destination buffer
+	\\ @return Address of the destination buffer
+	u8* scan(u8* dest, u64 size)...
+
+
+
+	i32 print(u8 const* str)!:
+		return printn(str, strlen(str))
+
+	i32 print(i64 num)!:
+		u8 str[32]
+		return print(itos(num, str, 10))
+
+	blueprint T
+	i32 print(T val, ...)!:
+		if print(val) < 0: return -1
+		if print(...) < 0: return -1
+		return 1
+
+	blueprint T
+	i32 print(u8 const* str, T val)!:
+		if __print(&str, val) < 0: return -1
+		if print(str) < 0: return -1
+		return 1
+
+	blueprint T
+	i32 print(u8 const* str, T val, ...)!:
+		if __print(&str, val) < 0: return -1
+		if print(str, ...) < 0: return -1
+		return 1
+	
+	blueprint T
+	i32 __print(u8 const** pStr, T val)!:
+		u8 const* str = *pStr
+		u8 const* dropIndex = strchr(str, '%')
+		if dropIndex == null:
+			*pStr = str + strlen(str)
+
+			if printn(str, (u64)(*pStr - str)) < 0: return -1
+			if print(val) < 0: return -1
+			return 1
+
+		*pStr = dropIndex + 1
+
+		if printn(str, (u64)(dropIndex - str)) < 0: return -1
+		if print(val) < 0: return -1
+		return 1
+
+	u8* scan(u8* dest, u64 size)!:
+		u8* begin = dest
+
+		while size--: *dest++ = getchar()
+
+		*dest = null
+		return begin
+
+import.linux "platform/linux/stdio.qnp"
+import.windows "platform/windows/stdio.qnp"

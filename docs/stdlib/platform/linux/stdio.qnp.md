@@ -1,5 +1,5 @@
 
-# Stdlib - stdlib/platform/linux/std.qnp
+# Stdlib - stdlib/platform/linux/stdio.qnp
 
 ## Overview
  - [Functions](#functions)
