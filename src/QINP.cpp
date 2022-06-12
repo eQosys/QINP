@@ -99,7 +99,7 @@ public:
 
 		end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> diff = end - start;
-		std::cout << diff.count() << "s" << std::endl;
+		std::cout << " DONE: " << diff.count() << "s" << std::endl;
 	}
 private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;
@@ -165,7 +165,7 @@ int main(int argc, char** argv, char** _env)
 
 		ProgramRef program;
 		{
-			if (verbose) std::cout << "Code gen: ";
+			if (verbose) std::cout << "Parsing...\n";
 			Timer timer(verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()));
@@ -234,13 +234,13 @@ int main(int argc, char** argv, char** _env)
 		}
 
 		{
-			if (verbose) std::cout << "Nasm: ";
+			if (verbose) std::cout << "Assembling...\n ";
 			Timer timer(verbose);
 			if (execCmd(nasmCmd))
 				THROW_QINP_ERROR("Assembler Error!");
 		}
 		{
-			if (verbose) std::cout << "Linker: ";
+			if (verbose) std::cout << "Linging...\n";
 			Timer timer(verbose);
 			if (execCmd(linkCmd))
 				THROW_QINP_ERROR("Linker Error!");
