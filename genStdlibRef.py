@@ -90,9 +90,9 @@ def generateLines(base, files, funcName = None):
 				else:
 					generateLines(symbol["subSymbols"], files, name)
 			case "FuncSpec":
-				if defFile == "<unknown>" or defFile != declFile:
+				if declFile != defFile:
 					files[declFile].functions.append(genLineFunction(symbol, funcName, False))
-				if defFile != "<unknown>":
+				if symbol["state"] == "Defined":
 					files[defFile].functions.append(genLineFunction(symbol, funcName, True))
 			case "ExtFunc":
 				files[declFile].functions.append(genLineFunction(symbol, None, True))
