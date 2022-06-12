@@ -240,7 +240,7 @@ int main(int argc, char** argv, char** _env)
 				THROW_QINP_ERROR("Assembler Error!");
 		}
 		{
-			if (verbose) std::cout << "Linging...\n";
+			if (verbose) std::cout << "Linking...\n";
 			Timer timer(verbose);
 			if (execCmd(linkCmd))
 				THROW_QINP_ERROR("Linker Error!");

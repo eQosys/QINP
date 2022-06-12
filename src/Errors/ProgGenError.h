@@ -30,3 +30,5 @@ public:
 
 #define MAKE_PROG_GEN_ERROR_TOKEN(token, what) MAKE_PROG_GEN_ERROR_DETAILED((token).pos, (token).posHistory, what)
 #define THROW_PROG_GEN_ERROR_TOKEN(token, what) THROW_PROG_GEN_ERROR_DETAILED((token).pos, (token).posHistory, what)
+
+#define RETHROW_PROG_GEN_ERROR_POS(pos, msg, prevErr) throw QinpError("FROM " + getPosStr(pos) + ": " + (msg) + ":\n" + (prevErr).what(), (prevErr).where())

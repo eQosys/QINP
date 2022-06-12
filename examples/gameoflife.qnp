@@ -83,6 +83,4 @@ while n++ < N_ITERATIONS:
 		break
 show()
 
-std.print("Ran for ")
-std.print(n)
-std.print(" iterations\n")
+std.print("Ran for % iterations\n", n)

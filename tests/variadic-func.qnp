@@ -1,0 +1,10 @@
+import "std.qnp"
+
+i32 sum(i32 a, i32 b):
+	return a + b
+
+blueprint
+i32 sum(i32 a, ...):
+	return a + sum(...)
+
+std.print("Sum: ", sum(1, 2, 3, 4, 5))

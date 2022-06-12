@@ -402,6 +402,18 @@ SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
 	return sym;
 }
 
+std::string getParamExprTypeStr(const std::vector<ExpressionRef>& paramExpr)
+{
+	std::string paramStr;
+	for (int i = 0; i < paramExpr.size(); ++i)
+	{
+		if (i != 0)
+			paramStr += ", ";
+		paramStr += getReadableDatatypeStr(paramExpr[i]->datatype);
+	}
+	return paramStr;
+}
+
 ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
 void parseGlobalCode(ProgGenInfo& info);
@@ -533,7 +545,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 		bpSym->func.retType.type == DTType::Macro &&
 		resolvedMacros->find(bpSym->func.retType.name) == resolvedMacros->end()
 	)
-		THROW_PROG_GEN_ERROR_POS(bpSym->pos.decl, "Blueprint return type has not been resolved!");
+		THROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "Blueprint return type has not been resolved!");
 
 	// Add temporary macros
 	pushBlueprintMacros(info, resolvedMacros);
@@ -545,7 +557,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	auto tokens = std::make_shared<TokenList>();
 	*tokens = *bpSym->func.blueprintTokens;
 	for (auto& token : *tokens)
-		addPosition(token, bpSym->pos.decl);
+		addPosition(token, getBestPos(bpSym));
 
 	{ // Remove the '!' specifier if it exists
 		auto it = tokens->begin();
@@ -568,7 +580,24 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	}
 
 	// Generate the blueprint specialization
-	parseInlineTokens(info, tokens, bpFilepath);
+	try
+	{
+		parseInlineTokens(info, tokens, bpFilepath);
+	}
+	catch(const QinpError& err)
+	{
+		std::string paramStr = "";
+		for (int i = 0; i < bpSym->func.params.size(); ++i)
+		{
+			if (i != 0)
+				paramStr += ", ";
+			paramStr += getReadableDatatypeStr(bpSym->func.params[i]->var.datatype);
+		}
+		if (bpSym->func.params.size() < paramExpr.size())
+			paramStr += ", ";
+		paramStr += getParamExprTypeStr(std::vector(paramExpr.begin() + bpSym->func.params.size(), paramExpr.end()));
+		RETHROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "While generating blueprint function '" + getParent(getParent(bpSym))->name + "' with parameters (" + paramStr + ")", err);
+	}
 
 	exitSymbol(info);
 
@@ -729,7 +758,7 @@ int getConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit,
 	return CONV_SCORE_NOT_POSSIBLE;
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false, int currBestScore = CONV_SCORE_MAX)
+SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false, int currBestScore = CONV_SCORE_MAX, bool currIsGenFromBlueprint = false)
 {
 	if (!overloads)
 		return nullptr;
@@ -785,7 +814,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 
 	if (!isBlueprintSearch)
 	{
-		auto temp = getMatchingOverload(info, getSymbol(overloads, BLUEPRINT_SYMBOL_NAME, true), paramExpr, true, matchScore);
+		auto temp = getMatchingOverload(info, getSymbol(overloads, BLUEPRINT_SYMBOL_NAME, true), paramExpr, true, matchScore, (match && match->func.genFromBlueprint));
 		if (temp)
 		{
 			match = temp;
@@ -801,8 +830,12 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 
 	if (isBlueprintSearch)
 	{
+		if (currBestScore != CONV_SCORE_MAX && !currIsGenFromBlueprint)
+			return nullptr;
+
 		generateBlueprintSpecialization(info, match, paramExpr);
-		return getMatchingOverload(info, getParent(overloads), paramExpr);
+		match = getMatchingOverload(info, getParent(overloads), paramExpr);
+		match->func.genFromBlueprint = true;
 	}
 
 	for (int i = 0; i < paramExpr.size(); ++i)
@@ -1907,7 +1940,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			{
 				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
 				if (!func)
-					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'!");
+					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'! Provided parameters: (" + getParamExprTypeStr(exp->paramExpr) + ")");
 			}
 			
 			exp->datatype = func->func.retType;
@@ -2401,6 +2434,8 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		if (isDefined(funcSym))
 		{
+			funcSym->pos.def = declDefPos;
+
 			parseExpectedColon(info);
 			bool doParseIndent = parseOptionalNewline(info);
 

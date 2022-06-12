@@ -5,8 +5,11 @@
 class QinpError
 {
 public:
+    QinpError(const std::string& what, const std::string& srcPos)
+        : m_what(what), m_where(srcPos)
+    {}
     QinpError(const std::string& what, const std::string& srcFile, int srcLine)
-        : m_what(what), m_where(srcFile + ":" + std::to_string(srcLine))
+        : QinpError(what, srcFile + ":" + std::to_string(srcLine))
     {}
 public:
     const std::string& what() const { return m_what; }
