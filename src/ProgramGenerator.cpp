@@ -578,75 +578,236 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	info.bpVariadicParamIDStack.pop();
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false)
+#define CONV_SCORE_MIN            -0xFF
+#define CONV_SCORE_BEGIN           0x0
+#define CONV_SCORE_MAX             0x7FFFFFFF
+#define CONV_SCORE_NOT_POSSIBLE   -0xFFFF
+#define CONV_SCORE_NO_CONV         0x0
+#define CONV_SCORE_EXPLICIT        0x0
+#define CONV_SCORE_MACRO           0x1
+#define CONV_SCORE_VARIADIC        0x1
+#define CONV_SCORE_PROMITION       0x2
+#define CONV_SCORE_PTR_TO_VOID_PTR 0x3
+#define CONV_SCORE_NARROW_CONV     0x4
+
+int getConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
+{
+	auto retCorrect = [&isExplicit](int score) -> int
+	{
+		return isExplicit ? CONV_SCORE_EXPLICIT : score;
+	};
+
+	from = dtArraysToPointer(from);
+	to = dtArraysToPointer(to);
+	if (dtEqual(from, to, ignoreFirstConstness))
+		return CONV_SCORE_NO_CONV;
+
+	if (dtEqualNoConst(from, to) && preservesConstness(from, to))
+		return CONV_SCORE_NO_CONV;
+
+	if (isPointer(from) && isVoidPtr(to) && preservesConstness(from, to))
+		return retCorrect(CONV_SCORE_PTR_TO_VOID_PTR);
+
+	if (isNull(from))
+		return CONV_SCORE_NO_CONV;
+
+	if (isExplicit)
+	{
+		if (isEnum(info.program, from) || isEnum(info.program, to))
+			return CONV_SCORE_EXPLICIT;
+
+		if (isPointer(from) || isInteger(to))
+			return CONV_SCORE_EXPLICIT;
+	}	
+
+	if (
+		from.type == DTType::Name &&
+		to.type == DTType::Name &&
+		isBuiltinType(from.name) &&
+		isBuiltinType(to.name)
+		)
+	{
+		static const std::map<std::pair<std::string, std::string>, int> convScoreMap = 
+		{
+			{ { "bool", "bool" }, CONV_SCORE_NO_CONV },
+			{ { "bool", "i8"   }, CONV_SCORE_PROMITION },
+			{ { "bool", "i16"  }, CONV_SCORE_PROMITION },
+			{ { "bool", "i32"  }, CONV_SCORE_PROMITION },
+			{ { "bool", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "bool", "u8"   }, CONV_SCORE_PROMITION },
+			{ { "bool", "u16"  }, CONV_SCORE_PROMITION },
+			{ { "bool", "u32"  }, CONV_SCORE_PROMITION },
+			{ { "bool", "u64"  }, CONV_SCORE_PROMITION },
+			
+			{ { "i8", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "i8", "i8"   }, CONV_SCORE_NO_CONV },
+			{ { "i8", "i16"  }, CONV_SCORE_PROMITION },
+			{ { "i8", "i32"  }, CONV_SCORE_PROMITION },
+			{ { "i8", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "i8", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i8", "u16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i8", "u32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i8", "u64"  }, CONV_SCORE_NARROW_CONV },
+
+			{ { "i16", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "i16", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i16", "i16"  }, CONV_SCORE_NO_CONV },
+			{ { "i16", "i32"  }, CONV_SCORE_PROMITION },
+			{ { "i16", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "i16", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i16", "u16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i16", "u32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i16", "u64"  }, CONV_SCORE_NARROW_CONV },
+
+			{ { "i32", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "i32", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i32", "i16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i32", "i32"  }, CONV_SCORE_NO_CONV },
+			{ { "i32", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "i32", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i32", "u16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i32", "u32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i32", "u64"  }, CONV_SCORE_NARROW_CONV },
+
+			{ { "i64", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "i16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "i32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "i64"  }, CONV_SCORE_NO_CONV },
+			{ { "i64", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "u16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "u32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "i64", "u64"  }, CONV_SCORE_NARROW_CONV },
+
+			{ { "u8", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "u8", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u8", "i16"  }, CONV_SCORE_PROMITION },
+			{ { "u8", "i32"  }, CONV_SCORE_PROMITION },
+			{ { "u8", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "u8", "u8"   }, CONV_SCORE_NO_CONV },
+			{ { "u8", "u16"  }, CONV_SCORE_PROMITION },
+			{ { "u8", "u32"  }, CONV_SCORE_PROMITION },
+			{ { "u8", "u64"  }, CONV_SCORE_PROMITION },
+
+			{ { "u16", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "u16", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u16", "i16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u16", "i32"  }, CONV_SCORE_PROMITION },
+			{ { "u16", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "u16", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u16", "u16"  }, CONV_SCORE_NO_CONV },
+			{ { "u16", "u32"  }, CONV_SCORE_PROMITION },
+			{ { "u16", "u64"  }, CONV_SCORE_PROMITION },
+
+			{ { "u32", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "u32", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u32", "i16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u32", "i32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u32", "i64"  }, CONV_SCORE_PROMITION },
+			{ { "u32", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u32", "u16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u32", "u32"  }, CONV_SCORE_NO_CONV },
+			{ { "u32", "u64"  }, CONV_SCORE_PROMITION },
+
+			{ { "u64", "bool" }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "i8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "i16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "i32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "i64"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "u8"   }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "u16"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "u32"  }, CONV_SCORE_NARROW_CONV },
+			{ { "u64", "u64"  }, CONV_SCORE_NO_CONV },
+		};
+
+		auto it = convScoreMap.find({ from.name, to.name });
+		if (it == convScoreMap.end())
+			return CONV_SCORE_NOT_POSSIBLE;
+		return retCorrect(it->second);
+	}
+	
+	return CONV_SCORE_NOT_POSSIBLE;
+}
+
+SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false, int currBestScore = CONV_SCORE_MAX)
 {
 	if (!overloads)
 		return nullptr;
 
 	SymbolRef match = nullptr;
-	int matchScore = 0;
-
-	// TODO: Implement a better matching algorithm
+	int matchScore = currBestScore;
+	int matchCount = (currBestScore == CONV_SCORE_MAX ? 0 : 1);
 
 	for (auto& [fName, fSym] : overloads->subSymbols)
 	{
 		if (fName == BLUEPRINT_SYMBOL_NAME)
 			continue;
 
-		if (fSym->func.params.size() != paramExpr.size() && !fSym->func.isVariadic)
+		if (fSym->func.isVariadic && paramExpr.size() <= fSym->func.params.size())
+			continue;
+		if (!fSym->func.isVariadic && paramExpr.size() != fSym->func.params.size())
 			continue;
 
-		bool matchFound = true;
-		bool isExactMatch = true;
-		int score = 0;
-		for (int i = 0; i < fSym->func.params.size() && matchFound; ++i) // Don't check variadic parameters
+		int score = CONV_SCORE_BEGIN;
+		for (int i = 0; i < paramExpr.size() && score >= CONV_SCORE_MIN; ++i) // Don't check variadic parameters
 		{
-			if (fSym->func.params[i]->var.datatype.type != DTType::Macro)
+			if (i < fSym->func.params.size()) // If the parameter is not variadic
 			{
-				if (
-					!dtEqual(paramExpr[i]->datatype, fSym->func.params[i]->var.datatype, true) &&
-					!dtEqual(dtArraysToPointer(paramExpr[i]->datatype), fSym->func.params[i]->var.datatype, true)
-				)
-					isExactMatch = false;
-				matchFound = !!genConvertExpression(info, paramExpr[i], fSym->func.params[i]->var.datatype, false, false);
+				if (fSym->func.params[i]->var.datatype.type != DTType::Macro)
+				{
+					int change = getConvScore(info, paramExpr[i]->datatype, fSym->func.params[i]->var.datatype, false, true);
+					if (change == CONV_SCORE_NOT_POSSIBLE)
+						score = CONV_SCORE_NOT_POSSIBLE;
+					else
+						score += change;
+				}
+				else
+					score += CONV_SCORE_MACRO;
 			}
-			++score;
+			else // If the parameter is variadic
+				score += CONV_SCORE_VARIADIC;
 		}
 
-		if (isExactMatch)
+		if (score < CONV_SCORE_MIN)
+			continue;
+
+		if (score == matchScore)
 		{
-			match = fSym;
+			++matchCount;
+		}
+		else if (score < matchScore)
+		{
 			matchScore = score;
-			break;
-		}
-		
-		if (matchFound)
-		{
-			if (match && matchScore == score)
-				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
-			if (matchScore < score)
-			{
-				match = fSym;
-				matchScore = score;
-			}
+			matchCount = 1;
+			match = fSym;
 		}
 	}
 
-	if (!match && !isBlueprintSearch)
-		match = getMatchingOverload(info, getSymbol(overloads, BLUEPRINT_SYMBOL_NAME, true), paramExpr, true);
-
-	if (match)
+	if (!isBlueprintSearch)
 	{
-		if (isBlueprintSearch)
+		auto temp = getMatchingOverload(info, getSymbol(overloads, BLUEPRINT_SYMBOL_NAME, true), paramExpr, true, matchScore);
+		if (temp)
 		{
-			generateBlueprintSpecialization(info, match, paramExpr);
-			return getMatchingOverload(info, getParent(overloads), paramExpr);
+			match = temp;
+			matchCount = 1;
 		}
-
-		for (int i = 0; i < paramExpr.size(); ++i)
-			if (!dtEqual(paramExpr[i]->datatype, match->func.params[i]->var.datatype))
-				paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false, true, true);
 	}
+
+	if (matchCount > 1)
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
+
+	if (!match)
+		return nullptr;
+
+	if (isBlueprintSearch)
+	{
+		generateBlueprintSpecialization(info, match, paramExpr);
+		return getMatchingOverload(info, getParent(overloads), paramExpr);
+	}
+
+	for (int i = 0; i < paramExpr.size(); ++i)
+		if (!dtEqual(paramExpr[i]->datatype, match->func.params[i]->var.datatype))
+			paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false, true, true);
 
 	return match;
 }
@@ -1097,8 +1258,6 @@ bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& ne
 			return true;
 		if (isPointer(oldDt) && isExplicit)
 			return true;
-		//if (isPointer(oldDt) && dtEqual(newDt, Datatype("u64")))
-		//	return true;
 		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;
 		return false;

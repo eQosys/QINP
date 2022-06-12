@@ -6,17 +6,13 @@ void printBlockList():
 	std.print("ChunkList:\n")
 	std.__MemBlockHeader* curr = std.__memBlocks
 	while curr != null:
-		std.print(" This: ")
-		std.print((u64)curr)
+		std.print(" This: ", (u64)curr)
 
-		std.print("\n Prev: ")
-		std.print((u64)curr->prev)
+		std.print("\n Prev: ", (u64)curr->prev)
 
-		std.print("\n Next: ")
-		std.print((u64)curr->next)
+		std.print("\n Next: ", (u64)curr->next)
 
-		std.print("\n Size: ")
-		std.print(curr->sizeAvail)
+		std.print("\n Size: ", curr->sizeAvail)
 
 		std.print("\n DiffToPrev: ")
 		if curr->prev != null: std.print((u64)curr - (u64)curr->prev)
@@ -39,9 +35,7 @@ i64 brkDiff():
 brkDiff()
 
 void printBrkDiff():
-	std.print("BrkDiff: ")
-	std.print(brkDiff())
-	std.print("\n")
+	std.print("BrkDiff: ", brkDiff(), "\n")
 
 printBlockList()
 
@@ -84,15 +78,11 @@ std.print("Clearing buff1... ")
 u64 begin = std.getTime()
 std.memset(buff1, 0, 1024 * 1024 * 1024)
 u64 end = std.getTime()
-std.print(" DONE\n")
-std.print(" -> Time: ")
-std.print(end - begin)
-std.print(" ms\n")
+std.print(" DONE\n -> Time: % ms\n", end - begin)
 
 u8* str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std.memcpy(str, "..................", 9)
-std.print(str)
-std.print("-----------------\n")
+std.print("%-----------------\n", str)
 
 std.print("Freeing 1024 megabytes...")
 std.free(buff1)
@@ -103,8 +93,7 @@ printBlockList()
 u8* str1 = (u8*)"Hello world, my name is TecStylos!"
 u8* tok = std.strtok(str1, " ")
 while tok:
-	std.print(tok)
-	std.print("\n")
+	std.print(tok, "\n")
 	tok = std.strtok(null, " ")
 
 u8 const* str2 = \
@@ -114,8 +103,7 @@ std.print(str2)
 
 i64 const var = 10 * 12 + 100
 
-std.print(var)
-std.print("\n")
+std.print(var, "\n")
 
 enum Color:
 	Red, Green, Blue
@@ -139,8 +127,7 @@ enum Data:
 	C
 	D = 10
 
-std.print((i64)Data.C)
-std.print("\n")
+std.print((i64)Data.C, "\n")
 
 u8* testStr1 = (u8*)"This is a test string"
 u8* testStr2 = (u8*)"This is a test string"
