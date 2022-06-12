@@ -2,7 +2,18 @@ import "stdio.qnp"
 import "system.qnp"
 
 space std:
-	void __assert(bool check, u8 const* msg, u8 const* file, u64 line):
+	\\ define assert(check, msg) __assert(check, msg, __file__, __line__)
+
+	\\ Internal assert function. Prints error message and exits if check is false.
+	\\ @param check Boolean expression to check.
+	\\ @param msg Error message to print.
+	\\ @param file File name where assert was called.
+	\\ @param line Line number where assert was called.
+	void __assert(bool check, u8 const* msg, u8 const* file, i32 line)...
+
+
+
+	void __assert(bool check, u8 const* msg, u8 const* file, i32 line)!:
 		if !check:
 			print("%:%: Assertion failed with message '%'!\n", file, line, msg)
 			exit(1)

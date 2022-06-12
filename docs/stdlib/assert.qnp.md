@@ -6,5 +6,5 @@
 
 
 ## Functions
- - [void __assert(bool check, u8 const* msg, u8 const* file, u64 line)]()
+ - [void __assert(bool check, u8 const* msg, u8 const* file, i32 line)]()
 

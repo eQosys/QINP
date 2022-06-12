@@ -81,7 +81,7 @@ def generateLines(base, files, funcName = None):
 
 		match symbol["type"]:
 			case "None" | "Namespace" | "Global":
-				pass
+				continue
 			case "Variable":
 				files[declFile].globals.append(genLineVariable(symbol))
 			case "FuncName":
@@ -90,6 +90,8 @@ def generateLines(base, files, funcName = None):
 				else:
 					generateLines(symbol["subSymbols"], files, name)
 			case "FuncSpec":
+				if symbol["genFromBlueprint"]:
+					continue
 				if declFile != defFile:
 					files[declFile].functions.append(genLineFunction(symbol, funcName, False))
 				if symbol["state"] == "Defined":
@@ -105,7 +107,7 @@ def generateLines(base, files, funcName = None):
 			case "Enum":
 				files[declFile].enums.append(genLineEnum(symbol))
 			case "EnumMember":
-				pass
+				continue
 			case "Macro":
 				files[declFile].macros.append(genMacroLine(symbol))
 			case _:

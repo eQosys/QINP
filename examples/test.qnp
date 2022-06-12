@@ -3,28 +3,27 @@ import "std.qnp"
 import "fileio.qnp"
 
 void printBlockList():
+	std.print("- - - - - - - - - -\n")
 	std.print("ChunkList:\n")
 	std.__MemBlockHeader* curr = std.__memBlocks
 	while curr != null:
-		std.print(" This: ", (u64)curr)
+		std.print(" This: %\n", (u64)curr)
+		std.print(" Prev: %\n", (u64)curr->prev)
+		std.print(" Next: %\n", (u64)curr->next)
+		std.print(" Size: %\n", curr->sizeAvail)
 
-		std.print("\n Prev: ", (u64)curr->prev)
+		std.print(" DiffToPrev: ")
+		if curr->prev != null: std.print((u64)curr - (u64)curr->prev, "\n")
+		else: std.print("--\n")
 
-		std.print("\n Next: ", (u64)curr->next)
+		std.print(" DiffToNext: ")
+		if curr->next != null: std.print((u64)curr->next - (u64)curr, "\n")
+		else: std.print("--\n")
 
-		std.print("\n Size: ", curr->sizeAvail)
+		std.print("\n")
 
-		std.print("\n DiffToPrev: ")
-		if curr->prev != null: std.print((u64)curr - (u64)curr->prev)
-		else: std.print("--")
-
-		std.print("\n DiffToNext: ")
-		if curr->next != null: std.print((u64)curr->next - (u64)curr)
-		else: std.print("--")
-
-		std.print("\n\n")
 		curr = curr->next
-	std.print("-----------------\n")
+	std.print("-------------------\n\n")
 
 i64 brkDiff():
 	static i64 lastBrk = 0
