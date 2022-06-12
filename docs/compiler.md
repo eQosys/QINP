@@ -45,10 +45,6 @@
   
     Specifies a library/object file to link against.
 
- - -s, --print-symbols
-
-    Prints the symbols (including unused ones) of the parsed program code.
-
  - -e, --export-symbol-info
 
     Writes the symbols (including unused ones) of the parsed program code

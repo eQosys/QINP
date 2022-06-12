@@ -13,17 +13,6 @@ import "time.qnp"
 define EXIT_SUCCESS 0
 define EXIT_FAILURE 1
 
-define char i8
-define short i16
-define int i32
-define long i64
-
-define uchar u8
-define ushort u16
-define uint u32
-define ulong u64
-
-
 space std:
 	\\ Print the first num chars of a string to stdout
 	\\ @param str The string to print
@@ -44,14 +33,14 @@ space std:
 	\\ Print two or more values of different types consecutively to stdout
 	\\ @param val The first value to print
 	\\ @param ... The remaining values to print
-	\\ @return The number of characters printed. Negative on error.
+	\\ @return Positive on success, negative on error.
 	blueprint T
 	i32 print(T val, ...)...
 
 	\\ Format a string and print it to stdout
 	\\ @param str The string to print
 	\\ @param val The first argument placed in the string
-	\\ @return The number of characters printed. Negative on error.
+	\\ @return Positive on success, negative on error.
 	blueprint T
 	i32 print(u8 const* str, T val)...
 
@@ -59,10 +48,14 @@ space std:
 	\\ @param str The string to print
 	\\ @param val The first argument placed in the string
 	\\ @param ... The remaining arguments placed in the string
-	\\ @return The number of characters printed. Negative on error.
+	\\ @return Positive on success, negative on error.
 	blueprint T
 	i32 print(u8 const* str, T val, ...)...
 
+	\\ Internal function to print a formatted string to stdout
+	\\ @param pStr A pointer to the string to print
+	\\ @param val The value to place in the string
+	\\ @return Positive on success, negative on error.
 	blueprint T
 	i32 __print(u8 const** pStr, T val)...
 
@@ -87,15 +80,21 @@ space std:
 
 	blueprint T
 	i32 print(T val, ...)!:
-		return print(val) + print(...)
+		if print(val) < 0: return -1
+		if print(...) < 0: return -1
+		return 1
 
 	blueprint T
 	i32 print(u8 const* str, T val)!:
-		return __print(&str, val) + print(str)
+		if __print(&str, val) < 0: return -1
+		if print(str) < 0: return -1
+		return 1
 
 	blueprint T
 	i32 print(u8 const* str, T val, ...)!:
-		return __print(&str, val) + print(str, ...)
+		if __print(&str, val) < 0: return -1
+		if print(str, ...) < 0: return -1
+		return 1
 	
 	blueprint T
 	i32 __print(u8 const** pStr, T val)!:
@@ -103,10 +102,16 @@ space std:
 		u8 const* dropIndex = strchr(str, '%')
 		if dropIndex == null:
 			*pStr = str + strlen(str)
-			return print(str) + print(val)
-		
+
+			if printn(str, (u64)(*pStr - str)) < 0: return -1
+			if print(val) < 0: return -1
+			return 1
+
 		*pStr = dropIndex + 1
-		return printn(str, (u64)(dropIndex - str)) + print(val)
+
+		if printn(str, (u64)(dropIndex - str)) < 0: return -1
+		if print(val) < 0: return -1
+		return 1
 
 	u8* scan(u8* dest, u64 size)!:
 		u8* begin = dest

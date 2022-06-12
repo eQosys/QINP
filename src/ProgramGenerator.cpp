@@ -556,8 +556,6 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	// Copy the blueprint tokens
 	auto tokens = std::make_shared<TokenList>();
 	*tokens = *bpSym->func.blueprintTokens;
-	for (auto& token : *tokens)
-		addPosition(token, getBestPos(bpSym));
 
 	{ // Remove the '!' specifier if it exists
 		auto it = tokens->begin();

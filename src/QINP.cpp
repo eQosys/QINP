@@ -50,7 +50,6 @@ std::map<std::string, OptionInfo> argNames =
 	{ "p", { "platform", OptionInfo::Type::Single } },
 	{ "a", { "runarg", OptionInfo::Type::Multi } },
 	{ "x", { "extern", OptionInfo::Type::Multi } },
-	{ "s", { "print-symbols", OptionInfo::Type::NoValue } },
 	{ "e", { "export-symbol-info", OptionInfo::Type::Single } },
 };
 
@@ -78,8 +77,6 @@ std::map<std::string, OptionInfo> argNames =
 	"	  Only used when --run is specified.\n" \
 	"  -x, --extern=[filepath]\n" \
 	"    Specifies a library/object file to link against.\n" \
-	"  -s, --print-symbols\n" \
-	"    Prints the symbols (including unused ones) of the parsed program code.\n" \
 	"  -e, --export-symbol-info\n" \
 	"    Writes the symbols (including unused ones) of the parsed program code\n" \
 	"    and additional info to the specified file.\n"
@@ -87,14 +84,16 @@ std::map<std::string, OptionInfo> argNames =
 class Timer
 {
 public:
-	Timer(bool printOnDestruction)
-		: m_printOnDestruction(printOnDestruction)
+	Timer(const std::string& msg, bool doPrint)
+		: m_doPrint(doPrint)
 	{
+		if (m_doPrint)
+			std::cout << msg << "...\n";
 		start = std::chrono::high_resolution_clock::now();
 	}
 	~Timer()
 	{
-		if (!m_printOnDestruction)
+		if (!m_doPrint)
 			return;
 
 		end = std::chrono::high_resolution_clock::now();
@@ -104,22 +103,8 @@ public:
 private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> start;
 	std::chrono::time_point<std::chrono::high_resolution_clock> end;
-	bool m_printOnDestruction;
+	bool m_doPrint;
 };
-
-void printIndentation(int depth)
-{
-	for (int i = 0; i < depth; ++i)
-		std::cout << "  ";
-}
-
-void printSymbolTree(SymbolRef root, int depth)
-{
-	printIndentation(depth);
-	std::cout << "'" << root->name << "' [" << SymTypeToString(root->type) << "]" << std::endl;
-	for (auto& subPair : root->subSymbols)
-		printSymbolTree(subPair.second, depth + 2);
-}
 
 int main(int argc, char** argv, char** _env)
 {
@@ -165,17 +150,10 @@ int main(int argc, char** argv, char** _env)
 
 		ProgramRef program;
 		{
-			if (verbose) std::cout << "Parsing...\n";
-			Timer timer(verbose);
+			Timer timer("Parsing", verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()));
 			program = generateProgram(tokens, importDirs, platform, inFilename);
-		}
-
-		if (args.hasOption("print-symbols"))
-		{
-			std::cout << "Symbol tree:" << std::endl;
-			printSymbolTree(program->symbols, 1);
 		}
 
 		if (args.hasOption("export-symbol-info"))
@@ -234,14 +212,12 @@ int main(int argc, char** argv, char** _env)
 		}
 
 		{
-			if (verbose) std::cout << "Assembling...\n ";
-			Timer timer(verbose);
+			Timer timer("Assembling", verbose);
 			if (execCmd(nasmCmd))
 				THROW_QINP_ERROR("Assembler Error!");
 		}
 		{
-			if (verbose) std::cout << "Linking...\n";
-			Timer timer(verbose);
+			Timer timer("Linking", verbose);
 			if (execCmd(linkCmd))
 				THROW_QINP_ERROR("Linker Error!");
 		}
