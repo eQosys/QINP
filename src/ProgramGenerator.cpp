@@ -585,10 +585,10 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 #define CONV_SCORE_NO_CONV         0x0
 #define CONV_SCORE_EXPLICIT        0x0
 #define CONV_SCORE_MACRO           0x1
-#define CONV_SCORE_VARIADIC        0x1
-#define CONV_SCORE_PROMITION       0x2
-#define CONV_SCORE_PTR_TO_VOID_PTR 0x3
-#define CONV_SCORE_NARROW_CONV     0x4
+#define CONV_SCORE_VARIADIC        0x2
+#define CONV_SCORE_PROMITION       0x3
+#define CONV_SCORE_PTR_TO_VOID_PTR 0x4
+#define CONV_SCORE_NARROW_CONV     0x5
 
 int getConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
 {

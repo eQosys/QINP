@@ -140,3 +140,6 @@ std.print("TestStr2: %\n", testStr2)
 std.print("\n")
 
 std.print("TestStr1: %\nTestStr2: %\n", testStr1, testStr2)
+
+std.print("File:Line -> %:%\n", __file__, __line__)
+std.print("File:Line -> ", __file__, ":", __line__, "\n")
