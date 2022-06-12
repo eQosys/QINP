@@ -2,6 +2,9 @@
 \\ System
 
 space std:
+	define EXIT_SUCCESS 0
+	define EXIT_FAILURE 1
+
 	\\ Terminate the calling process and return the specified exit status.
 	\\ @param status The exit status to return to the parent process.
 	void exit(i32 status)...		\\ Platform dependent implementation

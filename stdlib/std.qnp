@@ -9,10 +9,6 @@ import "string.qnp"
 import "time.qnp"
 
 
-\\ Convenience definitions
-define EXIT_SUCCESS 0
-define EXIT_FAILURE 1
-
 space std:
 	\\ Print the first num chars of a string to stdout
 	\\ @param str The string to print
