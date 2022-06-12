@@ -819,6 +819,8 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 			matchCount = 1;
 		}
 	}
+	else if (currBestScore != CONV_SCORE_MAX && !currIsGenFromBlueprint)
+		return nullptr;
 
 	if (matchCount > 1)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
@@ -828,9 +830,6 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std:
 
 	if (isBlueprintSearch)
 	{
-		if (currBestScore != CONV_SCORE_MAX && !currIsGenFromBlueprint)
-			return nullptr;
-
 		generateBlueprintSpecialization(info, match, paramExpr);
 		match = getMatchingOverload(info, getParent(overloads), paramExpr);
 		match->func.genFromBlueprint = true;
@@ -2397,6 +2396,9 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	}
 
 	parseExpected(info, Token::Type::Separator, ")");
+
+	if (blueprintMacros.empty() && !funcSym->func.isVariadic)
+		funcSym->func.isBlueprint = isBlueprint = false;
 
 	if (funcSym->func.isVariadic && !isBlueprint)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Variadic functions must be blueprints!");

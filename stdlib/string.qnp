@@ -2,6 +2,9 @@
 \\ Strings
 
 space std:
+	\\ Used to convert between string and integer
+	define __BASE_CHARS_LOWER "0123456789abcdefghijklmnopqrstuvwxyz"
+
 	\\ Determine the length of a string (without the null terminator)
 	\\ @param str The null-terminated string to measure
 	\\ @return The length of the string
@@ -164,8 +167,6 @@ space std:
 	u8 tolower(u8 c)...
 
 
-	u8 const*const __baseCharsLower = "0123456789abcdefghijklmnopqrstuvwxyz"
-
 
 	u64 strlen(u8 const* str)!:
 		u8 const* begin = str
@@ -314,6 +315,7 @@ space std:
 		return begin
 
 	u8* itos(i64 num, u8* str, i64 base)!:
+		static u8 const* const __baseCharsLower = __BASE_CHARS_LOWER
 		u8* begin = str
 		bool negative = num < 0
 
@@ -331,6 +333,7 @@ space std:
 		return strrev(begin, str)
 
 	i64 stoi(u8 const* str, i64 base)!:
+		static u8 const* const __baseCharsLower = __BASE_CHARS_LOWER
 		i64 num = 0
 		bool negative = *str == '-'
 

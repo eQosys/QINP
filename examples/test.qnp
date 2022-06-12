@@ -144,6 +144,7 @@ std.print("TestStr1: %\nTestStr2: %\n", testStr1, testStr2)
 std.print("File:Line -> %:%\n", __file__, __line__)
 std.print("File:Line -> ", __file__, ":", __line__, "\n")
 
+blueprint
 i32 sum(i32 a, i32 b):
 	return a + b
 
@@ -151,4 +152,5 @@ blueprint
 i32 sum(i32 a, ...):
 	return a + sum(...)
 
-std.print("Sum: ", sum(1, 2, 3, 4, 5))
+std.print("Sum: ", sum(1, 2))
+

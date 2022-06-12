@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <set>
 #include <stdexcept>
-#include <set>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
@@ -79,6 +78,8 @@ TokenListRef tokenize(const std::string& code, std::string name)
 
 	bool specialChar = false;
 
+	int litIntBase = 10;
+
 	auto handleEndToken = [&]()
 	{
 		state = State::BeginToken;
@@ -120,6 +121,10 @@ TokenListRef tokenize(const std::string& code, std::string name)
 			tokens->back().value += token.value;
 			return;
 		}
+		else if (token.type == Token::Type::LiteralInteger)
+		{
+			token.value = std::to_string(std::stoull(token.value, nullptr, litIntBase));
+		}
 
 		tokens->push_back(token);
 	};
@@ -148,6 +153,7 @@ TokenListRef tokenize(const std::string& code, std::string name)
 				token.type = Token::Type::LiteralInteger;
 				token.value.push_back(c);
 				state = State::TokenizeLiteral;
+				litIntBase = 10;
 			}
 			else if (isWhitespace(c))
 			{
@@ -245,11 +251,45 @@ TokenListRef tokenize(const std::string& code, std::string name)
 				THROW_TOKENIZER_ERROR(token.pos, "Expected whitespace or newline after '\\'!");
 			break;
 		case State::TokenizeLiteral:
-			if (isNum(c) || '.' == c)
+			if (
+				'x' == c || 'X' == c ||
+				'b' == c || 'B' == c
+				)
 			{
+				if (token.value != "0")
+					THROW_TOKENIZER_ERROR(token.pos, "Expected '0' before '" + std::string(1, c) + "'!");
+				c = tolower(c);
+				litIntBase = (c == 'x') ? 16 : 2;
+				token.value.clear();
 				token.value.push_back(c);
 				break;
 			}
+			if (isNum(c))
+			{
+				if (token.value.size() >= 2 && token.value.find('b') == 1 && '1' < c)
+					THROW_TOKENIZER_ERROR(token.pos, "Binary literals can only contain '0' or '1'!");
+				token.value.push_back(c);
+				break;
+			}
+			if ('.' == c)
+			{
+				if (token.value.find('.') != std::string::npos)
+					THROW_TOKENIZER_ERROR(token.pos, "Expected only one '.' in a literal!");
+				token.value.push_back(c);
+				break;
+			}
+			if (
+				('a' <= c && c <= 'f') ||
+				('A' <= c && c <= 'F')
+				)
+			{
+				if (token.value.find('x') != 1)
+					THROW_TOKENIZER_ERROR(token.pos, "'" + std::string(1, c) + "' can only be used in hex literals!");
+				token.value.push_back(tolower(c));
+				break;
+			}
+			if (isAlpha(c))
+				THROW_TOKENIZER_ERROR(token.pos, "Expected a number after '" + token.value + "'!");
 			--index;
 			state = State::EndToken;
 			break;
