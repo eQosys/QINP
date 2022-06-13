@@ -156,3 +156,8 @@ std.__assert(sum(1, 2) == 3, "Sum failed", __file__, __line__)
 alias print = std.print
 
 print(std.min(5, 4, 8, 6))
+
+print("Importing defer.qnp...\n")
+import "defer.qnp"
+
+print("Imported defer.qnp!\n")

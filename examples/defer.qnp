@@ -1,0 +1,7 @@
+import "std.qnp"
+
+std.print("This is printed before deferring the compilation of this file.\n")
+
+defer
+
+std.print("This is printed after deferring the compilation of this file.\n")

@@ -134,6 +134,7 @@ bool isKeyword(const std::string& name)
 		"break",
 		"const",
 		"continue",
+		"defer",
 		"define",
 		"do",
 		"elif",

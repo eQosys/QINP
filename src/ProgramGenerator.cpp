@@ -406,7 +406,7 @@ SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
 
 ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
-void parseGlobalCode(ProgGenInfo& info);
+void parseGlobalCode(ProgGenInfo& info, bool fromBeginning = true);
 
 void parseInlineTokens(ProgGenInfo& info, TokenListRef tokens, const std::string& progPath)
 {
@@ -2723,7 +2723,12 @@ bool parseStatementDefer(ProgGenInfo& info)
 	if (!isKeyword(deferToken, "defer"))
 		return false;
 
-	// TODO: implement defer
+	nextToken(info);
+	parseExpectedNewline(info);
+
+	info.currToken = info.tokens->insert(info.currToken, makeToken(Token::Type::EndOfCode, "<defer>"));
+
+	info.deferredCompilations.push(makeProgGenInfoBackup(info));
 
 	return true;
 }
@@ -3194,9 +3199,10 @@ bool parseEnum(ProgGenInfo& info)
 	return true;
 }
 
-void parseGlobalCode(ProgGenInfo& info)
+void parseGlobalCode(ProgGenInfo& info, bool fromBeginning)
 {
-	info.currToken = info.tokens->begin();
+	if (fromBeginning)
+		info.currToken = info.tokens->begin();
 
 	while (!isEndOfCode(peekToken(info)))
 	{
@@ -3280,14 +3286,15 @@ bool parseStatementImport(ProgGenInfo& info)
 	{
 		nextToken(info);
 		auto& specToken = nextToken(info);
-		if (!isIdentifier(specToken))
-			THROW_PROG_GEN_ERROR_TOKEN(specToken, "Expected platform identifier!");
 
-		if (specToken.value == "defer")
+		if (isKeyword(specToken, "defer"))
 		{
 			isDeferred = true;
 			continue;
 		}
+
+		if (!isIdentifier(specToken))
+			THROW_PROG_GEN_ERROR_TOKEN(specToken, "Expected platform identifier!");
 
 		static const std::set<std::string> platformNames = { "windows", "linux", "macos" };
 		if (platformNames.find(specToken.value) == platformNames.end())
@@ -3366,6 +3373,17 @@ void importDeferredImports(ProgGenInfo& info)
 		importFile(info, info.deferredImports[i]);
 }
 
+void parseDeferredCompilations(ProgGenInfo& info)
+{
+	while (!info.deferredCompilations.empty())
+	{
+		loadProgGenInfoBackup(info, info.deferredCompilations.front());
+		++info.currToken;
+		parseGlobalCode(info, false);
+		info.deferredCompilations.pop();
+	}
+}
+
 ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform, const std::string& progPath)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs, progPath };
@@ -3382,6 +3400,8 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 	parseGlobalCode(info);
 
 	importDeferredImports(info);
+
+	parseDeferredCompilations(info);
 
 	markReachableFunctions(info, info.program->body);
 	detectUndefinedFunctions(info);
