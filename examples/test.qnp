@@ -154,3 +154,7 @@ i32 sum(i32 a, ...):
 std.print("Sum: %\n", sum(1, 2))
 
 std.__assert(sum(1, 2) == 3, "Sum failed", __file__, __line__)
+
+alias print = std.print
+
+print("HELLO_WORLD\n")

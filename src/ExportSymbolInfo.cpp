@@ -4,7 +4,7 @@ void exportPosition(Token::Position pos, std::ostream& out)
 {
 	out << "{\"file\": \"" << pos.file
 		<< "\",\"line\": " << pos.line
-		<< ",\"col\": " << pos.column 
+		<< ",\"col\": " << pos.column
 		<< "}";
 }
 
@@ -20,6 +20,9 @@ void exportPosition(Symbol::DeclDefPos pos, std::ostream& out)
 // Export the symbol info to a text file with the json format.
 void exportSymbolInfo(SymbolRef root, std::ostream& out)
 {
+	if (isAlias(root))
+		return;
+
 	out << "{";
 
 	out << "\"name\": \"" << root->name << "\"";

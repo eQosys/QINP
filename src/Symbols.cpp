@@ -103,6 +103,11 @@ bool isMacro(const SymbolRef symbol)
 	return isSymType(SymType::Macro, symbol);
 }
 
+bool isAlias(const SymbolRef symbol)
+{
+	return isSymType(SymType::Alias, symbol);
+}
+
 bool isSymState(SymState state, const SymbolRef symbol)
 {
 	return symbol->state == state;
@@ -289,6 +294,7 @@ std::string SymTypeToString(SymType type)
 	case SymType::Enum: return "Enum";
 	case SymType::EnumMember: return "EnumMember";
 	case SymType::Macro: return "Macro";
+	case SymType::Alias: return "Alias";
 	}
 
 	assert(false && "Unknown symbol type");

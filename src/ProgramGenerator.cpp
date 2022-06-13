@@ -606,7 +606,9 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 
 	info.bpVariadicParamIDStack.pop();
 
-	return getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr);
+	auto specialization = getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr);
+	specialization->func.genFromBlueprint = true;
+	return specialization;
 }
 
 #define CONV_SCORE_MIN            -0xFF
@@ -1513,6 +1515,9 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 	auto sym = getSymbol(currSym(info), symToken.value, localOnly);
 	if (!sym)
 		return nullptr;
+
+	while (isAlias(sym))
+		sym = sym->aliasedSymbol;
 
 	ExpressionRef exp = std::make_shared<Expression>(symToken.pos);
 
@@ -2655,6 +2660,61 @@ bool parseStatementReturn(ProgGenInfo& info)
 	return true;
 }
 
+SymbolRef makeAlias(const std::string& name, Token::Position pos, SymbolRef sym)
+{
+	auto aliasSym = std::make_shared<Symbol>();
+	aliasSym->pos.decl = pos;
+	aliasSym->name = name;
+	aliasSym->type = SymType::Alias;
+	aliasSym->aliasedSymbol = sym;
+
+	return aliasSym;
+}
+
+bool parseAlias(ProgGenInfo& info)
+{
+	auto& aliasToken = peekToken(info);
+	if (!isKeyword(aliasToken, "alias"))
+		return false;
+
+	nextToken(info);
+	auto& nameToken = nextToken(info);
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
+
+	parseExpected(info, Token::Type::Operator, "=");
+
+	auto curr = currSym(info);
+	bool localOnly = false;
+	if (isSeparator(peekToken(info), "."))
+	{
+		nextToken(info);
+		curr = info.program->symbols;
+		localOnly = true;
+	}
+
+	while (isIdentifier(peekToken(info)))
+	{
+		curr = getSymbol(curr, peekToken(info).value, localOnly);
+
+		if (!curr)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Symbol '" + peekToken(info).value + "' not found!");
+
+		nextToken(info);
+
+		if (!isNewline(peekToken(info)))
+			parseExpected(info, Token::Type::Operator, ".");
+
+		localOnly = true;
+	}
+
+	parseExpectedNewline(info);
+
+	addSymbol(currSym(info), makeAlias(nameToken.value, nameToken.pos, curr));
+
+	return true;
+}
+
 bool parseInlineAssembly(ProgGenInfo& info)
 {
 	auto& asmToken = peekToken(info);
@@ -2738,6 +2798,7 @@ void parseBody(ProgGenInfo& info, bool doParseIndent)
 		++numStatements;
 		auto& token = peekToken(info);
 		if (parseEmptyLine(info)) continue;
+		if (parseAlias(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseControlFlow(info)) continue;
 		if (parseStatementContinue(info)) continue;
@@ -3243,6 +3304,7 @@ bool parseStatementImport(ProgGenInfo& info)
 bool parseSingleGlobalCode(ProgGenInfo& info)
 {
 	if (parseEmptyLine(info)) return true;
+	if (parseAlias(info)) return true;
 	if (parseStatementPass(info)) return true;
 	if (parseStatementImport(info)) return true;
 	if (parseStatementDefine(info)) return true;

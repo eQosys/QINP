@@ -127,6 +127,7 @@ bool isKeyword(const std::string& name)
 	{
 		"__file__",
 		"__line__",
+		"alias",
 		"asm",
 		"assembly",
 		"blueprint",
