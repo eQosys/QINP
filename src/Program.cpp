@@ -77,7 +77,7 @@ std::string getReadableName(const std::vector<ExpressionRef>& paramExpr)
 	{
 		if (i != 0)
 			paramStr += ", ";
-		paramStr += getReadableDatatypeStr(paramExpr[i]->datatype);
+		paramStr += getReadableName(paramExpr[i]->datatype);
 	}
 	return paramStr;
 }
@@ -89,7 +89,7 @@ std::string getReadableName(const std::vector<SymbolRef>& paramSym, bool isVaria
 	{
 		if (i != 0)
 			paramStr += ", ";
-		paramStr += getReadableDatatypeStr(paramSym[i]->var.datatype);
+		paramStr += getReadableName(paramSym[i]->var.datatype);
 	}
 	if (isVariadic)
 		paramStr += paramSym.empty() ? "..." : ", ...";
@@ -99,9 +99,9 @@ std::string getReadableName(const std::vector<SymbolRef>& paramSym, bool isVaria
 std::string getReadableName(SymbolRef symbol)
 {
 	if (isVariable(symbol))
-		return getReadableDatatypeStr(symbol->var.datatype) + " " + symbol->name;
+		return getReadableName(symbol->var.datatype) + " " + symbol->name;
 	if (isFuncSpec(symbol))
-		return SymPathToString(getSymbolPath(nullptr, symbol)) + "(" + getReadableName(symbol->func.params, symbol->func.isVariadic) + ")";
+		return getReadableName(symbol->func.retType) + " " + SymPathToString(getSymbolPath(nullptr, getParent(symbol))) + "(" + getReadableName(symbol->func.params, symbol->func.isVariadic) + ")";
 	if (isFuncName(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isEnum(symbol))

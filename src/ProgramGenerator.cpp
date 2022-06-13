@@ -1044,11 +1044,11 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 	}
 	
 	if (!dtEqual(existingOverload->func.retType, func->func.retType))
-		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already exists with different return type!");
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' already exists with different return type!");
 	if (!isDefined(func))
 		return existingOverload;
 	if (isDefined(existingOverload))
-		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getMangledName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
 
 	return replaceSymbol(existingOverload, func);
 }
@@ -1363,14 +1363,14 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 			PRINT_WARNING(
 				MAKE_PROG_GEN_ERROR_POS(
 					expToConvert->pos,
-					"Conversion from '" + getReadableDatatypeStr(expToConvert->datatype) + "' to '" + getReadableDatatypeStr(newDatatype) + "' does not preserve the constness of the old type!"
+					"Conversion from '" + getReadableName(expToConvert->datatype) + "' to '" + getReadableName(newDatatype) + "' does not preserve the constness of the old type!"
 				)
 			);
 		return makeConvertExpression(expToConvert, newDatatype);
 	}
 
 	if (doThrow)
-		THROW_PROG_GEN_ERROR_POS(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getReadableDatatypeStr(expToConvert->datatype) + "' to '" + getReadableDatatypeStr(newDatatype) + "'!");
+		THROW_PROG_GEN_ERROR_POS(expToConvert->pos, std::string("Cannot ") + (isExplicit ? "" : "implicitly ") + "convert from '" + getReadableName(expToConvert->datatype) + "' to '" + getReadableName(newDatatype) + "'!");
 
 	return nullptr;
 }
@@ -1412,8 +1412,8 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 	if (!newDatatype)
 		THROW_PROG_GEN_ERROR_POS(
 			exp->pos, "Cannot convert " + 
-			getReadableDatatypeStr(exp->left->datatype) + " and " +
-			getReadableDatatypeStr(exp->right->datatype) + " to a common datatype!");
+			getReadableName(exp->left->datatype) + " and " +
+			getReadableName(exp->right->datatype) + " to a common datatype!");
 	
 	exp->left = genConvertExpression(info, exp->left, newDatatype);
 	exp->right = genConvertExpression(info, exp->right, newDatatype);
@@ -3342,7 +3342,7 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 	for (auto sym : *info.program->symbols)
 	{
 		if (isFuncSpec(sym) && !isDefined(sym) && isReachable(sym))
-			THROW_PROG_GEN_ERROR_POS(sym->pos.decl, "Cannot reference undefined function '" + getMangledName(sym) + "'!");
+			THROW_PROG_GEN_ERROR_POS(sym->pos.decl, "Cannot reference undefined function '" + getReadableName(sym) + "'!");
 	}
 }
 

@@ -65,4 +65,4 @@ Datatype dtArraysToPointer(const Datatype& datatype);
 
 std::string getDatatypeStr(const Datatype& datatype);
 
-std::string getReadableDatatypeStr(const Datatype& datatype);
+std::string getReadableName(const Datatype& datatype);

@@ -265,17 +265,17 @@ std::string getDatatypeStr(const Datatype& datatype)
 	return result;
 }
 
-std::string getReadableDatatypeStr(const Datatype& datatype)
+std::string getReadableName(const Datatype& datatype)
 {
 	std::string result;
 	if (isOfType(datatype, DTType::Name) || isOfType(datatype, DTType::Macro))
 		result += datatype.name;
 	else if (isOfType(datatype, DTType::Array))
-		result += getReadableDatatypeStr(*datatype.subType) + "[" + std::to_string(datatype.arraySize) + "]";
+		result += getReadableName(*datatype.subType) + "[" + std::to_string(datatype.arraySize) + "]";
 	else if (isOfType(datatype, DTType::Pointer))
-		result += getReadableDatatypeStr(*datatype.subType) + "*";
+		result += getReadableName(*datatype.subType) + "*";
 	else if (isOfType(datatype, DTType::Reference))
-		result += getReadableDatatypeStr(*datatype.subType) + "&";
+		result += getReadableName(*datatype.subType) + "&";
 
 	if (datatype.isConst)
 		result += " const";

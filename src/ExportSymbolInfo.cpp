@@ -59,12 +59,12 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 	case SymType::Variable:
 		out << ",\"modName\": \"" << root->var.modName << "\"";
 		out << ",\"offset\": " << root->var.offset;
-		out << ",\"datatype\": \"" << getReadableDatatypeStr(root->var.datatype) << "\"";
+		out << ",\"datatype\": \"" << getReadableName(root->var.datatype) << "\"";
 		out << ",\"context\": \"" << SymVarContextToString(root->var.context) << "\"";
 		break;
 	case SymType::FunctionSpec:
 	case SymType::ExtFunc:
-		out << ",\"retType\": \"" << getReadableDatatypeStr(root->func.retType) << "\"";
+		out << ",\"retType\": \"" << getReadableName(root->func.retType) << "\"";
 		out << ",\"retOffset\": " << root->func.retOffset;
 		out << ",\"params\": [";
 		for (auto it = root->func.params.begin(); it != root->func.params.end(); )
