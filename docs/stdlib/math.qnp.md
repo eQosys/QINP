@@ -6,9 +6,11 @@
 
 
 ## Functions
- - [i64 abs(i64 a)]()
- - [i64 max(i64 a, i64 b)]()
- - [i64 min(i64 a, i64 b)]()
- - [i64 pow(i64 base, i64 exponent)]()
- - [i64 sign(i64 a)]()
+ - [blueprint T abs(T a)]()
+ - [blueprint T max(T a, T b)]()
+ - [blueprint T max(T a, ...)]()
+ - [blueprint T min(T a, T b)]()
+ - [blueprint T min(T a, ...)]()
+ - [blueprint T pow(T base, T exponent)]()
+ - [blueprint T sign(T a)]()
 

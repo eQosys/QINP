@@ -46,6 +46,7 @@ bool dtEqualNoConst(const Datatype& a, const Datatype& b)
 	case DTType::None:
 		return true;
 	case DTType::Name:
+	case DTType::Macro:
 		return a.name == b.name;
 	case DTType::Array:
 		if (a.arraySize != b.arraySize)

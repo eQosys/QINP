@@ -1,7 +1,5 @@
 import "std.qnp"
 
-import "fileio.qnp"
-
 void printBlockList():
 	std.print("- - - - - - - - - -\n")
 	std.print("ChunkList:\n")
@@ -157,4 +155,4 @@ std.__assert(sum(1, 2) == 3, "Sum failed", __file__, __line__)
 
 alias print = std.print
 
-print("HELLO_WORLD\n")
+print(std.min(5, 4, 8, 6))
