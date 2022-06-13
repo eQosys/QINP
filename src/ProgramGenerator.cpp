@@ -402,32 +402,6 @@ SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
 	return sym;
 }
 
-std::string getParamExprTypeStr(const std::vector<ExpressionRef>& paramExpr)
-{
-	std::string paramStr;
-	for (int i = 0; i < paramExpr.size(); ++i)
-	{
-		if (i != 0)
-			paramStr += ", ";
-		paramStr += getReadableDatatypeStr(paramExpr[i]->datatype);
-	}
-	return paramStr;
-}
-
-std::string getParamSymbolStr(const std::vector<SymbolRef>& paramSym, bool isVariadic)
-{
-	std::string paramStr;
-	for (int i = 0; i < paramSym.size(); ++i)
-	{
-		if (i != 0)
-			paramStr += ", ";
-		paramStr += getReadableDatatypeStr(paramSym[i]->var.datatype);
-	}
-	if (isVariadic)
-		paramStr += paramSym.empty() ? "..." : ", ...";
-	return paramStr;
-}
-
 ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
 void parseGlobalCode(ProgGenInfo& info);
@@ -514,9 +488,9 @@ void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
 	}
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr);
+SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom);
 
-SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr)
+SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom)
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
 	auto resolvedMacros = std::make_shared<BlueprintMacroMap>();
@@ -600,17 +574,11 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 	}
 	catch(const QinpError& err)
 	{
-		std::string paramStr = "";
-		for (int i = 0; i < bpSym->func.params.size(); ++i)
-		{
-			if (i != 0)
-				paramStr += ", ";
-			paramStr += getReadableDatatypeStr(bpSym->func.params[i]->var.datatype);
-		}
+		std::string paramStr = getReadableName(bpSym->func.params, false);
 		if (bpSym->func.params.size() < paramExpr.size())
 			paramStr += ", ";
-		paramStr += getParamExprTypeStr(std::vector(paramExpr.begin() + bpSym->func.params.size(), paramExpr.end()));
-		RETHROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "While generating blueprint function '" + getParent(getParent(bpSym))->name + "' with parameters (" + paramStr + ")", err);
+		paramStr += getReadableName(std::vector(paramExpr.begin() + bpSym->func.params.size(), paramExpr.end()));
+		RETHROW_PROG_GEN_ERROR_POS(generatedFrom, "While generating blueprint function '" + getParent(getParent(bpSym))->name + "' with parameters (" + paramStr + ")", err);
 	}
 
 	exitSymbol(info);
@@ -620,7 +588,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 
 	info.bpVariadicParamIDStack.pop();
 
-	auto specialization = getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr);
+	auto specialization = getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr, generatedFrom);
 	specialization->func.genFromBlueprint = true;
 	return specialization;
 }
@@ -632,11 +600,11 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 #define CONV_SCORE_NO_CONV         0x0
 #define CONV_SCORE_EXPLICIT        0x0
 #define CONV_SCORE_MACRO           0x1
-#define CONV_SCORE_VARIADIC        0x1
 #define CONV_SCORE_MAKE_CONST      0x2
-#define CONV_SCORE_PROMITION       0x2
-#define CONV_SCORE_PTR_TO_VOID_PTR 0x2
-#define CONV_SCORE_NARROW_CONV     0x3
+#define CONV_SCORE_VARIADIC        0x3
+#define CONV_SCORE_PROMITION       0x4
+#define CONV_SCORE_PTR_TO_VOID_PTR 0x5
+#define CONV_SCORE_NARROW_CONV     0x6
 
 int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
 {
@@ -811,17 +779,6 @@ int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<Expressio
 	return score;
 }
 
-#define SPEC_SCORE_SPEC 0x0
-#define SPEC_SCORE_GEN  0x1
-#define SPEC_SCORE_BLUE 0x2
-
-int calcSpecScore(SymbolRef func)
-{
-	if (func->func.isBlueprint) return SPEC_SCORE_BLUE;
-	if (func->func.genFromBlueprint) return SPEC_SCORE_GEN;
-	return SPEC_SCORE_SPEC;
-}
-
 void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidates, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
 {
 	if (!overloads)
@@ -847,7 +804,7 @@ void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidat
 	}
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
+SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom)
 {
 	std::map<SymbolRef, int> candidates;
 	addPossibleCandidates(info, candidates, overloads, paramExpr);
@@ -856,65 +813,43 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 		return nullptr;
 
 	auto itBest = candidates.begin();
-	bool isAmbiguous = false;
-	for (auto itCurr = candidates.begin(); itCurr != candidates.end(); ++itCurr)
+	for (auto itCurr = candidates.begin(); itCurr != candidates.end(); )
 	{
 		if (itCurr == itBest)
+		{
+			++itCurr;
 			continue;
-
-		int specScoreBest = calcSpecScore(itBest->first);
-		int specScoreCurr = calcSpecScore(itCurr->first);
-
-		if (specScoreBest < specScoreCurr) // Already selected better candidate, remove the current one
-		{
-			itCurr = candidates.erase(itCurr);
 		}
-		else if (specScoreBest > specScoreCurr) // Current candidate is better, remove the previous one
+
+		if (itCurr->second < itBest->second)
 		{
-			candidates.erase(itBest);
+			candidates.erase(itBest, itCurr);
 			itBest = itCurr;
 		}
-		else if (itBest->second != CONV_SCORE_BEGIN && itBest->first->func.genFromBlueprint && itCurr->first->func.isBlueprint) // Prefer blueprint over non-exact, generated function
-		{
-			itBest = candidates.erase(itBest, itCurr);
-			isAmbiguous = false;
-		}
-		else if (itCurr->second != CONV_SCORE_BEGIN && itCurr->first->func.genFromBlueprint && itBest->first->func.isBlueprint) // Prefer blueprint over non-exact, generated function
+		else if (itCurr->second > itBest->second)
 		{
 			itCurr = candidates.erase(itCurr);
-		}
-		else if (itBest->second < itCurr->second) // Already selected better candidate, remove the current one
-		{
-			itCurr = candidates.erase(itCurr);
-		}
-		else if (itBest->second > itCurr->second) // Current candidate is better, remove the previous one
-		{
-			itBest = candidates.erase(itBest, itCurr);
-			isAmbiguous = false;
 		}
 		else
 		{
-			isAmbiguous = true;
+			++itCurr;
 		}
 	}
 
 	if (candidates.size() > 1)
-		printf("HELLO");
-
-	if (isAmbiguous)
 	{
-		auto paramStr = getParamExprTypeStr(paramExpr);
+		auto paramStr = getReadableName(paramExpr);
 		std::string candidatesStr;
 		for (auto& [fSym, _] : candidates)
-			candidatesStr += "  " + getPosStr(getBestPos(fSym)) + ": " + overloads->name + "(" + getParamSymbolStr(fSym->func.params, fSym->func.isVariadic) + ")\n";
+			candidatesStr += "  " + getPosStr(getBestPos(fSym)) + ": " + overloads->name + "(" + getReadableName(fSym->func.params, fSym->func.isVariadic) + ")\n";
 		candidatesStr.pop_back();
-		THROW_QINP_ERROR("Ambiguous function call: " + overloads->name + "(" + paramStr + ")\nPossible candidates are:\n" + candidatesStr);
+		THROW_PROG_GEN_ERROR_POS(searchedFrom, "Ambiguous function call: " + overloads->name + "(" + paramStr + ")\nPossible candidates are:\n" + candidatesStr);
 	}
 
 	auto bestCandidate = itBest->first;
 
 	if (bestCandidate->func.isBlueprint)
-		bestCandidate = generateBlueprintSpecialization(info, bestCandidate, paramExpr);
+		bestCandidate = generateBlueprintSpecialization(info, bestCandidate, paramExpr, searchedFrom);
 
 	for (int i = 0; i < paramExpr.size(); ++i)
 	{
@@ -2021,9 +1956,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			}
 			else
 			{
-				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr);
+				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr, exp->pos);
 				if (!func)
-					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getMangledName(exp->left->symbol) + "'! Provided parameters: (" + getParamExprTypeStr(exp->paramExpr) + ")");
+					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getReadableName(exp->left->symbol) + "'! Provided parameters: (" + getReadableName(exp->paramExpr) + ")");
 			}
 			
 			exp->datatype = func->func.retType;

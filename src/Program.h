@@ -58,6 +58,11 @@ std::string getMangledName(const std::string& funcName, const Datatype& retType,
 std::string getMangledName(const std::string& funcName, const Expression* callExpr);
 std::string getMangledName(const std::string& varName, const Datatype& datatype);
 std::string getMangledName(SymbolRef symbol);
+
+std::string getReadableName(const std::vector<ExpressionRef>& paramExpr);
+std::string getReadableName(const std::vector<SymbolRef>& paramSym, bool isVariadic);
+std::string getReadableName(SymbolRef symbol);
+
 std::string getLiteralStringName(int strID);
 std::string getStaticLocalInitName(int initID);
 

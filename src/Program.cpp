@@ -63,12 +63,53 @@ std::string getMangledName(SymbolRef symbol)
 	if (isFuncSpec(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isFuncName(symbol))
-		return symbol->name;
+		SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isEnum(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	assert(false && "Unhandled symbol type!");
 	return "";
 }
+
+std::string getReadableName(const std::vector<ExpressionRef>& paramExpr)
+{
+	std::string paramStr;
+	for (int i = 0; i < paramExpr.size(); ++i)
+	{
+		if (i != 0)
+			paramStr += ", ";
+		paramStr += getReadableDatatypeStr(paramExpr[i]->datatype);
+	}
+	return paramStr;
+}
+
+std::string getReadableName(const std::vector<SymbolRef>& paramSym, bool isVariadic)
+{
+	std::string paramStr;
+	for (int i = 0; i < paramSym.size(); ++i)
+	{
+		if (i != 0)
+			paramStr += ", ";
+		paramStr += getReadableDatatypeStr(paramSym[i]->var.datatype);
+	}
+	if (isVariadic)
+		paramStr += paramSym.empty() ? "..." : ", ...";
+	return paramStr;
+}
+
+std::string getReadableName(SymbolRef symbol)
+{
+	if (isVariable(symbol))
+		return getReadableDatatypeStr(symbol->var.datatype) + " " + symbol->name;
+	if (isFuncSpec(symbol))
+		return SymPathToString(getSymbolPath(nullptr, symbol)) + "(" + getReadableName(symbol->func.params, symbol->func.isVariadic) + ")";
+	if (isFuncName(symbol))
+		return SymPathToString(getSymbolPath(nullptr, symbol));
+	if (isEnum(symbol))
+		return SymPathToString(getSymbolPath(nullptr, symbol));
+	assert(false && "Unhandled symbol type!");
+	return "";
+}
+
 std::string getLiteralStringName(int strID)
 {
 	return "__#str_" + std::to_string(strID);
