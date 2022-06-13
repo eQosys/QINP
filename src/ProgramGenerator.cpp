@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <cassert>
+#include <queue>
 
 #include "Warning.h"
 #include "Errors/ProgGenError.h"
@@ -51,6 +52,7 @@ struct ProgGenInfo
 	std::set<std::string> imports;
 
 	std::vector<Token> deferredImports;
+	std::queue<struct ProgGenInfoBackup> deferredCompilations;
 
 	std::stack<BlueprintMacroMapRef> bpMacroMapStack;
 	std::stack<std::vector<int>> bpVariadicParamIDStack;
@@ -2671,7 +2673,7 @@ SymbolRef makeAlias(const std::string& name, Token::Position pos, SymbolRef sym)
 	return aliasSym;
 }
 
-bool parseAlias(ProgGenInfo& info)
+bool parseStatementAlias(ProgGenInfo& info)
 {
 	auto& aliasToken = peekToken(info);
 	if (!isKeyword(aliasToken, "alias"))
@@ -2711,6 +2713,17 @@ bool parseAlias(ProgGenInfo& info)
 	parseExpectedNewline(info);
 
 	addSymbol(currSym(info), makeAlias(nameToken.value, nameToken.pos, curr));
+
+	return true;
+}
+
+bool parseStatementDefer(ProgGenInfo& info)
+{
+	auto& deferToken = peekToken(info);
+	if (!isKeyword(deferToken, "defer"))
+		return false;
+
+	// TODO: implement defer
 
 	return true;
 }
@@ -2798,7 +2811,7 @@ void parseBody(ProgGenInfo& info, bool doParseIndent)
 		++numStatements;
 		auto& token = peekToken(info);
 		if (parseEmptyLine(info)) continue;
-		if (parseAlias(info)) continue;
+		if (parseStatementAlias(info)) continue;
 		if (parseStatementPass(info)) continue;
 		if (parseControlFlow(info)) continue;
 		if (parseStatementContinue(info)) continue;
@@ -3304,7 +3317,8 @@ bool parseStatementImport(ProgGenInfo& info)
 bool parseSingleGlobalCode(ProgGenInfo& info)
 {
 	if (parseEmptyLine(info)) return true;
-	if (parseAlias(info)) return true;
+	if (parseStatementAlias(info)) return true;
+	if (parseStatementDefer(info)) return true;
 	if (parseStatementPass(info)) return true;
 	if (parseStatementImport(info)) return true;
 	if (parseStatementDefine(info)) return true;
