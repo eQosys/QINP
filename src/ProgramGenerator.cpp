@@ -414,6 +414,20 @@ std::string getParamExprTypeStr(const std::vector<ExpressionRef>& paramExpr)
 	return paramStr;
 }
 
+std::string getParamSymbolStr(const std::vector<SymbolRef>& paramSym, bool isVariadic)
+{
+	std::string paramStr;
+	for (int i = 0; i < paramSym.size(); ++i)
+	{
+		if (i != 0)
+			paramStr += ", ";
+		paramStr += getReadableDatatypeStr(paramSym[i]->var.datatype);
+	}
+	if (isVariadic)
+		paramStr += paramSym.empty() ? "..." : ", ...";
+	return paramStr;
+}
+
 ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
 void parseGlobalCode(ProgGenInfo& info);
@@ -618,10 +632,11 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 #define CONV_SCORE_NO_CONV         0x0
 #define CONV_SCORE_EXPLICIT        0x0
 #define CONV_SCORE_MACRO           0x1
-#define CONV_SCORE_VARIADIC        0x2
-#define CONV_SCORE_PROMITION       0x3
-#define CONV_SCORE_PTR_TO_VOID_PTR 0x4
-#define CONV_SCORE_NARROW_CONV     0x5
+#define CONV_SCORE_VARIADIC        0x1
+#define CONV_SCORE_MAKE_CONST      0x2
+#define CONV_SCORE_PROMITION       0x2
+#define CONV_SCORE_PTR_TO_VOID_PTR 0x2
+#define CONV_SCORE_NARROW_CONV     0x3
 
 int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
 {
@@ -633,16 +648,16 @@ int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit
 	from = dtArraysToPointer(from);
 	to = dtArraysToPointer(to);
 	if (dtEqual(from, to, ignoreFirstConstness))
-		return CONV_SCORE_NO_CONV;
+		return retCorrect(CONV_SCORE_NO_CONV);
 
 	if (dtEqualNoConst(from, to) && preservesConstness(from, to))
-		return CONV_SCORE_NO_CONV;
+		return retCorrect(CONV_SCORE_MAKE_CONST);
 
 	if (isPointer(from) && isVoidPtr(to) && preservesConstness(from, to))
 		return retCorrect(CONV_SCORE_PTR_TO_VOID_PTR);
 
 	if (isNull(from))
-		return CONV_SCORE_NO_CONV;
+		return retCorrect(CONV_SCORE_NO_CONV);
 
 	if (isExplicit)
 	{
@@ -796,6 +811,17 @@ int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<Expressio
 	return score;
 }
 
+#define SPEC_SCORE_SPEC 0x0
+#define SPEC_SCORE_GEN  0x1
+#define SPEC_SCORE_BLUE 0x2
+
+int calcSpecScore(SymbolRef func)
+{
+	if (func->func.isBlueprint) return SPEC_SCORE_BLUE;
+	if (func->func.genFromBlueprint) return SPEC_SCORE_GEN;
+	return SPEC_SCORE_SPEC;
+}
+
 void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidates, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
 {
 	if (!overloads)
@@ -829,21 +855,60 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 	if (candidates.empty())
 		return nullptr;
 
-	// Find the best candidate
 	auto itBest = candidates.begin();
-
+	bool isAmbiguous = false;
 	for (auto itCurr = candidates.begin(); itCurr != candidates.end(); ++itCurr)
 	{
-		bool bestIsBlueprintRelated = (itBest->first->func.genFromBlueprint || itBest->first->func.isBlueprint);
-		bool candidateIsBlueprintRelated = (itCurr->first->func.genFromBlueprint || itCurr->first->func.isBlueprint);
-
-		if (!bestIsBlueprintRelated && candidateIsBlueprintRelated)
+		if (itCurr == itBest)
 			continue;
 
-		if (bestIsBlueprintRelated && !candidateIsBlueprintRelated)
+		int specScoreBest = calcSpecScore(itBest->first);
+		int specScoreCurr = calcSpecScore(itCurr->first);
+
+		if (specScoreBest < specScoreCurr) // Already selected better candidate, remove the current one
+		{
+			itCurr = candidates.erase(itCurr);
+		}
+		else if (specScoreBest > specScoreCurr) // Current candidate is better, remove the previous one
+		{
+			candidates.erase(itBest);
 			itBest = itCurr;
-		else if (itCurr->second < itBest->second)
-			itBest = itCurr;
+		}
+		else if (itBest->second != CONV_SCORE_BEGIN && itBest->first->func.genFromBlueprint && itCurr->first->func.isBlueprint) // Prefer blueprint over non-exact, generated function
+		{
+			itBest = candidates.erase(itBest, itCurr);
+			isAmbiguous = false;
+		}
+		else if (itCurr->second != CONV_SCORE_BEGIN && itCurr->first->func.genFromBlueprint && itBest->first->func.isBlueprint) // Prefer blueprint over non-exact, generated function
+		{
+			itCurr = candidates.erase(itCurr);
+		}
+		else if (itBest->second < itCurr->second) // Already selected better candidate, remove the current one
+		{
+			itCurr = candidates.erase(itCurr);
+		}
+		else if (itBest->second > itCurr->second) // Current candidate is better, remove the previous one
+		{
+			itBest = candidates.erase(itBest, itCurr);
+			isAmbiguous = false;
+		}
+		else
+		{
+			isAmbiguous = true;
+		}
+	}
+
+	if (candidates.size() > 1)
+		printf("HELLO");
+
+	if (isAmbiguous)
+	{
+		auto paramStr = getParamExprTypeStr(paramExpr);
+		std::string candidatesStr;
+		for (auto& [fSym, _] : candidates)
+			candidatesStr += "  " + getPosStr(getBestPos(fSym)) + ": " + overloads->name + "(" + getParamSymbolStr(fSym->func.params, fSym->func.isVariadic) + ")\n";
+		candidatesStr.pop_back();
+		THROW_QINP_ERROR("Ambiguous function call: " + overloads->name + "(" + paramStr + ")\nPossible candidates are:\n" + candidatesStr);
 	}
 
 	auto bestCandidate = itBest->first;
@@ -1555,7 +1620,7 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 		{
 		case SymVarContext::None:
 		case SymVarContext::PackMember:
-			exp->isObject = true; // TODO: Should be false
+			exp->isObject = false;
 			break;
 		case SymVarContext::Local:
 		case SymVarContext::Global:
