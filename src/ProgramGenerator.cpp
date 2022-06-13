@@ -500,7 +500,9 @@ void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
 	}
 }
 
-void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr)
+SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr);
+
+SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr)
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
 	auto resolvedMacros = std::make_shared<BlueprintMacroMap>();
@@ -603,6 +605,8 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 	popBlueprintMacros(info);
 
 	info.bpVariadicParamIDStack.pop();
+
+	return getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr);
 }
 
 #define CONV_SCORE_MIN            -0xFF
@@ -617,7 +621,7 @@ void generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::v
 #define CONV_SCORE_PTR_TO_VOID_PTR 0x4
 #define CONV_SCORE_NARROW_CONV     0x5
 
-int getConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
+int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
 {
 	auto retCorrect = [&isExplicit](int score) -> int
 	{
@@ -756,90 +760,102 @@ int getConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit,
 	return CONV_SCORE_NOT_POSSIBLE;
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, const SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, bool isBlueprintSearch = false, int currBestScore = CONV_SCORE_MAX, bool currIsGenFromBlueprint = false)
+int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<ExpressionRef>& paramExpr)
+{
+	if (!isFuncSpec(func))
+		return CONV_SCORE_NOT_POSSIBLE;
+	
+	int score = CONV_SCORE_BEGIN;
+	for (int i = 0; i < paramExpr.size(); ++i)
+	{
+		if (i < func->func.params.size()) // If the parameter is not variadic
+		{
+			auto& expectedType = func->func.params[i]->var.datatype;
+			auto& actualType = paramExpr[i]->datatype;
+
+			if (expectedType.type == DTType::Macro) // If the parameter is a blueprint macro
+			{
+				score += CONV_SCORE_MACRO;
+			}
+			else
+			{
+				int convScore = calcConvScore(info, actualType, expectedType, false, true);
+				if (convScore == CONV_SCORE_NOT_POSSIBLE)
+					return CONV_SCORE_NOT_POSSIBLE;
+				score += convScore;
+			}
+		}
+		else // If the parameter is variadic
+		{
+			score += CONV_SCORE_VARIADIC;
+		}
+	}
+
+	return score;
+}
+
+void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidates, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
 {
 	if (!overloads)
-		return nullptr;
-
-	SymbolRef match = nullptr;
-	int matchScore = currBestScore;
-	int matchCount = (currBestScore == CONV_SCORE_MAX ? 0 : 1);
+		return;
 
 	for (auto& [fName, fSym] : overloads->subSymbols)
 	{
 		if (fName == BLUEPRINT_SYMBOL_NAME)
-			continue;
-
-		if (fSym->func.isVariadic && paramExpr.size() <= fSym->func.params.size())
-			continue;
-		if (!fSym->func.isVariadic && paramExpr.size() != fSym->func.params.size())
-			continue;
-
-		int score = CONV_SCORE_BEGIN;
-		for (int i = 0; i < paramExpr.size() && score >= CONV_SCORE_MIN; ++i) // Don't check variadic parameters
 		{
-			if (i < fSym->func.params.size()) // If the parameter is not variadic
-			{
-				if (fSym->func.params[i]->var.datatype.type != DTType::Macro)
-				{
-					int change = getConvScore(info, paramExpr[i]->datatype, fSym->func.params[i]->var.datatype, false, true);
-					if (change == CONV_SCORE_NOT_POSSIBLE)
-						score = CONV_SCORE_NOT_POSSIBLE;
-					else
-						score += change;
-				}
-				else
-					score += CONV_SCORE_MACRO;
-			}
-			else // If the parameter is variadic
-				score += CONV_SCORE_VARIADIC;
+			addPossibleCandidates(info, candidates, fSym, paramExpr);
 		}
-
-		if (score < CONV_SCORE_MIN)
-			continue;
-
-		if (score == matchScore)
+		else
 		{
-			++matchCount;
-		}
-		else if (score < matchScore)
-		{
-			matchScore = score;
-			matchCount = 1;
-			match = fSym;
+			if (fSym->func.isVariadic && paramExpr.size() <= fSym->func.params.size())
+				continue;
+			if (!fSym->func.isVariadic && paramExpr.size() != fSym->func.params.size())
+				continue;
+
+			int score = calcFuncScore(info, fSym, paramExpr);
+			if (score != CONV_SCORE_NOT_POSSIBLE)
+				candidates[fSym] = score;
 		}
 	}
+}
 
-	if (!isBlueprintSearch)
-	{
-		auto temp = getMatchingOverload(info, getSymbol(overloads, BLUEPRINT_SYMBOL_NAME, true), paramExpr, true, matchScore, (match && match->func.genFromBlueprint));
-		if (temp)
-		{
-			match = temp;
-			matchCount = 1;
-		}
-	}
-	else if (currBestScore != CONV_SCORE_MAX && !currIsGenFromBlueprint)
+SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
+{
+	std::map<SymbolRef, int> candidates;
+	addPossibleCandidates(info, candidates, overloads, paramExpr);
+
+	if (candidates.empty())
 		return nullptr;
 
-	if (matchCount > 1)
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Multiple overloads found for function call!");
+	// Find the best candidate
+	auto itBest = candidates.begin();
 
-	if (!match)
-		return nullptr;
-
-	if (isBlueprintSearch)
+	for (auto itCurr = candidates.begin(); itCurr != candidates.end(); ++itCurr)
 	{
-		generateBlueprintSpecialization(info, match, paramExpr);
-		match = getMatchingOverload(info, getParent(overloads), paramExpr);
-		match->func.genFromBlueprint = true;
+		bool bestIsBlueprintRelated = (itBest->first->func.genFromBlueprint || itBest->first->func.isBlueprint);
+		bool candidateIsBlueprintRelated = (itCurr->first->func.genFromBlueprint || itCurr->first->func.isBlueprint);
+
+		if (!bestIsBlueprintRelated && candidateIsBlueprintRelated)
+			continue;
+
+		if (bestIsBlueprintRelated && !candidateIsBlueprintRelated)
+			itBest = itCurr;
+		else if (itCurr->second < itBest->second)
+			itBest = itCurr;
 	}
+
+	auto bestCandidate = itBest->first;
+
+	if (bestCandidate->func.isBlueprint)
+		bestCandidate = generateBlueprintSpecialization(info, bestCandidate, paramExpr);
 
 	for (int i = 0; i < paramExpr.size(); ++i)
-		if (!dtEqual(paramExpr[i]->datatype, match->func.params[i]->var.datatype))
-			paramExpr[i] = genConvertExpression(info, paramExpr[i], match->func.params[i]->var.datatype, false, true, true);
+	{
+		if (!dtEqual(paramExpr[i]->datatype, bestCandidate->func.params[i]->var.datatype))
+			paramExpr[i] = genConvertExpression(info, paramExpr[i], bestCandidate->func.params[i]->var.datatype, false, true, true);
+	}
 
-	return match;
+	return bestCandidate;
 }
 
 SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
