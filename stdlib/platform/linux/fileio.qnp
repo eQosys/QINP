@@ -10,6 +10,10 @@ space std:
 	define __OPEN_WRITEONLY 01
 	define __OPEN_READWRITE 02
 
+
+
+defer
+space std:
 	pack File!:
 		pass
 

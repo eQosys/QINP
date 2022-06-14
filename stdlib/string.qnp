@@ -168,6 +168,8 @@ space std:
 
 
 
+defer
+space std:
 	u64 strlen(u8 const* str)!:
 		u8 const* begin = str
 		while *str: ++str

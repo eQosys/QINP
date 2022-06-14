@@ -51,6 +51,8 @@ space std:
 
 
 
+defer
+space std:
 	blueprint T
 	T min(T a, T b)!:
 		return a < b ? a : b

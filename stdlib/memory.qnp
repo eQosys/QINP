@@ -37,6 +37,8 @@ space std:
 
 
 
+defer
+space std:
 	void* memcpy(void* dest, void const* src, u64 len)!:
 		u8* d8End = (u8*)dest + len
 

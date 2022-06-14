@@ -9,7 +9,10 @@ space std:
 	define __MEM_ALIGNMENT_SIZE 8
 
 	\\ The header for every allocated block of memory (used for freeing/keeping track of allocated, unused memory)
-	pack __MemBlockHeader...
+	pack __MemBlockHeader:
+		__MemBlockHeader* prev
+		__MemBlockHeader* next
+		u64 sizeAvail
 
 	\\ Changes the data segment size to the given size and returns the new size.
 	\\ @param size The new size
@@ -84,6 +87,8 @@ space std:
 
 
 
+defer
+space std:
 	u64 __brk(u64 size)!:
 		return __syscall(__SYS_BRK, size)
 
@@ -91,11 +96,6 @@ space std:
 		u64 oldSize = __brk(0)
 		u64 newSize = oldSize + increment
 		return __brk(newSize) == oldSize ? (void*)null : (void*)oldSize
-
-	pack __MemBlockHeader!:
-		__MemBlockHeader* prev
-		__MemBlockHeader* next
-		u64 sizeAvail
 
 	u64 __roundUp(u64 value, u64 alignment)!:
 		return ((value + alignment - 1) / alignment) * alignment

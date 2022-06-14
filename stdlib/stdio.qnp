@@ -61,6 +61,8 @@ space std:
 
 
 
+defer
+space std:
 	i32 print(u8 const* str)!:
 		return printn(str, strlen(str))
 

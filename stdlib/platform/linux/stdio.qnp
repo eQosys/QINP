@@ -8,6 +8,10 @@ space std:
 	define __STDOUT (File*)1
 	define __STDERR (File*)2
 
+
+
+defer
+space std:
 	i32 printn(u8 const* str, u64 num)!:
 		return fwrite(__STDOUT, str, num)
 

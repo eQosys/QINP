@@ -3,6 +3,7 @@
 
 import "syscall.qnp"
 
+defer
 space std:
 	void exit(i32 status)!:
 		__syscall(__SYS_EXIT, status)

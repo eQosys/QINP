@@ -615,10 +615,10 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 #define CONV_SCORE_EXPLICIT        0x0
 #define CONV_SCORE_MACRO           0x1
 #define CONV_SCORE_MAKE_CONST      0x2
-#define CONV_SCORE_VARIADIC        0x3
-#define CONV_SCORE_PROMITION       0x4
-#define CONV_SCORE_PTR_TO_VOID_PTR 0x5
-#define CONV_SCORE_NARROW_CONV     0x6
+#define CONV_SCORE_VARIADIC        0x4
+#define CONV_SCORE_PROMITION       0x8
+#define CONV_SCORE_PTR_TO_VOID_PTR 0x10
+#define CONV_SCORE_NARROW_CONV     0x20
 
 int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
 {
@@ -2449,7 +2449,7 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		preDeclSym = getSymbol(preDeclSym, getSignatureNoRet(funcSym), true);
 	if (reqPreDecl && !preDeclSym)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing pre-declaration before explicit function definition!");
-	else if (!reqPreDecl && preDeclSym)
+	else if (!reqPreDecl && preDeclSym && !preDeclSym->func.genFromBlueprint)
 		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
 
 	funcSym->state = SymState::Defined;
@@ -2737,6 +2737,9 @@ bool parseStatementDefer(ProgGenInfo& info)
 
 	nextToken(info);
 	parseExpectedNewline(info);
+
+	if (currSym(info) != info.program->symbols)
+		THROW_PROG_GEN_ERROR_TOKEN(deferToken, "Defer statement must be in global scope!");
 
 	info.currToken = info.tokens->insert(info.currToken, makeToken(Token::Type::EndOfCode, "<defer>"));
 

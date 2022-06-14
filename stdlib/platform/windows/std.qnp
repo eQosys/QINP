@@ -10,6 +10,10 @@ space std:
 	extern bool __ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
 	extern void __Sleep(i32 ms) = "Sleep"
 
+
+
+defer
+space std:
 	void exit(i32 status)!:
 		__ExitProcess(status)
 

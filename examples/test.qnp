@@ -1,75 +1,26 @@
 import "std.qnp"
 
-void printBlockList():
-	std.print("- - - - - - - - - -\n")
-	std.print("ChunkList:\n")
-	std.__MemBlockHeader* curr = std.__memBlocks
-	while curr != null:
-		std.print(" This: %\n", (u64)curr)
-		std.print(" Prev: %\n", (u64)curr->prev)
-		std.print(" Next: %\n", (u64)curr->next)
-		std.print(" Size: %\n", curr->sizeAvail)
-
-		std.print(" DiffToPrev: ")
-		if curr->prev != null: std.print((u64)curr - (u64)curr->prev, "\n")
-		else: std.print("--\n")
-
-		std.print(" DiffToNext: ")
-		if curr->next != null: std.print((u64)curr->next - (u64)curr, "\n")
-		else: std.print("--\n")
-
-		std.print("\n")
-
-		curr = curr->next
-	std.print("-------------------\n\n")
-
-i64 brkDiff():
-	static i64 lastBrk = 0
-	i64 currBrk = std.__brk(0)
-	i64 diff = currBrk - lastBrk
-	lastBrk = currBrk
-	return diff
-brkDiff()
-
-void printBrkDiff():
-	std.print("BrkDiff: ", brkDiff(), "\n")
-
-printBlockList()
 
 std.print("Allocating 100 bytes\n")
 void* buff1 = std.malloc(100)
-printBrkDiff()
-printBlockList()
 std.print("Allocating 10000 bytes\n")
 void* buff2 = std.malloc(10000)
-printBrkDiff()
-printBlockList()
 
 std.print("Freeing 100 bytes\n")
 std.free(buff1)
-printBrkDiff()
-printBlockList()
 
 std.print("Freeing 10000 bytes\n")
 std.free(buff2)
-printBrkDiff()
-printBlockList()
 
 std.print("Allocating 12000 bytes\n")
 buff1 = std.malloc(12000)
-printBrkDiff()
-printBlockList()
 
 std.print("Freeing 12000 bytes\n")
 std.free(buff1)
-printBrkDiff()
-printBlockList()
 
 std.print("Allocating 1024 megabytes...")
 buff1 = std.malloc(1024 * 1024 * 1024)
 std.print(" DONE\n")
-printBrkDiff()
-printBlockList()
 
 std.print("Clearing buff1... ")
 u64 begin = std.getTime()
@@ -84,8 +35,6 @@ std.print("%-----------------\n", str)
 std.print("Freeing 1024 megabytes...")
 std.free(buff1)
 std.print(" DONE\n")
-printBrkDiff()
-printBlockList()
 
 u8* str1 = (u8*)"Hello world, my name is TecStylos!"
 u8* tok = std.strtok(str1, " ")

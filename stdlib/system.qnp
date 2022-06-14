@@ -20,6 +20,8 @@ space std:
 
 
 
+defer
+space std:
 	u64 getargs(u8 const*const** pargv)!:
 		u64 argc
 		assembly:

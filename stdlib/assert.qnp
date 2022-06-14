@@ -13,6 +13,8 @@ space std:
 
 
 
+defer
+space std:
 	void __assert(bool check, u8 const* msg, u8 const* file, i32 line)!:
 		if !check:
 			print("%:%: Assertion failed with message '%'!\n", file, line, msg)

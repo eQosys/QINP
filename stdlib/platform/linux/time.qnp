@@ -1,17 +1,30 @@
 \\ QINP Standard Library
 \\ Time - Linux Specific
 
+import "syscall.qnp"
+
 space std:
 	define __CLOCK_REALTIME 0
 	define __CLOCK_MONOTONIC 1
 	define __CLOCK_PROCESS_CPUTIME_ID 2
 	define __CLOCK_THREAD_CPUTIME_ID 3
 
+	\\ Holds a time value in seconds and nanoseconds
 	pack __timespec:
 		i64 seconds
 		i64 nanoseconds
 
-	i32 __clock_gettime(i32 clockID, __timespec* t):
+	\\ Retrieves the current time of the system
+	\\ @param clockID The clock to use
+	\\ @param t A pointer to a __timespec pack to store the time in
+	\\ @return 0 on success, -1 on error
+	i32 __clock_gettime(i32 clockID, __timespec* t)...
+
+
+
+defer
+space std:
+	i32 __clock_gettime(i32 clockID, __timespec* t)!:
 		return __syscall(__SYS_CLOCK_GETTIME, clockID, (u64)t)
 
 	u64 getTime()!:
