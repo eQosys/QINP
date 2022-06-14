@@ -30,6 +30,13 @@ struct LocalStackFrame
 typedef std::map<std::string, std::pair<Datatype, SymbolRef>> BlueprintMacroMap;
 typedef std::shared_ptr<BlueprintMacroMap> BlueprintMacroMapRef;
 
+struct BpSpecToDefine
+{
+	SymbolRef bpSym;
+	std::vector<ExpressionRef> paramExpr;
+	Token::Position generatedFrom;
+};
+
 struct ProgGenInfo
 {
 	TokenListRef tokens;
@@ -56,6 +63,7 @@ struct ProgGenInfo
 
 	std::stack<BlueprintMacroMapRef> bpMacroMapStack;
 	std::stack<std::vector<int>> bpVariadicParamIDStack;
+	std::vector<BpSpecToDefine> bpSpecsToDefine;
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
@@ -592,6 +600,10 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 
 	auto specialization = getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr, generatedFrom);
 	specialization->func.genFromBlueprint = true;
+
+	if (isDeclared(specialization))
+		info.bpSpecsToDefine.push_back({ bpSym, paramExpr, generatedFrom });
+
 	return specialization;
 }
 
@@ -3384,6 +3396,17 @@ void parseDeferredCompilations(ProgGenInfo& info)
 	}
 }
 
+void genDeclaredOnlyBpSpecs(ProgGenInfo& info)
+{
+	for (auto& spec : info.bpSpecsToDefine)
+	{
+		if (!isDefined(spec.bpSym))
+			THROW_PROG_GEN_ERROR_POS(spec.generatedFrom, "Cannot generate blueprint specialization of undefined blueprint '" + getReadableName(spec.bpSym) + "'!");
+
+		generateBlueprintSpecialization(info, spec.bpSym, spec.paramExpr, spec.generatedFrom);
+	}
+}
+
 ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform, const std::string& progPath)
 {
 	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs, progPath };
@@ -3402,6 +3425,8 @@ ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string
 	importDeferredImports(info);
 
 	parseDeferredCompilations(info);
+
+	genDeclaredOnlyBpSpecs(info);
 
 	markReachableFunctions(info, info.program->body);
 	detectUndefinedFunctions(info);
