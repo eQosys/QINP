@@ -123,6 +123,8 @@ It can be used multiple times in a file.
 The keyword can only be placed in global scope.
 It's primary use is to separate declarations from implementations. (Comparable to C/C++'s Header/Source separation.)
 
+Note: Packs whose members should be reachable from another file should be _defined_ before any `defer`s are used.
+
 #### Usage
 ```qinp
 defer

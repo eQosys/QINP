@@ -11,5 +11,11 @@ space std:
 	\\ @return Zero on success, negative on error
 	i32 sleep(u64 ms)...		\\ Platform dependent implementation
 
+
+
+defer
+space std:
+	pass
+
 import.linux "platform/linux/time.qnp"
 import.windows "platform/windows/time.qnp"
