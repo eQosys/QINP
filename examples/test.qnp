@@ -142,22 +142,28 @@ std.print("File:Line -> %:%\n", __file__, __line__)
 std.print("File:Line -> ", __file__, ":", __line__, "\n")
 
 blueprint T
-T sum(T a, T b):
-	return a + b
+T sum(T a, T b)...
 
 blueprint T
-T sum(T a, ...):
-	return a + sum(...)
+T sum(T a, ...)...
 
-std.print("Sum: %\n", sum(1, 2))
+std.print("Sum: %\n", sum(1, 2, 3))
 
-std.__assert(sum(1, 2) == 3, "Sum failed", __file__, __line__)
+std.__assert(sum(1, 2, 3) == 6, "Sum failed", __file__, __line__)
 
 alias print = std.print
 
-print(std.min(5, 4, 8, 6))
+print("%\n", std.min(5, 4, 8, 6))
 
 print("Importing defer.qnp...\n")
 import "defer.qnp"
 
 print("Imported defer.qnp!\n")
+
+blueprint T
+T sum(T a, T b)!:
+	return a + b
+
+blueprint T
+T sum(T a, ...)!:
+	return a + sum(...)

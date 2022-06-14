@@ -1,0 +1,7 @@
+import "std.qnp"
+
+std.print("defer-main.qnp: Importing defer-import.qnp\n")
+
+import "defer-import.qnp"
+
+std.print("defer-main.qnp: Imported defer-import.qnp\n")
