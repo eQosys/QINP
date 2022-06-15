@@ -242,15 +242,65 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 			auto newPos = tokIt->pos;
 			bool updateCurrToken = (begin == info.currToken);
 
+			std::vector<TokenList> macroArgs;
+
+			if (sym->macroIsFunctionLike)
+			{
+				if (!isSeparator(*++tokIt, "("))
+					THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected '(' after function-like macro!");
+
+				for (int i = 0; i < sym->macroParamNames.size(); ++i)
+				{
+					macroArgs.push_back({});
+
+					int parenCount = 0;
+					while (parenCount != 0 || !isSeparator(*tokIt, ","))
+					{
+						if (isSeparator(*tokIt, "("))
+							++parenCount;
+						else if (isSeparator(*tokIt, ")"))
+							--parenCount;
+						macroArgs[i].push_back(*tokIt);
+						++tokIt;
+					}
+				}
+
+				if (!isSeparator(*tokIt, ")"))
+					THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected ')'!");
+			}
+
 			begin = info.tokens->erase(begin, ++tokIt);
 			begin = info.tokens->insert(begin, sym->macroTokens.begin(), sym->macroTokens.end());
 
-			auto it = begin;
-			for (int i = 0; i < sym->macroTokens.size(); ++i)
-				addPosition(*it++, newPos);
+			if (sym->macroIsFunctionLike)
+			{
+				auto it = begin;
+				for (int i = 0; i < sym->macroTokens.size(); ++i, ++it)
+				{
+					if (!isIdentifier(*it))
+						continue;
+					if (std::find(sym->macroParamNames.begin(), sym->macroParamNames.end(), it->value) == sym->macroParamNames.end())
+						continue;
+
+					bool updateBegin = false;
+					if (it == begin)
+						updateBegin = true;
+
+					it = info.tokens->erase(it);
+					it = info.tokens->insert(it, macroArgs[i].begin(), macroArgs[i].end());
+
+					if (updateBegin)
+						begin = it;
+				}
+			}
+
+			{
+				auto it = begin;
+				for (int i = 0; i < sym->macroTokens.size(); ++i)
+					addPosition(*it++, newPos);
+			}
 
 			tokIt = begin;
-
 			if (updateCurrToken)
 				info.currToken = begin;
 

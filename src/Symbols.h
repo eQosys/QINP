@@ -94,6 +94,8 @@ struct Symbol
 	int64_t enumValue;
 
 	TokenList macroTokens;
+	bool macroIsFunctionLike = false;
+	std::vector<std::string> macroParamNames;
 
 	SymbolRef aliasedSymbol;
 

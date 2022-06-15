@@ -2,7 +2,7 @@ import "stdio.qnp"
 import "system.qnp"
 
 space std:
-	\\ define assert(check, msg) __assert(check, msg, __file__, __line__)
+	define assert(check, msg) __assert(check, msg, __file__, __line__)
 
 	\\ Internal assert function. Prints error message and exits if check is false.
 	\\ @param check Boolean expression to check.
