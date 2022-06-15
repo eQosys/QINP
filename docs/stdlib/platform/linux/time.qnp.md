@@ -8,16 +8,16 @@
 
 
 ## Functions
- - [i32 __clock_gettime(i32 clockID, std.__timespec* t)]()
- - [u64 getTime()]()
- - [i32 sleep(u64 ms)]()
+ - [i32 std.__clock_gettime(i32 std.clockID, std.__timespec* std.t)]()
+ - [u64 std.getTime()]()
+ - [i32 std.sleep(u64 std.ms)]()
 
 ## Packs/Unions
- - [pack __timespec]()
+ - [pack std.__timespec]()
 
 ## Macros
- - [__CLOCK_MONOTONIC]()
- - [__CLOCK_PROCESS_CPUTIME_ID]()
- - [__CLOCK_REALTIME]()
- - [__CLOCK_THREAD_CPUTIME_ID]()
+ - [std.__CLOCK_MONOTONIC]()
+ - [std.__CLOCK_PROCESS_CPUTIME_ID]()
+ - [std.__CLOCK_REALTIME]()
+ - [std.__CLOCK_THREAD_CPUTIME_ID]()
 

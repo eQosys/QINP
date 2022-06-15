@@ -7,11 +7,11 @@
 
 
 ## Functions
- - [void exit(i32 status) ...]()
- - [u64 getargs(u8 const* const** pargv)]()
- - [u8 const* const* getenv()]()
+ - [void std.exit(i32 std.status) ...]()
+ - [u64 std.getargs(u8 const* const** std.pargv)]()
+ - [u8 const* const* std.getenv()]()
 
 ## Macros
- - [EXIT_FAILURE]()
- - [EXIT_SUCCESS]()
+ - [std.EXIT_FAILURE]()
+ - [std.EXIT_SUCCESS]()
 

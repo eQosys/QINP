@@ -6,6 +6,6 @@
 
 
 ## Functions
- - [u64 getTime() ...]()
- - [i32 sleep(u64 ms) ...]()
+ - [u64 std.getTime() ...]()
+ - [i32 std.sleep(u64 std.ms) ...]()
 

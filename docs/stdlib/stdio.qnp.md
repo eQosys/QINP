@@ -6,13 +6,13 @@
 
 
 ## Functions
- - [blueprint i32 __print(u8 const** pStr, T val)]()
- - [u8 getchar() ...]()
- - [blueprint i32 print(T val, ...)]()
- - [blueprint i32 print(u8 const* str, T val)]()
- - [blueprint i32 print(u8 const* str, T val, ...)]()
- - [i32 print(i64 num)]()
- - [i32 print(u8 const* str)]()
- - [i32 printn(u8 const* str, u64 num) ...]()
- - [u8* scan(u8* dest, u64 size)]()
+ - [blueprint i32 std.__print(u8 const** std.pStr, T std.val)]()
+ - [u8 std.getchar() ...]()
+ - [blueprint i32 std.print(T std.val, ...)]()
+ - [blueprint i32 std.print(u8 const* std.str, T std.val)]()
+ - [blueprint i32 std.print(u8 const* std.str, T std.val, ...)]()
+ - [i32 std.print(i64 std.num)]()
+ - [i32 std.print(u8 const* std.str)]()
+ - [i32 std.printn(u8 const* std.str, u64 std.num) ...]()
+ - [u8* std.scan(u8* std.dest, u64 std.size)]()
 

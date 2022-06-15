@@ -9,29 +9,29 @@
 
 
 ## Globals
- - [std.__MemBlockHeader* __memBlocks]()
+ - [std.__MemBlockHeader* std.__memBlocks]()
 
 ## Functions
- - [std.__MemBlockHeader* __allocBlock(u64 sizeAvail)]()
- - [u64 __brk(u64 size)]()
- - [std.__MemBlockHeader* __getAvailBlock(u64 sizeAvail)]()
- - [std.__MemBlockHeader* __insertAvailBlock(std.__MemBlockHeader* block)]()
- - [bool __isAdjacentToNext(std.__MemBlockHeader const* block)]()
- - [std.__MemBlockHeader* __mergeBlockWithNeighbors(std.__MemBlockHeader* block)]()
- - [std.__MemBlockHeader* __mergeBlockWithNext(std.__MemBlockHeader* block)]()
- - [void __removeAvailBlock(std.__MemBlockHeader* block)]()
- - [u64 __roundDown(u64 value, u64 alignment)]()
- - [u64 __roundUp(u64 value, u64 alignment)]()
- - [void* __sbrk(i64 increment)]()
- - [std.__MemBlockHeader* __splitBlock(std.__MemBlockHeader* block, u64 newSizeAvail)]()
- - [void free(void* ptr)]()
- - [void* malloc(u64 size)]()
+ - [std.__MemBlockHeader* std.__allocBlock(u64 std.minSizeAvail)]()
+ - [u64 std.__brk(u64 std.size)]()
+ - [std.__MemBlockHeader* std.__getAvailBlock(u64 std.minSizeAvail)]()
+ - [std.__MemBlockHeader* std.__insertAvailBlock(std.__MemBlockHeader* std.block)]()
+ - [bool std.__isAdjacentToNext(std.__MemBlockHeader const* std.block)]()
+ - [std.__MemBlockHeader* std.__mergeBlockWithNeighbors(std.__MemBlockHeader* std.block)]()
+ - [std.__MemBlockHeader* std.__mergeBlockWithNext(std.__MemBlockHeader* std.block)]()
+ - [void std.__removeAvailBlock(std.__MemBlockHeader* std.block)]()
+ - [u64 std.__roundDown(u64 std.value, u64 std.alignment)]()
+ - [u64 std.__roundUp(u64 std.value, u64 std.alignment)]()
+ - [void* std.__sbrk(i64 std.increment)]()
+ - [std.__MemBlockHeader* std.__splitBlock(std.__MemBlockHeader* std.block, u64 std.newSizeAvail)]()
+ - [void std.free(void* std.ptr)]()
+ - [void* std.malloc(u64 std.size)]()
 
 ## Packs/Unions
- - [pack __MemBlockHeader]()
+ - [pack std.__MemBlockHeader]()
 
 ## Macros
- - [__FREE_PAGES_COUNT_MAX]()
- - [__MEM_ALIGNMENT_SIZE]()
- - [__PAGE_SIZE]()
+ - [std.__FREE_PAGES_COUNT_MAX]()
+ - [std.__MEM_ALIGNMENT_SIZE]()
+ - [std.__PAGE_SIZE]()
 

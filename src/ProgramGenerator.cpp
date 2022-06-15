@@ -27,8 +27,7 @@ struct LocalStackFrame
 	int frameSize = 0; // The size of the stack frame. (Sum of the push sizes of all locals)
 };
 
-typedef std::map<std::string, std::pair<Datatype, SymbolRef>> BlueprintMacroMap;
-typedef std::shared_ptr<BlueprintMacroMap> BlueprintMacroMapRef;
+typedef std::map<std::string, SymbolRef> BlueprintMacroMap; // Name -> macro
 
 struct BpSpecToDefine
 {
@@ -61,7 +60,6 @@ struct ProgGenInfo
 	std::vector<Token> deferredImports;
 	std::queue<struct ProgGenInfoBackup> deferredCompilations;
 
-	std::stack<BlueprintMacroMapRef> bpMacroMapStack;
 	std::stack<std::vector<int>> bpVariadicParamIDStack;
 	std::vector<BpSpecToDefine> bpSpecsToDefine;
 
@@ -206,55 +204,74 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 {
 	auto tokIt = moveTokenIterator(*info.tokens, info.currToken, offset);
 
-	auto pTok = &*tokIt;
-
 	if (ignoreSymDef)
-		return *pTok;
+		return *tokIt;
 
-	if (isKeyword(*pTok, "__file__"))
+	if (isKeyword(*tokIt, "__file__"))
 	{
-		pTok->type = Token::Type::String;
-		pTok->value = std::filesystem::canonical(pTok->pos.file).string();
+		tokIt->type = Token::Type::String;
+		tokIt->value = std::filesystem::canonical(tokIt->pos.file).string();
 	}
-	if (isKeyword(*pTok, "__line__"))
+	if (isKeyword(*tokIt, "__line__"))
 	{
-		pTok->type = Token::Type::LiteralInteger;
-		pTok->value = std::to_string(pTok->pos.line);
+		tokIt->type = Token::Type::LiteralInteger;
+		tokIt->value = std::to_string(tokIt->pos.line);
 	}
-	
-	while (isIdentifier(*pTok))
-	{
-		SymbolRef sym;
-		if (!info.bpMacroMapStack.empty())
-		{
-			auto it = info.bpMacroMapStack.top()->find(pTok->value);
-			if (it != info.bpMacroMapStack.top()->end())
-				sym = it->second.second;
-		}
 
+	auto begin = tokIt;
+
+	bool localOnly = false;
+	if (isOperator(*tokIt, "."))
+	{
+		++tokIt;
+		localOnly = true;
+	}
+
+	auto curr = currSym(info);
+
+	while (tokIt != info.tokens->end() && isIdentifier(*tokIt))
+	{
+		auto& tok = *tokIt;
+
+		auto sym = getSymbol(curr, tokIt->value, localOnly);
 		if (!sym)
-			sym = getSymbol(currSym(info), pTok->value);
-
-		if (!sym || !isMacro(sym))
 			break;
 
-		bool updateCurrToken = (tokIt == info.currToken);
+		if (isMacro(sym))
+		{
+			auto newPos = tokIt->pos;
+			bool updateCurrToken = (begin == info.currToken);
 
-		auto newPos = pTok->pos;
+			begin = info.tokens->erase(begin, ++tokIt);
+			begin = info.tokens->insert(begin, sym->macroTokens.begin(), sym->macroTokens.end());
 
-		tokIt = info.tokens->erase(tokIt);
-		tokIt = info.tokens->insert(tokIt, sym->macroTokens.begin(), sym->macroTokens.end());
-		pTok = &*tokIt;
+			auto it = begin;
+			for (int i = 0; i < sym->macroTokens.size(); ++i)
+				addPosition(*it++, newPos);
 
-		auto it = tokIt;
-		for (int i = 0; i < sym->macroTokens.size(); ++i)
-			addPosition(*it++, newPos);
+			tokIt = begin;
 
-		if (updateCurrToken)
-			info.currToken = tokIt;
+			if (updateCurrToken)
+				info.currToken = begin;
+
+			curr = currSym(info);
+		}
+		else
+		{
+			curr = sym;
+			++tokIt;
+			localOnly = true;
+
+			if (tokIt == info.tokens->end())
+				break;
+
+			if (!isOperator(*tokIt, "."))
+				break;
+			++tokIt;
+		}
 	}
 
-	return *pTok;
+	return *begin;
 }
 
 const Token& nextToken(ProgGenInfo& info, int offset = 1, bool ignoreSymDef = false)
@@ -428,16 +445,10 @@ void parseInlineTokens(ProgGenInfo& info, TokenListRef tokens, const std::string
 	loadProgGenInfoBackup(info, backup);
 }
 
-void pushBlueprintMacros(ProgGenInfo& info, BlueprintMacroMapRef blueprintMacros)
+std::string blueprintMacroNameFromName(const std::string& name)
 {
-	assert(blueprintMacros);
-	info.bpMacroMapStack.push(blueprintMacros);
-}
-
-void popBlueprintMacros(ProgGenInfo& info)
-{
-	assert(!info.bpMacroMapStack.empty());
-	info.bpMacroMapStack.pop();
+	static int id = 0;
+	return "_BM_N_#" + std::to_string(++id) + "_" + name;
 }
 
 std::string variadicNameFromID(int id)
@@ -503,13 +514,16 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom)
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
-	auto resolvedMacros = std::make_shared<BlueprintMacroMap>();
+	BlueprintMacroMap resolvedMacros;
 	info.bpVariadicParamIDStack.push({});
 	for (int i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
 	{
 		static int variadicParamID = 0;
 
 		SymbolRef param;
+
+		std::string name;
+		std::string mangledName;
 
 		if (i < bpSym->func.params.size()) // If the parameter is not variadic
 		{
@@ -518,12 +532,15 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 			if (param->var.datatype.type != DTType::Macro)
 				continue;
 
-			if (resolvedMacros->find(param->var.datatype.name) != resolvedMacros->end())
+			if (resolvedMacros.find(param->var.datatype.name) != resolvedMacros.end())
 			{
-				if (!dtEqual((*resolvedMacros)[param->var.datatype.name].first, paramExpr[i]->datatype))
+				if (!dtEqual(resolvedMacros[param->var.datatype.name]->var.datatype, paramExpr[i]->datatype))
 					THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
 				continue;
 			}
+
+			name = param->var.datatype.name;
+			mangledName = blueprintMacroNameFromName(name);
 		}
 		else // If the parameter is variadic
 		{
@@ -533,29 +550,44 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 			param = std::make_shared<Symbol>();
 			param->pos.decl = getBestPos(bpSym);
 			param->var.datatype.name = variadicTypeFromID(varID);
+			name = param->var.datatype.name;
+			mangledName = name;
 		}
 
-		auto sym = makeMacroSymbol(param->pos.decl, param->var.datatype.name);
-		auto dt = dtArraysToPointer(paramExpr[i]->datatype);
-		sym->macroTokens = DatatypeToTokenList(dt);
-		(*resolvedMacros)[param->var.datatype.name] = { dt, sym };
+		auto sym = makeMacroSymbol(param->pos.decl, mangledName);
+		sym->var.datatype = dtArraysToPointer(paramExpr[i]->datatype);
+		sym->macroTokens = DatatypeToTokenList(sym->var.datatype);
+		resolvedMacros[name] = sym;
 	}
 	// Check if the return type is a blueprint macro
 	if (
 		bpSym->func.retType.type == DTType::Macro &&
-		resolvedMacros->find(bpSym->func.retType.name) == resolvedMacros->end()
+		resolvedMacros.find(bpSym->func.retType.name) == resolvedMacros.end()
 	)
 		THROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "Blueprint return type has not been resolved!");
-
-	// Add temporary macros
-	pushBlueprintMacros(info, resolvedMacros);
 	
 	// Enter the space the blueprint was defined in
 	enterSymbol(info, info.program->symbols);
 
+	// Add macros
+	for (auto& [name, sym] : resolvedMacros)
+		addSymbol(currSym(info), sym);
+
 	// Copy the blueprint tokens
 	auto tokens = std::make_shared<TokenList>();
 	*tokens = *bpSym->func.blueprintTokens;
+
+	// Replace every macro occurence with the macro's mangled name
+	for (auto& token : *tokens)
+	{
+		if (!isIdentifier(token))
+			continue;
+
+		if (resolvedMacros.find(token.value) == resolvedMacros.end())
+			continue;
+
+		token.value = resolvedMacros[token.value]->name;
+	}
 
 	{ // Remove the '!' specifier if it exists
 		auto it = tokens->begin();
@@ -592,9 +624,6 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 	}
 
 	exitSymbol(info);
-
-	// Remove temporary macros
-	popBlueprintMacros(info);
 
 	info.bpVariadicParamIDStack.pop();
 

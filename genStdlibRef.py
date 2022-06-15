@@ -41,7 +41,7 @@ class PageContent:
 	macros: list[str]
 
 def genLineVariable(symbol):
-	return symbol["datatype"] + " " + symbol["name"]
+	return symbol["datatype"] + " std." + symbol["name"]
 
 def genLineFunction(symbol, funcName, isDefine):
 	isExtern = funcName is None
@@ -52,16 +52,16 @@ def genLineFunction(symbol, funcName, isDefine):
 	if symbol["isBlueprint"]:
 		line = "blueprint " + line
 		
-	return line + symbol["retType"] + " " + funcName + "(" + ", ".join(map(genLineVariable, symbol["params"])) + ("", ", ...")[symbol["isVariadic"]] + ")" + (" ...", "")[isDefine]
+	return line + symbol["retType"] + " std." + funcName + "(" + ", ".join(map(genLineVariable, symbol["params"])) + ("", ", ...")[symbol["isVariadic"]] + ")" + (" ...", "")[isDefine]
 
 def genLinePack(symbol, isDefine):
-	return ("pack", "union")[symbol["isUnion"]] + " " + symbol["name"] + (" ...", "")[isDefine]
+	return ("pack", "union")[symbol["isUnion"]] + " std." + symbol["name"] + (" ...", "")[isDefine]
 
 def genLineEnum(symbol):
-	return symbol["name"]
+	return "std." + symbol["name"]
 
 def genMacroLine(symbol):
-	return symbol["name"]
+	return "std." + symbol["name"]
 
 def generateContent(name, lines):
 	content = "\n## " + name + "\n"

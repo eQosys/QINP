@@ -38,9 +38,9 @@ space std:
 
 	\\ Returns the smallest block of memory that is large enough to hold the given size.
 	\\ If no block is large enough, returns the last block in the list.
-	\\ @param sizeAvail The available size of the block to find
+	\\ @param minSizeAvail The available size of the block to find
 	\\ @return The smallest block of memory that is large enough to hold the given size or the last block in the list
-	__MemBlockHeader* __getAvailBlock(u64 sizeAvail)...
+	__MemBlockHeader* __getAvailBlock(u64 minSizeAvail)...
 
 	\\ Inserts a new block of memory into the list (sorted by address)
 	\\ @param block The block of memory to insert
@@ -76,9 +76,9 @@ space std:
 	__MemBlockHeader* __mergeBlockWithNeighbors(__MemBlockHeader* block)...
 
 	\\ Allocates a block of memory padded to a page size while being big enough to hold the given available size and the block header.
-	\\ @param sizeAvail The size of the block to allocate
+	\\ @param minSizeAvail The size of the block to allocate
 	\\ @return A pointer to the header of the allocated block (null on failure)
-	__MemBlockHeader* __allocBlock(u64 sizeAvail)...
+	__MemBlockHeader* __allocBlock(u64 minSizeAvail)...
 
 
 
@@ -103,14 +103,14 @@ space std:
 	u64 __roundDown(u64 value, u64 alignment)!:
 		return (value / alignment) * alignment
 
-	__MemBlockHeader* __getAvailBlock(u64 sizeAvail)!:
-		\\ No check for sizeAvail == 0 because a block may have 0 bytes of available space
+	__MemBlockHeader* __getAvailBlock(u64 minSizeAvail)!:
+		\\ No check for minSizeAvail == 0 because a block may have 0 bytes of available space
 		__MemBlockHeader* smallest = null
 		__MemBlockHeader* last = null
 		__MemBlockHeader* curr = __memBlocks
 
 		while curr:
-			if curr->sizeAvail >= sizeAvail:
+			if curr->sizeAvail >= minSizeAvail:
 				if !smallest || curr->sizeAvail < smallest->sizeAvail:
 					smallest = curr
 			last = curr
@@ -184,10 +184,10 @@ space std:
 
 		return block
 
-	__MemBlockHeader* __allocBlock(u64 sizeAvail)!:
-		if !sizeAvail: return null
+	__MemBlockHeader* __allocBlock(u64 minSizeAvail)!:
+		if !minSizeAvail: return null
 
-		u64 size = __roundUp(sizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
+		u64 size = __roundUp(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
 		__MemBlockHeader* block = (__MemBlockHeader*)__sbrk(size)
 		if !block: return null
 

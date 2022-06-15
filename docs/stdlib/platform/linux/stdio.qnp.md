@@ -7,11 +7,11 @@
 
 
 ## Functions
- - [u8 getchar()]()
- - [i32 printn(u8 const* str, u64 num)]()
+ - [u8 std.getchar()]()
+ - [i32 std.printn(u8 const* std.str, u64 std.num)]()
 
 ## Macros
- - [__STDERR]()
- - [__STDIN]()
- - [__STDOUT]()
+ - [std.__STDERR]()
+ - [std.__STDIN]()
+ - [std.__STDOUT]()
 

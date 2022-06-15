@@ -116,3 +116,5 @@ T sum(T a, T b)!:
 blueprint T
 T sum(T a, ...)!:
 	return a + sum(...)
+
+std.exit(std.EXIT_FAILURE)
