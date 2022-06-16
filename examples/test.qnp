@@ -98,7 +98,7 @@ T sum(T a, ...)...
 
 std.print("Sum: %\n", sum(1, 2, 3))
 
-std.assert(sum(1, 2, 3) == 6, "Sum failed")
+std.assert(sum(1, 2, 3) != 6, "Sum failed")
 
 alias print = std.print
 

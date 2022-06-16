@@ -211,11 +211,13 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 	{
 		tokIt->type = Token::Type::String;
 		tokIt->value = std::filesystem::canonical(tokIt->pos.file).string();
+		return *tokIt;
 	}
 	if (isKeyword(*tokIt, "__line__"))
 	{
 		tokIt->type = Token::Type::LiteralInteger;
 		tokIt->value = std::to_string(tokIt->pos.line);
+		return *tokIt;
 	}
 
 	auto begin = tokIt;
@@ -251,10 +253,11 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 
 				for (int i = 0; i < sym->macroParamNames.size(); ++i)
 				{
+					++tokIt;
 					macroArgs.push_back({});
 
 					int parenCount = 0;
-					while (parenCount != 0 || !isSeparator(*tokIt, ","))
+					while (parenCount != 0 || (!isSeparator(*tokIt, ",") && !isSeparator(*tokIt, ")")))
 					{
 						if (isSeparator(*tokIt, "("))
 							++parenCount;
@@ -279,24 +282,34 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 				{
 					if (!isIdentifier(*it))
 						continue;
-					if (std::find(sym->macroParamNames.begin(), sym->macroParamNames.end(), it->value) == sym->macroParamNames.end())
-						continue;
 
-					bool updateBegin = false;
-					if (it == begin)
-						updateBegin = true;
+					for (int paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
+					{
+						if (sym->macroParamNames[paramIndex] != it->value)
+							continue;
 
-					it = info.tokens->erase(it);
-					it = info.tokens->insert(it, macroArgs[i].begin(), macroArgs[i].end());
+						bool updateBegin = (it == begin);
 
-					if (updateBegin)
-						begin = it;
+						it = info.tokens->erase(it);
+						it = info.tokens->insert(it, macroArgs[paramIndex].begin(), macroArgs[paramIndex].end());
+
+						if (updateBegin)
+							begin = it;
+
+						for (int i = 0; i < macroArgs[paramIndex].size(); ++i)
+							++it;
+
+						break;
+					}
 				}
 			}
 
 			{
 				auto it = begin;
-				for (int i = 0; i < sym->macroTokens.size(); ++i)
+				int nTokens = sym->macroTokens.size() - macroArgs.size();
+				for (auto& arg : macroArgs)
+					nTokens += arg.size();
+				for (int i = 0; i < nTokens; ++i)
 					addPosition(*it++, newPos);
 			}
 
@@ -3074,10 +3087,10 @@ bool parseStatementImport(ProgGenInfo& info);
 
 bool parseStatementDefine(ProgGenInfo& info)
 {
-	auto& defToken = peekToken(info);
+	auto& defToken = peekToken(info, 0, true);
 	if (!isKeyword(defToken, "define"))
 		return false;
-	nextToken(info);
+	nextToken(info, 1, true);
 
 	auto& nameToken = nextToken(info, 1, true);
 
@@ -3085,6 +3098,24 @@ bool parseStatementDefine(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 
 	auto sym = makeMacroSymbol(nameToken.pos, nameToken.value);
+
+	if (isSeparator(peekToken(info, 0, true), "(") && peekToken(info, 0, true).pos.column - nameToken.pos.column == nameToken.value.size())
+	{
+		nextToken(info, 1, true);
+		sym->macroIsFunctionLike = true;
+		
+		while (!isSeparator(peekToken(info, 0, true), ")"))
+		{
+			auto& argToken = nextToken(info, 1, true);
+			if (!isIdentifier(argToken))
+				THROW_PROG_GEN_ERROR_TOKEN(argToken, "Expected identifier!");
+			sym->macroParamNames.push_back(argToken.value);
+			if (isSeparator(peekToken(info, 0, true), ","))
+				nextToken(info);
+		}
+
+		nextToken(info, 1, true);
+	}
 
 	auto existingSymbol = getSymbol(currSym(info), sym->name, true);
 	if (existingSymbol)
