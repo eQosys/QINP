@@ -14,7 +14,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [const](#const)
  - [_continue_](./control-flow.md#continue)
  - [defer](#defer)
- - [define](#define)
+ - [define](#macros)
  - [_do_](./control-flow.md#do-while-loop)
  - [_elif_](./control-flow.md#if-elif-else)
  - [_else_](./control-flow.md#if-elif-else)
@@ -132,25 +132,37 @@ defer
 
 ---
 
-### Define
+### Macros
 
 The `define` keyword is used to create a named macro and associate it with a list of tokens.
 The name must be an identifier. The tokens can be of any type except a newline.
 Every occurence of the macro's name in the code is replaced by it's associated tokens.
 
+Function-like macros have a 'parameter' list, which is a list of identifiers. Every occurence of the parameter's names in the macro definition is replaced by the corresponding argument.
+
 #### Usage
-```qinp
-define [name] [token list]
-```
+> Simple macro:
+> ```qinp
+> define [name] [token list]
+> ```
+> Function-like macro
+> ```qinp
+> define
+> ```
 
 #### Examples
-```qinp
-define foo "bar"
-```
+> Simple macro
+> ```qinp
+> define foo "bar"
+> ```
 
-```qinp
-define bar foo foo \\ Same as 'define bar "bar" "bar"
-```
+> Function-like macro
+> ```qinp
+> define log(msg) .std.print("Log %:%: %", __line__, __file__, msg)
+> \\        ^ The opening parenthesis must be directly after the name of the macro.
+> \\          When a whitespace is placed between the name and the opening parenthesis,
+> \\          the macro definition is treated as a simple macro instead of a function-like macro.
+> ```
 
 ---
 
