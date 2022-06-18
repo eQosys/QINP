@@ -182,6 +182,7 @@ The size of the union is the size of the largest member.
 The `static` keyword can be used to declare/define a variable in a function as static, which means that its state is preserved between function calls (like a global variable), without being visible outside the function. When defining a static variable, the initializer is only run once (with the first call of the function).
 
 #### Example
+
 ```qinp
 void foo():
 	static u32 x
@@ -200,7 +201,9 @@ The members of an enum are accessed via the [space operator](./operators.md#name
 
 The first element of an enum is 0 by default. The following elements are incremented by 1.
 This behavior can be overridden by specifying a custom value for an element.
+
 #### Usage
+
 ```qinp
 enum [enumName]:
 	[memberName1], [memberName2]
@@ -211,6 +214,7 @@ enum [enumName]:
 ```
 
 #### Example
+
 ```qinp
 enum Color:
 	red, green, blue,

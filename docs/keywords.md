@@ -53,11 +53,13 @@ The `alias` keyword can be used give an existing symbol a new name.
 Aliases and [macros](#define) are not interchangeable.
 
 #### Usage
+
 ```qinp
 alias [name] = [symbol]
 ```
 
 #### Example
+
 ```qinp
 alias print = std.print \\ print is now a synonym for std.print
 ```
@@ -70,6 +72,7 @@ Inline assembly can written through the `asm` and `assembly` keywords. The forme
 Variables can also be used in inline assembly. Global variables are replaced with their mangled name, local variables are replaced by their offset to the base pointer (including a +/- sign).
 
 #### Usage
+
 > Single-line assembly:
 > ```qinp
 > asm: [assembly string]
@@ -94,6 +97,7 @@ Variables can also be used in inline assembly. Global variables are replaced wit
 > ```
 
 #### Examples
+
 ```qinp
 asm: "mov rax, [$(global_var)]"
 assembly: "add rax, [rbp $(local_var)]"
@@ -141,6 +145,7 @@ Every occurence of the macro's name in the code is replaced by it's associated t
 Function-like macros have a 'parameter' list, which is a list of identifiers. Every occurence of the parameter's names in the macro definition is replaced by the corresponding argument.
 
 #### Usage
+
 > Simple macro:
 > ```qinp
 > define [name] [token list]
@@ -151,6 +156,7 @@ Function-like macros have a 'parameter' list, which is a list of identifiers. Ev
 > ```
 
 #### Examples
+
 > Simple macro
 > ```qinp
 > define foo "bar"
@@ -173,11 +179,13 @@ Functions marked with the `extern` keyword can used the same way as any other fu
 Currently only builtin types can be used as return types and parameter types. (Pointers to packs are valid)
 
 #### Usage
+
 ```qinp
 extern [function declaration] = [export-name]
 ```
 
 #### Example
+
 ```qinp
 extern void __ExitProcess(i32 status) = "ExitProcess" \\ ExitProcess is part of the Windows API
 ```
@@ -207,6 +215,7 @@ The `defer` specifier can be used to import a file after all other imports.
 It can be used to mimic the behavior of C/C++'s header and source file inclusion.
 
 #### Usage
+
 > Standard import:
 > ```qinp
 > import [file_string]
@@ -218,6 +227,7 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 > ```
 
 #### Example
+
 > Standard import:
 > ```qinp
 > import "std.qnp"
@@ -236,6 +246,7 @@ The `null` keyword is used to represent 0 of any builtin type.
 It can be implicitely converted to any builtin type.
 
 #### Example
+
 ```qinp
 void* p = null
 u8* pu = null
@@ -251,6 +262,7 @@ The `pass` keyword is a no-op statement.
 It's primary purpose is to be used as a placeholder for empty bodies (e.g. function body).
 
 #### Example
+
 ```qinp
 void foo():
 	pass
@@ -267,11 +279,13 @@ When the function it is used in has a return type other than `void`, the stateme
 In functions with a return type of `void`, the `return` statement is optional, otherwise the last statement in the function body must be a `return` statement.
 
 #### Usage
+
 ```qinp
 return [expression*]
 ```
 
 #### Examples
+
 ```qinp
 u64 square(u64 x):
 	return x * x
@@ -292,6 +306,7 @@ The preceding `.` operator is used to access a symbol from the global scope.
 Spaces can be nested.
 
 #### Usage
+
 > Space definition:
 > ```qinp
 > space [name]:
@@ -305,6 +320,7 @@ Spaces can be nested.
 > ```
 
 #### Examples
+
 > Space definition:
 > ```qinp
 > u64 x = 0

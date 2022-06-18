@@ -27,6 +27,7 @@ At the moment there are no multi-line comments.
 Single-line comments are preceded by a double backslash ('\\\\').
 
 #### Example
+
 ```qinp
 u32 a = 3 * 5	\\ This is a comment
 ```
@@ -44,6 +45,7 @@ The indentation is file specific. Different files can have different indentation
 The colon is almost always used to indicate a new scope/deeper indentation level with the beginning of the following line. In these cases it is possible to write a statement directly after it, without the need for a newline.
 
 #### Example
+
 ```qinp
 u64 a = 3
 u64 b = 5
@@ -59,7 +61,7 @@ std.print("I am not part of the else clause!") \\ Indentation matters!
 
 Identifiers are used to name variables, functions, packs, etc.
 
-Valid characters for an identifier are `a-z, A-Z, 0-9, _`, but the first character must be a letter or an underscore.
+Valid characters for identifiers are `a-z, A-Z, 0-9, _`. The first character cannot be a number.
 
 Identifiers are case sensitive.
 

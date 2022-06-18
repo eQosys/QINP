@@ -16,6 +16,7 @@ The conditions may be any expression that evaluates (possibly through implicit c
 The elif and else statements are optional.
 
 #### Usage
+
 ```qinp
 if [condition]:
 	[body]
@@ -26,6 +27,7 @@ else:
 ```
 
 #### Example:
+
 ```qinp
 if true:
 	std.print("Hello")
@@ -42,12 +44,14 @@ else:
 While loops are used to execute a block of code repeatedly as long as a condition evaluates to true.
 
 #### Usage
+
 ```qinp
 while [condition]:
 	[body]
 ```
 
 #### Example
+
 ```qinp
 u32 i = 0
 while ++i < 10:
@@ -62,6 +66,7 @@ while ++i < 10:
 Do-while loops are used to execute a block of code at least once, and then repeat the loop as long as the condition evaluates to true.
 
 #### Usage
+
 ```qinp
 do:
 	[body]
@@ -69,6 +74,7 @@ while [condition]
 ```
 
 #### Example
+
 ```qinp
 u32 i = 0
 do:
@@ -84,6 +90,7 @@ while ++i < 10
 The `continue` statement can be used to skip the rest of the current iteration of a loop. This can be useful to ignore the rest of the code in a loop without using conditional statement.
 
 #### Example
+
 ```qinp
 u32 i = 0
 while ++i < 10:
@@ -98,6 +105,7 @@ The `break` statement can be used to break out of a loop.
 The remaining code in the loop is not executed.
 
 #### Example
+
 ```qinp
 u32 i = 0
 while ++i < 10:
