@@ -20,7 +20,7 @@ Prerequisites:
  - Make
  - C++17 Compiler
  - NASM
- - Python
+ - Python (Optional, required to run the tests)
 
 Building:
  - run `./build.sh Release` in the project root directory to build QINP. The executable can be found in `./bin/Release/`
