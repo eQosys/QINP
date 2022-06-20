@@ -98,7 +98,7 @@ T sum(T a, ...)...
 
 std.print("Sum: %\n", sum(1, 2, 3))
 
-std.assert(sum(1, 2, 3) != 6, "Sum failed")
+std.assert(sum(1, 2, 3) == 6, "Sum failed")
 
 alias print = std.print
 
@@ -116,5 +116,15 @@ T sum(T a, T b)!:
 blueprint T
 T sum(T a, ...)!:
 	return a + sum(...)
+
+std.print("10^1 = ", std.pow(10, 1), "\n")
+std.print("10^2 = ", std.pow(10, 2), "\n")
+std.print("10^3 = ", std.pow(10, 3), "\n")
+std.print("10^4 = ", std.pow(10, 4), "\n")
+std.print("10^5 = ", std.pow(10, 5), "\n")
+std.print("10^6 = ", std.pow(10, 6), "\n")
+std.print("10^7 = ", std.pow(10, 7), "\n")
+std.print("10^8 = ", std.pow(10, 8), "\n")
+std.print("10^9 = ", std.pow(10, 9), "\n")
 
 std.exit(std.EXIT_FAILURE)
