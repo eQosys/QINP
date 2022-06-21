@@ -1,3 +1,6 @@
+\\ QINP Standard Library
+\\ Assertions
+
 import "stdio.qnp"
 import "system.qnp"
 

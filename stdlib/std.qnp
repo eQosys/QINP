@@ -1,7 +1,6 @@
 \\ QINP Standard Library
 \\ Platform independent implementation
 
-
 import "assert.qnp"
 import "system.qnp"
 import "math.qnp"
