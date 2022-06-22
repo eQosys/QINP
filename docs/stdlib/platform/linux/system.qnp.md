@@ -6,5 +6,5 @@
 
 
 ## Functions
- - [void std.exit(i32 std.status)]()
+ - [void std.exit(i32 status)]()
 

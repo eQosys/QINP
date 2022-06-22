@@ -8,10 +8,10 @@
 
 
 ## Functions
- - [void std.fclose(std.File* std.pFile)]()
- - [std.File* std.fopen(u8 const* std.filename, u8 const* std.mode)]()
- - [u64 std.fread(std.File* std.pFile, void* std.dest, u64 std.num)]()
- - [u64 std.fwrite(std.File* std.pFile, void const* std.src, u64 std.num)]()
+ - [void std.fclose(std.File* pFile)]()
+ - [std.File* std.fopen(u8 const* filename, u8 const* mode)]()
+ - [u64 std.fread(std.File* pFile, void* dest, u64 num)]()
+ - [u64 std.fwrite(std.File* pFile, void const* src, u64 num)]()
 
 ## Packs/Unions
  - [pack std.File]()

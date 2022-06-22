@@ -1150,7 +1150,7 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 	}
 	
 	if (!dtEqual(existingOverload->func.retType, func->func.retType))
-		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' already exists with different return type!");
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' exists with different return type: '" + getPosStr(getBestPos(existingOverload)) + "'!");
 	if (!isDefined(func))
 		return existingOverload;
 	if (isDefined(existingOverload))
@@ -2553,7 +2553,13 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 		parseExpectedNewline(info);
 	}
 
+	if (isDefined(funcSym))
+		funcSym->pos.def = declDefPos;
+
 	funcSym = addFunction(info, funcSym);
+
+	if (isDefined(funcSym))
+		funcSym->pos.def = declDefPos;
 
 	if (isBlueprint)
 	{
@@ -2561,8 +2567,6 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 		if (isDefined(funcSym))
 		{
-			funcSym->pos.def = declDefPos;
-
 			parseExpectedColon(info);
 			bool doParseIndent = parseOptionalNewline(info);
 
@@ -2585,8 +2589,6 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 	}
 	else if (isDefined(funcSym))
 	{
-		funcSym->pos.def = declDefPos;
-
 		parseExpectedColon(info);
 		bool parsedNewline = parseOptionalNewline(info);
 

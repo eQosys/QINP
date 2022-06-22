@@ -6,11 +6,11 @@
 
 
 ## Functions
- - [blueprint T std.abs(T std.a)]()
- - [blueprint T std.max(T std.a, T std.b)]()
- - [blueprint T std.max(T std.a, ...)]()
- - [blueprint T std.min(T std.a, T std.b)]()
- - [blueprint T std.min(T std.a, ...)]()
- - [blueprint T std.pow(T std.base, T std.exponent)]()
- - [blueprint T std.sign(T std.a)]()
+ - [blueprint T std.abs(T a)]()
+ - [blueprint T std.max(T a, T b)]()
+ - [blueprint T std.max(T a, ...)]()
+ - [blueprint T std.min(T a, T b)]()
+ - [blueprint T std.min(T a, ...)]()
+ - [blueprint T std.pow(T base, T exponent)]()
+ - [blueprint T std.sign(T a)]()
 

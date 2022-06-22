@@ -7,11 +7,11 @@
 
 
 ## Functions
- - [void std.free(void* std.ptr) ...]()
- - [void* std.malloc(u64 std.size) ...]()
- - [i32 std.memcmp(void const* std.a, void const* std.b, u64 std.len)]()
- - [void* std.memcpy(void* std.dest, void const* std.src, u64 std.len)]()
- - [void* std.memset(void* std.dest, u8 std.val, u64 std.len)]()
+ - [void std.free(void* ptr) ...]()
+ - [void* std.malloc(u64 size) ...]()
+ - [i64 std.memcmp(void const* a, void const* b, u64 len)]()
+ - [void* std.memcpy(void* dest, void const* src, u64 len)]()
+ - [void* std.memset(void* dest, u8 val, u64 len)]()
 
 ## Macros
  - [std.MIN_MEM_LEN_USE_ALIGN]()

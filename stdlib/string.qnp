@@ -64,27 +64,27 @@ space std:
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmp(u8 const* str1, u8 const* str2)...
+	i64 strcmp(u8 const* str1, u8 const* str2)...
 
 	\\ Compare the first num characters of two strings
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @param num The number of characters to compare
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmp(u8 const* str1, u8 const* str2, u64 num)...
+	i64 strcmp(u8 const* str1, u8 const* str2, u64 num)...
 
 	\\ Compare two null-terimated strings without case sensitivity
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmpi(u8 const* str1, u8 const* str2)...
+	i64 strcmpi(u8 const* str1, u8 const* str2)...
 
 	\\ Compare the first num characters of two strings without case sensitivity
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @param num The number of characters to compare
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	i32 strcmpi(u8 const* str1, u8 const* str2, u64 num)...
+	i64 strcmpi(u8 const* str1, u8 const* str2, u64 num)...
 
 	\\ Locate the first occurencce of a character in a string
 	\\ @param str The string to search
@@ -219,29 +219,29 @@ space std:
 		*dest = null
 		return begin
 	
-	i32 strcmp(u8 const* str1, u8 const* str2)!:
+	i64 strcmp(u8 const* str1, u8 const* str2)!:
 		while *str1 == *str2 && *str1 && *str2:
 			++str1
 			++str2
-		return (i32)*str1 - (i32)*str2
+		return (i64)*str1 - (i64)*str2
 
-	i32 strcmp(u8 const* str1, u8 const* str2, u64 num)!:
+	i64 strcmp(u8 const* str1, u8 const* str2, u64 num)!:
 		while num-- && *str1 == *str2 && *str1:
 			++str1
 			++str2
-		return num == -1 ? (i32)0 : (i32)*str1 - (i32)*str2
+		return num == -1 ? (i64)0 : (i64)*str1 - (i64)*str2
 
-	i32 strcmpi(u8 const* str1, u8 const* str2)!:
+	i64 strcmpi(u8 const* str1, u8 const* str2)!:
 		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
 			++str1
 			++str2
-		return (i32)tolower(*str1) - (i32)tolower(*str2)
+		return (i64)tolower(*str1) - (i64)tolower(*str2)
 
-	i32 strcmpi(u8 const* str1, u8 const* str2, u64 num)!:
+	i64 strcmpi(u8 const* str1, u8 const* str2, u64 num)!:
 		while num-- && tolower(*str1) == tolower(*str2) && *str1:
 			++str1
 			++str2
-		return num == -1 ? (i32)0 : (i32)tolower(*str1) - (i32)tolower(*str2)
+		return num == -1 ? (i64)0 : (i64)tolower(*str1) - (i64)tolower(*str2)
 
 	u8 const* strchr(u8 const* str, u8 ch)!:
 		while *str != ch && *str: ++str

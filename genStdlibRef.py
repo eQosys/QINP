@@ -40,8 +40,8 @@ class PageContent:
 	enums: list[str]
 	macros: list[str]
 
-def genLineVariable(symbol):
-	return symbol["datatype"] + " std." + symbol["name"]
+def genLineVariable(symbol, addStdPrefix = False):
+	return symbol["datatype"] + (" ", " std.")[addStdPrefix] + symbol["name"]
 
 def genLineFunction(symbol, funcName, isDefine):
 	isExtern = funcName is None
@@ -83,7 +83,7 @@ def generateLines(base, files, funcName = None):
 			case "None" | "Namespace" | "Global":
 				continue
 			case "Variable":
-				files[declFile].globals.append(genLineVariable(symbol))
+				files[declFile].globals.append(genLineVariable(symbol, True))
 			case "FuncName":
 				if name == "&_BLUEPRINTS_&":
 					generateLines(symbol["subSymbols"], files, funcName)

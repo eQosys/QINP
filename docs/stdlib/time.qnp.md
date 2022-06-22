@@ -7,5 +7,5 @@
 
 ## Functions
  - [u64 std.getTime() ...]()
- - [i32 std.sleep(u64 std.ms) ...]()
+ - [i32 std.sleep(u64 ms) ...]()
 

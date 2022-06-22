@@ -8,7 +8,7 @@
 
 ## Functions
  - [u8 std.getchar()]()
- - [i32 std.printn(u8 const* std.str, u64 std.num)]()
+ - [i32 std.printn(u8 const* str, u64 num)]()
 
 ## Macros
  - [std.__STDERR]()

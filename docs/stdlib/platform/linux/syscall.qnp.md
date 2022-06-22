@@ -7,10 +7,10 @@
 
 
 ## Functions
- - [u64 std.__syscall(u64 std.num)]()
- - [u64 std.__syscall(u64 std.num, u64 std.rdi)]()
- - [u64 std.__syscall(u64 std.num, u64 std.rdi, u64 std.rsi)]()
- - [u64 std.__syscall(u64 std.num, u64 std.rdi, u64 std.rsi, u64 std.rdx)]()
+ - [u64 std.__syscall(u64 num)]()
+ - [u64 std.__syscall(u64 num, u64 rdi)]()
+ - [u64 std.__syscall(u64 num, u64 rdi, u64 rsi)]()
+ - [u64 std.__syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)]()
 
 ## Macros
  - [std.__SYS_ACCEPT]()
