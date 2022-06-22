@@ -12,7 +12,7 @@ space std:
 	\\ @param mode The mode to open the file in. The mode can be one of the following:
 	\\  - "r" for reading.
 	\\  - "w" for writing.
-	\\  - "rw" for appending.
+	\\  - "rw" for reading and writing.
 	\\ @return The file object.
 	File* fopen(u8 const* filename, u8 const* mode)...		\\ Platform dependent implementation
 

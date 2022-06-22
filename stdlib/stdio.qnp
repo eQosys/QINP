@@ -47,7 +47,7 @@ space std:
 	\\ @param val The value to place in the string
 	\\ @return Positive on success, negative on error.
 	blueprint T
-	i32 __print(u8 const** pStr, T val)...
+	i32 __printf(u8 const** pStr, T val)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read from stdin
@@ -78,18 +78,18 @@ space std:
 
 	blueprint T
 	i32 print(u8 const* str, T val)!:
-		if __print(&str, val) < 0: return -1
+		if __printf(&str, val) < 0: return -1
 		if print(str) < 0: return -1
 		return 1
 
 	blueprint T
 	i32 print(u8 const* str, T val, ...)!:
-		if __print(&str, val) < 0: return -1
+		if __printf(&str, val) < 0: return -1
 		if print(str, ...) < 0: return -1
 		return 1
 	
 	blueprint T
-	i32 __print(u8 const** pStr, T val)!:
+	i32 __printf(u8 const** pStr, T val)!:
 		u8 const* str = *pStr
 		u8 const* dropIndex = strchr(str, '%')
 		if dropIndex == null:
