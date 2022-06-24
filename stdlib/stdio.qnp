@@ -15,10 +15,16 @@ space std:
 	\\ @return The number of characters printed. Negative on error.
 	i32 print(u8 const* str)...
 
-	\\ Print a base-10 integer to stdout
+	\\ Print a single character to stdout
+	\\ @param char The character to print
+	\\ @return Positive on success, negative on error.
+	i32 print(u8 char)...
+
+	\\ Print a base-10 value with any other integral type to stdout
 	\\ @param num The integer to print
 	\\ @return The number of characters printed. Negative on error.
-	i32 print(i64 num)...
+	blueprint T
+	i32 print(T val)...
 
 	\\ Print two or more values of different types consecutively to stdout
 	\\ @param val The first value to print
@@ -66,9 +72,13 @@ space std:
 	i32 print(u8 const* str)!:
 		return printn(str, strlen(str))
 
-	i32 print(i64 num)!:
+	i32 print(u8 char)!:
+		return printn(&char, 1)
+
+	blueprint T
+	i32 print(T val)!:
 		u8 str[32]
-		return print(itos(num, str, 10))
+		return print(itos(val, str, 10))
 
 	blueprint T
 	i32 print(T val, ...)!:

@@ -20,13 +20,13 @@ arr[2] = 3
 arr[3] = 4
 
 std.print("arr = ")
-std.print(arr[0])
+std.print((i64)arr[0])
 std.print(",")
-std.print(arr[1])
+std.print((i64)arr[1])
 std.print(",")
-std.print(arr[2])
+std.print((i64)arr[2])
 std.print(",")
-std.print(arr[3])
+std.print((i64)arr[3])
 std.print("\n")
 
 pack Data:

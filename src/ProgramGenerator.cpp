@@ -705,8 +705,8 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 #define CONV_SCORE_NOT_POSSIBLE   -0xFFFF
 #define CONV_SCORE_NO_CONV         0x0
 #define CONV_SCORE_EXPLICIT        0x0
-#define CONV_SCORE_MACRO           0x1
-#define CONV_SCORE_MAKE_CONST      0x2
+#define CONV_SCORE_MAKE_CONST      0x1
+#define CONV_SCORE_MACRO           0x2
 #define CONV_SCORE_VARIADIC        0x4
 #define CONV_SCORE_PROMITION       0x8
 #define CONV_SCORE_PTR_TO_VOID_PTR 0x10
@@ -724,10 +724,10 @@ int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit
 	if (dtEqual(from, to, ignoreFirstConstness))
 		return retCorrect(CONV_SCORE_NO_CONV);
 
-	if (dtEqualNoConst(from, to) && preservesConstness(from, to))
+	if (dtEqualNoConst(from, to) && preservesConstness(from, to, ignoreFirstConstness))
 		return retCorrect(CONV_SCORE_MAKE_CONST);
 
-	if (isPointer(from) && isVoidPtr(to) && preservesConstness(from, to))
+	if (isPointer(from) && isVoidPtr(to) && preservesConstness(from, to, ignoreFirstConstness))
 		return retCorrect(CONV_SCORE_PTR_TO_VOID_PTR);
 
 	if (isNull(from))
@@ -913,6 +913,7 @@ void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidat
 SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom)
 {
 	std::map<SymbolRef, int> candidates;
+
 	addPossibleCandidates(info, candidates, overloads, paramExpr);
 
 	if (candidates.empty())

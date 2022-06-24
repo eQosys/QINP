@@ -16,13 +16,13 @@ std.print(data.asInt)
 std.print("\n")
 
 std.print("data.asBytes = ")
-std.print(data.asBytes[0])
+std.print((i64)data.asBytes[0])
 std.print(",")
-std.print(data.asBytes[1])
+std.print((i64)data.asBytes[1])
 std.print(",")
-std.print(data.asBytes[2])
+std.print((i64)data.asBytes[2])
 std.print(",")
-std.print(data.asBytes[3])
+std.print((i64)data.asBytes[3])
 std.print("\n")
 
 

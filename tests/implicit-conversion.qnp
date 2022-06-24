@@ -23,7 +23,7 @@ std.print(vU16)
 std.print("\n")
 
 std.print("vU8 = ")
-std.print(vU8)
+std.print((i64)vU8)
 std.print("\n")
 
 std.print("vI64 = ")
