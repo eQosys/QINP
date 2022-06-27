@@ -15,7 +15,8 @@ space std:
 	i32 printn(u8 const* str, u64 num)!:
 		return fwrite(__STDOUT, str, num)
 
-	u8 getchar()!:
-		u8 ch
-		u64 result = fread(__STDIN, &ch, 1)
-		return ch
+	i32 scann(u8* dest, u64 num)!:
+		i32 result = fread(__STDIN, dest, num)
+		if result >= 0:
+			dest[result] = 0
+		return result

@@ -127,4 +127,9 @@ std.print("10^7 = ", std.pow(10, 7), "\n")
 std.print("10^8 = ", std.pow(10, 8), "\n")
 std.print("10^9 = ", std.pow(10, 9), "\n")
 
+u8 testBuff[10]
+std.print(">>> ")
+std.scann(testBuff, 5)
+std.print(" -> ", testBuff)
+
 std.exit(std.EXIT_FAILURE)

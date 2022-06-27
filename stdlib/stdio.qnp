@@ -56,14 +56,14 @@ space std:
 	i32 __printf(u8 const** pStr, T val)...
 
 	\\ Reads a character from stdin
-	\\ @return The character read from stdin
-	u8 getchar()...		\\ Platform dependent implementation
+	\\ @return The character read
+	u8 getchar()...
 
-	\\ Read a null-terminated string from stdin
+	\\ Read a specified number of characters from stdin and appends a null character
 	\\ @param dest The destination buffer
-	\\ @param size The size of the destination buffer
-	\\ @return Address of the destination buffer
-	u8* scan(u8* dest, u64 size)...
+	\\ @param size The number of characters to read
+	\\ @return Number of characters read, negative on error
+	i32 scann(u8* dest, u64 num)...		\\ Platform dependent implementation
 
 
 
@@ -115,13 +115,10 @@ space std:
 		if print(val) < 0: return -1
 		return 1
 
-	u8* scan(u8* dest, u64 size)!:
-		u8* begin = dest
-
-		while size--: *dest++ = getchar()
-
-		*dest = null
-		return begin
+	u8 getchar()!:
+		u8 char
+		scann(&char, 1)
+		return char
 
 import.linux "platform/linux/stdio.qnp"
 import.windows "platform/windows/stdio.qnp"
