@@ -1,7 +1,7 @@
 \\ QINP Standard Library
 \\ System - Linux Specific
 
-import "syscall.qnp"
+import "__syscall.qnp"
 
 space std:
 	pass

@@ -1,5 +1,5 @@
 
-# Stdlib - stdlib/platform/linux/syscall.qnp
+# Stdlib - stdlib/platform/linux/__syscall.qnp
 
 ## Overview
  - [Functions](#functions)
