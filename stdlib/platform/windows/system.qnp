@@ -1,0 +1,12 @@
+\\ QINP Standard Library
+\\ System - Windows Specific
+
+space std:
+	extern void __ExitProcess(i32 status) = "ExitProcess"
+
+
+
+defer
+space std:
+	void exit(i32 status)!:
+		__ExitProcess(status)

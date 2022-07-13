@@ -1,5 +1,5 @@
 \\ QINP Standard Library
-\\ File input/output - Linux Specific
+\\ File Input/Output - Linux Specific
 
 import "syscall.qnp"
 

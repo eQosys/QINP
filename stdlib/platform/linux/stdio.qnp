@@ -1,5 +1,5 @@
 \\ QINP Standard Library
-\\ Linux Specific
+\\ Standard Input/Output - Linux Specific
 
 import "../../fileio.qnp"
 

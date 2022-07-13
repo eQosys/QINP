@@ -3,6 +3,11 @@
 
 import "syscall.qnp"
 
+space std:
+	pass
+
+
+
 defer
 space std:
 	void exit(i32 status)!:

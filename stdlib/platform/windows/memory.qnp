@@ -1,0 +1,15 @@
+\\ QINP Standard Library
+\\ Memory - Windows Specific
+
+space std:
+	pass
+
+
+
+defer
+space std:
+	void* malloc(u64 size)!:
+		return null
+
+	void free(void* ptr)!:
+		pass

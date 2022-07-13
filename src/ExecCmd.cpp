@@ -42,7 +42,13 @@ int execCmd(const std::string& command)
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
 
-	if (CreateProcessA(NULL, (LPSTR)command.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+	if (CreateProcessA(
+		NULL, (LPSTR)command.c_str(),
+		NULL, NULL,
+		FALSE, NULL,
+		NULL, NULL,
+		&si, &pi)
+	)
 	{
 		WaitForSingleObject(pi.hProcess, INFINITE);
 

@@ -1,0 +1,15 @@
+\\ QINP Standard Library
+\\ Time - Windows Specific
+
+space std:
+	pass
+
+
+
+defer
+space std:
+	u64 getTime()!:
+		return 0
+
+	i32 sleep(u64 ms)!:
+		return 0
