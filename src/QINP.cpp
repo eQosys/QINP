@@ -152,7 +152,7 @@ int main(int argc, char** argv, char** _env)
 		{
 			Timer timer("Parsing", verbose);
 			auto code = readTextFile(inFilename);
-			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()));
+			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()).string());
 			program = generateProgram(tokens, importDirs, platform, inFilename);
 		}
 

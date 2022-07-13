@@ -36,6 +36,26 @@ struct BpSpecToDefine
 	Token::Position generatedFrom;
 };
 
+struct ProgGenInfo;
+
+struct ProgGenInfoIndent
+{
+	int lvl = 0;
+	int nPerLvl = 0;
+	std::string chStr = "";
+};
+
+struct ProgGenInfoBackup
+{
+	TokenListRef tokens;
+	std::string progPath;
+	TokenList::iterator currToken;
+	ProgGenInfoIndent indent;
+	int funcRetOffset;
+	int funcFrameSize;
+	Datatype funcRetType;
+};
+
 struct ProgGenInfo
 {
 	TokenListRef tokens;
@@ -43,12 +63,9 @@ struct ProgGenInfo
 	std::set<std::string> importDirs;
 	std::string progPath;
 	TokenList::iterator currToken;
-	struct Indent
-	{
-		int lvl = 0;
-		int nPerLvl = 0;
-		std::string chStr = "";
-	} indent;
+
+	using Indent = ProgGenInfoIndent;
+	Indent indent;
 
 	std::stack<BodyRef> mainBodyBackups;
 	int funcRetOffset;
@@ -58,24 +75,13 @@ struct ProgGenInfo
 	std::set<std::string> imports;
 
 	std::vector<Token> deferredImports;
-	std::queue<struct ProgGenInfoBackup> deferredCompilations;
+	std::queue<ProgGenInfoBackup> deferredCompilations;
 
 	std::stack<std::vector<int>> bpVariadicParamIDStack;
 	std::vector<BpSpecToDefine> bpSpecsToDefine;
 
 	int continueEnableCount = 0;
 	int breakEnableCount = 0;
-};
-
-struct ProgGenInfoBackup
-{
-	TokenListRef tokens;
-	std::string progPath;
-	TokenList::iterator currToken;
-	ProgGenInfo::Indent indent;
-	int funcRetOffset;
-	int funcFrameSize;
-	Datatype funcRetType;
 };
 
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
@@ -3349,7 +3355,7 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 		std::string absPath;
 		try
 		{
-			absPath = std::filesystem::canonical(std::filesystem::path(dir) / fileToken.value);
+			absPath = std::filesystem::canonical(std::filesystem::path(dir) / fileToken.value).string();
 		}
 		catch (std::filesystem::filesystem_error&)
 		{
@@ -3368,7 +3374,7 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 	};
 
 	// Seach for a matching file relative to the current file's directory
-	std::string path = getImportFile(std::filesystem::path(info.progPath).parent_path());
+	std::string path = getImportFile(std::filesystem::path(info.progPath).parent_path().string());
 
 	if (path == "<alreadyImported>")
 		return;
@@ -3395,7 +3401,7 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	parseInlineTokens(
 		info,
-		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path())),
+		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string()),
 		path
 	);
 }
