@@ -24,10 +24,18 @@ blueprint [param1], [param2], ...
 
 #### Usage
 
-```qinp
-blueprint [param1], [param2], ...
-[function declaration/definition]
-```
+> Declaration:
+> ```qinp
+> blueprint [blueprint params]
+> [retType] [name]([parameters])...
+> ```
+
+> Definition:
+> ```qinp
+> blueprint [blueprint params]
+> [retType] [name]([parameters]):
+>     [function body]
+> ```
 
 #### Example
 
@@ -44,14 +52,22 @@ void printValue(u8 const* name, T value):
 
 ### Variadic Functions
 
+Variadic functions are functions which can take an arbitrary number of arguments. Variadic functions are declared by having `...` as the last parameter in a function declaration.
+
 #### Usage
 
-Variadic functions are functions which can take an arbitrary number of arguments. Their last argument must be `...`.
+> Declaration:
+> ```qinp
+> blueprint [optional blueprint params]
+> [retType] [name]([parameters], ...)...
+> ```
 
-```qinp
-blueprint [param1], [param2], ...
-[function declaration/definition]
-```
+> Definition:
+> ```qinp
+> blueprint [optional blueprint params]
+> [retType] [name]([parameters], ...):
+>     [function body]
+> ```
 
 #### Example
 
