@@ -26,10 +26,16 @@ space std:
 	\\ @return 0 if the buffers are equal, < 0 if the first byte that differs in a is less than in b, > 0 if the first byte that differs in a is greater than in b
 	i64 memcmp(void const* a, void const* b, u64 num)...
 
-	\\ Allocate a buffer of a given siz
+	\\ Allocate a buffer of a given size
 	\\ @param size The size of the buffer to allocate
 	\\ @return The allocated buffer (null if failed)
 	void* malloc(u64 size)...		\\ Platform dependent implementation
+
+	\\ Reallocate a buffer to a given size
+	\\ @param ptr The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
+	\\ @param size The new size of the buffer
+	\\ @return The pointer to the newly allocated memory.
+	void* realloc(void* ptr, u64 size)...		\\ Platform dependent implementation
 
 	\\ Free a buffer
 	\\ @param buffer The buffer to free

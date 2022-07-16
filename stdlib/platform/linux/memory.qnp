@@ -42,6 +42,11 @@ space std:
 	\\ @return The smallest block of memory that is large enough to hold the given size or the last block in the list
 	__MemBlockHeader* __getAvailBlock(u64 minSizeAvail)...
 
+	\\ Returns the next adjacent block if there is one available
+	\\ @param block The block to search for the adjacent next
+	\\ @return The next available adjacent block, null if it doesn't exist
+	__MemBlockHeader* __getNextAdjacentAvailBlock(__MemBlockHeader* block)...
+
 	\\ Inserts a new block of memory into the list (sorted by address)
 	\\ @param block The block of memory to insert
 	\\ @return The block before the inserted block (null if the block was inserted at the beginning of the list)
@@ -69,6 +74,13 @@ space std:
 	\\ @param block The block of memory to check
 	\\ @return True if the block is adjacent to the next one, otherwise false
 	bool __isAdjacentToNext(__MemBlockHeader const* block)...
+
+
+	\\ Checks whether the given blocks of memory are adjacent.
+	\\ @param block The block of memory to check
+	\\ @param next The block of memory that may be adjacent to block
+	\\ @return True if block is adjacent to next, otherwise false
+	bool __isAdjacentToNext(__MemBlockHeader const* block, __MemBlockHeader const* next)...
 
 	\\ Merges the given block with the previous and next blocks if they are adjacent.
 	\\ @param block The block of memory to merge
@@ -116,6 +128,18 @@ space std:
 			last = curr
 			curr = curr->next
 		return smallest ? smallest : last
+
+	__MemBlockHeader* __getNextAdjacentAvailBlock(__MemBlockHeader* block)!:
+		if !block: return null
+
+		__MemBlockHeader* curr = __memBlocks
+		
+		while curr && curr < block:
+			curr = curr->next
+
+		if !__isAdjacentToNext(block, curr):
+			curr = null
+		return curr
 
 	__MemBlockHeader* __insertAvailBlock(__MemBlockHeader* block)!:
 		if !block: return null
@@ -214,6 +238,54 @@ space std:
 		if newBlock: __insertAvailBlock(newBlock)
 
 		return block + 1
+
+	void* realloc(void* ptr, u64 size)!:
+		if !ptr:
+			return malloc(size)
+
+		__MemBlockHeader* block = (__MemBlockHeader*)ptr - 1
+
+		if size > block->sizeAvail:
+			__MemBlockHeader* next = __getNextAdjacentAvailBlock(block)
+			if next && ( \
+				block->sizeAvail + next->sizeAvail >= size || \
+				block->sizeAvail + next->sizeAvail + sizeof(__MemBlockHeader) == size):
+				__removeAvailBlock(next)
+				block->next = next
+				__mergeBlockWithNext(block)
+				next = __splitBlock(block, size)
+				__insertAvailBlock(next)
+			else:
+				next = (__MemBlockHeader*)malloc(size) - 1
+				if !next: return null
+				memcpy(next + 1, block + 1, block->sizeAvail)
+				free(ptr)
+				block = next
+			return (void*)(block + 1)
+		elif size < block->sizeAvail:
+			__MemBlockHeader* next = null
+			if block->sizeAvail - size < sizeof(__MemBlockHeader):
+				next = __getNextAdjacentAvailBlock(block)
+				if next:
+					__removeAvailBlock(next)
+					block->next = next
+					__mergeBlockWithNext(block)
+					next = __splitBlock(block, size)
+					__insertAvailBlock(next)
+				else:
+					next = (__MemBlockHeader*)malloc(size) - 1
+					if !next: return null
+					memcpy(next + 1, block + 1, size)
+					free(ptr)
+					block = next
+			else:
+				next = __splitBlock(block, size)
+				__insertAvailBlock(next)
+				next = __mergeBlockWithNeighbors(next)
+				\\ TODO: System free if next is the last block in the list
+			return (void*)(block + 1)
+		
+		return ptr
 
 	void free(void* ptr)!:
 		if !ptr: return
