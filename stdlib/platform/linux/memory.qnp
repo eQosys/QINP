@@ -256,8 +256,8 @@ space std:
 				next = __splitBlock(block, size)
 				__insertAvailBlock(next)
 			else:
-				next = (__MemBlockHeader*)malloc(size) - 1
-				if !next: return null
+				next = (__MemBlockHeader*)malloc(size)
+				if !next--: return null
 				memcpy(next + 1, block + 1, block->sizeAvail)
 				free(ptr)
 				block = next
@@ -273,8 +273,8 @@ space std:
 					next = __splitBlock(block, size)
 					__insertAvailBlock(next)
 				else:
-					next = (__MemBlockHeader*)malloc(size) - 1
-					if !next: return null
+					next = (__MemBlockHeader*)malloc(size)
+					if !next--: return null
 					memcpy(next + 1, block + 1, size)
 					free(ptr)
 					block = next
