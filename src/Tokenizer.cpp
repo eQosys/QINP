@@ -256,7 +256,7 @@ TokenListRef tokenize(const std::string& code, std::string name)
 				'b' == c || 'B' == c
 				)
 			{
-				if (token.value != "0")
+				if (token.value.size() == 1 && token.value != "0")
 					THROW_TOKENIZER_ERROR(token.pos, "Expected '0' before '" + std::string(1, c) + "'!");
 				c = tolower(c);
 				litIntBase = (c == 'x') ? 16 : 2;

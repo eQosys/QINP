@@ -1,5 +1,5 @@
 \\ QINP Standard Library
-\\ Syscall - Linux Specific
+\\ Syscall - Linux Internal
 
 space std:
 	\\ The following __syscall functions are used to invoke system calls.
