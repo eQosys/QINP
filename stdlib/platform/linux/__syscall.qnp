@@ -114,11 +114,11 @@ space std:
 	define __SYS_GETTIMEOFDAY 96
 	define __SYS_GETRLIMIT 97
 	define __SYS_GETRUSAGE 98
-	define __SYS___SYSINFO 99
+	define __SYS_SYSINFO 99
 	define __SYS_TIMES 100
 	define __SYS_PTRACE 101
 	define __SYS_GETUID 102
-	define __SYS___SYSLOG 103
+	define __SYS_SYSLOG 103
 	define __SYS_GETGID 104
 	define __SYS_SETUID 105
 	define __SYS_SETGID 106
@@ -154,7 +154,7 @@ space std:
 	define __SYS_USTAT 136
 	define __SYS_STATFS 137
 	define __SYS_FSTATFS 138
-	define __SYS___SYSFS 139
+	define __SYS_SYSFS 139
 	define __SYS_GETPRIORITY 140
 	define __SYS_SETPRIORITY 141
 	define __SYS_SCHED_SETPARAM 142
@@ -171,7 +171,7 @@ space std:
 	define __SYS_VHANGUP 153
 	define __SYS_MODIFY_LDT 154
 	define __SYS_PIVOT_ROOT 155
-	define __SYS____SYSCTL 156
+	define __SYS__SYSCTL 156
 	define __SYS_PRCTL 157
 	define __SYS_ARCH_PRCTL 158
 	define __SYS_ADJTIMEX 159
@@ -198,7 +198,7 @@ space std:
 	define __SYS_NFSSERVCTL 180
 	define __SYS_GETPMSG 181
 	define __SYS_PUTPMSG 182
-	define __SYS_AFS___SYSCALL 183
+	define __SYS_AFS_SYSCALL 183
 	define __SYS_TUXCALL 184
 	define __SYS_SECURITY 185
 	define __SYS_GETTID 186
@@ -234,7 +234,7 @@ space std:
 	define __SYS_REMAP_FILE_PAGES 216
 	define __SYS_GETDENTS64 217
 	define __SYS_SET_TID_ADDRESS 218
-	define __SYS_RESTART___SYSCALL 219
+	define __SYS_RESTART_SYSCALL 219
 	define __SYS_SEMTIMEDOP 220
 	define __SYS_FADVISE64 221
 	define __SYS_TIMER_CREATE 222
