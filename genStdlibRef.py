@@ -17,8 +17,6 @@ The Standard Library is a collection of functions, packs and definitions that ar
 All files building the Standard Library can be found in the [stdlib](../../stdlib/) directory:
 <filelist>
 
-The main file for the Standard Library is [./std.qnp](./std.qnp.md). It imports the most fundamental functions, definitions and packs.
-
 Every Function/pack defined in the standard library exists in the `std` space.
 
 Identifiers with a leading double underscore are implementation details and should not be used directly.

@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 std.print("true = ")
 std.print(true)

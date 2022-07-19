@@ -1,5 +1,9 @@
-import "std.qnp"
-
+import "assert.qnp"
+import "fileio.qnp"
+import "math.qnp"
+import "memory.qnp"
+import "stdio.qnp"
+import "time.qnp"
 
 std.print("Allocating 100 bytes\n")
 void* buff1 = std.malloc(100)

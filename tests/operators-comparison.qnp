@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 void show(bool b):
 	std.print("b = ")

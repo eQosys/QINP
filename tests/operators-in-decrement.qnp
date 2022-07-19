@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 void show(i32 var):
 	std.print("var = ")

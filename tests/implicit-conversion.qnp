@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 u64 vU64 = 11615071587555895818
 u32 vU32 = vU64

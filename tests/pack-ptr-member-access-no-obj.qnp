@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 pack Data:
 	i32 var

@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 std.print("defer-main.qnp: Importing defer-import.qnp\n")
 

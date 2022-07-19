@@ -1,4 +1,5 @@
-import "std.qnp"
+import "stdio.qnp"
+import "system.qnp"
 
 u8** argv
 u64 argc = std.getargs(&argv)

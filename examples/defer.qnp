@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 std.print("This is printed before deferring the compilation of this file.\n")
 

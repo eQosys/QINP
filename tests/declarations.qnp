@@ -1,5 +1,3 @@
-import "std.qnp"
-
 i32 varDecl
 
 i32 varDef = 10

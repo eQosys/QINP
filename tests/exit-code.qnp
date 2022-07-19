@@ -1,3 +1,3 @@
-import "std.qnp"
+import "system.qnp"
 
 std.exit(123)

@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 i32 var = 0
 

@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 u8 buff[1024]
 u8 const* helloWorld = "Hello, World!\n"

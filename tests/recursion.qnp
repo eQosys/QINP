@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 i32 fib(i32 n):
 	return n < 2 ? n : fib(n-1) + fib(n-2)

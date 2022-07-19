@@ -1,4 +1,4 @@
-import "std.qnp"
+import "stdio.qnp"
 
 union Data:
 	i32 asInt
