@@ -194,9 +194,12 @@ space std:
 		return block
 
 	bool __isAdjacentToNext(__MemBlockHeader const* block)!:
-		if !block || !block->next: return false
+		if !block: return false
+		return __isAdjacentToNext(block, block->next)
 
-		return (u64)block + sizeof(__MemBlockHeader) + block->sizeAvail == (u64)block->next
+	bool __isAdjacentToNext(__MemBlockHeader const* block, __MemBlockHeader const* next)!:
+		if !block || !next: return false
+		return ((u64)block + sizeof(__MemBlockHeader) + block->sizeAvail) == (u64)next
 
 	__MemBlockHeader* __mergeBlockWithNeighbors(__MemBlockHeader* block)!:
 		if !block: return null

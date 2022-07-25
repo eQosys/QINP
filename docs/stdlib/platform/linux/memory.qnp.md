@@ -18,7 +18,7 @@
  - [std.__MemBlockHeader* std.__getNextAdjacentAvailBlock(std.__MemBlockHeader* block)]()
  - [std.__MemBlockHeader* std.__insertAvailBlock(std.__MemBlockHeader* block)]()
  - [bool std.__isAdjacentToNext(std.__MemBlockHeader const* block)]()
- - [bool std.__isAdjacentToNext(std.__MemBlockHeader const* block, std.__MemBlockHeader const* next) ...]()
+ - [bool std.__isAdjacentToNext(std.__MemBlockHeader const* block, std.__MemBlockHeader const* next)]()
  - [std.__MemBlockHeader* std.__mergeBlockWithNeighbors(std.__MemBlockHeader* block)]()
  - [std.__MemBlockHeader* std.__mergeBlockWithNext(std.__MemBlockHeader* block)]()
  - [void std.__removeAvailBlock(std.__MemBlockHeader* block)]()
