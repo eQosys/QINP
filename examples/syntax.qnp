@@ -1,0 +1,36 @@
+import "stdio.qnp"
+
+fn<i64> fibonacci(i64 n):
+	return n < 2 ? n : fibonacci(n-1) + fibonacci(n-2)
+
+fn<i64> print(u8* format, T? arg, ...):
+	...
+
+pack String:
+	var<u8*> m_raw
+	var<u64> m_size
+	var<u64> m_reserved
+
+pack<T?> List:
+	var<T*> m_data
+	var<u64> m_size
+	var<u64? m_r
+
+union Union:
+	var<i64> i_64
+	var<u64> u_64
+
+union<T?> Union2:
+	var<i64> i_64
+	var<T> var_t
+
+fn<bool> testFunc():
+	var<i64> localVariable
+	const<i64> localConstant
+	ptr<i64> \\ same as var<i64*>
+
+enum<i8> Color:
+	...
+
+enum<i64> AnyEnum:
+	...
