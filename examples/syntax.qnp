@@ -6,6 +6,16 @@ fn<i64> fibonacci(i64 n):
 fn<i64> print(u8* format, T? arg, ...):
 	...
 
+fn<i64, i64> getPos()...
+
+var<i64> a
+var<i64> b
+a, b = getPos()
+
+fn printPos(i64 x, i64 y)...
+
+printPos(getPos())
+
 pack String:
 	var<u8*> m_raw
 	var<u64> m_size

@@ -141,6 +141,7 @@ bool isKeyword(const std::string& name)
 		"else",
 		"enum",
 		"extern",
+		"fn",
 		"if",
 		"import",
 		"null",
