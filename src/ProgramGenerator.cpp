@@ -20,70 +20,6 @@
 #define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) if (expr->datatype.isConst) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
 
-struct LocalStackFrame
-{
-	std::map<std::string, Variable> locals;
-	int totalOffset = 0; // The offset of the last local variable pushed onto the stack.
-	int frameSize = 0; // The size of the stack frame. (Sum of the push sizes of all locals)
-};
-
-typedef std::map<std::string, SymbolRef> BlueprintMacroMap; // Name -> macro
-
-struct BpSpecToDefine
-{
-	SymbolRef bpSym;
-	std::vector<ExpressionRef> paramExpr;
-	Token::Position generatedFrom;
-};
-
-struct ProgGenInfo;
-
-struct ProgGenInfoIndent
-{
-	int lvl = 0;
-	int nPerLvl = 0;
-	std::string chStr = "";
-};
-
-struct ProgGenInfoBackup
-{
-	TokenListRef tokens;
-	std::string progPath;
-	TokenList::iterator currToken;
-	ProgGenInfoIndent indent;
-	int funcRetOffset;
-	int funcFrameSize;
-	Datatype funcRetType;
-};
-
-struct ProgGenInfo
-{
-	TokenListRef tokens;
-	ProgramRef program;
-	std::set<std::string> importDirs;
-	std::string progPath;
-	TokenList::iterator currToken;
-
-	using Indent = ProgGenInfoIndent;
-	Indent indent;
-
-	std::stack<BodyRef> mainBodyBackups;
-	int funcRetOffset;
-	int funcFrameSize;
-	Datatype funcRetType;
-
-	std::set<std::string> imports;
-
-	std::vector<Token> deferredImports;
-	std::queue<ProgGenInfoBackup> deferredCompilations;
-
-	std::stack<std::vector<int>> bpVariadicParamIDStack;
-	std::vector<BpSpecToDefine> bpSpecsToDefine;
-
-	int continueEnableCount = 0;
-	int breakEnableCount = 0;
-};
-
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
 {
 	ProgGenInfoBackup backup;
@@ -125,6 +61,8 @@ void exitSymbol(ProgGenInfo& info)
 	info.program->symStack.pop();
 }
 
+// Creates a space with an internal, mangled name.
+// Shadow spaces are used to combat name collisions in if/elif/else, while, do/while, for, ... statements.
 SymbolRef addShadowSpace(ProgGenInfo& info)
 {
 	static int shadowId = 0;
@@ -142,21 +80,21 @@ SymbolRef addShadowSpace(ProgGenInfo& info)
 
 TokenList::iterator moveTokenIterator(TokenList& list, TokenList::iterator it, int offset)
 {
-	if (offset > 0)
+	if (offset > 0) // Move to next items
 	{
 		while (offset-- > 0)
 		{
 			++it;
-			if (it == list.end())
+			if (it == list.end()) // Duplicate and append the last element when moving out of bounds
 				it = list.insert(it, list.back());
 		}
 	}
-	else if (offset < 0)
+	else if (offset < 0) // Move to previous items
 	{
 		while (offset++ < 0)
 		{
 			--it;
-			if (it == list.begin())
+			if (it == list.begin()) // Reached beginning
 				return it;
 		}
 	}
@@ -164,21 +102,11 @@ TokenList::iterator moveTokenIterator(TokenList& list, TokenList::iterator it, i
 	return it;
 }
 
-void autoResizeTokenList(ProgGenInfo& info, int offset)
-{
-	if (offset >= 0 && std::distance(info.currToken, info.tokens->end()) <= offset)
-	{
-		int dist = offset - std::distance(info.currToken, info.tokens->end()) + 1;
-		while (dist-- > 0)
-			info.tokens->push_back(info.tokens->back());
-	}
-}
-
 TokenList DatatypeToTokenList(const Datatype& datatype)
 {
 	TokenList tokens;
 
-	auto insertToken = [&tokens](const Token::Type type, const std::string& value)
+	auto insertTokenFront = [&tokens](const Token::Type type, const std::string& value)
 	{
 		tokens.insert(tokens.begin(), makeToken(type, value));
 	};
@@ -187,14 +115,14 @@ TokenList DatatypeToTokenList(const Datatype& datatype)
 	while (pDt)
 	{
 		if (pDt->isConst)
-			insertToken(Token::Type::Keyword, "const");
+			insertTokenFront(Token::Type::Keyword, "const");
 
 		if (isOfType(*pDt, DTType::Name) || isOfType(*pDt, DTType::Macro))
-			insertToken(isBuiltinType(pDt->name) ? Token::Type::BuiltinType : Token::Type::Identifier, pDt->name);
+			insertTokenFront(isBuiltinType(pDt->name) ? Token::Type::BuiltinType : Token::Type::Identifier, pDt->name);
 		else if (isOfType(*pDt, DTType::Array))
 			assert(false && "Array datatypes not supported!");
 		else if (isOfType(*pDt, DTType::Pointer))
-			insertToken(Token::Type::Operator, "*");
+			insertTokenFront(Token::Type::Operator, "*");
 		else if (isOfType(*pDt, DTType::Reference))
 			assert(false && "Reference datatypes not supported!");
 		else
@@ -206,7 +134,103 @@ TokenList DatatypeToTokenList(const Datatype& datatype)
 	return tokens;
 }
 
-const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = false)
+Token& kwFileToTokString(Token& tok)
+{
+	tok.type = Token::Type::String;
+	tok.value = std::filesystem::canonical(tok.pos.file).string();
+	return tok;
+}
+
+Token& kwLineToTokInteger(Token& tok)
+{
+	tok.type = Token::Type::LiteralInteger;
+	tok.value = std::to_string(tok.pos.line);
+	return tok;
+}
+
+void expandMacro(ProgGenInfo& info, TokenList::iterator& tokIt, TokenList::iterator& begin, SymbolRef sym, SymbolRef& curr)
+{
+	auto newPos = tokIt->pos;
+	bool updateCurrToken = (begin == info.currToken);
+
+	std::vector<TokenList> macroArgs;
+
+	if (sym->macroIsFunctionLike) // Parse parameters of function like macro
+	{
+		if (!isSeparator(*++tokIt, "("))
+			THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected '(' after function-like macro!");
+
+		for (int i = 0; i < sym->macroParamNames.size(); ++i)
+		{
+			++tokIt;
+			macroArgs.push_back({});
+
+			int parenCount = 0;
+			while (parenCount != 0 || (!isSeparator(*tokIt, ",") && !isSeparator(*tokIt, ")")))
+			{
+				if (isSeparator(*tokIt, "("))
+					++parenCount;
+				else if (isSeparator(*tokIt, ")"))
+					--parenCount;
+				macroArgs[i].push_back(*tokIt);
+				++tokIt;
+			}
+		}
+
+		if (!isSeparator(*tokIt, ")"))
+			THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected ')'!");
+	}
+
+	// Replace the macro with its content
+	begin = info.tokens->erase(begin, ++tokIt);
+	begin = info.tokens->insert(begin, sym->macroTokens.begin(), sym->macroTokens.end());
+
+	if (sym->macroIsFunctionLike) // Replace all occurences of the parameters with their provided values
+	{
+		auto it = begin;
+		for (int i = 0; i < sym->macroTokens.size(); ++i, ++it)
+		{
+			if (!isIdentifier(*it))
+				continue;
+
+			for (int paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
+			{
+				if (sym->macroParamNames[paramIndex] != it->value)
+					continue;
+
+				bool updateBegin = (it == begin);
+
+				it = info.tokens->erase(it);
+				it = info.tokens->insert(it, macroArgs[paramIndex].begin(), macroArgs[paramIndex].end());
+
+				if (updateBegin)
+					begin = it;
+
+				for (int i = 0; i < macroArgs[paramIndex].size(); ++i)
+					++it;
+
+				break;
+			}
+		}
+	}
+
+	{ // Add new file/line positions for debugging
+		auto it = begin;
+		int nTokens = sym->macroTokens.size() - macroArgs.size();
+		for (auto& arg : macroArgs)
+			nTokens += arg.size();
+		for (int i = 0; i < nTokens; ++i)
+			addPosition(*it++, newPos);
+	}
+
+	tokIt = begin;
+	if (updateCurrToken)
+		info.currToken = begin;
+
+	curr = currSym(info);
+}
+
+const Token& peekToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
 {
 	auto tokIt = moveTokenIterator(*info.tokens, info.currToken, offset);
 
@@ -214,28 +238,22 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 		return *tokIt;
 
 	if (isKeyword(*tokIt, "__file__"))
-	{
-		tokIt->type = Token::Type::String;
-		tokIt->value = std::filesystem::canonical(tokIt->pos.file).string();
-		return *tokIt;
-	}
+		return kwFileToTokString(*tokIt);
+
 	if (isKeyword(*tokIt, "__line__"))
-	{
-		tokIt->type = Token::Type::LiteralInteger;
-		tokIt->value = std::to_string(tokIt->pos.line);
-		return *tokIt;
-	}
+		return kwLineToTokInteger(*tokIt);
 
 	auto begin = tokIt;
 
+
 	bool localOnly = false;
-	if (isOperator(*tokIt, "."))
+	auto curr = currSym(info);
+	if (isOperator(*tokIt, ".")) // Begin from global space when preceded by '.'
 	{
 		++tokIt;
 		localOnly = true;
+		curr = info.program->symbols;
 	}
-
-	auto curr = currSym(info);
 
 	while (tokIt != info.tokens->end() && isIdentifier(*tokIt))
 	{
@@ -247,83 +265,7 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 
 		if (isMacro(sym))
 		{
-			auto newPos = tokIt->pos;
-			bool updateCurrToken = (begin == info.currToken);
-
-			std::vector<TokenList> macroArgs;
-
-			if (sym->macroIsFunctionLike)
-			{
-				if (!isSeparator(*++tokIt, "("))
-					THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected '(' after function-like macro!");
-
-				for (int i = 0; i < sym->macroParamNames.size(); ++i)
-				{
-					++tokIt;
-					macroArgs.push_back({});
-
-					int parenCount = 0;
-					while (parenCount != 0 || (!isSeparator(*tokIt, ",") && !isSeparator(*tokIt, ")")))
-					{
-						if (isSeparator(*tokIt, "("))
-							++parenCount;
-						else if (isSeparator(*tokIt, ")"))
-							--parenCount;
-						macroArgs[i].push_back(*tokIt);
-						++tokIt;
-					}
-				}
-
-				if (!isSeparator(*tokIt, ")"))
-					THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected ')'!");
-			}
-
-			begin = info.tokens->erase(begin, ++tokIt);
-			begin = info.tokens->insert(begin, sym->macroTokens.begin(), sym->macroTokens.end());
-
-			if (sym->macroIsFunctionLike)
-			{
-				auto it = begin;
-				for (int i = 0; i < sym->macroTokens.size(); ++i, ++it)
-				{
-					if (!isIdentifier(*it))
-						continue;
-
-					for (int paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
-					{
-						if (sym->macroParamNames[paramIndex] != it->value)
-							continue;
-
-						bool updateBegin = (it == begin);
-
-						it = info.tokens->erase(it);
-						it = info.tokens->insert(it, macroArgs[paramIndex].begin(), macroArgs[paramIndex].end());
-
-						if (updateBegin)
-							begin = it;
-
-						for (int i = 0; i < macroArgs[paramIndex].size(); ++i)
-							++it;
-
-						break;
-					}
-				}
-			}
-
-			{
-				auto it = begin;
-				int nTokens = sym->macroTokens.size() - macroArgs.size();
-				for (auto& arg : macroArgs)
-					nTokens += arg.size();
-				for (int i = 0; i < nTokens; ++i)
-					addPosition(*it++, newPos);
-			}
-
-			tokIt = begin;
-			if (updateCurrToken)
-				info.currToken = begin;
-
-			curr = currSym(info);
+			expandMacro(info, tokIt, begin, sym, curr);
 		}
 		else
 		{
@@ -343,7 +285,7 @@ const Token& peekToken(ProgGenInfo& info, int offset = 0, bool ignoreSymDef = fa
 	return *begin;
 }
 
-const Token& nextToken(ProgGenInfo& info, int offset = 1, bool ignoreSymDef = false)
+const Token& nextToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
 {
 	auto& temp = peekToken(info, offset - 1, ignoreSymDef);
 
@@ -414,8 +356,6 @@ ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype& datatyp
 
 	return exp;
 }
-
-void addVariable(ProgGenInfo& info, SymbolRef sym);
 
 void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 {
@@ -498,10 +438,6 @@ SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
 	return sym;
 }
 
-ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
-
-void parseGlobalCode(ProgGenInfo& info, bool fromBeginning = true);
-
 void parseInlineTokens(ProgGenInfo& info, TokenListRef tokens, const std::string& progPath)
 {
 	auto backup = makeProgGenInfoBackup(info);
@@ -577,8 +513,6 @@ void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
 		it = ++tokens->insert(it, makeToken(Token::Type::Newline, "\n"));
 	}
 }
-
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom);
 
 SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom)
 {
@@ -1022,8 +956,6 @@ uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std:
 	return memberSymbol->enumValue;
 }
 
-Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprintMacros = {});
-
 bool parseEmptyLine(ProgGenInfo& info)
 {
 	if (peekToken(info).type != Token::Type::Newline)
@@ -1258,7 +1190,7 @@ void increaseIndent(ProgGenInfo::Indent& indent)
 	++indent.lvl;
 }
 
-bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces = false)
+bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 {
 	if (info.indent.chStr.empty())
 	{
@@ -1531,8 +1463,6 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 	exp->left = genConvertExpression(info, exp->left, newDatatype);
 	exp->right = genConvertExpression(info, exp->right, newDatatype);
 }
-
-ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl = 0);
 
 ExpressionRef getParseEnumMember(ProgGenInfo& info)
 {
@@ -2406,8 +2336,6 @@ Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprint
 	return exitEntered(datatype, false);
 }
 
-void parseFunctionBody(ProgGenInfo& info, bool doParseIndent);
-
 std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
 {
 	SymbolRef sym = std::make_shared<Symbol>();
@@ -2891,8 +2819,6 @@ bool parseStatementPass(ProgGenInfo& info)
 	return true;
 }
 
-bool parseControlFlow(ProgGenInfo& info);
-
 bool parseStatementContinue(ProgGenInfo& info)
 {
 	auto& contToken = peekToken(info);
@@ -3092,8 +3018,6 @@ void parseFunctionBody(ProgGenInfo& info, bool doParseIndent)
 	}
 }
 
-bool parseStatementImport(ProgGenInfo& info);
-
 bool parseStatementDefine(ProgGenInfo& info)
 {
 	auto& defToken = peekToken(info, 0, true);
@@ -3139,8 +3063,6 @@ bool parseStatementDefine(ProgGenInfo& info)
 
 	return true;
 }
-
-bool parseSingleGlobalCode(ProgGenInfo& info);
 
 bool parseStatementSpace(ProgGenInfo& info)
 {
