@@ -359,11 +359,14 @@ ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype& datatyp
 
 void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 {
+	// Create the internal if statement
 	auto ifStatement = std::make_shared<Statement>(initExpr->pos, Statement::Type::If_Clause);
 
+	// Add the body to execute when the variable has not been initialized yet
 	ifStatement->ifConditionalBodies.push_back(ConditionalBody());
 	auto& condBody = ifStatement->ifConditionalBodies.back();
 
+	// Create the internal static variable to check whether to variable has been initializes or not
 	auto statSym = std::make_shared<Symbol>();
 	statSym->pos.decl = initExpr->pos;
 	statSym->pos.def = initExpr->pos;
@@ -374,8 +377,10 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 
 	addVariable(info, statSym);
 
+	// Use the internal variable for the condition of the if statement
 	condBody.condition = makeSymbolExpression(initExpr->pos, statSym);
 
+	// Generate the assignment to execute when the static variable has not been initialized yet
 	auto assignExpr = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->eType = Expression::ExprType::Assign;
 	assignExpr->isObject = true;
@@ -407,6 +412,7 @@ bool isPackType(ProgGenInfo& info, const Token& token)
 	return isPackType(info, token.value);
 }
 
+// Checks whether a type conversion of the left-hand operand is prohibited or not
 bool leftConversionIsProhibited(Expression::ExprType eType)
 {
 	static const std::set<Expression::ExprType> prohibitedTypes = 
@@ -1657,6 +1663,8 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 	bool rightLiteral = false;
 	bool farRightLiteral = false;
 
+	// Simplify subexpression before simplifying the current expression
+	// Check every operand whether it is a literal or not
 	if (expr->left)
 	{
 		expr->left = autoSimplifyExpression(expr->left);
@@ -1678,103 +1686,90 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 
 	// TODO: Handle floating point expressions
 	// TODO: Handle signed integer expressions
+	// TODO: Handle Conversion
 	// TODO: Masking
+
+	if (leftLiteral)
+	{
+		if (rightLiteral) // leftLiteral == true && rightLiteral == true
+		{
+			switch(expr->eType)
+			{
+			case Expression::ExprType::Logical_OR:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 || expr->right->value.u64))); break;
+			case Expression::ExprType::Logical_AND:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 && expr->right->value.u64))); break;
+			case Expression::ExprType::Bitwise_OR:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 | expr->right->value.u64))); break;
+			case Expression::ExprType::Bitwise_XOR:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 ^ expr->right->value.u64))); break;
+			case Expression::ExprType::Bitwise_AND:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 & expr->right->value.u64))); break;
+			case Expression::ExprType::Comparison_Equal:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 == expr->right->value.u64))); break;
+			case Expression::ExprType::Comparison_NotEqual:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 != expr->right->value.u64))); break;
+			case Expression::ExprType::Comparison_Less:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 < expr->right->value.u64))); break;
+			case Expression::ExprType::Comparison_LessEqual:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 <= expr->right->value.u64))); break;
+			case Expression::ExprType::Comparison_Greater:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 > expr->right->value.u64))); break;
+			case Expression::ExprType::Comparison_GreaterEqual:
+				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 >= expr->right->value.u64))); break;
+			case Expression::ExprType::Shift_Left:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 << expr->right->value.u64))); break;
+			case Expression::ExprType::Shift_Right:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 >> expr->right->value.u64))); break;
+			case Expression::ExprType::Sum:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 + expr->right->value.u64))); break;
+			case Expression::ExprType::Difference:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 - expr->right->value.u64))); break;
+			case Expression::ExprType::Product:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 * expr->right->value.u64))); break;
+			case Expression::ExprType::Quotient:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 / expr->right->value.u64))); break;
+			case Expression::ExprType::Remainder:
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 % expr->right->value.u64))); break;
+			}
+		}
+		else // leftLiteral == true && rightLiteral == false
+		{
+			;
+		}
+
+		switch (expr->eType) // leftLiteral == true
+		{
+		case Expression::ExprType::Logical_NOT:
+			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(!expr->left->value.u64))); break;
+		case Expression::ExprType::Bitwise_NOT:
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(~expr->left->value.u64))); break;
+		case Expression::ExprType::Prefix_Minus:
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(-expr->left->value.u64))); break;
+		case Expression::ExprType::Conditional_Op:
+			expr = expr->left->value.u64 ? expr->right : expr->farRight; break;
+		}
+	}
+	else
+	{
+		if (rightLiteral) // leftLiteral == false && rightLiteral == true
+		{
+			;
+		}
+		else // leftLiteral == false && rightLiteral == false
+		{
+			;
+		}
+	}
 
 	switch (expr->eType)
 	{
 	case Expression::ExprType::Conversion:
 		break;
-	case Expression::ExprType::Logical_OR:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 || expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Logical_AND:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 && expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Bitwise_OR:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 | expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Bitwise_XOR:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 ^ expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Bitwise_AND:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 & expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Comparison_Equal:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 == expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Comparison_NotEqual:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 != expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Comparison_Less:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 < expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Comparison_LessEqual:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 <= expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Comparison_Greater:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 > expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Comparison_GreaterEqual:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 >= expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Shift_Left:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 << expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Shift_Right:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 >> expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Sum:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 + expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Difference:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 - expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Product:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 * expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Quotient:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 / expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Remainder:
-		if (leftLiteral && rightLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 % expr->right->value.u64)));
-		break;
-	case Expression::ExprType::Logical_NOT:
-		if (leftLiteral)
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(!expr->left->value.u64)));
-		break;
-	case Expression::ExprType::Bitwise_NOT:
-		if (leftLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(~expr->left->value.u64)));
-		break;
 	case Expression::ExprType::Prefix_Plus:
 		break; // Nothing to do
-	case Expression::ExprType::Prefix_Minus:
-		if (leftLiteral)
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(-expr->left->value.u64)));
-		break;
-	case Expression::ExprType::Conditional_Op:
-		if (leftLiteral)
-			expr = expr->left->value.u64 ? expr->right : expr->farRight;
-		break;
 	}
+
 	return expr;
 }
 
