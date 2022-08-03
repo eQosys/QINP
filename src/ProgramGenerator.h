@@ -197,11 +197,11 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert);
 
 bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& newDt, bool isExplicit);
 
-ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow, bool ignoreFirstConstness);
-
 void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp);
 
 ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl = 0);
+
+ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl, const Datatype& targetType, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
 
 ExpressionRef getParseEnumMember(ProgGenInfo& info);
 
@@ -221,8 +221,6 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl);
 
 ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl);
 
-ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl);
-
 bool parseExpression(ProgGenInfo& info);
 
 bool parseExpression(ProgGenInfo& info, const Datatype& targetType);
@@ -231,11 +229,11 @@ Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprint
 
 void parseFunctionBody(ProgGenInfo& info, bool doParseIndent);
 
-std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name);
+std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info);
 
-void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name);
+bool parseDeclDefVariable(ProgGenInfo& info);
 
-void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name, bool isBlueprint, const std::vector<Token>& blueprintMacros, TokenList::iterator itFuncBegin);
+bool parseDeclDefFunction(ProgGenInfo& info);
 
 bool parseDeclDef(ProgGenInfo& info);
 

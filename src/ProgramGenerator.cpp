@@ -1955,7 +1955,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot subscript pointer to void type!");
 			exp->isLValue = isArray(exp->datatype) ? false : true;
 			exp->isObject = true;
-			exp->right = genConvertExpression(info, getParseExpression(info), { "u64" });
+			exp->right = getParseExpression(info, 0, { "u64" });
 			ENABLE_EXPR_ONLY_FOR_OBJ(exp->right);
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
@@ -2126,7 +2126,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->isObject = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
-		exp->left = genConvertExpression(info, getParseExpression(info, precLvl), Datatype("bool"));
+		exp->left = getParseExpression(info, precLvl, { "bool" });
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
 		exp->datatype = { "bool" };
 		exp->isLValue = false;
@@ -2165,7 +2165,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 			return getParseExpression(info, precLvl + 1);
 		}
 		parseExpected(info, Token::Type::Separator, ")");
-		exp = genConvertExpression(info, getParseExpression(info, precLvl), newDatatype, true);
+		exp = getParseExpression(info, precLvl, newDatatype, true);
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp);
 		exp->isObject = true;
 	}
@@ -2207,7 +2207,7 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
 	if (precLvl > maxPrecLvl)
 		return getParseParenthesized(info);
 
-	ExpressionRef expr = nullptr;;
+	ExpressionRef expr = nullptr;
 	switch (opPrecLvls[precLvl].type)
 	{
 	case OpPrecLvl::Type::Binary: expr = getParseBinaryExpression(info, precLvl); break;
@@ -2219,25 +2219,36 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
 	return autoSimplifyExpression(expr);
 }
 
-bool parseExpression(ProgGenInfo& info)
+ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl, const Datatype& targetType, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
 {
-	auto exp = getParseExpression(info);
-	if (exp)
-		pushStatement(info, exp);
-	parseExpectedNewline(info);
-	return !!exp;
+	auto expr = getParseExpression(info, precLvl);
+	if (!expr)
+		return nullptr;
+
+	if (!dtEqual(expr->datatype, targetType))
+		expr = genConvertExpression(info, expr, targetType, isExplicit, doThrow, ignoreFirstConstness);
+
+	return expr;	
 }
 
-bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
+bool parseExpression(ProgGenInfo& info)
 {
 	auto expr = getParseExpression(info);
 	if (!expr)
 		return false;
-
-	if (!dtEqual(expr->datatype, targetType))
-		expr = genConvertExpression(info, expr, targetType);
+	
 	pushStatement(info, expr);
+	parseExpectedNewline(info);
+	return true;
+}
 
+bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
+{
+	auto expr = getParseExpression(info, 0, targetType);
+	if (!expr)
+		return false;
+
+	pushStatement(info, expr);
 	return true;
 }
 
@@ -2331,8 +2342,29 @@ Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprint
 	return exitEntered(datatype, false);
 }
 
-std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
+std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info)
 {
+	bool isStatic = isKeyword(peekToken(info), "static");
+
+	if (isStatic && !isInFunction(currSym(info)))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Static keyword can only be used inside of function definitions!");
+
+	auto& varToken = peekToken(info, 1);
+	if (!isKeyword(varToken, "var"))
+		return { nullptr, nullptr };
+	nextToken(info, 1 + isStatic);
+
+	parseExpected(info, Token::Type::Operator, "<");
+	auto datatype = getParseDatatype(info);
+	if (isVoid(datatype))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
+	parseExpected(info, Token::Type::Operator, ">");
+
+	auto& nameToken = nextToken(info);
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
+	auto& name = nameToken.value;
+
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Variable;
 	sym->pos.decl = peekToken(info).pos;
@@ -2376,12 +2408,9 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info, c
 	return { sym, initExpr };
 }
 
-void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, bool isStatic, const std::string& name)
+bool parseDeclDefVariable(ProgGenInfo& info)
 {
-	if (isVoid(datatype))
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
-
-	auto [varSym, initExpr] = getParseDeclDefVariable(info, datatype, isStatic, name);
+	auto [varSym, initExpr] = getParseDeclDefVariable(info);
 	if (initExpr)
 	{
 		auto assignExpr = std::make_shared<Expression>(initExpr->pos);
@@ -2393,15 +2422,72 @@ void parseExpectedDeclDefVariable(ProgGenInfo& info, const Datatype& datatype, b
 		assignExpr->right = genConvertExpression(info, initExpr, varSym->var.datatype);
 		assignExpr->ignoreConstness = true;
 
-		if (isStatic)
+		if (isVarContext(varSym, SymVarContext::Static))
 			pushStaticLocalInit(info, assignExpr);
 		else
 			pushStatement(info, assignExpr);
 	}
+
+	return !!varSym;
 }
 
-void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, const std::string& name, bool isBlueprint, const std::vector<Token>& blueprintMacros, TokenList::iterator itFuncBegin)
+bool parseDeclDefFunction(ProgGenInfo& info)
 {
+	auto& varToken = peekToken(info, 1);
+	if (!isKeyword(varToken, "fn"))
+		return false;
+	nextToken(info);
+
+	parseExpected(info, Token::Type::Operator, "<");
+	auto datatype = getParseDatatype(info);
+	if (isVoid(datatype))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
+	parseExpected(info, Token::Type::Operator, ">");
+
+	auto& nameToken = nextToken(info);
+	if (!isIdentifier(nameToken))
+		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
+	auto& name = nameToken.value;
+
+	// ----- FROM 'parseDeclDef' -----
+
+	std::vector<Token> blueprintMacros;
+	TokenList::iterator itFuncBegin;
+
+	auto& typeToken = peekToken(info);
+
+	bool isBlueprint = false;
+	std::vector<Token> blueprintMacros;
+	if (isKeyword(typeToken, "blueprint"))
+	{
+		isBlueprint = true;
+		nextToken(info);
+
+		while (isIdentifier(peekToken(info)))
+		{
+			blueprintMacros.push_back(nextToken(info));
+
+			if (!isNewline(peekToken(info)))
+				parseExpected(info, Token::Type::Separator, ",");
+		}
+
+		parseExpectedNewline(info);
+	}
+
+	auto bpBegin = info.currToken;
+	auto dtBpToken = peekToken(info);
+
+	if (isBlueprint && !parseIndent(info))
+		THROW_PROG_GEN_ERROR_TOKEN(*bpBegin, "Inconsistent indentation!");
+
+	if (!isSeparator(peekToken(info), "("))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing parameter list for function declaration!");
+
+	if (!isInGlobal(currSym(info)))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions are not allowed here!");
+
+	// ----- Previous Source -----
+
 	SymbolRef funcSym = std::make_shared<Symbol>();
 
 	auto declDefPos = peekToken(info).pos;
@@ -2544,64 +2630,11 @@ void parseExpectedDeclDefFunction(ProgGenInfo& info, const Datatype& datatype, c
 
 bool parseDeclDef(ProgGenInfo& info)
 {
-	auto& typeToken = peekToken(info);
+	if (parseDeclDefVariable(info)) return true;
+	if (parseDeclDefFunction(info)) return true;
+	return false;
 
-	bool isStatic = false;
-	if (isKeyword(typeToken, "static"))
-	{
-		if (!isInFunction(currSym(info)))
-			THROW_PROG_GEN_ERROR_TOKEN(typeToken, "Static keyword can only be used inside of function definitions!");
-		isStatic = true;
-		nextToken(info);
-	}
-
-	bool isBlueprint = false;
-	std::vector<Token> blueprintMacros;
-	if (isKeyword(typeToken, "blueprint"))
-	{
-		isBlueprint = true;
-		nextToken(info);
-
-		while (isIdentifier(peekToken(info)))
-		{
-			blueprintMacros.push_back(nextToken(info));
-
-			if (!isNewline(peekToken(info)))
-				parseExpected(info, Token::Type::Separator, ",");
-		}
-
-		parseExpectedNewline(info);
-	}
-
-	auto bpBegin = info.currToken;
-	auto dtBpToken = peekToken(info);
-
-	if (isBlueprint && !parseIndent(info))
-		THROW_PROG_GEN_ERROR_TOKEN(*bpBegin, "Inconsistent indentation!");
-
-	auto datatype = getParseDatatype(info, blueprintMacros);
-	if (!datatype)
-		return false;
-
-	auto& nameToken = nextToken(info);
-	if (!isIdentifier(nameToken))
-		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
-
-	if (isSeparator(peekToken(info), "("))
-	{
-		if (!isInGlobal(currSym(info)))
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions are not allowed here!");
-
-		parseExpectedDeclDefFunction(info, datatype, nameToken.value, isBlueprint, blueprintMacros, bpBegin);
-	}
-	else
-	{
-		if (isBlueprint)
-			THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Variables cannot be blueprints!");
-		parseExpectedDeclDefVariable(info, datatype, isStatic, nameToken.value);
-	}
-
-	return true;
+	// ----------------------
 }
 
 bool parseDeclExtFunc(ProgGenInfo& info)
@@ -2690,7 +2723,7 @@ bool parseStatementReturn(ProgGenInfo& info)
 	lastStatement(info)->funcRetOffset = info.funcRetOffset;
 
 	if (!isVoid(info.funcRetType))
-		lastStatement(info)->subExpr = genConvertExpression(info, getParseExpression(info), info.funcRetType);
+		lastStatement(info)->subExpr = getParseExpression(info, 0, info.funcRetType);
 	else if (!isNewline(peekToken(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(exprBegin, "Return statement in void function must be followed by a newline!");
 	parseExpectedNewline(info);
@@ -2900,7 +2933,7 @@ bool parseStatementIf(ProgGenInfo& info)
 
 		statement->ifConditionalBodies.push_back({});
 		auto& condBody = statement->ifConditionalBodies.back();
-		condBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
+		condBody.condition = getParseExpression(info, 0, { "bool" });
 		condBody.body = std::make_shared<Body>();
 
 		parseExpectedColon(info);
@@ -2949,7 +2982,7 @@ bool parseStatementWhile(ProgGenInfo& info)
 	auto statement = std::make_shared<Statement>(whileToken.pos, Statement::Type::While_Loop);
 	statement->whileConditionalBody.body = std::make_shared<Body>();
 
-	statement->whileConditionalBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
+	statement->whileConditionalBody.condition = getParseExpression(info, 0, { "bool" });
 
 	parseExpectedColon(info);
 	bool parsedNewline = parseOptionalNewline(info);
@@ -2979,8 +3012,8 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 	if (!parseIndent(info))
 		THROW_PROG_GEN_ERROR_TOKEN(doToken, "Expected 'while'!");
 	parseExpected(info, Token::Type::Keyword, "while");
-	
-	statement->doWhileConditionalBody.condition = genConvertExpression(info, getParseExpression(info), { "bool" });
+
+	statement->doWhileConditionalBody.condition = getParseExpression(info, 0, { "bool" });
 
 	parseExpectedNewline(info);
 
