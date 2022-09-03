@@ -1,4 +1,5 @@
-import "std.qnp"
+import "stdio.qnp"
+import "time.qnp"
 
 define WIDTH 20
 define HEIGHT 10
