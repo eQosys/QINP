@@ -153,6 +153,7 @@ bool isKeyword(const std::string& name)
 		"sizeof",
 		"space",
 		"static",
+		"var",
 		// "default",
 		// "offsetof",
 		// "for",

@@ -2158,7 +2158,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		break;
 	case Expression::ExprType::Explicit_Cast:
 	{
-		Datatype newDatatype = getParseDatatype(info);
+		Datatype newDatatype = getParseDatatype(info, {});
 		if (!newDatatype)
 		{
 			nextToken(info, -1);
@@ -2252,7 +2252,7 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 	return true;
 }
 
-Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprintMacros)
+Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacros)
 {
 	Datatype datatype;
 
@@ -2265,21 +2265,30 @@ Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprint
 		return dt;
 	};
 
-	auto dtBeginTok = peekToken(info);
+	auto& dtBeginTok = peekToken(info);
 
-	if (
-		std::find_if(
-			blueprintMacros.begin(), blueprintMacros.end(),
-			[&](const Token& tok) { return tok.value == dtBeginTok.value; }
-		) != blueprintMacros.end()
-	)
+	if (isOperator(dtBeginTok, "?"))
 	{
-		if (!isIdentifier(dtBeginTok))
-			return exitEntered({}, true);
+		if (!pBlueprintMacros)
+			THROW_QINP_ERROR("Parsing blueprint macro but no macro list was provided!");
 
 		nextToken(info);
-		datatype.name = dtBeginTok.value;
+		auto& tok = nextToken(info);
+		if (!isIdentifier(tok))
+			THROW_PROG_GEN_ERROR_TOKEN(tok, "Expected identifier!");
+
+		if (
+			std::find_if(
+				pBlueprintMacros->begin(), pBlueprintMacros->end(),
+				[&](const Token& tok) { return tok.value == tok.value; }
+			) == pBlueprintMacros->end()
+		)
+		{
+			pBlueprintMacros->push_back(tok);
+		}
+
 		datatype.type = DTType::Macro;
+		datatype.name = tok.value;
 
 		return exitEntered(datatype, false);
 	}
@@ -2433,17 +2442,22 @@ bool parseDeclDefVariable(ProgGenInfo& info)
 
 bool parseDeclDefFunction(ProgGenInfo& info)
 {
-	auto& varToken = peekToken(info, 1);
+	// Check if it's a function declaration/definition
+	auto& varToken = peekToken(info);
 	if (!isKeyword(varToken, "fn"))
 		return false;
 	nextToken(info);
 
-	parseExpected(info, Token::Type::Operator, "<");
-	auto datatype = getParseDatatype(info);
-	if (isVoid(datatype))
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
-	parseExpected(info, Token::Type::Operator, ">");
+	// Parse the return type
+	Datatype datatype("void");
+	if (isOperator(peekToken(info), "<"))
+	{
+		parseExpected(info, Token::Type::Operator, "<");
+		datatype = getParseDatatype(info);
+		parseExpected(info, Token::Type::Operator, ">");
+	}
 
+	// Parse the function name
 	auto& nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
@@ -2451,16 +2465,16 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 
 	// ----- FROM 'parseDeclDef' -----
 
-	std::vector<Token> blueprintMacros;
 	TokenList::iterator itFuncBegin;
+
+	SymbolRef funcSym = std::make_shared<Symbol>();
 
 	auto& typeToken = peekToken(info);
 
-	bool isBlueprint = false;
 	std::vector<Token> blueprintMacros;
 	if (isKeyword(typeToken, "blueprint"))
 	{
-		isBlueprint = true;
+		funcSym->func.isBlueprint = true;
 		nextToken(info);
 
 		while (isIdentifier(peekToken(info)))
@@ -2477,7 +2491,7 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 	auto bpBegin = info.currToken;
 	auto dtBpToken = peekToken(info);
 
-	if (isBlueprint && !parseIndent(info))
+	if (funcSym->func.isBlueprint && !parseIndent(info))
 		THROW_PROG_GEN_ERROR_TOKEN(*bpBegin, "Inconsistent indentation!");
 
 	if (!isSeparator(peekToken(info), "("))
@@ -2488,8 +2502,6 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 
 	// ----- Previous Source -----
 
-	SymbolRef funcSym = std::make_shared<Symbol>();
-
 	auto declDefPos = peekToken(info).pos;
 
 	funcSym->pos.decl = declDefPos;
@@ -2497,7 +2509,6 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 	funcSym->name = name;
 	funcSym->func.body = std::make_shared<Body>();
 	funcSym->func.retType = datatype;
-	funcSym->func.isBlueprint = isBlueprint;
 
 	parseExpected(info, Token::Type::Separator, "(");
 
@@ -2506,6 +2517,7 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 		if (isSeparator(peekToken(info), "..."))
 		{
 			funcSym->func.isVariadic = true;
+			funcSym->func.isBlueprint = true;
 			nextToken(info);
 			break;
 		}
@@ -2517,7 +2529,7 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 		auto& param = paramSym->var;
 		param.context = SymVarContext::Parameter;
 
-		param.datatype = getParseDatatype(info, blueprintMacros);
+		param.datatype = getParseDatatype(info, &blueprintMacros);
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 		
@@ -2541,17 +2553,14 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 	parseExpected(info, Token::Type::Separator, ")");
 
 	if (blueprintMacros.empty() && !funcSym->func.isVariadic)
-		funcSym->func.isBlueprint = isBlueprint = false;
-
-	if (funcSym->func.isVariadic && !isBlueprint)
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Variadic functions must be blueprints!");
+		funcSym->func.isBlueprint = false;
 
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
 		nextToken(info);
 
 	auto preDeclSym = getSymbol(currSym(info), name, true);
-	if (preDeclSym && isBlueprint)
+	if (preDeclSym && funcSym->func.isBlueprint)
 		preDeclSym = getSymbol(preDeclSym, BLUEPRINT_SYMBOL_NAME, true);
 	if (preDeclSym)
 		preDeclSym = getSymbol(preDeclSym, getSignatureNoRet(funcSym), true);
@@ -2577,7 +2586,7 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 	if (isDefined(funcSym))
 		funcSym->pos.def = declDefPos;
 
-	if (isBlueprint)
+	if (funcSym->func.isBlueprint)
 	{
 		funcSym->func.blueprintTokens = std::make_shared<TokenList>();
 
@@ -2626,6 +2635,8 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 		popTempBody(info);
 		decreaseIndent(info.indent);
 	}
+
+	return true;
 }
 
 bool parseDeclDef(ProgGenInfo& info)

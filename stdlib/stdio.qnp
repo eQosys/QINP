@@ -8,62 +8,57 @@ space std:
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
 	\\ @return The number of characters printed. Negative on error.
-	i32 printn(u8 const* str, u64 num)...		\\ Platform dependent implementation
+	fn<i32> printn(u8 const* str, u64 num)...		\\ Platform dependent implementation
 
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
 	\\ @return The number of characters printed. Negative on error.
-	i32 print(u8 const* str)...
+	fn<i32> print(u8 const* str)...
 
 	\\ Print a single character to stdout
 	\\ @param char The character to print
 	\\ @return Positive on success, negative on error.
-	i32 print(u8 char)...
+	fn<i32> print(u8 char)...
 
 	\\ Print a base-10 value with any other integral type to stdout
 	\\ @param num The integer to print
 	\\ @return The number of characters printed. Negative on error.
-	blueprint T
-	i32 print(T val)...
+	fn<i32> print(?T val)...
 
 	\\ Print two or more values of different types consecutively to stdout
 	\\ @param val The first value to print
 	\\ @param ... The remaining values to print
 	\\ @return Positive on success, negative on error.
-	blueprint T
-	i32 print(T val, ...)...
+	fn<i32> print(?T val, ...)...
 
 	\\ Format a string and print it to stdout
 	\\ @param str The string to print
 	\\ @param val The first argument placed in the string
 	\\ @return Positive on success, negative on error.
-	blueprint T
-	i32 print(u8 const* str, T val)...
+	fn<i32> print(u8 const* str, ?T val)...
 
 	\\ Format a string and print it to stdout
 	\\ @param str The string to print
 	\\ @param val The first argument placed in the string
 	\\ @param ... The remaining arguments placed in the string
 	\\ @return Positive on success, negative on error.
-	blueprint T
-	i32 print(u8 const* str, T val, ...)...
+	fn<i32> print(u8 const* str, ?T val, ...)...
 
 	\\ Internal function to print a formatted string to stdout
 	\\ @param pStr A pointer to the string to print
 	\\ @param val The value to place in the string
 	\\ @return Positive on success, negative on error.
-	blueprint T
-	i32 __printf(u8 const** pStr, T val)...
+	fn<i32> __printf(u8 const** pStr, ?T val)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read
-	u8 getchar()...
+	fn<u8> getchar()...
 
 	\\ Read a specified number of characters from stdin and append a null character
 	\\ @param dest The destination buffer (Minimum buffer size: [num] + 1)
 	\\ @param num The number of characters to read
 	\\ @return Number of characters read, negative on error
-	i32 scann(u8* dest, u64 num)...		\\ Platform dependent implementation
+	fn<i32> scann(u8* dest, u64 num)...		\\ Platform dependent implementation
 
 
 

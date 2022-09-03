@@ -155,7 +155,7 @@ SymbolRef getEnum(ProgGenInfo& info, const std::string& name);
 
 uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName);
 
-Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprintMacros = {});
+Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacros = nullptr);
 
 bool parseEmptyLine(ProgGenInfo& info);
 
@@ -224,8 +224,6 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl);
 bool parseExpression(ProgGenInfo& info);
 
 bool parseExpression(ProgGenInfo& info, const Datatype& targetType);
-
-Datatype getParseDatatype(ProgGenInfo& info, const std::vector<Token>& blueprintMacros);
 
 void parseFunctionBody(ProgGenInfo& info, bool doParseIndent);
 
