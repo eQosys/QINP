@@ -1,27 +1,27 @@
-i32 varDecl
+var<i32> varDecl
 
-i32 varDef = 10
+var<i32> varDef = 10
 
-i32 arrDecl[16]
+var<i32> arrDecl[16]
 
-i32* ptrDecl
+var<i32*> ptrDecl
 
-i32* ptrDef = &varDecl
+var<i32*> ptrDef = &varDecl
 
-void funcDecl(i32 arg)...
+fn<> funcDecl(i32 arg)...
 
-bool funcDef(u64 arg):
+fn<bool> funcDef(u64 arg):
 	return arg == 0
 
 pack Data...
 
-Data* pData
+var<Data*> pData
 
 pack Data:
-	Data* pSub
-	i32 val
+	var<Data*> pSub
+	var<i32> val
 
-Data data
+var<Data> data
 
 enum Color:
 	Red, Green,

@@ -1,19 +1,19 @@
 import "stdio.qnp"
 
-i32 var = 123
-i32* pVar = &var
+var<i32> variable = 123
+var<i32*> pVar = &variable
 
 std.print("var = ")
-std.print(var)
+std.print(variable)
 std.print("\n")
 
 *pVar = 456
 
 std.print("var = ")
-std.print(var)
+std.print(variable)
 std.print("\n")
 
-u8 arr[4]
+var<u8> arr[4]
 arr[0] = 1
 arr[1] = 2
 arr[2] = 3
@@ -30,16 +30,16 @@ std.print((i64)arr[3])
 std.print("\n")
 
 pack Data:
-	i32 x
+	var<i32> x
 
-Data data
+var<Data> data
 data.x = 123
 
 std.print("data.x = ")
 std.print(data.x)
 std.print("\n")
 
-Data* pData = &data
+var<Data*> pData = &data
 
 std.print("pData->x = ")
 std.print(pData->x)

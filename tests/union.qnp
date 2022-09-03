@@ -1,11 +1,11 @@
 import "stdio.qnp"
 
 union Data:
-	i32 asInt
-	u8 asBytes[4]
-	bool asBool[4]
+	var<i32> asInt
+	var<u8> asBytes[4]
+	var<bool> asBool[4]
 
-Data data
+var<Data> data
 data.asBytes[0] = 0
 data.asBytes[1] = 1
 data.asBytes[2] = 32

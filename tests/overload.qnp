@@ -1,10 +1,10 @@
 import "stdio.qnp"
 
-i32 func():
+fn<i32> func():
 	return 10
 
-i32 func(i32 var):
-	return var * 2
+fn<i32> func(i32 v):
+	return v * 2
 
 std.print(func())
 std.print("\n")

@@ -12,11 +12,11 @@ space std:
 
 defer
 space std:
-	i32 printn(u8 const* str, u64 num)!:
+	fn<i32> printn(u8 const* str, u64 num)!:
 		return fwrite(__STDOUT, str, num)
 
-	i32 scann(u8* dest, u64 num)!:
-		i32 result = fread(__STDIN, dest, num)
+	fn<i32> scann(u8* dest, u64 num)!:
+		var<i32> result = fread(__STDIN, dest, num)
 		if result >= 0:
 			dest[result] = 0
 		return result

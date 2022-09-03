@@ -6,9 +6,9 @@ import "stdio.qnp"
 import "time.qnp"
 
 std.print("Allocating 100 bytes\n")
-void* buff1 = std.malloc(100)
+var<void*> buff1 = std.malloc(100)
 std.print("Allocating 10000 bytes\n")
-void* buff2 = std.malloc(10000)
+var<void*> buff2 = std.malloc(10000)
 
 std.print("Freeing 100 bytes\n")
 std.free(buff1)
@@ -27,12 +27,12 @@ buff1 = std.malloc(1024 * 1024 * 1024)
 std.print(" DONE\n")
 
 std.print("Clearing buff1... ")
-u64 begin = std.getTime()
+var<u64> begin = std.getTime()
 std.memset(buff1, 0, 1024 * 1024 * 1024)
-u64 end = std.getTime()
+var<u64> end = std.getTime()
 std.print(" DONE\n -> Time: % ms\n", end - begin)
 
-u8* str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+var<u8*> str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std.memcpy(str, "..................", 9)
 std.print("%-----------------\n", str)
 
@@ -40,20 +40,20 @@ std.print("Freeing 1024 megabytes...")
 std.free(buff1)
 std.print(" DONE\n")
 
-u8* str1 = (u8*)"Hello world, my name is TecStylos!"
-u8* tok = std.strtok(str1, " ")
+var<u8*> str1 = (u8*)"Hello world, my name is TecStylos!"
+var<u8*> tok = std.strtok(str1, " ")
 while tok:
 	std.print(tok, "\n")
 	tok = std.strtok(null, " ")
 
-u8 const* str2 = \
+var<u8 const*> str2 = \
 	"Hello world, " \
 	"my name is TecStylos!\n"
 std.print(str2)
 
-i64 const var = 10 * 12 + 100
+var<i64 const> variable = 10 * 12 + 100
 
-std.print(var, "\n")
+std.print(variable, "\n")
 
 enum Color:
 	Red, Green, Blue
@@ -63,9 +63,9 @@ std.print((u64)Color.Green, "\n")
 std.toupper('a')
 std.tolower('A')
 
-u8 buff[10000]
+var<u8> buff[10000]
 
-std.File* f = std.fopen("examples/test.qnp", "r")
+var<std.File*> f = std.fopen("examples/test.qnp", "r")
 std.print("Read % bytes\n", std.fread(f, buff, sizeof(buff) - 1))
 std.fclose(f)
 buff[sizeof(buff) - 1] = 0
@@ -79,8 +79,8 @@ enum Data:
 
 std.print((i64)Data.C, "\n")
 
-u8* testStr1 = (u8*)"This is a test string"
-u8* testStr2 = (u8*)"This is a test string"
+var<u8*> testStr1 = (u8*)"This is a test string"
+var<u8*> testStr2 = (u8*)"This is a test string"
 
 testStr1[0] = '.'
 
@@ -94,11 +94,9 @@ std.print("TestStr1: %\nTestStr2: %\n", testStr1, testStr2)
 std.print("File:Line -> %:%\n", __file__, __line__)
 std.print("File:Line -> ", __file__, ":", __line__, "\n")
 
-blueprint T
-T sum(T a, T b)...
+fn<?T> sum(?T a, ?T b)...
 
-blueprint T
-T sum(T a, ...)...
+fn<?T> sum(?T a, ...)...
 
 std.print("Sum: %\n", sum(1, 2, 3))
 
@@ -113,12 +111,10 @@ import "defer.qnp"
 
 print("Imported defer.qnp!\n")
 
-blueprint T
-T sum(T a, T b)!:
+fn<?T> sum(?T a, ?T b)!:
 	return a + b
 
-blueprint T
-T sum(T a, ...)!:
+fn<?T> sum(?T a, ...)!:
 	return a + sum(...)
 
 std.print("10^1 = ", std.pow(10, 1), "\n")
@@ -131,7 +127,7 @@ std.print("10^7 = ", std.pow(10, 7), "\n")
 std.print("10^8 = ", std.pow(10, 8), "\n")
 std.print("10^9 = ", std.pow(10, 9), "\n")
 
-u8 testBuff[10]
+var<u8> testBuff[10]
 std.print(">>> ")
 std.scann(testBuff, 5)
 std.print(" -> ", testBuff)

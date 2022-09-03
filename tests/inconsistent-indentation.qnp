@@ -1,3 +1,3 @@
 space SPACE:
-	u32 thisIsTabIndented
-    u32 thisIsSpaceIndented
+	var<u32> thisIsTabIndented
+    var<u32> thisIsSpaceIndented

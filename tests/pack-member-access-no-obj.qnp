@@ -1,6 +1,6 @@
 import "stdio.qnp"
 
 pack Data:
-	i32 var
+	var<i32> member
 
-std.print(Data.var)
+std.print(Data.member)

@@ -1,4 +1,4 @@
-void func()...
+fn<> func()...
 
-void func()!:
+fn func()!:
 	return

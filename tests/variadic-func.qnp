@@ -1,11 +1,9 @@
 import "stdio.qnp"
 
-blueprint T
-T sum(T a, T b):
+fn<?T> sum(?T a, ?T b):
 	return a + b
 
-blueprint T
-T sum(T a, ...):
+fn<?T> sum(?T a, ...):
 	return a + sum(...)
 
 std.print("Sum: ", sum(1, 2, 3, 4, 5))

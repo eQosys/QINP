@@ -18,8 +18,8 @@ space std:
 	pack File!:
 		pass
 
-	File* fopen(u8 const* filename, u8 const* mode)!:
-		i32 flags
+	fn<File*> fopen(u8 const* filename, u8 const* mode)!:
+		var<i32> flags
 		if strcmp(mode, "r") == 0:
 			flags = __OPEN_READONLY
 		elif strcmp(mode, "w") == 0:
@@ -29,15 +29,15 @@ space std:
 		else:
 			return null
 
-		i32 fd = __syscall(__SYS_OPEN, (u64)filename, flags)
+		var<i32> fd = __syscall(__SYS_OPEN, (u64)filename, flags)
 
 		return fd < 0 ? (File*)null : (File*)fd
 
-	u64 fread(File* pFile, void* dest, u64 num)!:
+	fn<u64> fread(File* pFile, void* dest, u64 num)!:
 		return __syscall(__SYS_READ, (u64)pFile, (u64)dest, num)
 
-	u64 fwrite(File* pFile, void const* src, u64 num)!:
+	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
 		return __syscall(__SYS_WRITE, (u64)pFile, (u64)src, num)
 
-	void fclose(File* pFile)!:
+	fn<> fclose(File* pFile)!:
 		__syscall(__SYS_CLOSE, (u64)pFile)

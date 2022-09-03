@@ -1,2 +1,2 @@
-void func()!:
+fn<> func()!:
 	return

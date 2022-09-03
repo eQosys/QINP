@@ -155,7 +155,7 @@ SymbolRef getEnum(ProgGenInfo& info, const std::string& name);
 
 uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName);
 
-Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacros = nullptr);
+Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacroTokens = nullptr);
 
 bool parseEmptyLine(ProgGenInfo& info);
 

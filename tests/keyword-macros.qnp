@@ -1,6 +1,6 @@
 import "stdio.qnp"
 
-void nothing(u8 const* str):
+fn<> nothing(u8 const* str):
 	pass
 
 nothing(__file__)

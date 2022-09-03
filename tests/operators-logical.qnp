@@ -1,6 +1,6 @@
 import "stdio.qnp"
 
-void show(bool b):
+fn<> show(bool b):
 	std.print("b = ")
 	if b:
 		std.print("true")

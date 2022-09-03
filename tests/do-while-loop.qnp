@@ -1,6 +1,6 @@
 import "stdio.qnp"
 
-i32 i = 10
+var<i32> i = 10
 do:
 	std.print(i)
 	std.print("\n")

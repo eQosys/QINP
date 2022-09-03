@@ -1,15 +1,15 @@
 import "stdio.qnp"
 
-bool vBool
-i8 vI8
-i16 vI16
-i32 vI32
-i64 vI64
-u8 vU8
-u16 vU16
-u32 vU32
-u64 vU64
-void* vPtr
+var<bool> vBool
+var<i8> vI8
+var<i16> vI16
+var<i32> vI32
+var<i64> vI64
+var<u8> vU8
+var<u16> vU16
+var<u32> vU32
+var<u64> vU64
+var<void*> vPtr
 
 std.print("sizeof(vBool) = ")
 std.print(sizeof(vBool))

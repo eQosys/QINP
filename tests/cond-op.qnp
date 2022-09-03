@@ -1,6 +1,6 @@
 import "stdio.qnp"
 
-void printBool(bool b):
+fn<> printBool(bool b):
 	std.print(b ? "true" : "false")
 
 printBool(true)

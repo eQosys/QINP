@@ -14,7 +14,7 @@ space std:
 	\\  - "w" for writing.
 	\\  - "rw" for reading and writing.
 	\\ @return The file object.
-	File* fopen(u8 const* filename, u8 const* mode)...		\\ Platform dependent implementation
+	fn<File*> fopen(u8 const* filename, u8 const* mode)...		\\ Platform dependent implementation
 
 	\\ Reads num bytes from the file into the destination buffer.
 	\\ May return less than num bytes if the end of the file is reached.
@@ -22,18 +22,18 @@ space std:
 	\\ @param dest The destination buffer.
 	\\ @param num The number of bytes to read.
 	\\ @return The number of bytes read.
-	u64 fread(File* pFile, void* dest, u64 num)...		\\ Platform dependent implementation
+	fn<u64> fread(File* pFile, void* dest, u64 num)...		\\ Platform dependent implementation
 
 	\\ Writes num bytes from the source buffer to the file.
 	\\ @param pFile The file object.
 	\\ @param src The source buffer.
 	\\ @param num The number of bytes to write.
 	\\ @return The number of bytes written.
-	u64 fwrite(File* pFile, void const* src, u64 num)...		\\ Platform dependent implementation
+	fn<u64> fwrite(File* pFile, void const* src, u64 num)...		\\ Platform dependent implementation
 
 	\\ Closes the file.
 	\\ @param pFile The file object.
-	void fclose(File* pFile)...		\\ Platform dependent implementation
+	fn<> fclose(File* pFile)...		\\ Platform dependent implementation
 
 
 

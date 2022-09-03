@@ -1,2 +1,2 @@
-u64 func(i32 a):
+fn<u64> func(i32 a):
 	a *= 10

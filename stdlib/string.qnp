@@ -170,135 +170,135 @@ space std:
 
 defer
 space std:
-	u64 strlen(u8 const* str)!:
-		u8 const* begin = str
+	fn<u64> strlen(u8 const* str)!:
+		var<u8 const*> begin = str
 		while *str: ++str
 		return (u64)(str - begin)
 
-	u8* strlwr(u8* str)!:
-		u8* begin = str
+	fn<u8*> strlwr(u8* str)!:
+		var<u8*> begin = str
 		while *str: *str++ = tolower(*str)
 		return begin
 
-	u8* strlwr(u8* str, u64 num)!:
-		u8* begin = str
+	fn<u8*> strlwr(u8* str, u64 num)!:
+		var<u8*> begin = str
 		while num--: *str++ = tolower(*str)
 		return begin
 
-	u8* strupr(u8* str)!:
-		u8* begin = str
+	fn<u8*> strupr(u8* str)!:
+		var<u8*> begin = str
 		while *str: *str++ = toupper(*str)
 		return begin
 
-	u8* strupr(u8* str, u64 num)!:
-		u8* begin = str
+	fn<u8*> strupr(u8* str, u64 num)!:
+		var<u8*> begin = str
 		while num--: *str++ = toupper(*str)
 		return begin
 	
-	u8* strcat(u8* dest, u8 const* src)!:
-		u8* begin = dest
+	fn<u8*> strcat(u8* dest, u8 const* src)!:
+		var<u8*> begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src)
 		return begin
 
-	u8* strcat(u8* dest, u8 const* src, u64 num)!:
-		u8* begin = dest
+	fn<u8*> strcat(u8* dest, u8 const* src, u64 num)!:
+		var<u8*> begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src, num)
 		return begin
 
-	u8* strcpy(u8* dest, u8 const* src)!:
-		u8* begin = dest
+	fn<u8*> strcpy(u8* dest, u8 const* src)!:
+		var<u8*> begin = dest
 		while *src: *dest++ = *src++
 		*dest = null
 		return begin
 
-	u8* strcpy(u8* dest, u8 const* src, u64 num)!:
-		u8* begin = dest
+	fn<u8*> strcpy(u8* dest, u8 const* src, u64 num)!:
+		var<u8*> begin = dest
 		while num--: *dest++ = *src++
 		*dest = null
 		return begin
 	
-	i64 strcmp(u8 const* str1, u8 const* str2)!:
+	fn<i64> strcmp(u8 const* str1, u8 const* str2)!:
 		while *str1 == *str2 && *str1 && *str2:
 			++str1
 			++str2
 		return (i64)*str1 - (i64)*str2
 
-	i64 strcmp(u8 const* str1, u8 const* str2, u64 num)!:
+	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num)!:
 		while num-- && *str1 == *str2 && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i64)0 : (i64)*str1 - (i64)*str2
 
-	i64 strcmpi(u8 const* str1, u8 const* str2)!:
+	fn<i64> strcmpi(u8 const* str1, u8 const* str2)!:
 		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
 			++str1
 			++str2
 		return (i64)tolower(*str1) - (i64)tolower(*str2)
 
-	i64 strcmpi(u8 const* str1, u8 const* str2, u64 num)!:
+	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num)!:
 		while num-- && tolower(*str1) == tolower(*str2) && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i64)0 : (i64)tolower(*str1) - (i64)tolower(*str2)
 
-	u8 const* strchr(u8 const* str, u8 ch)!:
+	fn<u8 const*> strchr(u8 const* str, u8 ch)!:
 		while *str != ch && *str: ++str
 		return *str == ch ? str : (u8 const*)null
 
-	u8 const* strrchr(u8 const* str, u8 ch)!:
-		u8 const* last = null
+	fn<u8 const*> strrchr(u8 const* str, u8 ch)!:
+		var<u8 const*> last = null
 		while *str:
 			if *str == ch:
 				last = str
 			++str
 		return last
 
-	u8 const* strstr(u8 const* str, u8 const* substr)!:
-		u64 sublen = strlen(substr)
-		u8 const* lastToCheck = str + strlen(str) - sublen
+	fn<u8 const*> strstr(u8 const* str, u8 const* substr)!:
+		var<u64> sublen = strlen(substr)
+		var<u8 const*> lastToCheck = str + strlen(str) - sublen
 		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
 				return str
 			++str
 		return null
 
-	u8 const* strrstr(u8 const* str, u8 const* substr)!:
-		u64 sublen = strlen(substr)
-		u8 const* lastToCheck = str + strlen(str) - sublen
-		u8 const* last = null
+	fn<u8 const*> strrstr(u8 const* str, u8 const* substr)!:
+		var<u64> sublen = strlen(substr)
+		var<u8 const*> lastToCheck = str + strlen(str) - sublen
+		var<u8 const*> last = null
 		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
 				last = str
 			++str
 		return last
 
-	u8* strset(u8* str, u8 ch)!:
-		u8* begin = str
+	fn<u8*> strset(u8* str, u8 ch)!:
+		var<u8*> begin = str
 		while *str: *str++ = ch
 		return begin
 
-	u8* strset(u8* str, u8 ch, u64 num)!:
-		u8* begin = str
+	fn<u8*> strset(u8* str, u8 ch, u64 num)!:
+		var<u8*> begin = str
 		while num--: *str++ = ch
 		return begin
 
-	u8* strrev(u8* str)!:
+	fn<u8*> strrev(u8* str)!:
 		return strrev(str, str + strlen(str))
 
-	u8* strrev(u8* begin, u8* end)!:
-		u8* str = begin
+	fn<u8*> strrev(u8* begin, u8* end)!:
+		var<u8*> str = begin
 
 		while begin < end:
-			u8 temp = *begin
+			var<u8> temp = *begin
 			*begin++ = *--end
 			*end = temp
 
 		return str
 	
-	u8* strtok(u8* str, u8 const* delimiters)!:
-		static u8* next = null
+	fn<u8*> strtok(u8* str, u8 const* delimiters)!:
+		static var<u8*> next = null
 		
 		if str:
 			next = str
@@ -306,7 +306,7 @@ space std:
 
 		if !next: return null
 
-		u8* begin = next
+		var<u8*> begin = next
 		while *next:
 			if strchr(delimiters, *next):
 				*next++ = null
@@ -316,10 +316,10 @@ space std:
 		next = null
 		return begin
 
-	u8* itos(i64 num, u8* str, i64 base)!:
-		static u8 const* const __baseCharsLower = __BASE_CHARS_LOWER
-		u8* begin = str
-		bool negative = num < 0
+	fn<u8*> itos(i64 num, u8* str, i64 base)!:
+		static var<u8 const*const> __baseCharsLower = __BASE_CHARS_LOWER
+		var<u8*> begin = str
+		var<bool> negative = num < 0
 
 		if negative: num *= -1
 
@@ -334,10 +334,10 @@ space std:
 
 		return strrev(begin, str)
 
-	i64 stoi(u8 const* str, i64 base)!:
-		static u8 const* const __baseCharsLower = __BASE_CHARS_LOWER
-		i64 num = 0
-		bool negative = *str == '-'
+	fn<i64> stoi(u8 const* str, i64 base)!:
+		static var<u8 const*const> __baseCharsLower = __BASE_CHARS_LOWER
+		var<i64> num = 0
+		var<bool> negative = *str == '-'
 
 		if negative: ++str
 
@@ -347,8 +347,8 @@ space std:
 
 		return negative ? -num : num
 
-	u8 toupper(u8 c)!:
+	fn<u8> toupper(u8 c)!:
 		return 'a' <= c && c <= 'z' ? 'A' - 'a' + c : c
 
-	u8 tolower(u8 c)!:
+	fn<u8> tolower(u8 c)!:
 		return 'A' <= c && c <= 'Z' ? 'a' - 'A' + c : c

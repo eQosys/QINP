@@ -11,30 +11,30 @@ space std:
 
 	\\ Holds a time value in seconds and nanoseconds
 	pack __timespec:
-		i64 seconds
-		i64 nanoseconds
+		var<i64> seconds
+		var<i64> nanoseconds
 
 	\\ Retrieves the current time of the system
 	\\ @param clockID The clock to use
 	\\ @param t A pointer to a __timespec pack to store the time in
 	\\ @return 0 on success, -1 on error
-	i32 __clock_gettime(i32 clockID, __timespec* t)...
+	fn<i32> __clock_gettime(i32 clockID, __timespec* t)...
 
 
 
 defer
 space std:
-	i32 __clock_gettime(i32 clockID, __timespec* t)!:
+	fn<i32> __clock_gettime(i32 clockID, __timespec* t)!:
 		return __syscall(__SYS_CLOCK_GETTIME, clockID, (u64)t)
 
-	u64 getTime()!:
-		__timespec t
+	fn<u64> getTime()!:
+		var<__timespec> t
 		return __clock_gettime(__CLOCK_REALTIME, &t) < 0 ? \
 			-1 : \
 			t.seconds * 1000 + t.nanoseconds / 1000000
 
-	i32 sleep(u64 ms)!:
-		__timespec ts
+	fn<i32> sleep(u64 ms)!:
+		var<__timespec> ts
 		ts.seconds = ms / 1000
 		ts.nanoseconds = (ms % 1000) * 1000000
 		return __syscall(__SYS_NANOSLEEP, (u64)&ts, (u64)&ts)

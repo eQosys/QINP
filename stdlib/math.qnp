@@ -6,80 +6,66 @@ space std:
 	\\ @param a The first value
 	\\ @param b The second value
 	\\ @return The smaller of the two values
-	blueprint T
-	T min(T a, T b)...
+	fn<?T> min(?T a, ?T b)...
 
 	\\ Returns the smallest of two or more values
 	\\ @param a The first value
 	\\ @param ... The other values
 	\\ @return The smallest of the values
-	blueprint T
-	T min(T a, ...)...
+	fn<?T> min(?T a, ...)...
 
 	\\ Returns the larger of two values
 	\\ @param a The first value
 	\\ @param b The second value
 	\\ @return The larger of the two values
-	blueprint T
-	T max(T a, T b)...
+	fn<?T> max(?T a, ?T b)...
 
 	\\ Returns the largest of two or more values
 	\\ @param a The first value
 	\\ @param ... The other values
 	\\ @return The largest of the values
-	blueprint T
-	T max(T a, ...)...
+	fn<?T> max(?T a, ...)...
 
 	\\ Returns the absolute value of a value
 	\\ @param a The value
 	\\ @return The absolute value of the value
-	blueprint T
-	T abs(T a)...
+	fn<?T> abs(?T a)...
 
 	\\ Returns the sign of a value
 	\\ @param a The value
 	\\ @return The sign of the value
-	blueprint T
-	T sign(T a)...
+	fn<?T> sign(?T a)...
 
 	\\ Returns the value of base raised to the power of exponent.
 	\\ @param base The base
 	\\ @param exponent The exponent (must be greater than or equal to 0)
 	\\ @return The value of base raised to the power of exponent
-	blueprint T
-	T pow(T base, T exponent)...
+	fn<?T> pow(?T base, ?T exponent)...
 
 
 
 defer
 space std:
-	blueprint T
-	T min(T a, T b)!:
+	fn<?T> min(?T a, ?T b)!:
 		return a < b ? a : b
 
-	blueprint T
-	T min(T a, ...)!:
+	fn<?T> min(?T a, ...)!:
 		return min(a, min(...))
 
-	blueprint T
-	T max(T a, T b)!:
+	fn<?T> max(?T a, ?T b)!:
 		return a > b ? a : b
 
-	blueprint T
-	T max(T a, ...)!:
+	fn<?T> max(?T a, ...)!:
 		return max(a, max(...))
 
-	blueprint T
-	T abs(T a)!:
+	fn<?T> abs(?T a)!:
 		return a < 0 ? -a : a
 
-	blueprint T
-	T sign(T a)!:
+	fn<?T> sign(?T a)!:
 		return a < 0 ? -1 : a > 0 ? 1 : 0
-	
-	blueprint T
-	T pow(T base, T exponent)!:
+
+	fn<?T> pow(?T base, ?T exponent)!:
 		if exponent == 0: return 1
-		T temp = pow(base, exponent / 2)
+		var<T> temp = pow(base, exponent / 2)
 		if exponent % 2 == 0: return temp * temp
 		return base * temp * temp

@@ -64,39 +64,34 @@ space std:
 
 defer
 space std:
-	i32 print(u8 const* str)!:
+	fn<i32> print(u8 const* str)!:
 		return printn(str, strlen(str))
 
-	i32 print(u8 char)!:
+	fn<i32> print(u8 char)!:
 		return printn(&char, 1)
 
-	blueprint T
-	i32 print(T val)!:
-		u8 str[32]
+	fn<i32> print(?T val)!:
+		var<u8> str[32]
 		return print(itos(val, str, 10))
 
-	blueprint T
-	i32 print(T val, ...)!:
+	fn<i32> print(?T val, ...)!:
 		if print(val) < 0: return -1
 		if print(...) < 0: return -1
 		return 1
 
-	blueprint T
-	i32 print(u8 const* str, T val)!:
+	fn<i32> print(u8 const* str, ?T val)!:
 		if __printf(&str, val) < 0: return -1
 		if print(str) < 0: return -1
 		return 1
 
-	blueprint T
-	i32 print(u8 const* str, T val, ...)!:
+	fn<i32> print(u8 const* str, ?T val, ...)!:
 		if __printf(&str, val) < 0: return -1
 		if print(str, ...) < 0: return -1
 		return 1
-	
-	blueprint T
-	i32 __printf(u8 const** pStr, T val)!:
-		u8 const* str = *pStr
-		u8 const* dropIndex = strchr(str, '%')
+
+	fn<i32> __printf(u8 const** pStr, ?T val)!:
+		var<u8 const*> str = *pStr
+		var<u8 const*> dropIndex = strchr(str, '%')
 		if dropIndex == null:
 			*pStr = str + strlen(str)
 
@@ -110,8 +105,8 @@ space std:
 		if print(val) < 0: return -1
 		return 1
 
-	u8 getchar()!:
-		u8 buff[2]
+	fn<u8> getchar()!:
+		var<u8> buff[2]
 		scann(buff, 1)
 		return *buff
 

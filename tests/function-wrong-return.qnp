@@ -1,2 +1,2 @@
-void square(i32 x):
+fn<> square(i32 x):
 	return x * x

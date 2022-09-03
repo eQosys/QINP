@@ -1,15 +1,15 @@
 import "stdio.qnp"
 
-i32 var = 12345
+var<i32> variable = 12345
 
 std.print("(bool)var = ")
-std.print((bool)var)
+std.print((bool)variable)
 std.print("\n")
 
 std.print("(i16)var = ")
-std.print((i16)var)
+std.print((i16)variable)
 std.print("\n")
 
 std.print("(i8)var = ")
-std.print((i8)var)
+std.print((i8)variable)
 std.print("\n")

@@ -1,14 +1,14 @@
 import "stdio.qnp"
 
-u64 vU64 = 11615071587555895818
-u32 vU32 = vU64
-u16 vU16 = vU64
-u8 vU8 = vU64
-i64 vI64 = vU64
-i32 vI32 = vU64
-i16 vI16 = vU64
-i8 vI8 = vU64
-bool vBool = vU8
+var<u64> vU64 = 11615071587555895818
+var<u32> vU32 = vU64
+var<u16> vU16 = vU64
+var<u8> vU8 = vU64
+var<i64> vI64 = vU64
+var<i32> vI32 = vU64
+var<i16> vI16 = vU64
+var<i8> vI8 = vU64
+var<bool> vBool = vU8
 
 std.print("vU64 = ")
 std.print(vU64)

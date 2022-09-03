@@ -1,2 +1,2 @@
-u32 a
-	u32 b
+var<u32> a
+	var<u32> b

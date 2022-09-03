@@ -12,13 +12,13 @@ space std:
 	\\ @param msg Error message to print.
 	\\ @param file File name where assert was called.
 	\\ @param line Line number where assert was called.
-	void __assert(bool check, u8 const* msg, u8 const* file, i32 line)...
+	fn<> __assert(bool check, u8 const* msg, u8 const* file, i32 line)...
 
 
 
 defer
 space std:
-	void __assert(bool check, u8 const* msg, u8 const* file, i32 line)!:
+	fn<> __assert(bool check, u8 const* msg, u8 const* file, i32 line)!:
 		if !check:
 			print("%:%: Assertion failed with message '%'!\n", file, line, msg)
 			exit(1)

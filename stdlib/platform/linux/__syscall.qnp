@@ -9,10 +9,10 @@ space std:
 	\\ @param rsi The second argument
 	\\ @param rdx The third argument
 	\\ @return The return value of the syscall (read from rax)
-	u64 __syscall(u64 num)...
-	u64 __syscall(u64 num, u64 rdi)...
-	u64 __syscall(u64 num, u64 rdi, u64 rsi)...
-	u64 __syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)...
+	fn<u64> __syscall(u64 num)...
+	fn<u64> __syscall(u64 num, u64 rdi)...
+	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi)...
+	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)...
 
 	\\ Syscalls (Taken from https://filippo.io/linux-syscall-table/)
 	define __SYS_READ 0
@@ -334,16 +334,16 @@ space std:
 
 defer
 space std:
-	u64 __syscall(u64 num)!:
-		u64 result
+	fn<u64> __syscall(u64 num)!:
+		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
 			"syscall"
 			"mov [rbp $(result)], rax"
 		return result
 
-	u64 __syscall(u64 num, u64 rdi)!:
-		u64 result
+	fn<u64> __syscall(u64 num, u64 rdi)!:
+		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
 			"mov rdi, [rbp $(rdi)]"
@@ -351,8 +351,8 @@ space std:
 			"mov [rbp $(result)], rax"
 		return result
 
-	u64 __syscall(u64 num, u64 rdi, u64 rsi)!:
-		u64 result
+	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi)!:
+		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
 			"mov rdi, [rbp $(rdi)]"
@@ -361,8 +361,8 @@ space std:
 			"mov [rbp $(result)], rax"
 		return result
 
-	u64 __syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)!:
-		u64 result
+	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)!:
+		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
 			"mov rdi, [rbp $(rdi)]"

@@ -1,11 +1,11 @@
 import "stdio.qnp"
 
-void show(i32 var):
+fn<> show(i32 v):
 	std.print("var = ")
-	std.print(var)
+	std.print(v)
 	std.print("\n")
 
-i32 i = 0
+var<i32> i = 0
 
 show(i)
 show(++i)

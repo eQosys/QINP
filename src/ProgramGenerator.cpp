@@ -16,11 +16,17 @@
 
 #define BLUEPRINT_SYMBOL_NAME "&_BLUEPRINTS_&"
 
-#define ENABLE_EXPR_ONLY_FOR_OBJ(expr) if (!expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
-#define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) if (expr->isObject) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
-#define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) if (expr->datatype.isConst) THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
+#define ENABLE_EXPR_ONLY_FOR_OBJ(expr) \
+	if (!expr->isObject)               \
+	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
+#define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) \
+	if (expr->isObject)                    \
+	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
+#define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) \
+	if (expr->datatype.isConst)              \
+	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
 
-ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
+ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo &info)
 {
 	ProgGenInfoBackup backup;
 	backup.tokens = info.tokens;
@@ -33,7 +39,7 @@ ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo& info)
 	return backup;
 }
 
-void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
+void loadProgGenInfoBackup(ProgGenInfo &info, const ProgGenInfoBackup &backup)
 {
 	info.tokens = backup.tokens;
 	info.progPath = backup.progPath;
@@ -44,18 +50,18 @@ void loadProgGenInfoBackup(ProgGenInfo& info, const ProgGenInfoBackup& backup)
 	info.funcRetType = backup.funcRetType;
 }
 
-SymbolRef currSym(const ProgGenInfo& info)
+SymbolRef currSym(const ProgGenInfo &info)
 {
 	return currSym(info.program);
 }
 
-void enterSymbol(ProgGenInfo& info, SymbolRef symbol)
+void enterSymbol(ProgGenInfo &info, SymbolRef symbol)
 {
 	assert(symbol);
 	info.program->symStack.push(symbol);
 }
 
-void exitSymbol(ProgGenInfo& info)
+void exitSymbol(ProgGenInfo &info)
 {
 	assert(!info.program->symStack.empty());
 	info.program->symStack.pop();
@@ -63,14 +69,14 @@ void exitSymbol(ProgGenInfo& info)
 
 // Creates a space with an internal, mangled name.
 // Shadow spaces are used to combat name collisions in if/elif/else, while, do/while, for, ... statements.
-SymbolRef addShadowSpace(ProgGenInfo& info)
+SymbolRef addShadowSpace(ProgGenInfo &info)
 {
 	static int shadowId = 0;
 	std::string shadowName = "<" + std::to_string(shadowId++) + ">";
 	auto symbol = std::make_shared<Symbol>();
 	symbol->type = SymType::Namespace;
 	symbol->name = shadowName;
-	
+
 	addSymbol(currSym(info), symbol);
 
 	symbol->frame.totalOffset = getParent(symbol)->frame.totalOffset;
@@ -78,7 +84,7 @@ SymbolRef addShadowSpace(ProgGenInfo& info)
 	return symbol;
 }
 
-TokenList::iterator moveTokenIterator(TokenList& list, TokenList::iterator it, int offset)
+TokenList::iterator moveTokenIterator(TokenList &list, TokenList::iterator it, int offset)
 {
 	if (offset > 0) // Move to next items
 	{
@@ -98,15 +104,15 @@ TokenList::iterator moveTokenIterator(TokenList& list, TokenList::iterator it, i
 				return it;
 		}
 	}
-	
+
 	return it;
 }
 
-TokenList DatatypeToTokenList(const Datatype& datatype)
+TokenList DatatypeToTokenList(const Datatype &datatype)
 {
 	TokenList tokens;
 
-	auto insertTokenFront = [&tokens](const Token::Type type, const std::string& value)
+	auto insertTokenFront = [&tokens](const Token::Type type, const std::string &value)
 	{
 		tokens.insert(tokens.begin(), makeToken(type, value));
 	};
@@ -127,28 +133,28 @@ TokenList DatatypeToTokenList(const Datatype& datatype)
 			assert(false && "Reference datatypes not supported!");
 		else
 			assert(false && "Unknown datatype type!");
-		
+
 		pDt = pDt->subType.get();
 	}
 
 	return tokens;
 }
 
-Token& kwFileToTokString(Token& tok)
+Token &kwFileToTokString(Token &tok)
 {
 	tok.type = Token::Type::String;
 	tok.value = std::filesystem::canonical(tok.pos.file).string();
 	return tok;
 }
 
-Token& kwLineToTokInteger(Token& tok)
+Token &kwLineToTokInteger(Token &tok)
 {
 	tok.type = Token::Type::LiteralInteger;
 	tok.value = std::to_string(tok.pos.line);
 	return tok;
 }
 
-void expandMacro(ProgGenInfo& info, TokenList::iterator& tokIt, TokenList::iterator& begin, SymbolRef sym, SymbolRef& curr)
+void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::iterator &begin, SymbolRef sym, SymbolRef &curr)
 {
 	auto newPos = tokIt->pos;
 	bool updateCurrToken = (begin == info.currToken);
@@ -217,7 +223,7 @@ void expandMacro(ProgGenInfo& info, TokenList::iterator& tokIt, TokenList::itera
 	{ // Add new file/line positions for debugging
 		auto it = begin;
 		int nTokens = sym->macroTokens.size() - macroArgs.size();
-		for (auto& arg : macroArgs)
+		for (auto &arg : macroArgs)
 			nTokens += arg.size();
 		for (int i = 0; i < nTokens; ++i)
 			addPosition(*it++, newPos);
@@ -230,7 +236,7 @@ void expandMacro(ProgGenInfo& info, TokenList::iterator& tokIt, TokenList::itera
 	curr = currSym(info);
 }
 
-const Token& peekToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
+const Token &peekToken(ProgGenInfo &info, int offset, bool ignoreSymDef)
 {
 	auto tokIt = moveTokenIterator(*info.tokens, info.currToken, offset);
 
@@ -245,7 +251,6 @@ const Token& peekToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
 
 	auto begin = tokIt;
 
-
 	bool localOnly = false;
 	auto curr = currSym(info);
 	if (isOperator(*tokIt, ".")) // Begin from global space when preceded by '.'
@@ -257,7 +262,7 @@ const Token& peekToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
 
 	while (tokIt != info.tokens->end() && isIdentifier(*tokIt))
 	{
-		auto& tok = *tokIt;
+		auto &tok = *tokIt;
 
 		auto sym = getSymbol(curr, tokIt->value, localOnly);
 		if (!sym)
@@ -285,39 +290,39 @@ const Token& peekToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
 	return *begin;
 }
 
-const Token& nextToken(ProgGenInfo& info, int offset, bool ignoreSymDef)
+const Token &nextToken(ProgGenInfo &info, int offset, bool ignoreSymDef)
 {
-	auto& temp = peekToken(info, offset - 1, ignoreSymDef);
+	auto &temp = peekToken(info, offset - 1, ignoreSymDef);
 
 	info.currToken = moveTokenIterator(*info.tokens, info.currToken, offset);
 
 	return temp;
 }
 
-void enableContinue(ProgGenInfo& info)
+void enableContinue(ProgGenInfo &info)
 {
 	++info.continueEnableCount;
 }
-void disableContinue(ProgGenInfo& info)
+void disableContinue(ProgGenInfo &info)
 {
 	assert(info.continueEnableCount > 0 && "Cannot disable continue, continue is not enabled.");
 	--info.continueEnableCount;
 }
-bool isContinueEnabled(const ProgGenInfo& info)
+bool isContinueEnabled(const ProgGenInfo &info)
 {
 	return info.continueEnableCount > 0;
 }
 
-void enableBreak(ProgGenInfo& info)
+void enableBreak(ProgGenInfo &info)
 {
 	++info.breakEnableCount;
 }
-void disableBreak(ProgGenInfo& info)
+void disableBreak(ProgGenInfo &info)
 {
 	assert(info.breakEnableCount > 0 && "Cannot disable break, break is not enabled.");
 	--info.breakEnableCount;
 }
-bool isBreakEnabled(const ProgGenInfo& info)
+bool isBreakEnabled(const ProgGenInfo &info)
 {
 	return info.breakEnableCount > 0;
 }
@@ -328,7 +333,7 @@ void mergeSubUsages(BodyRef parent, BodyRef child)
 	child->usedFunctions.clear();
 }
 
-void pushStatement(ProgGenInfo& info, StatementRef statement)
+void pushStatement(ProgGenInfo &info, StatementRef statement)
 {
 	info.program->body->statements.push_back(statement);
 }
@@ -345,7 +350,7 @@ ExpressionRef makeSymbolExpression(Token::Position pos, SymbolRef symbol)
 	return exp;
 }
 
-ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype& datatype, EValue value)
+ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype &datatype, EValue value)
 {
 	ExpressionRef exp = std::make_shared<Expression>(pos);
 	exp->eType = Expression::ExprType::Literal;
@@ -357,14 +362,14 @@ ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype& datatyp
 	return exp;
 }
 
-void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
+void pushStaticLocalInit(ProgGenInfo &info, ExpressionRef initExpr)
 {
 	// Create the internal if statement
 	auto ifStatement = std::make_shared<Statement>(initExpr->pos, Statement::Type::If_Clause);
 
 	// Add the body to execute when the variable has not been initialized yet
 	ifStatement->ifConditionalBodies.push_back(ConditionalBody());
-	auto& condBody = ifStatement->ifConditionalBodies.back();
+	auto &condBody = ifStatement->ifConditionalBodies.back();
 
 	// Create the internal static variable to check whether to variable has been initializes or not
 	auto statSym = std::make_shared<Symbol>();
@@ -372,7 +377,7 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	statSym->pos.def = initExpr->pos;
 	statSym->name = getStaticLocalInitName(info.program->staticLocalInitCount++);
 	statSym->type = SymType::Variable;
-	statSym->var.datatype = { "bool" };
+	statSym->var.datatype = {"bool"};
 	statSym->var.context = SymVarContext::Global;
 
 	addVariable(info, statSym);
@@ -384,9 +389,9 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	auto assignExpr = std::make_shared<Expression>(initExpr->pos);
 	assignExpr->eType = Expression::ExprType::Assign;
 	assignExpr->isObject = true;
-	assignExpr->datatype = { "bool" };
+	assignExpr->datatype = {"bool"};
 	assignExpr->left = makeSymbolExpression(initExpr->pos, statSym);
-	assignExpr->right = makeLiteralExpression(initExpr->pos, { "bool" }, { (uint64_t)0 });
+	assignExpr->right = makeLiteralExpression(initExpr->pos, {"bool"}, {(uint64_t)0});
 
 	condBody.body = std::make_shared<Body>();
 	condBody.body->statements.push_back(assignExpr);
@@ -395,17 +400,17 @@ void pushStaticLocalInit(ProgGenInfo& info, ExpressionRef initExpr)
 	pushStatement(info, ifStatement);
 }
 
-StatementRef lastStatement(ProgGenInfo& info)
+StatementRef lastStatement(ProgGenInfo &info)
 {
 	return info.program->body->statements.back();
 }
 
-bool isPackType(ProgGenInfo& info, const std::string& name)
+bool isPackType(ProgGenInfo &info, const std::string &name)
 {
 	return isPackType(info.program, name);
 }
 
-bool isPackType(ProgGenInfo& info, const Token& token)
+bool isPackType(ProgGenInfo &info, const Token &token)
 {
 	if (!isIdentifier(token))
 		return false;
@@ -415,27 +420,27 @@ bool isPackType(ProgGenInfo& info, const Token& token)
 // Checks whether a type conversion of the left-hand operand is prohibited or not
 bool leftConversionIsProhibited(Expression::ExprType eType)
 {
-	static const std::set<Expression::ExprType> prohibitedTypes = 
-	{
-		Expression::ExprType::Assign,
-		Expression::ExprType::Assign_Sum,
-		Expression::ExprType::Assign_Difference,
-		Expression::ExprType::Assign_Product,
-		Expression::ExprType::Assign_Quotient,
-		Expression::ExprType::Assign_Remainder,
-		Expression::ExprType::Assign_Bw_LeftShift,
-		Expression::ExprType::Assign_Bw_RightShift,
-		Expression::ExprType::Assign_Bw_AND,
-		Expression::ExprType::Assign_Bw_XOR,
-		Expression::ExprType::Assign_Bw_OR,
-		Expression::ExprType::Shift_Left,
-		Expression::ExprType::Shift_Right,
-	};
+	static const std::set<Expression::ExprType> prohibitedTypes =
+		{
+			Expression::ExprType::Assign,
+			Expression::ExprType::Assign_Sum,
+			Expression::ExprType::Assign_Difference,
+			Expression::ExprType::Assign_Product,
+			Expression::ExprType::Assign_Quotient,
+			Expression::ExprType::Assign_Remainder,
+			Expression::ExprType::Assign_Bw_LeftShift,
+			Expression::ExprType::Assign_Bw_RightShift,
+			Expression::ExprType::Assign_Bw_AND,
+			Expression::ExprType::Assign_Bw_XOR,
+			Expression::ExprType::Assign_Bw_OR,
+			Expression::ExprType::Shift_Left,
+			Expression::ExprType::Shift_Right,
+		};
 
 	return prohibitedTypes.find(eType) != prohibitedTypes.end();
 }
 
-SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
+SymbolRef makeMacroSymbol(const Token::Position &pos, const std::string &name)
 {
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Macro;
@@ -444,7 +449,7 @@ SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name)
 	return sym;
 }
 
-void parseInlineTokens(ProgGenInfo& info, TokenListRef tokens, const std::string& progPath)
+void parseInlineTokens(ProgGenInfo &info, TokenListRef tokens, const std::string &progPath)
 {
 	auto backup = makeProgGenInfoBackup(info);
 
@@ -456,7 +461,7 @@ void parseInlineTokens(ProgGenInfo& info, TokenListRef tokens, const std::string
 	loadProgGenInfoBackup(info, backup);
 }
 
-std::string blueprintMacroNameFromName(const std::string& name)
+std::string blueprintMacroNameFromName(const std::string &name)
 {
 	static int id = 0;
 	return "_BM_N_#" + std::to_string(++id) + "_" + name;
@@ -491,19 +496,22 @@ TokenList genVariadicParamDeclTokenList(const std::vector<int> varParamIDs)
 	return tokens;
 }
 
-void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
+void genBlueprintSpecPreSpace(const SymPath &path, TokenListRef tokens)
 {
 	if (path.empty())
 		return;
 
 	int nPerIndent = 0;
-	for (auto& token : *tokens)
+	for (auto &token : *tokens)
 	{
 		if (!isWhitespace(token))
 			break;
 		++nPerIndent;
 	}
 	nPerIndent /= path.size();
+
+	if (nPerIndent == 0)
+		THROW_QINP_ERROR("Unable to detect indentation!");
 
 	auto it = tokens->begin();
 	auto whitespace = makeToken(Token::Type::Whitespace, it->value);
@@ -512,7 +520,7 @@ void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
 	{
 		for (int j = 0; j < nPerIndent * i; ++j)
 			it = ++tokens->insert(it, whitespace);
-		
+
 		it = ++tokens->insert(it, makeToken(Token::Type::Keyword, "space"));
 		it = ++tokens->insert(it, makeToken(Token::Type::Identifier, path[i]));
 		it = ++tokens->insert(it, makeToken(Token::Type::Separator, ":"));
@@ -520,7 +528,7 @@ void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens)
 	}
 }
 
-SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom)
+SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, const Token::Position &generatedFrom)
 {
 	// Check if the parameters resolve all blueprint macros (+ without conflicts)
 	BlueprintMacroMap resolvedMacros;
@@ -571,15 +579,14 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 	// Check if the return type is a blueprint macro
 	if (
 		bpSym->func.retType.type == DTType::Macro &&
-		resolvedMacros.find(bpSym->func.retType.name) == resolvedMacros.end()
-	)
+		resolvedMacros.find(bpSym->func.retType.name) == resolvedMacros.end())
 		THROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "Blueprint return type has not been resolved!");
-	
+
 	// Enter the space the blueprint was defined in
 	enterSymbol(info, info.program->symbols);
 
 	// Add macros
-	for (auto& [name, sym] : resolvedMacros)
+	for (auto &[name, sym] : resolvedMacros)
 		addSymbol(currSym(info), sym);
 
 	// Copy the blueprint tokens
@@ -587,15 +594,18 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 	*tokens = *bpSym->func.blueprintTokens;
 
 	// Replace every macro occurence with the macro's mangled name
-	for (auto& token : *tokens)
+	for (auto it = tokens->begin(); it != tokens->end(); ++it)
 	{
-		if (!isIdentifier(token))
+		if (!isIdentifier(*it))
 			continue;
 
-		if (resolvedMacros.find(token.value) == resolvedMacros.end())
+		if (resolvedMacros.find(it->value) == resolvedMacros.end())
 			continue;
 
-		token.value = resolvedMacros[token.value]->name;
+		it->value = resolvedMacros[it->value]->name;
+
+		if (tokens->begin() != it && isOperator(*std::prev(it), "?"))
+			tokens->erase(std::prev(it));
 	}
 
 	{ // Remove the '!' specifier if it exists
@@ -606,7 +616,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 			it = tokens->erase(it);
 	}
 	// Generate 'space [name]:' tokens
-	genBlueprintSpecPreSpace(getSymbolPath(nullptr, getParent(getParent(getParent(bpSym)))), tokens);
+	genBlueprintSpecPreSpace(getSymbolPath(nullptr, getParent(bpSym, 3)), tokens);
 	auto bpFilepath = bpSym->func.blueprintTokens->front().pos.file;
 	if (!info.bpVariadicParamIDStack.top().empty())
 	{
@@ -623,42 +633,45 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, s
 	{
 		parseInlineTokens(info, tokens, bpFilepath);
 	}
-	catch(const QinpError& err)
+	catch (const QinpError &err)
 	{
 		std::string paramStr = getReadableName(bpSym->func.params, false);
 		if (bpSym->func.params.size() < paramExpr.size())
 			paramStr += ", ";
 		paramStr += getReadableName(std::vector(paramExpr.begin() + bpSym->func.params.size(), paramExpr.end()));
-		RETHROW_PROG_GEN_ERROR_POS(generatedFrom, "While generating blueprint function '" + getParent(getParent(bpSym))->name + "' with parameters (" + paramStr + ")", err);
+
+		auto symPathStr = SymPathToString(getSymbolPath(nullptr, getParent(bpSym, 2)));
+
+		RETHROW_PROG_GEN_ERROR_POS(generatedFrom, "While generating a blueprint specialization for the function '" + symPathStr + "' with parameters (" + paramStr + ")", err);
 	}
 
 	exitSymbol(info);
 
 	info.bpVariadicParamIDStack.pop();
 
-	auto specialization = getMatchingOverload(info, getParent(getParent(bpSym)), paramExpr, generatedFrom);
+	auto specialization = getMatchingOverload(info, getParent(bpSym, 2), paramExpr, generatedFrom);
 	specialization->func.genFromBlueprint = true;
 
 	if (isDeclared(specialization))
-		info.bpSpecsToDefine.push_back({ bpSym, paramExpr, generatedFrom });
+		info.bpSpecsToDefine.push_back({bpSym, paramExpr, generatedFrom});
 
 	return specialization;
 }
 
-#define CONV_SCORE_MIN            -0xFF
-#define CONV_SCORE_BEGIN           0x0
-#define CONV_SCORE_MAX             0x7FFFFFFF
-#define CONV_SCORE_NOT_POSSIBLE   -0xFFFF
-#define CONV_SCORE_NO_CONV         0x0
-#define CONV_SCORE_EXPLICIT        0x0
-#define CONV_SCORE_MAKE_CONST      0x1
-#define CONV_SCORE_MACRO           0x2
-#define CONV_SCORE_VARIADIC        0x4
-#define CONV_SCORE_PROMITION       0x8
+#define CONV_SCORE_MIN -0xFF
+#define CONV_SCORE_BEGIN 0x0
+#define CONV_SCORE_MAX 0x7FFFFFFF
+#define CONV_SCORE_NOT_POSSIBLE -0xFFFF
+#define CONV_SCORE_NO_CONV 0x0
+#define CONV_SCORE_EXPLICIT 0x0
+#define CONV_SCORE_MAKE_CONST 0x1
+#define CONV_SCORE_MACRO 0x2
+#define CONV_SCORE_VARIADIC 0x4
+#define CONV_SCORE_PROMITION 0x8
 #define CONV_SCORE_PTR_TO_VOID_PTR 0x10
-#define CONV_SCORE_NARROW_CONV     0x20
+#define CONV_SCORE_NARROW_CONV 0x20
 
-int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
+int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
 {
 	auto retCorrect = [&isExplicit](int score) -> int
 	{
@@ -686,129 +699,128 @@ int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit
 
 		if (isPointer(from) || isInteger(to))
 			return CONV_SCORE_EXPLICIT;
-	}	
+	}
 
 	if (
 		from.type == DTType::Name &&
 		to.type == DTType::Name &&
 		isBuiltinType(from.name) &&
-		isBuiltinType(to.name)
-		)
+		isBuiltinType(to.name))
 	{
-		static const std::map<std::pair<std::string, std::string>, int> convScoreMap = 
-		{
-			{ { "bool", "bool" }, CONV_SCORE_NO_CONV },
-			{ { "bool", "i8"   }, CONV_SCORE_PROMITION },
-			{ { "bool", "i16"  }, CONV_SCORE_PROMITION },
-			{ { "bool", "i32"  }, CONV_SCORE_PROMITION },
-			{ { "bool", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "bool", "u8"   }, CONV_SCORE_PROMITION },
-			{ { "bool", "u16"  }, CONV_SCORE_PROMITION },
-			{ { "bool", "u32"  }, CONV_SCORE_PROMITION },
-			{ { "bool", "u64"  }, CONV_SCORE_PROMITION },
-			
-			{ { "i8", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "i8", "i8"   }, CONV_SCORE_NO_CONV },
-			{ { "i8", "i16"  }, CONV_SCORE_PROMITION },
-			{ { "i8", "i32"  }, CONV_SCORE_PROMITION },
-			{ { "i8", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "i8", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i8", "u16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i8", "u32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i8", "u64"  }, CONV_SCORE_NARROW_CONV },
+		static const std::map<std::pair<std::string, std::string>, int> convScoreMap =
+			{
+				{{"bool", "bool"}, CONV_SCORE_NO_CONV},
+				{{"bool", "i8"}, CONV_SCORE_PROMITION},
+				{{"bool", "i16"}, CONV_SCORE_PROMITION},
+				{{"bool", "i32"}, CONV_SCORE_PROMITION},
+				{{"bool", "i64"}, CONV_SCORE_PROMITION},
+				{{"bool", "u8"}, CONV_SCORE_PROMITION},
+				{{"bool", "u16"}, CONV_SCORE_PROMITION},
+				{{"bool", "u32"}, CONV_SCORE_PROMITION},
+				{{"bool", "u64"}, CONV_SCORE_PROMITION},
 
-			{ { "i16", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "i16", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i16", "i16"  }, CONV_SCORE_NO_CONV },
-			{ { "i16", "i32"  }, CONV_SCORE_PROMITION },
-			{ { "i16", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "i16", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i16", "u16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i16", "u32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i16", "u64"  }, CONV_SCORE_NARROW_CONV },
+				{{"i8", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"i8", "i8"}, CONV_SCORE_NO_CONV},
+				{{"i8", "i16"}, CONV_SCORE_PROMITION},
+				{{"i8", "i32"}, CONV_SCORE_PROMITION},
+				{{"i8", "i64"}, CONV_SCORE_PROMITION},
+				{{"i8", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"i8", "u16"}, CONV_SCORE_NARROW_CONV},
+				{{"i8", "u32"}, CONV_SCORE_NARROW_CONV},
+				{{"i8", "u64"}, CONV_SCORE_NARROW_CONV},
 
-			{ { "i32", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "i32", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i32", "i16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i32", "i32"  }, CONV_SCORE_NO_CONV },
-			{ { "i32", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "i32", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i32", "u16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i32", "u32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i32", "u64"  }, CONV_SCORE_NARROW_CONV },
+				{{"i16", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"i16", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"i16", "i16"}, CONV_SCORE_NO_CONV},
+				{{"i16", "i32"}, CONV_SCORE_PROMITION},
+				{{"i16", "i64"}, CONV_SCORE_PROMITION},
+				{{"i16", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"i16", "u16"}, CONV_SCORE_NARROW_CONV},
+				{{"i16", "u32"}, CONV_SCORE_NARROW_CONV},
+				{{"i16", "u64"}, CONV_SCORE_NARROW_CONV},
 
-			{ { "i64", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "i16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "i32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "i64"  }, CONV_SCORE_NO_CONV },
-			{ { "i64", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "u16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "u32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "i64", "u64"  }, CONV_SCORE_NARROW_CONV },
+				{{"i32", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"i32", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"i32", "i16"}, CONV_SCORE_NARROW_CONV},
+				{{"i32", "i32"}, CONV_SCORE_NO_CONV},
+				{{"i32", "i64"}, CONV_SCORE_PROMITION},
+				{{"i32", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"i32", "u16"}, CONV_SCORE_NARROW_CONV},
+				{{"i32", "u32"}, CONV_SCORE_NARROW_CONV},
+				{{"i32", "u64"}, CONV_SCORE_NARROW_CONV},
 
-			{ { "u8", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "u8", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u8", "i16"  }, CONV_SCORE_PROMITION },
-			{ { "u8", "i32"  }, CONV_SCORE_PROMITION },
-			{ { "u8", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "u8", "u8"   }, CONV_SCORE_NO_CONV },
-			{ { "u8", "u16"  }, CONV_SCORE_PROMITION },
-			{ { "u8", "u32"  }, CONV_SCORE_PROMITION },
-			{ { "u8", "u64"  }, CONV_SCORE_PROMITION },
+				{{"i64", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "i16"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "i32"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "i64"}, CONV_SCORE_NO_CONV},
+				{{"i64", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "u16"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "u32"}, CONV_SCORE_NARROW_CONV},
+				{{"i64", "u64"}, CONV_SCORE_NARROW_CONV},
 
-			{ { "u16", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "u16", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u16", "i16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u16", "i32"  }, CONV_SCORE_PROMITION },
-			{ { "u16", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "u16", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u16", "u16"  }, CONV_SCORE_NO_CONV },
-			{ { "u16", "u32"  }, CONV_SCORE_PROMITION },
-			{ { "u16", "u64"  }, CONV_SCORE_PROMITION },
+				{{"u8", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"u8", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"u8", "i16"}, CONV_SCORE_PROMITION},
+				{{"u8", "i32"}, CONV_SCORE_PROMITION},
+				{{"u8", "i64"}, CONV_SCORE_PROMITION},
+				{{"u8", "u8"}, CONV_SCORE_NO_CONV},
+				{{"u8", "u16"}, CONV_SCORE_PROMITION},
+				{{"u8", "u32"}, CONV_SCORE_PROMITION},
+				{{"u8", "u64"}, CONV_SCORE_PROMITION},
 
-			{ { "u32", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "u32", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u32", "i16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u32", "i32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u32", "i64"  }, CONV_SCORE_PROMITION },
-			{ { "u32", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u32", "u16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u32", "u32"  }, CONV_SCORE_NO_CONV },
-			{ { "u32", "u64"  }, CONV_SCORE_PROMITION },
+				{{"u16", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"u16", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"u16", "i16"}, CONV_SCORE_NARROW_CONV},
+				{{"u16", "i32"}, CONV_SCORE_PROMITION},
+				{{"u16", "i64"}, CONV_SCORE_PROMITION},
+				{{"u16", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"u16", "u16"}, CONV_SCORE_NO_CONV},
+				{{"u16", "u32"}, CONV_SCORE_PROMITION},
+				{{"u16", "u64"}, CONV_SCORE_PROMITION},
 
-			{ { "u64", "bool" }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "i8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "i16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "i32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "i64"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "u8"   }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "u16"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "u32"  }, CONV_SCORE_NARROW_CONV },
-			{ { "u64", "u64"  }, CONV_SCORE_NO_CONV },
-		};
+				{{"u32", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"u32", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"u32", "i16"}, CONV_SCORE_NARROW_CONV},
+				{{"u32", "i32"}, CONV_SCORE_NARROW_CONV},
+				{{"u32", "i64"}, CONV_SCORE_PROMITION},
+				{{"u32", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"u32", "u16"}, CONV_SCORE_NARROW_CONV},
+				{{"u32", "u32"}, CONV_SCORE_NO_CONV},
+				{{"u32", "u64"}, CONV_SCORE_PROMITION},
 
-		auto it = convScoreMap.find({ from.name, to.name });
+				{{"u64", "bool"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "i8"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "i16"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "i32"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "i64"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "u8"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "u16"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "u32"}, CONV_SCORE_NARROW_CONV},
+				{{"u64", "u64"}, CONV_SCORE_NO_CONV},
+			};
+
+		auto it = convScoreMap.find({from.name, to.name});
 		if (it == convScoreMap.end())
 			return CONV_SCORE_NOT_POSSIBLE;
 		return retCorrect(it->second);
 	}
-	
+
 	return CONV_SCORE_NOT_POSSIBLE;
 }
 
-int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<ExpressionRef>& paramExpr)
+int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<ExpressionRef> &paramExpr)
 {
 	if (!isFuncSpec(func))
 		return CONV_SCORE_NOT_POSSIBLE;
-	
+
 	int score = CONV_SCORE_BEGIN;
 	for (int i = 0; i < paramExpr.size(); ++i)
 	{
 		if (i < func->func.params.size()) // If the parameter is not variadic
 		{
-			auto& expectedType = func->func.params[i]->var.datatype;
-			auto& actualType = paramExpr[i]->datatype;
+			auto &expectedType = func->func.params[i]->var.datatype;
+			auto &actualType = paramExpr[i]->datatype;
 
 			if (expectedType.type == DTType::Macro) // If the parameter is a blueprint macro
 			{
@@ -831,12 +843,12 @@ int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<Expressio
 	return score;
 }
 
-void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidates, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr)
+void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidates, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr)
 {
 	if (!overloads)
 		return;
 
-	for (auto& [fName, fSym] : overloads->subSymbols)
+	for (auto &[fName, fSym] : overloads->subSymbols)
 	{
 		if (fName == BLUEPRINT_SYMBOL_NAME)
 		{
@@ -856,7 +868,7 @@ void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidat
 	}
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom)
+SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, const Token::Position &searchedFrom)
 {
 	std::map<SymbolRef, int> candidates;
 
@@ -866,7 +878,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 		return nullptr;
 
 	auto itBest = candidates.begin();
-	for (auto itCurr = candidates.begin(); itCurr != candidates.end(); )
+	for (auto itCurr = candidates.begin(); itCurr != candidates.end();)
 	{
 		if (itCurr == itBest)
 		{
@@ -893,7 +905,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 	{
 		auto paramStr = getReadableName(paramExpr);
 		std::string candidatesStr;
-		for (auto& [fSym, _] : candidates)
+		for (auto &[fSym, _] : candidates)
 			candidatesStr += "  " + getPosStr(getBestPos(fSym)) + ": " + overloads->name + "(" + getReadableName(fSym->func.params, fSym->func.isVariadic) + ")\n";
 		candidatesStr.pop_back();
 		THROW_PROG_GEN_ERROR_POS(searchedFrom, "Ambiguous function call: " + overloads->name + "(" + paramStr + ")\nPossible candidates are:\n" + candidatesStr);
@@ -913,7 +925,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 	return bestCandidate;
 }
 
-SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
+SymbolRef getVariable(ProgGenInfo &info, const std::string &name)
 {
 	auto symbol = getSymbol(currSym(info), name);
 	if (!isVariable(symbol))
@@ -922,7 +934,7 @@ SymbolRef getVariable(ProgGenInfo& info, const std::string& name)
 	return symbol;
 }
 
-SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
+SymbolRef getFunctions(ProgGenInfo &info, const std::string &name)
 {
 	auto symbol = getSymbol(currSym(info), name);
 	if (!isFuncName(symbol))
@@ -931,16 +943,16 @@ SymbolRef getFunctions(ProgGenInfo& info, const std::string& name)
 	return symbol;
 }
 
-SymbolRef getFunctions(ProgGenInfo& info, const std::vector<std::string>& path)
+SymbolRef getFunctions(ProgGenInfo &info, const std::vector<std::string> &path)
 {
 	auto symbol = getSymbolFromPath(info.program->symbols, path);
 	if (!isFuncName(symbol))
 		return nullptr;
-	
+
 	return symbol;
 }
 
-SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
+SymbolRef getEnum(ProgGenInfo &info, const std::string &name)
 {
 	auto symbol = getSymbol(currSym(info), name);
 	if (!isEnum(symbol))
@@ -949,7 +961,7 @@ SymbolRef getEnum(ProgGenInfo& info, const std::string& name)
 	return symbol;
 }
 
-uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std::string& memberName)
+uint64_t getEnumValue(ProgGenInfo &info, const std::string &enumName, const std::string &memberName)
 {
 	auto enumSymbol = getEnum(info, enumName);
 	if (!enumSymbol)
@@ -958,11 +970,11 @@ uint64_t getEnumValue(ProgGenInfo& info, const std::string& enumName, const std:
 	auto memberSymbol = getSymbol(enumSymbol, memberName, true);
 	if (!memberSymbol)
 		THROW_QINP_ERROR("Enum member '" + memberName + "' not found!");
-	
+
 	return memberSymbol->enumValue;
 }
 
-bool parseEmptyLine(ProgGenInfo& info)
+bool parseEmptyLine(ProgGenInfo &info)
 {
 	if (peekToken(info).type != Token::Type::Newline)
 		return false;
@@ -970,44 +982,44 @@ bool parseEmptyLine(ProgGenInfo& info)
 	return true;
 }
 
-void parseExpected(ProgGenInfo& info, Token::Type type)
+void parseExpected(ProgGenInfo &info, Token::Type type)
 {
-	auto& token = nextToken(info);
+	auto &token = nextToken(info);
 	if (token.type != type)
 		THROW_PROG_GEN_ERROR_TOKEN(token, "Expected token of type '" + TokenTypeToString(type) + "', but found '" + TokenTypeToString(token.type) + "'!");
 }
 
-void parseExpected(ProgGenInfo& info, Token::Type type, const std::string& value)
+void parseExpected(ProgGenInfo &info, Token::Type type, const std::string &value)
 {
-	auto& token = nextToken(info);
+	auto &token = nextToken(info);
 	if (token.type != type || token.value != value)
 		THROW_PROG_GEN_ERROR_TOKEN(token, "Expected '" + value + "', but found '" + token.value + "'!");
 }
 
-void parseExpectedNewline(ProgGenInfo& info)
+void parseExpectedNewline(ProgGenInfo &info)
 {
-	auto& token = nextToken(info);
+	auto &token = nextToken(info);
 	if (!isNewline(token))
 		THROW_PROG_GEN_ERROR_TOKEN(token, "Expected newline!");
 }
 
-bool parseOptionalNewline(ProgGenInfo& info)
+bool parseOptionalNewline(ProgGenInfo &info)
 {
 	bool newlineFound = false;
-	auto& token = peekToken(info);
+	auto &token = peekToken(info);
 	if ((newlineFound = (isNewline(token) || isEndOfCode(token))))
 		nextToken(info);
 	return newlineFound;
 }
 
-void parseExpectedColon(ProgGenInfo& info)
+void parseExpectedColon(ProgGenInfo &info)
 {
 	parseExpected(info, Token::Type::Separator, ":");
 }
 
-void addVariable(ProgGenInfo& info, SymbolRef sym)
+void addVariable(ProgGenInfo &info, SymbolRef sym)
 {
-	auto& var = sym->var;
+	auto &var = sym->var;
 	var.modName = sym->name;
 
 	if (isInPack(currSym(info)))
@@ -1054,7 +1066,7 @@ void addVariable(ProgGenInfo& info, SymbolRef sym)
 	addSymbol(currSym(info), sym);
 }
 
-SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
+SymbolRef addFunction(ProgGenInfo &info, SymbolRef func)
 {
 	auto funcs = getSymbol(currSym(info), func->name, true);
 	if (funcs && !isFuncName(funcs))
@@ -1093,7 +1105,7 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 		addSymbol(funcs, func);
 		return func;
 	}
-	
+
 	if (!dtEqual(existingOverload->func.retType, func->func.retType))
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' exists with different return type: '" + getPosStr(getBestPos(existingOverload)) + "'!");
 	if (!isDefined(func))
@@ -1104,10 +1116,10 @@ SymbolRef addFunction(ProgGenInfo& info, SymbolRef func)
 	return replaceSymbol(existingOverload, func);
 }
 
-SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
+SymbolRef addPack(ProgGenInfo &info, SymbolRef pack)
 {
 	auto existingPack = getSymbol(currSym(info), pack->name, true);
-	
+
 	if (!existingPack)
 	{
 		addSymbol(currSym(info), pack);
@@ -1128,7 +1140,7 @@ SymbolRef addPack(ProgGenInfo& info, SymbolRef pack)
 	return replaceSymbol(existingPack, pack);
 }
 
-std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
+std::string preprocessAsmCode(ProgGenInfo &info, const Token &asmToken)
 {
 	std::string result;
 	bool parseVar = false;
@@ -1157,7 +1169,7 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 			auto pVar = getVariable(info, varName);
 			if (!pVar)
 				THROW_PROG_GEN_ERROR_TOKEN(asmToken, "Unknown variable '" + varName + "'!");
-				
+
 			if (isVarOffset(pVar))
 			{
 				int offset = pVar->var.offset;
@@ -1191,12 +1203,12 @@ std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken)
 	return result;
 }
 
-void increaseIndent(ProgGenInfo::Indent& indent)
+void increaseIndent(ProgGenInfo::Indent &indent)
 {
 	++indent.lvl;
 }
 
-bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
+bool parseIndent(ProgGenInfo &info, bool ignoreLeadingWhitespaces)
 {
 	if (info.indent.chStr.empty())
 	{
@@ -1210,7 +1222,7 @@ bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 		if (info.indent.lvl != 1)
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Indentation level must be 1 for the first used indentation!");
 
-		auto& firstToken = peekToken(info);
+		auto &firstToken = peekToken(info);
 		if (!isWhitespace(firstToken))
 			return false;
 
@@ -1235,7 +1247,7 @@ bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 	int indentCount = 0;
 	for (int i = 0; i < info.indent.nPerLvl * info.indent.lvl; ++i)
 	{
-		auto& token = peekToken(info, indentCount);
+		auto &token = peekToken(info, indentCount);
 		if (!isWhitespace(token) || token.value != info.indent.chStr)
 			return false;
 		++indentCount;
@@ -1249,25 +1261,25 @@ bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 	return true;
 }
 
-void unparseIndent(ProgGenInfo& info)
+void unparseIndent(ProgGenInfo &info)
 {
 	nextToken(info, -info.indent.nPerLvl * info.indent.lvl);
 }
 
-void decreaseIndent(ProgGenInfo::Indent& indent)
+void decreaseIndent(ProgGenInfo::Indent &indent)
 {
 	if (indent.lvl == 0)
 		THROW_PROG_GEN_ERROR_POS(Token::Position(), "Indent level already 0!");
 	--indent.lvl;
 }
 
-void pushTempBody(ProgGenInfo& info, BodyRef body)
+void pushTempBody(ProgGenInfo &info, BodyRef body)
 {
 	info.mainBodyBackups.push(info.program->body);
 	info.program->body = body;
 }
 
-void popTempBody(ProgGenInfo& info)
+void popTempBody(ProgGenInfo &info)
 {
 	if (info.mainBodyBackups.empty())
 		THROW_PROG_GEN_ERROR_POS(Token::Position(), "No backup body to pop!");
@@ -1276,7 +1288,7 @@ void popTempBody(ProgGenInfo& info)
 	info.mainBodyBackups.pop();
 }
 
-Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
+Datatype getBestConvDatatype(const Datatype &left, const Datatype &right)
 {
 	if (isNull(left))
 		return right;
@@ -1296,12 +1308,20 @@ Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 
 	if (!isBuiltinType(left.name) || !isBuiltinType(right.name))
 		return Datatype();
-	
-	static const std::vector<std::string> typeOrder = 
-	{
-		"bool", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64",
-	};
-	
+
+	static const std::vector<std::string> typeOrder =
+		{
+			"bool",
+			"i8",
+			"u8",
+			"i16",
+			"u16",
+			"i32",
+			"u32",
+			"i64",
+			"u64",
+		};
+
 	auto leftIt = std::find(typeOrder.begin(), typeOrder.end(), left.name);
 	auto rightIt = std::find(typeOrder.begin(), typeOrder.end(), right.name);
 	if (leftIt == typeOrder.end() || rightIt == typeOrder.end())
@@ -1310,7 +1330,7 @@ Datatype getBestConvDatatype(const Datatype& left, const Datatype& right)
 	return (leftIt > rightIt) ? left : right;
 }
 
-ExpressionRef makeConvertExpression(ExpressionRef expToConvert, const Datatype& newDatatype)
+ExpressionRef makeConvertExpression(ExpressionRef expToConvert, const Datatype &newDatatype)
 {
 	ENABLE_EXPR_ONLY_FOR_OBJ(expToConvert);
 	auto exp = std::make_shared<Expression>(expToConvert->pos);
@@ -1332,7 +1352,7 @@ ExpressionRef genAutoArrayToPtr(ExpressionRef expToConvert)
 	return makeConvertExpression(expToConvert, newDt);
 }
 
-bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& newDt, bool isExplicit)
+bool isConvPossible(ProgGenInfo &info, const Datatype &oldDt, const Datatype &newDt, bool isExplicit)
 {
 	if (dtEqualNoConst(oldDt, newDt) && preservesConstness(oldDt, newDt))
 		return true;
@@ -1391,7 +1411,7 @@ bool isConvPossible(ProgGenInfo& info, const Datatype& oldDt, const Datatype& ne
 	return false;
 }
 
-ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
+ExpressionRef genConvertExpression(ProgGenInfo &info, ExpressionRef expToConvert, const Datatype &newDatatype, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
 {
 	expToConvert = genAutoArrayToPtr(expToConvert);
 
@@ -1409,14 +1429,11 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 		if (
 			isPointer(expToConvert->datatype) &&
 			isPointer(newDatatype) &&
-			!preservesConstness(expToConvert->datatype, newDatatype)
-			)
+			!preservesConstness(expToConvert->datatype, newDatatype))
 			PRINT_WARNING(
 				MAKE_PROG_GEN_ERROR_POS(
 					expToConvert->pos,
-					"Conversion from '" + getReadableName(expToConvert->datatype) + "' to '" + getReadableName(newDatatype) + "' does not preserve the constness of the old type!"
-				)
-			);
+					"Conversion from '" + getReadableName(expToConvert->datatype) + "' to '" + getReadableName(newDatatype) + "' does not preserve the constness of the old type!"));
 		return makeConvertExpression(expToConvert, newDatatype);
 	}
 
@@ -1426,7 +1443,7 @@ ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert
 	return nullptr;
 }
 
-void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
+void autoFixDatatypeMismatch(ProgGenInfo &info, ExpressionRef exp)
 {
 	if (dtEqual(exp->left->datatype, exp->right->datatype))
 		return;
@@ -1439,14 +1456,14 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 		case Expression::ExprType::Difference:
 		case Expression::ExprType::Assign_Sum:
 		case Expression::ExprType::Assign_Difference:
-			exp->right = genConvertExpression(info, exp->right, { "u64" }, true);
+			exp->right = genConvertExpression(info, exp->right, {"u64"}, true);
 			{
 				auto temp = std::make_shared<Expression>(exp->pos);
 				temp->eType = Expression::ExprType::Product;
 				temp->right = exp->right;
-				temp->datatype = { "u64" };
+				temp->datatype = {"u64"};
 
-				temp->left = makeLiteralExpression(exp->pos, { "u64" }, { (uint64_t)getDatatypePointedToSize(info.program, exp->left->datatype) });
+				temp->left = makeLiteralExpression(exp->pos, {"u64"}, {(uint64_t)getDatatypePointedToSize(info.program, exp->left->datatype)});
 
 				exp->right = temp;
 			}
@@ -1462,17 +1479,17 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp)
 
 	if (!newDatatype)
 		THROW_PROG_GEN_ERROR_POS(
-			exp->pos, "Cannot convert " + 
-			getReadableName(exp->left->datatype) + " and " +
-			getReadableName(exp->right->datatype) + " to a common datatype!");
-	
+			exp->pos, "Cannot convert " +
+						  getReadableName(exp->left->datatype) + " and " +
+						  getReadableName(exp->right->datatype) + " to a common datatype!");
+
 	exp->left = genConvertExpression(info, exp->left, newDatatype);
 	exp->right = genConvertExpression(info, exp->right, newDatatype);
 }
 
-ExpressionRef getParseEnumMember(ProgGenInfo& info)
+ExpressionRef getParseEnumMember(ProgGenInfo &info)
 {
-	auto& enumToken = peekToken(info);
+	auto &enumToken = peekToken(info);
 	if (!isIdentifier(enumToken))
 		return nullptr;
 
@@ -1482,7 +1499,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	nextToken(info);
 	parseExpected(info, Token::Type::Operator, ".");
 
-	auto& memberToken = nextToken(info);
+	auto &memberToken = nextToken(info);
 
 	if (!isIdentifier(memberToken))
 		THROW_PROG_GEN_ERROR_TOKEN(memberToken, "Expected enum member identifier!");
@@ -1493,7 +1510,7 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	{
 		value = getEnumValue(info, enumToken.value, memberToken.value);
 	}
-	catch (const QinpError& e)
+	catch (const QinpError &e)
 	{
 		THROW_PROG_GEN_ERROR_TOKEN(memberToken, e.what());
 	}
@@ -1501,9 +1518,9 @@ ExpressionRef getParseEnumMember(ProgGenInfo& info)
 	return makeLiteralExpression(memberToken.pos, getMangledName(getEnum(info, enumToken.value)), EValue(value));
 }
 
-ExpressionRef getParseLiteral(ProgGenInfo& info)
+ExpressionRef getParseLiteral(ProgGenInfo &info)
 {
-	auto& litToken = peekToken(info);
+	auto &litToken = peekToken(info);
 	if (!isLiteral(litToken))
 		return getParseEnumMember(info);
 
@@ -1516,19 +1533,19 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	switch (litToken.type)
 	{
 	case Token::Type::LiteralInteger:
-		exp->datatype = { "u64" };
+		exp->datatype = {"u64"};
 		exp->value = EValue((uint64_t)std::stoull(litToken.value));
 		break;
 	case Token::Type::LiteralChar:
-		exp->datatype = { "u8" };
+		exp->datatype = {"u8"};
 		exp->value = EValue((uint64_t)litToken.value[0]);
 		break;
 	case Token::Type::LiteralBoolean:
-		exp->datatype = { "bool" };
+		exp->datatype = {"bool"};
 		exp->value = EValue((uint64_t)(litToken.value == "true" ? 1 : 0));
 		break;
 	case Token::Type::LiteralNull:
-		exp->datatype = { "null" };
+		exp->datatype = {"null"};
 		exp->value = EValue((uint64_t)0);
 		break;
 	case Token::Type::String:
@@ -1538,16 +1555,16 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 		{
 			auto it = info.program->strings.find(litToken.value);
 			if (it == info.program->strings.end())
-				info.program->strings.insert({ litToken.value, strID });
+				info.program->strings.insert({litToken.value, strID});
 			else
 				strID = it->second;
 		}
-		
+
 		exp->value = EValue((uint64_t)strID);
 		exp->datatype = Datatype(DTType::Array, Datatype("u8"), litToken.value.size() + 1);
 		exp->datatype.subType->isConst = true;
 	}
-		break;
+	break;
 	default:
 		THROW_PROG_GEN_ERROR_TOKEN(litToken, "Invalid literal type!");
 	}
@@ -1555,12 +1572,12 @@ ExpressionRef getParseLiteral(ProgGenInfo& info)
 	return exp;
 }
 
-ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
+ExpressionRef getParseSymbol(ProgGenInfo &info, bool localOnly)
 {
-	auto& symToken = peekToken(info);
+	auto &symToken = peekToken(info);
 	if (!isIdentifier(symToken))
 		return nullptr;
-	
+
 	auto sym = getSymbol(currSym(info), symToken.value, localOnly);
 	if (!sym)
 		return nullptr;
@@ -1625,29 +1642,31 @@ ExpressionRef getParseSymbol(ProgGenInfo& info, bool localOnly)
 	return exp;
 }
 
-ExpressionRef getParseValue(ProgGenInfo& info, bool localOnly)
+ExpressionRef getParseValue(ProgGenInfo &info, bool localOnly)
 {
 	ExpressionRef exp = nullptr;
 
 	exp = getParseLiteral(info);
-	if (exp) return exp;
+	if (exp)
+		return exp;
 
 	exp = getParseSymbol(info, localOnly);
-	if (exp) return exp;
+	if (exp)
+		return exp;
 
 	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected symbol name or literal value!");
 }
 
-ExpressionRef getParseParenthesized(ProgGenInfo& info)
+ExpressionRef getParseParenthesized(ProgGenInfo &info)
 {
-	auto& parenOpen = peekToken(info);
+	auto &parenOpen = peekToken(info);
 	if (!isSeparator(parenOpen, "("))
 		return getParseValue(info, false);
-	
+
 	nextToken(info);
 	auto exp = getParseExpression(info);
 
-	auto& parenClose = nextToken(info);
+	auto &parenClose = nextToken(info);
 	if (!isSeparator(parenClose, ")"))
 		THROW_PROG_GEN_ERROR_TOKEN(parenClose, "Expected ')'!");
 
@@ -1693,44 +1712,62 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 	{
 		if (rightLiteral) // leftLiteral == true && rightLiteral == true
 		{
-			switch(expr->eType)
+			switch (expr->eType)
 			{
 			case Expression::ExprType::Logical_OR:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 || expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 || expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Logical_AND:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 && expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 && expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Bitwise_OR:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 | expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 | expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Bitwise_XOR:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 ^ expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 ^ expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Bitwise_AND:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 & expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 & expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Comparison_Equal:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 == expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 == expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Comparison_NotEqual:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 != expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 != expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Comparison_Less:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 < expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 < expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Comparison_LessEqual:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 <= expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 <= expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Comparison_Greater:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 > expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 > expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Comparison_GreaterEqual:
-				expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(expr->left->value.u64 >= expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(expr->left->value.u64 >= expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Shift_Left:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 << expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 << expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Shift_Right:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 >> expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 >> expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Sum:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 + expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 + expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Difference:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 - expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 - expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Product:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 * expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 * expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Quotient:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 / expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 / expr->right->value.u64)));
+				break;
 			case Expression::ExprType::Remainder:
-				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 % expr->right->value.u64))); break;
+				expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(expr->left->value.u64 % expr->right->value.u64)));
+				break;
 			}
 		}
 		else // leftLiteral == true && rightLiteral == false
@@ -1741,13 +1778,17 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 		switch (expr->eType) // leftLiteral == true
 		{
 		case Expression::ExprType::Logical_NOT:
-			expr = makeLiteralExpression(expr->pos, { "bool" }, EValue(uint64_t(!expr->left->value.u64))); break;
+			expr = makeLiteralExpression(expr->pos, {"bool"}, EValue(uint64_t(!expr->left->value.u64)));
+			break;
 		case Expression::ExprType::Bitwise_NOT:
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(~expr->left->value.u64))); break;
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(~expr->left->value.u64)));
+			break;
 		case Expression::ExprType::Prefix_Minus:
-			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(-expr->left->value.u64))); break;
+			expr = makeLiteralExpression(expr->pos, expr->datatype, EValue(uint64_t(-expr->left->value.u64)));
+			break;
 		case Expression::ExprType::Conditional_Op:
-			expr = expr->left->value.u64 ? expr->right : expr->farRight; break;
+			expr = expr->left->value.u64 ? expr->right : expr->farRight;
+			break;
 		}
 	}
 	else
@@ -1773,14 +1814,14 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 	return expr;
 }
 
-ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
+ExpressionRef getParseBinaryExpression(ProgGenInfo &info, int precLvl)
 {
-	auto& opsLvl = opPrecLvls[precLvl];
+	auto &opsLvl = opPrecLvls[precLvl];
 
 	ExpressionRef baseExpr = nullptr;
 	auto currExpr = getParseExpression(info, precLvl + 1);
 
-	const Token* pOpToken = nullptr;
+	const Token *pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
 	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOpKey(*pOpToken))
 	{
@@ -1792,7 +1833,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			temp->left = currExpr;
 			currExpr = temp;
 		}
-			break;
+		break;
 		case OpPrecLvl::EvalOrder::RightToLeft:
 		{
 			if (!baseExpr)
@@ -1810,7 +1851,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 				currExpr = temp;
 			}
 		}
-			break;
+		break;
 		default:
 			assert(false && "Unknown eval order!");
 		}
@@ -1845,7 +1886,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 		case Expression::ExprType::Conditional_Op:
 		{
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
-			currExpr->left = genConvertExpression(info, currExpr->left, { "bool" });
+			currExpr->left = genConvertExpression(info, currExpr->left, {"bool"});
 
 			currExpr->right = getParseExpression(info, 0);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
@@ -1865,15 +1906,15 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			currExpr->isLValue = currExpr->right->isLValue;
 			currExpr->isObject = currExpr->right->isObject;
 		}
-			break;
+		break;
 		case Expression::ExprType::Logical_OR:
 		case Expression::ExprType::Logical_AND:
 			currExpr->right = getParseExpression(info, precLvl + 1);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
-			currExpr->left = genConvertExpression(info, currExpr->left, { "bool" });
-			currExpr->right = genConvertExpression(info, currExpr->right, { "bool" });
-			currExpr->datatype = { "bool" };
+			currExpr->left = genConvertExpression(info, currExpr->left, {"bool"});
+			currExpr->right = genConvertExpression(info, currExpr->right, {"bool"});
+			currExpr->datatype = {"bool"};
 			currExpr->isLValue = false;
 			currExpr->isObject = true;
 			break;
@@ -1898,7 +1939,7 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->left);
 			ENABLE_EXPR_ONLY_FOR_OBJ(currExpr->right);
 			autoFixDatatypeMismatch(info, currExpr);
-			currExpr->datatype = { "bool" };
+			currExpr->datatype = {"bool"};
 			currExpr->isLValue = false;
 			currExpr->isObject = true;
 			break;
@@ -1925,13 +1966,13 @@ ExpressionRef getParseBinaryExpression(ProgGenInfo& info, int precLvl)
 	return baseExpr ? baseExpr : currExpr;
 }
 
-ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
+ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 {
 	auto exp = getParseExpression(info, precLvl + 1);
-	
-	auto& opsLvl = opPrecLvls[precLvl];
 
-	const Token* pOpToken = nullptr;
+	auto &opsLvl = opPrecLvls[precLvl];
+
+	const Token *pOpToken = nullptr;
 	std::map<std::string, Expression::ExprType>::iterator it;
 	while ((it = opsLvl.ops.find((pOpToken = &peekToken(info))->value)) != opsLvl.ops.end() && isSepOpKey(*pOpToken))
 	{
@@ -1955,7 +1996,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot subscript pointer to void type!");
 			exp->isLValue = isArray(exp->datatype) ? false : true;
 			exp->isObject = true;
-			exp->right = getParseExpression(info, 0, { "u64" });
+			exp->right = getParseExpression(info, 0, {"u64"});
 			ENABLE_EXPR_ONLY_FOR_OBJ(exp->right);
 			parseExpected(info, Token::Type::Separator, "]");
 			break;
@@ -1998,7 +2039,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 				if (!func)
 					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getReadableName(exp->left->symbol) + "'! Provided parameters: (" + getReadableName(exp->paramExpr) + ")");
 			}
-			
+
 			exp->datatype = func->func.retType;
 			exp->left->datatype = Datatype(DTType::Pointer, Datatype(getSignature(func)));
 			exp->left->symbol = func;
@@ -2007,10 +2048,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
 
 			exp->paramSizeSum = 0;
-			for (auto& param : exp->paramExpr)
+			for (auto &param : exp->paramExpr)
 				exp->paramSizeSum += getDatatypePushSize(info.program, param->datatype);
 		}
-			break;
+		break;
 		case Expression::ExprType::Suffix_Increment:
 		case Expression::ExprType::Suffix_Decrement:
 			ENABLE_EXPR_ONLY_FOR_NON_CONST(exp->left);
@@ -2079,7 +2120,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 			if (!exp->left->isObject)
 				exp = exp->right;
 		}
-			break;
+		break;
 		default:
 			assert(false && "Unknown operator!");
 		}
@@ -2088,11 +2129,11 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo& info, int precLvl)
 	return exp;
 }
 
-ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
+ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 {
-	auto& opsLvl = opPrecLvls[precLvl];
+	auto &opsLvl = opPrecLvls[precLvl];
 
-	auto& opToken = peekToken(info);
+	auto &opToken = peekToken(info);
 	auto it = opsLvl.ops.find(opToken.value);
 	if (it == opsLvl.ops.end() || !isSepOpKey(opToken))
 		return getParseExpression(info, precLvl + 1);
@@ -2126,9 +2167,9 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->isObject = true;
 		break;
 	case Expression::ExprType::Logical_NOT:
-		exp->left = getParseExpression(info, precLvl, { "bool" });
+		exp->left = getParseExpression(info, precLvl, {"bool"});
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
-		exp->datatype = { "bool" };
+		exp->datatype = {"bool"};
 		exp->isLValue = false;
 		exp->isObject = true;
 		break;
@@ -2169,7 +2210,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		ENABLE_EXPR_ONLY_FOR_OBJ(exp);
 		exp->isObject = true;
 	}
-		break;
+	break;
 	case Expression::ExprType::SizeOf:
 	{
 		parseExpected(info, Token::Type::Separator, "(");
@@ -2184,10 +2225,10 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 		exp->eType = Expression::ExprType::Literal;
 		exp->isLValue = false;
 		exp->isObject = true;
-		exp->datatype = { "u64" };
+		exp->datatype = {"u64"};
 		exp->value = EValue((uint64_t)getDatatypeSize(info.program, datatype));
 	}
-		break;
+	break;
 	case Expression::ExprType::MemberAccess:
 		enterSymbol(info, info.program->symbols);
 		exp = getParseExpression(info, precLvl + 1);
@@ -2200,7 +2241,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo& info, int precLvl)
 	return exp;
 }
 
-ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
+ExpressionRef getParseExpression(ProgGenInfo &info, int precLvl)
 {
 	static const int maxPrecLvl = opPrecLvls.size() - 1;
 
@@ -2210,16 +2251,23 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl)
 	ExpressionRef expr = nullptr;
 	switch (opPrecLvls[precLvl].type)
 	{
-	case OpPrecLvl::Type::Binary: expr = getParseBinaryExpression(info, precLvl); break;
-	case OpPrecLvl::Type::Unary_Suffix: expr = getParseUnarySuffixExpression(info, precLvl); break;
-	case OpPrecLvl::Type::Unary_Prefix: expr = getParseUnaryPrefixExpression(info, precLvl); break;
-	default: THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Unknown operator precedence level type!");
+	case OpPrecLvl::Type::Binary:
+		expr = getParseBinaryExpression(info, precLvl);
+		break;
+	case OpPrecLvl::Type::Unary_Suffix:
+		expr = getParseUnarySuffixExpression(info, precLvl);
+		break;
+	case OpPrecLvl::Type::Unary_Prefix:
+		expr = getParseUnaryPrefixExpression(info, precLvl);
+		break;
+	default:
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Unknown operator precedence level type!");
 	}
 
 	return autoSimplifyExpression(expr);
 }
 
-ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl, const Datatype& targetType, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
+ExpressionRef getParseExpression(ProgGenInfo &info, int precLvl, const Datatype &targetType, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
 {
 	auto expr = getParseExpression(info, precLvl);
 	if (!expr)
@@ -2228,21 +2276,21 @@ ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl, const Datatype&
 	if (!dtEqual(expr->datatype, targetType))
 		expr = genConvertExpression(info, expr, targetType, isExplicit, doThrow, ignoreFirstConstness);
 
-	return expr;	
+	return expr;
 }
 
-bool parseExpression(ProgGenInfo& info)
+bool parseExpression(ProgGenInfo &info)
 {
 	auto expr = getParseExpression(info);
 	if (!expr)
 		return false;
-	
+
 	pushStatement(info, expr);
 	parseExpectedNewline(info);
 	return true;
 }
 
-bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
+bool parseExpression(ProgGenInfo &info, const Datatype &targetType)
 {
 	auto expr = getParseExpression(info, 0, targetType);
 	if (!expr)
@@ -2252,39 +2300,38 @@ bool parseExpression(ProgGenInfo& info, const Datatype& targetType)
 	return true;
 }
 
-Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacros)
+Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacroTokens)
 {
 	Datatype datatype;
 
 	auto prevTokIt = info.currToken;
 
-	auto exitEntered = [&](const Datatype& dt, bool resetTokIt)
+	auto exitEntered = [&](const Datatype &dt, bool resetTokIt)
 	{
 		if (resetTokIt)
 			info.currToken = prevTokIt;
 		return dt;
 	};
 
-	auto& dtBeginTok = peekToken(info);
+	auto &dtBeginTok = peekToken(info);
 
 	if (isOperator(dtBeginTok, "?"))
 	{
-		if (!pBlueprintMacros)
+		if (!pBlueprintMacroTokens)
 			THROW_QINP_ERROR("Parsing blueprint macro but no macro list was provided!");
 
 		nextToken(info);
-		auto& tok = nextToken(info);
+		auto &tok = nextToken(info);
 		if (!isIdentifier(tok))
 			THROW_PROG_GEN_ERROR_TOKEN(tok, "Expected identifier!");
 
 		if (
 			std::find_if(
-				pBlueprintMacros->begin(), pBlueprintMacros->end(),
-				[&](const Token& tok) { return tok.value == tok.value; }
-			) == pBlueprintMacros->end()
-		)
+				pBlueprintMacroTokens->begin(), pBlueprintMacroTokens->end(),
+				[&](const Token &tok)
+				{ return tok.value == tok.value; }) == pBlueprintMacroTokens->end())
 		{
-			pBlueprintMacros->push_back(tok);
+			pBlueprintMacroTokens->push_back(tok);
 		}
 
 		datatype.type = DTType::Macro;
@@ -2309,7 +2356,7 @@ Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacro
 			localOnly = true;
 		}
 
-		const Token* pNameToken = nullptr;
+		const Token *pNameToken = nullptr;
 		do
 		{
 			pNameToken = &nextToken(info);
@@ -2321,7 +2368,6 @@ Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacro
 			localOnly = true;
 		} while (isOperator(nextToken(info), "."));
 		nextToken(info, -1);
-		
 
 		if (!isPack(sym) && !isEnum(sym))
 			return exitEntered({}, true);
@@ -2351,16 +2397,16 @@ Datatype getParseDatatype(ProgGenInfo& info, std::vector<Token>* pBlueprintMacro
 	return exitEntered(datatype, false);
 }
 
-std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info)
+std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 {
 	bool isStatic = isKeyword(peekToken(info), "static");
 
 	if (isStatic && !isInFunction(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Static keyword can only be used inside of function definitions!");
 
-	auto& varToken = peekToken(info, 1);
+	auto &varToken = peekToken(info, isStatic);
 	if (!isKeyword(varToken, "var"))
-		return { nullptr, nullptr };
+		return {nullptr, nullptr};
 	nextToken(info, 1 + isStatic);
 
 	parseExpected(info, Token::Type::Operator, "<");
@@ -2369,10 +2415,10 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
 	parseExpected(info, Token::Type::Operator, ">");
 
-	auto& nameToken = nextToken(info);
+	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
-	auto& name = nameToken.value;
+	auto &name = nameToken.value;
 
 	SymbolRef sym = std::make_shared<Symbol>();
 	sym->type = SymType::Variable;
@@ -2411,13 +2457,13 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo& info)
 			initExpr = getParseExpression(info);
 		}
 	}
-	
+
 	parseExpectedNewline(info);
 
-	return { sym, initExpr };
+	return {sym, initExpr};
 }
 
-bool parseDeclDefVariable(ProgGenInfo& info)
+bool parseDeclDefVariable(ProgGenInfo &info)
 {
 	auto [varSym, initExpr] = getParseDeclDefVariable(info);
 	if (initExpr)
@@ -2440,69 +2486,53 @@ bool parseDeclDefVariable(ProgGenInfo& info)
 	return !!varSym;
 }
 
-bool parseDeclDefFunction(ProgGenInfo& info)
+bool parseDeclDefFunction(ProgGenInfo &info)
 {
 	// Check if it's a function declaration/definition
-	auto& varToken = peekToken(info);
+
+	auto &varToken = peekToken(info);
 	if (!isKeyword(varToken, "fn"))
 		return false;
+	
+	TokenList::iterator itFuncBegin = info.currToken;
+	while (
+		info.tokens->begin() != itFuncBegin &&
+		isWhitespace(*std::prev(itFuncBegin)) &&
+		!isNewline(*std::prev(itFuncBegin))
+	)
+		--itFuncBegin;
+
 	nextToken(info);
+
+	std::vector<Token> blueprintMacroTokens;
 
 	// Parse the return type
 	Datatype datatype("void");
 	if (isOperator(peekToken(info), "<"))
 	{
 		parseExpected(info, Token::Type::Operator, "<");
-		datatype = getParseDatatype(info);
+		if (!isOperator(peekToken(info), ">")) // Makes 'fn<>' possible (same as 'fn' and 'fn<void>')
+			datatype = getParseDatatype(info, &blueprintMacroTokens);
 		parseExpected(info, Token::Type::Operator, ">");
 	}
 
 	// Parse the function name
-	auto& nameToken = nextToken(info);
+	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
-	auto& name = nameToken.value;
-
-	// ----- FROM 'parseDeclDef' -----
-
-	TokenList::iterator itFuncBegin;
-
-	SymbolRef funcSym = std::make_shared<Symbol>();
-
-	auto& typeToken = peekToken(info);
-
-	std::vector<Token> blueprintMacros;
-	if (isKeyword(typeToken, "blueprint"))
-	{
-		funcSym->func.isBlueprint = true;
-		nextToken(info);
-
-		while (isIdentifier(peekToken(info)))
-		{
-			blueprintMacros.push_back(nextToken(info));
-
-			if (!isNewline(peekToken(info)))
-				parseExpected(info, Token::Type::Separator, ",");
-		}
-
-		parseExpectedNewline(info);
-	}
-
-	auto bpBegin = info.currToken;
-	auto dtBpToken = peekToken(info);
-
-	if (funcSym->func.isBlueprint && !parseIndent(info))
-		THROW_PROG_GEN_ERROR_TOKEN(*bpBegin, "Inconsistent indentation!");
+	auto &name = nameToken.value;
 
 	if (!isSeparator(peekToken(info), "("))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing parameter list for function declaration!");
 
 	if (!isInGlobal(currSym(info)))
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions are not allowed here!");
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
 
 	// ----- Previous Source -----
 
 	auto declDefPos = peekToken(info).pos;
+
+	SymbolRef funcSym = std::make_shared<Symbol>();
 
 	funcSym->pos.decl = declDefPos;
 	funcSym->type = SymType::FunctionSpec;
@@ -2517,7 +2547,6 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 		if (isSeparator(peekToken(info), "..."))
 		{
 			funcSym->func.isVariadic = true;
-			funcSym->func.isBlueprint = true;
 			nextToken(info);
 			break;
 		}
@@ -2526,13 +2555,13 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 		paramSym->type = SymType::Variable;
 		paramSym->pos.decl = peekToken(info).pos;
 		paramSym->parent = funcSym;
-		auto& param = paramSym->var;
+		auto &param = paramSym->var;
 		param.context = SymVarContext::Parameter;
 
-		param.datatype = getParseDatatype(info, &blueprintMacros);
+		param.datatype = getParseDatatype(info, &blueprintMacroTokens);
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
-		
+
 		param.offset = funcSym->func.retOffset;
 		funcSym->func.retOffset += getDatatypePushSize(info.program, param.datatype);
 
@@ -2552,8 +2581,8 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 
 	parseExpected(info, Token::Type::Separator, ")");
 
-	if (blueprintMacros.empty() && !funcSym->func.isVariadic)
-		funcSym->func.isBlueprint = false;
+	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic)
+		funcSym->func.isBlueprint = true;
 
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
@@ -2625,12 +2654,12 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 		info.funcRetType = funcSym->func.retType;
 		info.funcFrameSize = 0;
 
-		for (auto& param : funcSym->func.params)
+		for (auto &param : funcSym->func.params)
 			addSymbol(funcSym, param);
 
 		parseFunctionBody(info, parsedNewline);
 		funcSym->frame.size = info.funcFrameSize;
-		
+
 		exitSymbol(info);
 		popTempBody(info);
 		decreaseIndent(info.indent);
@@ -2639,18 +2668,20 @@ bool parseDeclDefFunction(ProgGenInfo& info)
 	return true;
 }
 
-bool parseDeclDef(ProgGenInfo& info)
+bool parseDeclDef(ProgGenInfo &info)
 {
-	if (parseDeclDefVariable(info)) return true;
-	if (parseDeclDefFunction(info)) return true;
+	if (parseDeclDefVariable(info))
+		return true;
+	if (parseDeclDefFunction(info))
+		return true;
 	return false;
 
 	// ----------------------
 }
 
-bool parseDeclExtFunc(ProgGenInfo& info)
+bool parseDeclExtFunc(ProgGenInfo &info)
 {
-	auto& extToken = peekToken(info);
+	auto &extToken = peekToken(info);
 
 	if (!isKeyword(extToken, "extern"))
 		return false;
@@ -2661,13 +2692,13 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 	funcSym->pos.decl = extToken.pos;
 	funcSym->type = SymType::ExtFunc;
 
-	auto& typeToken = peekToken(info);
+	auto &typeToken = peekToken(info);
 	funcSym->func.retType = getParseDatatype(info);
 
 	if (!funcSym->func.retType)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 
-	auto& nameToken = nextToken(info);
+	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 	funcSym->name = nameToken.value;
@@ -2680,7 +2711,7 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 		paramSym->type = SymType::Variable;
 		paramSym->pos.decl = peekToken(info).pos;
 		paramSym->parent = funcSym;
-		auto& param = paramSym->var;
+		auto &param = paramSym->var;
 		param.context = SymVarContext::Parameter;
 
 		param.datatype = getParseDatatype(info);
@@ -2708,7 +2739,7 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 
 	parseExpected(info, Token::Type::Operator, "=");
 
-	auto& asmNameTok = nextToken(info);
+	auto &asmNameTok = nextToken(info);
 
 	if (!isString(asmNameTok))
 		THROW_PROG_GEN_ERROR_TOKEN(asmNameTok, "Expected assembly name!");
@@ -2721,14 +2752,14 @@ bool parseDeclExtFunc(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementReturn(ProgGenInfo& info)
+bool parseStatementReturn(ProgGenInfo &info)
 {
-	auto& retToken = peekToken(info);
+	auto &retToken = peekToken(info);
 	if (!isKeyword(retToken, "return"))
 		return false;
 
 	nextToken(info);
-	auto& exprBegin = peekToken(info);
+	auto &exprBegin = peekToken(info);
 
 	pushStatement(info, std::make_shared<Statement>(retToken.pos, Statement::Type::Return));
 	lastStatement(info)->funcRetOffset = info.funcRetOffset;
@@ -2742,7 +2773,7 @@ bool parseStatementReturn(ProgGenInfo& info)
 	return true;
 }
 
-SymbolRef makeAlias(const std::string& name, Token::Position pos, SymbolRef sym)
+SymbolRef makeAlias(const std::string &name, Token::Position pos, SymbolRef sym)
 {
 	auto aliasSym = std::make_shared<Symbol>();
 	aliasSym->pos.decl = pos;
@@ -2753,14 +2784,14 @@ SymbolRef makeAlias(const std::string& name, Token::Position pos, SymbolRef sym)
 	return aliasSym;
 }
 
-bool parseStatementAlias(ProgGenInfo& info)
+bool parseStatementAlias(ProgGenInfo &info)
 {
-	auto& aliasToken = peekToken(info);
+	auto &aliasToken = peekToken(info);
 	if (!isKeyword(aliasToken, "alias"))
 		return false;
 
 	nextToken(info);
-	auto& nameToken = nextToken(info);
+	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 
@@ -2797,9 +2828,9 @@ bool parseStatementAlias(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementDefer(ProgGenInfo& info)
+bool parseStatementDefer(ProgGenInfo &info)
 {
-	auto& deferToken = peekToken(info);
+	auto &deferToken = peekToken(info);
 	if (!isKeyword(deferToken, "defer"))
 		return false;
 
@@ -2816,13 +2847,13 @@ bool parseStatementDefer(ProgGenInfo& info)
 	return true;
 }
 
-bool parseInlineAssembly(ProgGenInfo& info)
+bool parseInlineAssembly(ProgGenInfo &info)
 {
-	auto& asmToken = peekToken(info);
+	auto &asmToken = peekToken(info);
 	if (!isKeyword(asmToken, "asm") && !isKeyword(asmToken, "assembly"))
 		return false;
 	nextToken(info);
-	
+
 	parseExpectedColon(info);
 	bool doParseIndent = parseOptionalNewline(info);
 
@@ -2831,7 +2862,7 @@ bool parseInlineAssembly(ProgGenInfo& info)
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
-		auto& strToken = nextToken(info);
+		auto &strToken = nextToken(info);
 		if (!isString(strToken))
 			THROW_PROG_GEN_ERROR_TOKEN(strToken, "Expected assembly string!");
 
@@ -2846,9 +2877,9 @@ bool parseInlineAssembly(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementPass(ProgGenInfo& info)
+bool parseStatementPass(ProgGenInfo &info)
 {
-	auto& passToken = peekToken(info);
+	auto &passToken = peekToken(info);
 	if (!isKeyword(passToken, "pass"))
 		return false;
 
@@ -2858,9 +2889,9 @@ bool parseStatementPass(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementContinue(ProgGenInfo& info)
+bool parseStatementContinue(ProgGenInfo &info)
 {
-	auto& contToken = peekToken(info);
+	auto &contToken = peekToken(info);
 	if (!isKeyword(contToken, "continue"))
 		return false;
 	nextToken(info);
@@ -2871,9 +2902,9 @@ bool parseStatementContinue(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementBreak(ProgGenInfo& info)
+bool parseStatementBreak(ProgGenInfo &info)
 {
-	auto& breakToken = peekToken(info);
+	auto &breakToken = peekToken(info);
 	if (!isKeyword(breakToken, "break"))
 		return false;
 	nextToken(info);
@@ -2885,27 +2916,37 @@ bool parseStatementBreak(ProgGenInfo& info)
 	return true;
 }
 
-void parseBody(ProgGenInfo& info, bool doParseIndent)
+void parseBody(ProgGenInfo &info, bool doParseIndent)
 {
 	int numStatements = 0;
 
-	auto& bodyBeginToken = peekToken(info, -1);
+	auto &bodyBeginToken = peekToken(info, -1);
 
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
 		++numStatements;
-		auto& token = peekToken(info);
-		if (parseEmptyLine(info)) continue;
-		if (parseStatementAlias(info)) continue;
-		if (parseStatementPass(info)) continue;
-		if (parseControlFlow(info)) continue;
-		if (parseStatementContinue(info)) continue;
-		if (parseStatementBreak(info)) continue;
-		if (parseDeclDef(info)) continue;
-		if (parseStatementReturn(info)) continue;
-		if (parseInlineAssembly(info)) continue;
-		if (parseExpression(info)) continue;
+		auto &token = peekToken(info);
+		if (parseEmptyLine(info))
+			continue;
+		if (parseStatementAlias(info))
+			continue;
+		if (parseStatementPass(info))
+			continue;
+		if (parseControlFlow(info))
+			continue;
+		if (parseStatementContinue(info))
+			continue;
+		if (parseStatementBreak(info))
+			continue;
+		if (parseDeclDef(info))
+			continue;
+		if (parseStatementReturn(info))
+			continue;
+		if (parseInlineAssembly(info))
+			continue;
+		if (parseExpression(info))
+			continue;
 		THROW_PROG_GEN_ERROR_TOKEN(token, "Unexpected token: " + token.value + "!");
 	}
 
@@ -2913,7 +2954,7 @@ void parseBody(ProgGenInfo& info, bool doParseIndent)
 		THROW_PROG_GEN_ERROR_TOKEN(bodyBeginToken, "Expected non-empty body!");
 }
 
-void parseBodyEx(ProgGenInfo& info, BodyRef body, bool doParseIndent)
+void parseBodyEx(ProgGenInfo &info, BodyRef body, bool doParseIndent)
 {
 	increaseIndent(info.indent);
 	pushTempBody(info, body);
@@ -2928,9 +2969,9 @@ void parseBodyEx(ProgGenInfo& info, BodyRef body, bool doParseIndent)
 	mergeSubUsages(info.program->body, body);
 }
 
-bool parseStatementIf(ProgGenInfo& info)
+bool parseStatementIf(ProgGenInfo &info)
 {
-	auto& ifToken = peekToken(info);
+	auto &ifToken = peekToken(info);
 	if (!isKeyword(ifToken, "if"))
 		return false;
 
@@ -2943,8 +2984,8 @@ bool parseStatementIf(ProgGenInfo& info)
 		nextToken(info);
 
 		statement->ifConditionalBodies.push_back({});
-		auto& condBody = statement->ifConditionalBodies.back();
-		condBody.condition = getParseExpression(info, 0, { "bool" });
+		auto &condBody = statement->ifConditionalBodies.back();
+		condBody.condition = getParseExpression(info, 0, {"bool"});
 		condBody.body = std::make_shared<Body>();
 
 		parseExpectedColon(info);
@@ -2961,7 +3002,7 @@ bool parseStatementIf(ProgGenInfo& info)
 
 	if (parsedIndent)
 	{
-		auto& elseToken = peekToken(info);
+		auto &elseToken = peekToken(info);
 		if (isKeyword(elseToken, "else"))
 		{
 			statement->elseBody = std::make_shared<Body>();
@@ -2979,13 +3020,13 @@ bool parseStatementIf(ProgGenInfo& info)
 	}
 
 	pushStatement(info, statement);
-	
+
 	return true;
 }
 
-bool parseStatementWhile(ProgGenInfo& info)
+bool parseStatementWhile(ProgGenInfo &info)
 {
-	auto& whileToken = peekToken(info);
+	auto &whileToken = peekToken(info);
 	if (!isKeyword(whileToken, "while"))
 		return false;
 	nextToken(info);
@@ -2993,7 +3034,7 @@ bool parseStatementWhile(ProgGenInfo& info)
 	auto statement = std::make_shared<Statement>(whileToken.pos, Statement::Type::While_Loop);
 	statement->whileConditionalBody.body = std::make_shared<Body>();
 
-	statement->whileConditionalBody.condition = getParseExpression(info, 0, { "bool" });
+	statement->whileConditionalBody.condition = getParseExpression(info, 0, {"bool"});
 
 	parseExpectedColon(info);
 	bool parsedNewline = parseOptionalNewline(info);
@@ -3005,9 +3046,9 @@ bool parseStatementWhile(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementDoWhile(ProgGenInfo& info)
+bool parseStatementDoWhile(ProgGenInfo &info)
 {
-	auto& doToken = peekToken(info);
+	auto &doToken = peekToken(info);
 	if (!isKeyword(doToken, "do"))
 		return false;
 	nextToken(info);
@@ -3024,7 +3065,7 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 		THROW_PROG_GEN_ERROR_TOKEN(doToken, "Expected 'while'!");
 	parseExpected(info, Token::Type::Keyword, "while");
 
-	statement->doWhileConditionalBody.condition = getParseExpression(info, 0, { "bool" });
+	statement->doWhileConditionalBody.condition = getParseExpression(info, 0, {"bool"});
 
 	parseExpectedNewline(info);
 
@@ -3033,19 +3074,22 @@ bool parseStatementDoWhile(ProgGenInfo& info)
 	return true;
 }
 
-bool parseControlFlow(ProgGenInfo& info)
+bool parseControlFlow(ProgGenInfo &info)
 {
-	if (parseStatementIf(info)) return true;
-	if (parseStatementWhile(info)) return true;
-	if (parseStatementDoWhile(info)) return true;
+	if (parseStatementIf(info))
+		return true;
+	if (parseStatementWhile(info))
+		return true;
+	if (parseStatementDoWhile(info))
+		return true;
 
 	return false;
 }
 
-void parseFunctionBody(ProgGenInfo& info, bool doParseIndent)
+void parseFunctionBody(ProgGenInfo &info, bool doParseIndent)
 {
-	auto& bodyBeginToken = peekToken(info, -1);
-	
+	auto &bodyBeginToken = peekToken(info, -1);
+
 	parseBody(info, doParseIndent);
 
 	if (info.program->body->statements.empty() || lastStatement(info)->type != Statement::Type::Return)
@@ -3057,14 +3101,14 @@ void parseFunctionBody(ProgGenInfo& info, bool doParseIndent)
 	}
 }
 
-bool parseStatementDefine(ProgGenInfo& info)
+bool parseStatementDefine(ProgGenInfo &info)
 {
-	auto& defToken = peekToken(info, 0, true);
+	auto &defToken = peekToken(info, 0, true);
 	if (!isKeyword(defToken, "define"))
 		return false;
 	nextToken(info, 1, true);
 
-	auto& nameToken = nextToken(info, 1, true);
+	auto &nameToken = nextToken(info, 1, true);
 
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
@@ -3075,10 +3119,10 @@ bool parseStatementDefine(ProgGenInfo& info)
 	{
 		nextToken(info, 1, true);
 		sym->macroIsFunctionLike = true;
-		
+
 		while (!isSeparator(peekToken(info, 0, true), ")"))
 		{
-			auto& argToken = nextToken(info, 1, true);
+			auto &argToken = nextToken(info, 1, true);
 			if (!isIdentifier(argToken))
 				THROW_PROG_GEN_ERROR_TOKEN(argToken, "Expected identifier!");
 			sym->macroParamNames.push_back(argToken.value);
@@ -3103,14 +3147,14 @@ bool parseStatementDefine(ProgGenInfo& info)
 	return true;
 }
 
-bool parseStatementSpace(ProgGenInfo& info)
+bool parseStatementSpace(ProgGenInfo &info)
 {
-	auto& spaceToken = peekToken(info);
+	auto &spaceToken = peekToken(info);
 	if (!isKeyword(spaceToken, "space"))
 		return false;
 	nextToken(info);
 
-	auto& nameToken = peekToken(info);
+	auto &nameToken = peekToken(info);
 	nextToken(info);
 
 	if (!isIdentifier(nameToken))
@@ -3137,7 +3181,7 @@ bool parseStatementSpace(ProgGenInfo& info)
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
-		auto& token = peekToken(info);
+		auto &token = peekToken(info);
 		if (!parseSingleGlobalCode(info))
 			THROW_PROG_GEN_ERROR_TOKEN(token, "Unexpected token: " + token.value + "!");
 		++codeCount;
@@ -3152,14 +3196,14 @@ bool parseStatementSpace(ProgGenInfo& info)
 	return true;
 }
 
-bool parsePackUnion(ProgGenInfo& info)
+bool parsePackUnion(ProgGenInfo &info)
 {
-	auto& packToken = peekToken(info);
+	auto &packToken = peekToken(info);
 	if (!isKeyword(packToken, "pack") && !isKeyword(packToken, "union"))
 		return false;
 	nextToken(info);
 
-	auto& nameToken = peekToken(info);
+	auto &nameToken = peekToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 	nextToken(info);
@@ -3169,7 +3213,7 @@ bool parsePackUnion(ProgGenInfo& info)
 	packSym->pos.decl = nameToken.pos;
 	packSym->name = nameToken.value;
 	packSym->pack.isUnion = isKeyword(packToken, "union");
-	auto& pack = packSym->pack;
+	auto &pack = packSym->pack;
 
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
@@ -3223,14 +3267,14 @@ bool parsePackUnion(ProgGenInfo& info)
 	return true;
 }
 
-bool parseEnum(ProgGenInfo& info)
+bool parseEnum(ProgGenInfo &info)
 {
-	auto& enumToken = peekToken(info);
+	auto &enumToken = peekToken(info);
 	if (!isKeyword(enumToken, "enum"))
 		return false;
 	nextToken(info);
 
-	auto& nameToken = peekToken(info);
+	auto &nameToken = peekToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
 	nextToken(info);
@@ -3254,8 +3298,9 @@ bool parseEnum(ProgGenInfo& info)
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
-		while (isIdentifier(peekToken(info))) {
-			auto& memberToken = nextToken(info);
+		while (isIdentifier(peekToken(info)))
+		{
+			auto &memberToken = nextToken(info);
 
 			if (getSymbol(enumSym, memberToken.value, true) != nullptr)
 				THROW_PROG_GEN_ERROR_TOKEN(memberToken, "Enum member '" + memberToken.value + "' already exists!");
@@ -3294,7 +3339,7 @@ bool parseEnum(ProgGenInfo& info)
 	return true;
 }
 
-void parseGlobalCode(ProgGenInfo& info, bool fromBeginning)
+void parseGlobalCode(ProgGenInfo &info, bool fromBeginning)
 {
 	if (fromBeginning)
 		info.currToken = info.tokens->begin();
@@ -3303,22 +3348,22 @@ void parseGlobalCode(ProgGenInfo& info, bool fromBeginning)
 	{
 		if (!parseIndent(info))
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected indentation!");
-		auto& token = peekToken(info);
+		auto &token = peekToken(info);
 		if (!parseSingleGlobalCode(info))
 			THROW_PROG_GEN_ERROR_TOKEN(token, "Unexpected token: " + token.value + "!");
 	}
 }
 
-void importFile(ProgGenInfo& info, const Token& fileToken)
+void importFile(ProgGenInfo &info, const Token &fileToken)
 {
-	auto getImportFile = [&](const std::string& dir) -> std::string
+	auto getImportFile = [&](const std::string &dir) -> std::string
 	{
 		std::string absPath;
 		try
 		{
 			absPath = std::filesystem::canonical(std::filesystem::path(dir) / fileToken.value).string();
 		}
-		catch (std::filesystem::filesystem_error&)
+		catch (std::filesystem::filesystem_error &)
 		{
 			return "<notFound>";
 		}
@@ -3339,11 +3384,11 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 
 	if (path == "<alreadyImported>")
 		return;
-	
+
 	if (path == "<notFound>")
 	{
 		// Search for a matching file in the specified import directories
-		for (auto& dir : info.importDirs)
+		for (auto &dir : info.importDirs)
 		{
 			path = getImportFile(dir);
 
@@ -3363,13 +3408,12 @@ void importFile(ProgGenInfo& info, const Token& fileToken)
 	parseInlineTokens(
 		info,
 		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string()),
-		path
-	);
+		path);
 }
 
-bool parseStatementImport(ProgGenInfo& info)
+bool parseStatementImport(ProgGenInfo &info)
 {
-	auto& importToken = peekToken(info);
+	auto &importToken = peekToken(info);
 	if (!isKeyword(importToken, "import"))
 		return false;
 	nextToken(info);
@@ -3380,7 +3424,7 @@ bool parseStatementImport(ProgGenInfo& info)
 	while (isOperator(peekToken(info), "."))
 	{
 		nextToken(info);
-		auto& specToken = nextToken(info);
+		auto &specToken = nextToken(info);
 
 		if (isKeyword(specToken, "defer"))
 		{
@@ -3391,7 +3435,7 @@ bool parseStatementImport(ProgGenInfo& info)
 		if (!isIdentifier(specToken))
 			THROW_PROG_GEN_ERROR_TOKEN(specToken, "Expected platform identifier!");
 
-		static const std::set<std::string> platformNames = { "windows", "linux", "macos" };
+		static const std::set<std::string> platformNames = {"windows", "linux", "macos"};
 		if (platformNames.find(specToken.value) == platformNames.end())
 			THROW_PROG_GEN_ERROR_TOKEN(specToken, "Unknown platform identifier: '" + specToken.value + "'!");
 		if (specToken.value != info.program->platform)
@@ -3401,7 +3445,7 @@ bool parseStatementImport(ProgGenInfo& info)
 		}
 	}
 
-	auto& fileToken = nextToken(info);
+	auto &fileToken = nextToken(info);
 	if (!isString(fileToken))
 		THROW_PROG_GEN_ERROR_TOKEN(fileToken, "Expected file path!");
 
@@ -3416,31 +3460,48 @@ bool parseStatementImport(ProgGenInfo& info)
 	return true;
 }
 
-bool parseSingleGlobalCode(ProgGenInfo& info)
+bool parseSingleGlobalCode(ProgGenInfo &info)
 {
-	if (parseEmptyLine(info)) return true;
-	if (parseStatementAlias(info)) return true;
-	if (parseStatementDefer(info)) return true;
-	if (parseStatementPass(info)) return true;
-	if (parseStatementImport(info)) return true;
-	if (parseStatementDefine(info)) return true;
-	if (parseStatementSpace(info)) return true;
-	if (parseControlFlow(info)) return true;
-	if (parseStatementContinue(info)) return true;
-	if (parseStatementBreak(info)) return true;
-	if (parsePackUnion(info)) return true;
-	if (parseEnum(info)) return true;
-	if (parseDeclDef(info)) return true;
-	if (parseDeclExtFunc(info)) return true;
-	if (parseInlineAssembly(info)) return true; 
-	if (parseInlineAssembly(info)) return true;
-	if (parseExpression(info)) return true;
+	if (parseEmptyLine(info))
+		return true;
+	if (parseStatementAlias(info))
+		return true;
+	if (parseStatementDefer(info))
+		return true;
+	if (parseStatementPass(info))
+		return true;
+	if (parseStatementImport(info))
+		return true;
+	if (parseStatementDefine(info))
+		return true;
+	if (parseStatementSpace(info))
+		return true;
+	if (parseControlFlow(info))
+		return true;
+	if (parseStatementContinue(info))
+		return true;
+	if (parseStatementBreak(info))
+		return true;
+	if (parsePackUnion(info))
+		return true;
+	if (parseEnum(info))
+		return true;
+	if (parseDeclDef(info))
+		return true;
+	if (parseDeclExtFunc(info))
+		return true;
+	if (parseInlineAssembly(info))
+		return true;
+	if (parseInlineAssembly(info))
+		return true;
+	if (parseExpression(info))
+		return true;
 	return false;
 }
 
-void markReachableFunctions(ProgGenInfo& info, BodyRef body)
+void markReachableFunctions(ProgGenInfo &info, BodyRef body)
 {
-	for (auto& funcPath : body->usedFunctions)
+	for (auto &funcPath : body->usedFunctions)
 	{
 		auto func = getSymbolFromPath(info.program->symbols, funcPath);
 
@@ -3453,7 +3514,7 @@ void markReachableFunctions(ProgGenInfo& info, BodyRef body)
 	}
 }
 
-void detectUndefinedFunctions(ProgGenInfo& info)
+void detectUndefinedFunctions(ProgGenInfo &info)
 {
 	for (auto sym : *info.program->symbols)
 	{
@@ -3462,13 +3523,13 @@ void detectUndefinedFunctions(ProgGenInfo& info)
 	}
 }
 
-void importDeferredImports(ProgGenInfo& info)
+void importDeferredImports(ProgGenInfo &info)
 {
 	for (int i = 0; i < info.deferredImports.size(); ++i)
 		importFile(info, info.deferredImports[i]);
 }
 
-void parseDeferredCompilations(ProgGenInfo& info)
+void parseDeferredCompilations(ProgGenInfo &info)
 {
 	while (!info.deferredCompilations.empty())
 	{
@@ -3479,9 +3540,9 @@ void parseDeferredCompilations(ProgGenInfo& info)
 	}
 }
 
-void genDeclaredOnlyBpSpecs(ProgGenInfo& info)
+void genDeclaredOnlyBpSpecs(ProgGenInfo &info)
 {
-	for (auto& spec : info.bpSpecsToDefine)
+	for (auto &spec : info.bpSpecsToDefine)
 	{
 		if (!isDefined(spec.bpSym))
 			THROW_PROG_GEN_ERROR_POS(spec.generatedFrom, "Cannot generate blueprint specialization of undefined blueprint '" + getReadableName(spec.bpSym) + "'!");
@@ -3490,9 +3551,9 @@ void genDeclaredOnlyBpSpecs(ProgGenInfo& info)
 	}
 }
 
-ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string>& importDirs, const std::string& platform, const std::string& progPath)
+ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
 {
-	ProgGenInfo info = { tokens, ProgramRef(new Program()), importDirs, progPath };
+	ProgGenInfo info = {tokens, ProgramRef(new Program()), importDirs, progPath};
 	info.program->platform = platform;
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();

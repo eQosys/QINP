@@ -5,15 +5,15 @@ import "__syscall.qnp"
 
 space std:
 	\\ IOCTL System call
-	i32 __ioctl(i32 fileDesc, u64 request)...
-	i32 __ioctl(i32 fileDesc, u64 request, void* param1)...
+	fn<i32> __ioctl(i32 fileDesc, u64 request)...
+	fn<i32> __ioctl(i32 fileDesc, u64 request, void* param1)...
 
 	define __IOCTL_NREAD 21531
 
 defer
 space std:
-	i32 __ioctl(i32 fileDesc, u64 request)!:
+	fn<i32> __ioctl(i32 fileDesc, u64 request)!:
 		return __syscall(__SYS_IOCTL, fileDesc, request)
 
-	i32 __ioctl(i32 fileDesc, u64 request, void* param1)!:
+	fn<i32> __ioctl(i32 fileDesc, u64 request, void* param1)!:
 		return __syscall(__SYS_IOCTL, fileDesc, request, (u64)param1)

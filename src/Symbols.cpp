@@ -251,9 +251,16 @@ SymbolRef replaceSymbol(SymbolRef currSym, SymbolRef newSym)
 	return currSym;
 }
 
-SymbolRef getParent(const SymbolRef symbol)
+SymbolRef getParent(SymbolRef symbol)
 {
 	return symbol->parent.lock();
+}
+
+SymbolRef getParent(SymbolRef symbol, uint64_t num)
+{
+	while (num-- > 0)
+		symbol = getParent(symbol);
+	return symbol;
 }
 
 SymbolRef getParent(SymbolRef curr, Symbol::Type type)

@@ -1,1 +1,1 @@
-u32 var \\ This is a comment
+var<u32> variable \\ This is a comment

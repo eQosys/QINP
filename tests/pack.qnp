@@ -1,14 +1,14 @@
 import "stdio.qnp"
 
 pack User:
-	i32 age
-	u8 name[32]
+	var<i32> age
+	var<u8> name[32]
 
 std.print("sizeof(User) = ")
 std.print(sizeof(User))
 std.print("\n")
 
-User user
+var<User> user
 user.age = 17
 std.strcpy(user.name, "TecStylos")
 

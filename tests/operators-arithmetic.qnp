@@ -1,8 +1,8 @@
 import "stdio.qnp"
 
-void show(i32 var):
+fn<> show(i32 variable):
 	std.print("var = ")
-	std.print(var)
+	std.print(variable)
 	std.print("\n")
 
 show(13)
