@@ -29,7 +29,7 @@ Single-line comments are preceded by a double backslash ('\\\\').
 #### Example
 
 ```qinp
-u32 a = 3 * 5	\\ This is a comment
+var<u32> a = 3 * 5	\\ This is a comment
 ```
 
 ---
@@ -47,8 +47,8 @@ The colon is almost always used to indicate a new scope/deeper indentation level
 #### Example
 
 ```qinp
-u64 a = 3
-u64 b = 5
+var<u64> a = 3
+var<u64> b = 5
 if a < b: std.print("a is smaller than b")
 	std.print("I am still part of the if clause!")
 else: std.print("a is bigger than b")

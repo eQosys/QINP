@@ -7,8 +7,8 @@
 
 
 ## Functions
- - [i32 std.__ioctl(i32 fileDesc, u64 request)]()
- - [i32 std.__ioctl(i32 fileDesc, u64 request, void* param1)]()
+ - [fn<i32> std.__ioctl(i32 fileDesc, u64 request)]()
+ - [fn<i32> std.__ioctl(i32 fileDesc, u64 request, void* param1)]()
 
 ## Macros
  - [std.__IOCTL_NREAD]()

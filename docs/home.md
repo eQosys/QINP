@@ -42,7 +42,7 @@ Building:
 ### Examples
 
 ```qinp
-import "std.qnp"
+import "stdio.qnp"
 std.print("Hello, world!")
 ```
 

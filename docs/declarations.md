@@ -27,32 +27,32 @@ Arrays can not be initialized.
 
 > Simple Declaration/Definition
 >
-> `datatype` `name`
+> var<`datatype`> `name`
 
 > Simple Declaration/Definition with initialization
 >
-> `datatype` `name` = `expression`
+> var<`datatype`> `name` = `expression`
 
 > Array Declaration/Definition
 >
-> `datatype` `name`[`size`]
+> var<`datatype`> `name`[`size`]
 
 #### Examples
 
 > Declaration/Definition
 > ```qinp
-> u32* foo
+> var<u32*> foo
 > ```
 
 > Declaration/Definition with initialization
 > ```qinp
-> u32 bar = 100
+> var<u32> bar = 100
 > ```
 
 > Array Declaration/Definition
 > ```qinp
-> u16 baz[10]
-> u64 qux[10][8]
+> var<u16> baz[10]
+> var<u64> qux[10][8]
 > ```
 
 ---
@@ -70,32 +70,43 @@ They are heavily used in the QINP standard library.
 
 > Declaration
 > ```qinp
-> [return-type] [name] ( [parameter-list] ) [!*]...
+> fn<[return-type]> [name] ( [parameter-list] ) [!*]...
 > ```
 
 > Definition
 > ```qinp
-> [return-type] [name] ( [parameter-list] ) [!*]:
+> fn<[return-type]> [name] ( [parameter-list] ) [!*]:
 > 	[body]
 
 #### Examples
 
 > Declaration
 > ```qinp
-> u8 foo(u32 a, u16* b)...
+> fn<u8> foo(u32 a, u16* b)...
 > ```
 > ```qinp
-> void func()!...
+> fn<void> func()!...
 > ```
 
 > Definition
 > ```qinp
-> u64 square(u64 x):
+> fn<u64> square(u64 x):
 >    return x * x
 > ```
 > ```qinp
-> void func()!:
+> fn<void> func()!:
 >    return
+> ```
+
+#### Note
+
+When declaring or defining a void function, the return type and '<>' can be omitted.
+The following three function declarations are all equally valid.
+
+> ```qinp
+> fn<void> func1()...
+> fn<> func2()...		\\ Used in the standard library
+> fn func3()...
 > ```
 
 ---
@@ -134,9 +145,9 @@ The size of a pack is constant and only known after the pack's definition. The [
 > Definition
 > ```qinp
 > pack User:
->    u32 age
->    u8 name[32]
->    User* friends[10]
+>    var<u32> age
+>    var<u8> name[32]
+>    var<User*> friends[10]
 > ```
 
 ---
@@ -171,8 +182,8 @@ The size of the union is the size of the largest member.
 > Definition
 > ```qinp
 > union Data:
-> 	u32 var
-> 	u8 name[5]
+> 	var<u32> var
+> 	var<u8> name[5]
 > ```
 
 ---
@@ -184,8 +195,8 @@ The `static` keyword can be used to declare/define a variable in a function as s
 #### Example
 
 ```qinp
-void foo():
-	static u32 x
+fn<> foo():
+	static var<u32> x
 	std.print(++x)
 ```
 
@@ -221,5 +232,5 @@ enum Color:
 	black = 5, white, yellow		\\ The comma after the last member of a row is optional
 	cyan = 3, magenta = -1, orange
 
-Color col = Color.red
+var<Color> col = Color.red
 ```

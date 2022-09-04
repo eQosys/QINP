@@ -230,12 +230,12 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 
 > Standard import:
 > ```qinp
-> import "std.qnp"
+> import "stdio.qnp"
 > ```
 
 > Conditional import:
 > ```qinp
-> import.linux "platform/linux/std.qnp"
+> import.linux "platform/linux/stdio.qnp"
 > ```
 
 ---
@@ -248,10 +248,10 @@ It can be implicitely converted to any builtin type.
 #### Example
 
 ```qinp
-void* p = null
-u8* pu = null
-i32 i = null
-bool b = null
+var<void*> p = null
+var<u8*> pu = null
+var<i32> i = null
+var<bool> b = null
 ```
 
 ---
@@ -264,7 +264,7 @@ It's primary purpose is to be used as a placeholder for empty bodies (e.g. funct
 #### Example
 
 ```qinp
-void foo():
+fn<> foo():
 	pass
 ```
 
@@ -287,12 +287,12 @@ return [expression*]
 #### Examples
 
 ```qinp
-u64 square(u64 x):
+fn<u64> square(u64 x):
 	return x * x
 ```
 
 ```qinp
-void say_hello():
+fn<> say_hello():
 	std.print("Hello, world!")
 	return		\\ This is optional
 ```
@@ -323,19 +323,19 @@ Spaces can be nested.
 
 > Space definition:
 > ```qinp
-> u64 x = 0
+> var<u64> x = 0
 > space foo:
-> 	u64 x = 1
+> 	var<u64> x = 1
 > space bar:
-> 	u64 x = 2
+> 	var<u64> x = 2
 > 
 > 	space foo:
-> 		u64 x = 3
+> 		var<u64> x = 3
 > ```
 
 > Accessing a space member:
 > ```qinp
-> x			\\ Always resolves to the local x
+> x			\\ Always resolves to the nearest x
 > .x			\\ Always accesses the global x
 > foo.x		\\ In global scope or foo space: .foo.x, in bar space: .bar.foo.x
 > bar.x		\\ In this example everywhere .bar.x

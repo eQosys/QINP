@@ -53,7 +53,7 @@ while [condition]:
 #### Example
 
 ```qinp
-u32 i = 0
+var<u32> i = 0
 while ++i < 10:
 	std.print(i)	\\ Prints the numbers 1 to 9
 	std.print("\n")
@@ -76,7 +76,7 @@ while [condition]
 #### Example
 
 ```qinp
-u32 i = 0
+var<u32> i = 0
 do:
 	std.print(i)	\\ Prints the numbers 0 to 9
 	std.print("\n")
@@ -92,7 +92,7 @@ The `continue` statement can be used to skip the rest of the current iteration o
 #### Example
 
 ```qinp
-u32 i = 0
+var<u32> i = 0
 while ++i < 10:
 	if i == 5:
 		continue
@@ -107,7 +107,7 @@ The remaining code in the loop is not executed.
 #### Example
 
 ```qinp
-u32 i = 0
+var<u32> i = 0
 while ++i < 10:
 	if i == 5:
 		break
