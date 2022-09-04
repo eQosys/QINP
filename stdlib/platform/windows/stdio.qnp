@@ -8,8 +8,8 @@ space std:
 
 defer
 space std:
-	i32 printn(u8 const* str, u64 num)!:
+	fn<i32> printn(u8 const* str, u64 num)!:
 		return 0
 
-	i32 scann(u8* dest, u64 num)!:
+	fn<i32> scann(u8* dest, u64 num)!:
 		return 0

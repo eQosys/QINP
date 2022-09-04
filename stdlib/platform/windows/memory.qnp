@@ -8,8 +8,8 @@ space std:
 
 defer
 space std:
-	void* malloc(u64 size)!:
+	fn<void*> malloc(u64 size)!:
 		return null
 
-	void free(void* ptr)!:
+	fn<> free(void* ptr)!:
 		pass

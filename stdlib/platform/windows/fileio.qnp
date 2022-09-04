@@ -13,14 +13,14 @@ space std:
 	pack File!:
 		pass
 
-	File* fopen(u8 const* filename, u8 const* mode)!:
+	fn<File*> fopen(u8 const* filename, u8 const* mode)!:
 		return null
 
-	u64 fread(File* pFile, void* dest, u64 num)!:
+	fn<u64> fread(File* pFile, void* dest, u64 num)!:
 		return 0
 
-	u64 fwrite(File* pFile, void const* src, u64 num)!:
+	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
 		return 0
 
-	void fclose(File* pFile)!:
+	fn<> fclose(File* pFile)!:
 		pass

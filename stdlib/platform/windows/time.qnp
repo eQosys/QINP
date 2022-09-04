@@ -8,8 +8,8 @@ space std:
 
 defer
 space std:
-	u64 getTime()!:
+	fn<u64> getTime()!:
 		return 0
 
-	i32 sleep(u64 ms)!:
+	fn<i32> sleep(u64 ms)!:
 		return 0
