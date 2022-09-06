@@ -44,3 +44,7 @@ enum<i8> Color:
 
 enum<i64> AnyEnum:
 	...
+
+fn<?Tnew> convert(?Told) [Told, Tnew]... \\ Specify the order of blueprint macros
+\\ When a macro list is given, every introduced macro must be present in the list.
+\\ The macro list may introduce new macros that can be used inside of the function body.
