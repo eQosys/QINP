@@ -2687,16 +2687,22 @@ bool parseDeclExtFunc(ProgGenInfo &info)
 		return false;
 	nextToken(info);
 
+	parseExpected(info, Token::Type::Keyword, "fn");
+
 	auto funcSym = std::make_shared<Symbol>();
 
 	funcSym->pos.decl = extToken.pos;
 	funcSym->type = SymType::ExtFunc;
 
-	auto &typeToken = peekToken(info);
-	funcSym->func.retType = getParseDatatype(info);
-
-	if (!funcSym->func.retType)
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
+	// Parse the return type
+	funcSym->func.retType = Datatype("void");
+	if (isOperator(peekToken(info), "<"))
+	{
+		parseExpected(info, Token::Type::Operator, "<");
+		if (!isOperator(peekToken(info), ">")) // Makes 'fn<>' possible (same as 'fn' and 'fn<void>')
+			funcSym->func.retType = getParseDatatype(info);
+		parseExpected(info, Token::Type::Operator, ">");
+	}
 
 	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))

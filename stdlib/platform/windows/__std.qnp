@@ -4,29 +4,29 @@
 space std:
 	define __HANDLE u64
 
-	extern u64 __GetStdHandle(i32 nStdHandle) = "GetStdHandle"
-	extern bool __WriteConsole(__HANDLE handle, void const* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
-	extern bool __ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
-	extern void __Sleep(i32 ms) = "Sleep"
+	extern fn<u64>__ex_GetStdHandle(i32 nStdHandle) = "GetStdHandle"
+	extern fn<bool> __ex_WriteConsole(__HANDLE handle, void const* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
+	extern fn<bool> __ex_ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
+	extern fn<> __ex_Sleep(i32 ms) = "Sleep"
 
 
 
 defer
 space std:
 	_RESULT print(u8 const* str, u64 len)!:
-		static __HANDLE hStdOut = __GetStdHandle(-11)
+		static __HANDLE hStdOut = __ex_GetStdHandle(-11)
 
 		i32 nWritten
-		__WriteConsole(hStdOut, str, len, &nWritten, (void*)0)
+		__ex_WriteConsole(hStdOut, str, len, &nWritten, (void*)0)
 		return nWritten
 
 	u8 getchar()!:
-		static __HANDLE hStdIn = __GetStdHandle(-10)
+		static __HANDLE hStdIn = __ex_GetStdHandle(-10)
 		u8 ch
 		i32 nRead
-		__ReadConsole(hStdIn, &ch, 1, &nRead, (void*)0)
+		__ex_ReadConsole(hStdIn, &ch, 1, &nRead, (void*)0)
 		return ch
 
 	_RESULT sleep(u64 ms)!:
-		__Sleep(ms)
+		__ex_Sleep(ms)
 		return 0

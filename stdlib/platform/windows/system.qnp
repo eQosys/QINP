@@ -2,11 +2,11 @@
 \\ System - Windows Specific
 
 space std:
-	extern void __ExitProcess(i32 status) = "ExitProcess"
+	extern fn<> __ex_ExitProcess(i32 status) = "ExitProcess"
 
 
 
 defer
 space std:
 	fn<> exit(i32 status)!:
-		__ExitProcess(status)
+		__ex_ExitProcess(status)
