@@ -2409,11 +2409,17 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		return {nullptr, nullptr};
 	nextToken(info, 1 + isStatic);
 
-	parseExpected(info, Token::Type::Operator, "<");
-	auto datatype = getParseDatatype(info);
-	if (isVoid(datatype))
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
-	parseExpected(info, Token::Type::Operator, ">");
+	Datatype datatype;
+	bool implicitDatatype = true;
+	if (isOperator(peekToken(info), "<"))
+	{
+		implicitDatatype = false;
+		parseExpected(info, Token::Type::Operator, "<");
+		datatype = getParseDatatype(info);
+		if (isVoid(datatype))
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
+		parseExpected(info, Token::Type::Operator, ">");
+	}
 
 	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
@@ -2437,16 +2443,17 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 
 	while (isSeparator(peekToken(info), "["))
 	{
+		if (implicitDatatype)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Arrays must be declared with an explicit datatype!");
+
 		nextToken(info);
 		parseExpected(info, Token::Type::LiteralInteger);
 		sym->var.datatype = Datatype(DTType::Array, sym->var.datatype, std::stoull(peekToken(info, -1).value));
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 
-	if (isPackType(info.program, sym->var.datatype) && !isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
+	if (!implicitDatatype && isPackType(info.program, sym->var.datatype) && !isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
 		THROW_PROG_GEN_ERROR_POS(getBestPos(sym), "Cannot use declared-only pack type!");
-
-	addVariable(info, sym);
 
 	ExpressionRef initExpr = nullptr;
 	if (!isInPack(currSym(info)))
@@ -2457,6 +2464,20 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 			initExpr = getParseExpression(info);
 		}
 	}
+
+	if (implicitDatatype)
+	{
+		if (!initExpr)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a variable declaration!");
+
+		// TODO: Drop references
+		sym->var.datatype = initExpr->datatype;
+
+		if (sym->var.datatype.type == DTType::Array)
+			sym->var.datatype.type = DTType::Pointer;
+	}
+
+	addVariable(info, sym);
 
 	parseExpectedNewline(info);
 
