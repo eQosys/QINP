@@ -66,6 +66,6 @@ space std:
 
 	fn<?T> pow(?T base, ?T exponent)!:
 		if exponent == 0: return 1
-		var<T> temp = pow(base, exponent / 2)
+		var temp = pow(base, exponent / 2)
 		if exponent % 2 == 0: return temp * temp
 		return base * temp * temp

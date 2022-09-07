@@ -1,0 +1,4 @@
+var i = 0
+var x = true
+var y = (i8)2
+var str = "Hello world!"

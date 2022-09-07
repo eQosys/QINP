@@ -2470,6 +2470,9 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		if (!initExpr)
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a variable declaration!");
 
+		if (isNull(initExpr->datatype))
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a null assignment!");
+
 		// TODO: Drop references
 		sym->var.datatype = initExpr->datatype;
 

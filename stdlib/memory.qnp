@@ -46,18 +46,18 @@ space std:
 defer
 space std:
 	fn<void*> memcpy(void* dest, void const* src, u64 len)!:
-		var<u8*> d8End = (u8*)dest + len
+		var d8End = (u8*)dest + len
 
-		var<u8*> d8 = (u8*)dest
-		var<u8 const*> s8 = (u8 const*)src
+		var d8 = (u8*)dest
+		var s8 = (u8 const*)src
 
 		if len >= MIN_MEM_LEN_USE_ALIGN:
 			while (u64)d8 % sizeof(u64): \\ Align to 8 bytes, testing for d8 < dEnd would be redundant
 				*d8++ = *s8++
 
-			var<u64*> d64 = (u64*)d8
-			var<u64 const*> s64 = (u64 const*)s8
-			var<u64*> d64End = (u64*)d8End - 1
+			var d64 = (u64*)d8
+			var s64 = (u64 const*)s8
+			var d64End = (u64*)d8End - 1
 			
 			while d64 < d64End:
 				*d64++ = *s64++ \\ Copy 8 bytes at a time
@@ -71,21 +71,21 @@ space std:
 		return dest
 
 	fn<void*> memset(void* dest, u8 val, u64 len)!:
-		var<u8*> d8End = (u8*)dest + len
+		var d8End = (u8*)dest + len
 
-		var<u8*> d8 = (u8*)dest
+		var d8 = (u8*)dest
 
 		if len >= MIN_MEM_LEN_USE_ALIGN:
 			while (u64)d8 % sizeof(u64): \\ Align to 8 bytes, testing for d8 < end would be redundant
 				*d8++ = val
 
-			var<u64> v64 = val
+			var v64 = (u64)val
 			v64 |= (v64 << 8)
 			v64 |= (v64 << 16)
 			v64 |= (v64 << 32)
 
-			var<u64*> d64 = (u64*)d8
-			var<u64*> d64End = (u64*)d8End - 1
+			var d64 = (u64*)d8
+			var d64End = (u64*)d8End - 1
 			
 			while d64 < d64End:
 				*d64++ = v64 \\ Set 8 bytes at a time
@@ -98,18 +98,18 @@ space std:
 		return dest
 
 	fn<i64> memcmp(void const* a, void const* b, u64 len)!:
-		var<u8 const*> a8End = (u8 const*)a + len
-		var<u8 const*> a8 = (u8 const*)a
-		var<u8 const*> b8 = (u8 const*)b
+		var a8End = (u8 const*)a + len
+		var a8 = (u8 const*)a
+		var b8 = (u8 const*)b
 
 		if len >= MIN_MEM_LEN_USE_ALIGN:
 			while (u64 const)a8 % sizeof(u64): \\ Align to 8 bytes, testing for a8 < end would be redundant
 				if *a8++ != *b8++:
 					return *(a8 - 1) - *(b8 - 1)
 			
-			var<u64 const*> a64 = (u64 const*)a8
-			var<u64 const*> b64 = (u64 const*)b8
-			var<u64 const*> a64End = (u64 const*)a8End - 1
+			var a64 = (u64 const*)a8
+			var b64 = (u64 const*)b8
+			var a64End = (u64 const*)a8End - 1
 
 			while a64 < a64End: \\ Compare 8 bytes at a time
 				if *a64++ != *b64++:

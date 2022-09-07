@@ -29,7 +29,7 @@ space std:
 		else:
 			return null
 
-		var<i32> fd = __syscall(__SYS_OPEN, (u64)filename, flags)
+		var fd = __syscall(__SYS_OPEN, (u64)filename, flags)
 
 		return fd < 0 ? (File*)null : (File*)fd
 

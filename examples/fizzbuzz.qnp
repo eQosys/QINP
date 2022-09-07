@@ -1,8 +1,8 @@
 import "stdio.qnp"
 
-var<u64> i = 0
+var i = 0
 while ++i < 100:
-	var<bool> any = false
+	var any = false
 	if !(i % 3):
 		std.print("Fizz ")
 		any = true

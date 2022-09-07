@@ -119,7 +119,7 @@ space std:
 		\\ No check for minSizeAvail == 0 because a block may have 0 bytes of available space
 		var<__MemBlockHeader*> smallest = null
 		var<__MemBlockHeader*> last = null
-		var<__MemBlockHeader*> curr = __memBlocks
+		var curr = __memBlocks
 
 		while curr:
 			if curr->sizeAvail >= minSizeAvail:
@@ -132,7 +132,7 @@ space std:
 	fn<__MemBlockHeader*> __getNextAdjacentAvailBlock(__MemBlockHeader* block)!:
 		if !block: return null
 
-		var<__MemBlockHeader*> curr = __memBlocks
+		var curr = __memBlocks
 		
 		while curr && curr < block:
 			curr = curr->next
@@ -145,7 +145,7 @@ space std:
 		if !block: return null
 
 		var<__MemBlockHeader*> prev = null
-		var<__MemBlockHeader*> curr = __memBlocks
+		var curr = __memBlocks
 
 		while curr && block >= curr:
 			prev = curr
@@ -178,7 +178,7 @@ space std:
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
 			return null
 
-		var<__MemBlockHeader*> newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
+		var newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
 		newBlock->sizeAvail = block->sizeAvail - newSizeAvail - sizeof(__MemBlockHeader)
 		block->sizeAvail = newSizeAvail
 
@@ -215,7 +215,7 @@ space std:
 		if !minSizeAvail: return null
 
 		var<u64> size = __roundUp(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
-		var<__MemBlockHeader*> block = (__MemBlockHeader*)__sbrk(size)
+		var block = (__MemBlockHeader*)__sbrk(size)
 		if !block: return null
 
 		block->sizeAvail = size - sizeof(__MemBlockHeader)
@@ -225,7 +225,7 @@ space std:
 	fn<void*> malloc(u64 size)!:
 		if !size: return null
 
-		var<__MemBlockHeader*> block = __getAvailBlock(size)
+		var block = __getAvailBlock(size)
 		if block:
 			if block->sizeAvail < size: \\ Expand the last block if it is not big enough
 				var<u64> newAllocatedSize = __roundUp(size - block->sizeAvail, __PAGE_SIZE)
@@ -237,7 +237,7 @@ space std:
 
 		if !block: return null
 
-		var<__MemBlockHeader*> newBlock = __splitBlock(block, size)
+		var newBlock = __splitBlock(block, size)
 		if newBlock: __insertAvailBlock(newBlock)
 
 		return block + 1
@@ -246,10 +246,10 @@ space std:
 		if !ptr:
 			return malloc(size)
 
-		var<__MemBlockHeader*> block = (__MemBlockHeader*)ptr - 1
+		var block = (__MemBlockHeader*)ptr - 1
 
 		if size > block->sizeAvail:
-			var<__MemBlockHeader*> next = __getNextAdjacentAvailBlock(block)
+			var next = __getNextAdjacentAvailBlock(block)
 			if next && ( \
 				block->sizeAvail + next->sizeAvail >= size || \
 				block->sizeAvail + next->sizeAvail + sizeof(__MemBlockHeader) == size):
@@ -293,7 +293,7 @@ space std:
 	fn<> free(void* ptr)!:
 		if !ptr: return
 
-		var<__MemBlockHeader*> block = (__MemBlockHeader*)ptr - 1
+		var block = (__MemBlockHeader*)ptr - 1
 		__insertAvailBlock(block)
 		block = __mergeBlockWithNeighbors(block)
 

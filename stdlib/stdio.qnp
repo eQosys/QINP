@@ -90,8 +90,8 @@ space std:
 		return 1
 
 	fn<i32> __printf(u8 const** pStr, ?T val)!:
-		var<u8 const*> str = *pStr
-		var<u8 const*> dropIndex = strchr(str, '%')
+		var str = *pStr
+		var dropIndex = strchr(str, '%')
 		if dropIndex == null:
 			*pStr = str + strlen(str)
 

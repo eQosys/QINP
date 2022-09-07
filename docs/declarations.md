@@ -55,6 +55,14 @@ Arrays can not be initialized.
 > var<u64> qux[10][8]
 > ```
 
+#### Note
+
+When defining a variable, the datatype may be omitted.
+> ```qinp
+> var i = 0 \\ The datatype is deduced from the expression on
+>           \\ the right side of the assignment
+> ```
+
 ---
 
 ### Functions

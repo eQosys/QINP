@@ -9,26 +9,26 @@ pack Grid: var<bool> cells[WIDTH][HEIGHT]
 
 var<Grid> grids[2]
 
-var<Grid*> pMain = grids + 0
-var<Grid*> pBack = grids + 1
+var pMain = grids + 0
+var pBack = grids + 1
 
 fn<> flip():
-	var<Grid*> pTemp = pMain
+	var pTemp = pMain
 	pMain = pBack
 	pBack = pTemp
 
 fn<> printBorder():
 	std.print("+")
-	var<i64> i = 0
+	var i = 0
 	while i++ < WIDTH: std.print("-")
 	
 	std.print("+\n")
 
 fn<> show():
-	var<i64> i = -1
+	var i = -1
 	printBorder()
 	while ++i < HEIGHT:
-		var<i64> j = -1
+		var j = -1
 		std.print("|")
 		while ++j < WIDTH:
 			std.print(pMain->cells[j][i] ? "#" : " ")
@@ -37,19 +37,19 @@ fn<> show():
 
 fn<> clear():
 	std.print("\r")
-	var<i64> i = 0
+	var i = 0
 	while i++ < HEIGHT + 2:
 		std.print("\e[1F")
 
 fn<> update():
-	var<i64> i = -1
+	var i = -1
 	while ++i < WIDTH:
-		var<i64> j = -1
+		var j = -1
 		while ++j < HEIGHT:
-			var<i64> count = 0
-			var<i64> k = i-2
+			var count = 0
+			var k = i-2
 			while ++k < i+2:
-				var<i64> l = j-2
+				var l = j-2
 				while ++l < j+2:
 					if (k >= 0 && k < WIDTH) && \
 						(l >= 0 && l < HEIGHT) && \
@@ -58,9 +58,9 @@ fn<> update():
 			pBack->cells[i][j] = pMain->cells[i][j] ? 2 <= count && count <= 3 : count == 3
 
 fn<bool> hasChanged():
-	var<i64> i = -1
+	var i = -1
 	while ++i < WIDTH:
-		var<i64> j = -1
+		var j = -1
 		while ++j < HEIGHT:
 			if pMain->cells[i][j] != pBack->cells[i][j]:
 				return true
@@ -72,7 +72,7 @@ grids[0].cells[1][2] = true
 grids[0].cells[2][1] = true
 grids[0].cells[2][2] = true
 
-var<i64> n = 0
+var n = 0
 while n++ < N_ITERATIONS:
 	show()
 	update()

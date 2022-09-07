@@ -3,6 +3,6 @@ import "stdio.qnp"
 fn<u64> fib(u64 n):
 	return n < 2 ? n : fib(n-1) + fib(n-2)
 
-var<u64> i = 0
+var i = 0
 while i++ < 10:
 	std.print("% -> %\n", i, fib(i))
