@@ -46,7 +46,7 @@ space std:
 defer
 space std:
 	fn<void*> memcpy(void* dest, void const* src, u64 len)!:
-		var d8End = (u8*)dest + len
+		const d8End = (u8*)dest + len
 
 		var d8 = (u8*)dest
 		var s8 = (u8 const*)src
@@ -57,7 +57,7 @@ space std:
 
 			var d64 = (u64*)d8
 			var s64 = (u64 const*)s8
-			var d64End = (u64*)d8End - 1
+			const d64End = (u64*)d8End - 1
 			
 			while d64 < d64End:
 				*d64++ = *s64++ \\ Copy 8 bytes at a time
@@ -71,7 +71,7 @@ space std:
 		return dest
 
 	fn<void*> memset(void* dest, u8 val, u64 len)!:
-		var d8End = (u8*)dest + len
+		const d8End = (u8*)dest + len
 
 		var d8 = (u8*)dest
 
@@ -85,7 +85,7 @@ space std:
 			v64 |= (v64 << 32)
 
 			var d64 = (u64*)d8
-			var d64End = (u64*)d8End - 1
+			const d64End = (u64*)d8End - 1
 			
 			while d64 < d64End:
 				*d64++ = v64 \\ Set 8 bytes at a time
@@ -98,9 +98,9 @@ space std:
 		return dest
 
 	fn<i64> memcmp(void const* a, void const* b, u64 len)!:
-		var a8End = (u8 const*)a + len
 		var a8 = (u8 const*)a
 		var b8 = (u8 const*)b
+		const a8End = a8 + len
 
 		if len >= MIN_MEM_LEN_USE_ALIGN:
 			while (u64 const)a8 % sizeof(u64): \\ Align to 8 bytes, testing for a8 < end would be redundant
@@ -109,7 +109,7 @@ space std:
 			
 			var a64 = (u64 const*)a8
 			var b64 = (u64 const*)b8
-			var a64End = (u64 const*)a8End - 1
+			const a64End = (u64 const*)a8End - 1
 
 			while a64 < a64End: \\ Compare 8 bytes at a time
 				if *a64++ != *b64++:

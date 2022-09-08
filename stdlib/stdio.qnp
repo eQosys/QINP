@@ -71,7 +71,7 @@ space std:
 		return printn(&char, 1)
 
 	fn<i32> print(?T val)!:
-		var<u8> str[32]
+		const<u8> str[32]
 		return print(itos(val, str, 10))
 
 	fn<i32> print(?T val, ...)!:
@@ -90,8 +90,8 @@ space std:
 		return 1
 
 	fn<i32> __printf(u8 const** pStr, ?T val)!:
-		var str = *pStr
-		var dropIndex = strchr(str, '%')
+		const str = *pStr
+		const dropIndex = strchr(str, '%')
 		if dropIndex == null:
 			*pStr = str + strlen(str)
 
@@ -106,7 +106,7 @@ space std:
 		return 1
 
 	fn<u8> getchar()!:
-		var<u8> buff[2]
+		const<u8> buff[2]
 		scann(buff, 1)
 		return *buff
 

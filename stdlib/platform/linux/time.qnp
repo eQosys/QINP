@@ -28,10 +28,10 @@ space std:
 		return __syscall(__SYS_CLOCK_GETTIME, clockID, (u64)t)
 
 	fn<u64> getTime()!:
-		var<__timespec> t
-		return __clock_gettime(__CLOCK_REALTIME, &t) < 0 ? \
+		var<__timespec> ts
+		return __clock_gettime(__CLOCK_REALTIME, &ts) < 0 ? \
 			-1 : \
-			t.seconds * 1000 + t.nanoseconds / 1000000
+			ts.seconds * 1000 + ts.nanoseconds / 1000000
 
 	fn<i32> sleep(u64 ms)!:
 		var<__timespec> ts

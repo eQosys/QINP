@@ -16,7 +16,7 @@ space std:
 		return fwrite(__STDOUT, str, num)
 
 	fn<i32> scann(u8* dest, u64 num)!:
-		var result = fread(__STDIN, dest, num)
+		const result = fread(__STDIN, dest, num)
 		if result >= 0:
 			dest[result] = 0
 		return result

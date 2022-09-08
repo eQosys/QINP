@@ -11,5 +11,5 @@ space std:
 	fn<void*> malloc(u64 size)!:
 		return null
 
-	fn<> free(void* ptr)!:
+	fn<> free(void* pBuff)!:
 		pass
