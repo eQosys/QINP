@@ -26,9 +26,9 @@
  - [fn<u64> std.__roundUp(u64 value, u64 alignment)]()
  - [fn<void*> std.__sbrk(i64 increment)]()
  - [fn<std.__MemBlockHeader*> std.__splitBlock(std.__MemBlockHeader* block, u64 newSizeAvail)]()
- - [fn<> std.free(void* ptr)]()
+ - [fn<> std.free(void* pBuff)]()
  - [fn<void*> std.malloc(u64 size)]()
- - [fn<void*> std.realloc(void* ptr, u64 size)]()
+ - [fn<void*> std.realloc(void* pBuff, u64 size)]()
 
 ## Packs/Unions
  - [pack std.__MemBlockHeader]()

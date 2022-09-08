@@ -147,6 +147,7 @@ bool isKeyword(const std::string& name)
 		"null",
 		"pack",
 		"pass",
+		"ptr",
 		"return",
 		"union",
 		"while",

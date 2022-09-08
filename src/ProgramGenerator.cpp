@@ -2399,15 +2399,38 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 
 std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 {
-	bool isStatic = isKeyword(peekToken(info), "static");
+	int isStatic = false;
+	int isConst = false;
+	int isPointer = false;
+	int isReference = false;
+	int isVariable = false;
+	
+	if (isStatic = isKeyword(peekToken(info), "static"))
+		nextToken(info);
 
 	if (isStatic && !isInFunction(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Static keyword can only be used inside of function definitions!");
+	
+	if (isConst = isKeyword(peekToken(info), "const"))
+		nextToken(info);
 
-	auto &varToken = peekToken(info, isStatic);
-	if (!isKeyword(varToken, "var"))
-		return {nullptr, nullptr};
-	nextToken(info, 1 + isStatic);
+	if (isReference = isKeyword(peekToken(info), "ref"))
+		nextToken(info);
+
+	if (isPointer = isKeyword(peekToken(info), "ptr"))
+		nextToken(info);
+
+	if (isVariable = isKeyword(peekToken(info), "var"))
+		nextToken(info);
+	
+	if (!isStatic && !isConst && !isReference && !isPointer && !isVariable)
+		return { nullptr, nullptr };
+
+	if (isPointer + isReference + isVariable > 1)
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The declarators 'ptr', 'ref' and 'var' cannot be used together!");
+
+	if (isConst && isVariable)
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The declarators 'const' and 'var' cannot be used together!");
 
 	Datatype datatype;
 	bool implicitDatatype = true;
@@ -2416,8 +2439,6 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		implicitDatatype = false;
 		parseExpected(info, Token::Type::Operator, "<");
 		datatype = getParseDatatype(info);
-		if (isVoid(datatype))
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
 		parseExpected(info, Token::Type::Operator, ">");
 	}
 
@@ -2452,9 +2473,7 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 
-	if (!implicitDatatype && isPackType(info.program, sym->var.datatype) && !isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
-		THROW_PROG_GEN_ERROR_POS(getBestPos(sym), "Cannot use declared-only pack type!");
-
+	// Parse the init expression if present
 	ExpressionRef initExpr = nullptr;
 	if (!isInPack(currSym(info)))
 	{
@@ -2465,20 +2484,48 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		}
 	}
 
+	// Deduce the datatype from the init expression if needed
 	if (implicitDatatype)
 	{
+		// Check for missing init expression
 		if (!initExpr)
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a variable declaration!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a variable declaration only!");
 
+		// Cannot deduce a datatype from a null assignment
 		if (isNull(initExpr->datatype))
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a null assignment!");
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot deduce a datatype from a null initialization!");
 
-		// TODO: Drop references
+		// Copy the datatype
 		sym->var.datatype = initExpr->datatype;
 
+		// Drop reference
+		if (sym->var.datatype.type == DTType::Reference)
+			sym->var.datatype = *sym->var.datatype.subType;
+
+		// Convert arrays to pointers
 		if (sym->var.datatype.type == DTType::Array)
 			sym->var.datatype.type = DTType::Pointer;
+
+		if (isPointer && sym->var.datatype.type != DTType::Pointer)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The deducted datatype must be a pointer!");
 	}
+
+	// Modify the datatype according to isConst, isPointer, isReference & isVariable
+	if (isPointer && !implicitDatatype) // Pointer handling must happen before constness
+		sym->var.datatype = Datatype(DTType::Pointer, sym->var.datatype);
+
+	if (isConst) // When using 'var' the constness won't be modified
+		sym->var.datatype.isConst = true;
+
+	if (isReference) // Reference handling must happen after constness
+		sym->var.datatype = Datatype(DTType::Reference, sym->var.datatype);
+
+
+	if (isVoid(sym->var.datatype))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");
+
+	if (!implicitDatatype && isPackType(info.program, sym->var.datatype) && !isDefined(getSymbol(currSym(info), sym->var.datatype.name)))
+		THROW_PROG_GEN_ERROR_POS(getBestPos(sym), "Cannot use declared-only pack type!");
 
 	addVariable(info, sym);
 

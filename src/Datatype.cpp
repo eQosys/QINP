@@ -116,8 +116,14 @@ bool isEnum(const ProgramRef program, const Datatype& datatype)
 bool isVoid(const Datatype& datatype)
 {
 	return
-		isOfType(datatype, DTType::Name) &&
-		datatype.name == "void";
+		(
+			isOfType(datatype, DTType::Name) &&
+			datatype.name == "void"
+		) ||
+		(
+			isOfType(datatype, DTType::Reference) &&
+			isVoid(*datatype.subType)
+		);
 }
 
 bool isVoidPtr(const Datatype& datatype)

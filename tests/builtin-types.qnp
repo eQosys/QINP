@@ -11,6 +11,8 @@ var<u32> vU32
 var<u64> vU64
 var<void*> vPtr
 
+ptr<void> vPtrImplicit
+
 std.print("sizeof(vBool) = ")
 std.print(sizeof(vBool))
 std.print(",")
@@ -67,6 +69,12 @@ std.print("\n")
 
 std.print("sizeof(vPtr) = ")
 std.print(sizeof(vPtr))
+std.print(",")
+std.print(sizeof(void*))
+std.print("\n")
+
+std.print("sizeof(vPtrImplicit) = ")
+std.print(sizeof(vPtrImplicit))
 std.print(",")
 std.print(sizeof(void*))
 std.print("\n")

@@ -242,11 +242,11 @@ space std:
 
 		return block + 1
 
-	fn<void*> realloc(void* ptr, u64 size)!:
-		if !ptr:
+	fn<void*> realloc(void* pBuff, u64 size)!:
+		if !pBuff:
 			return malloc(size)
 
-		var block = (__MemBlockHeader*)ptr - 1
+		var block = (__MemBlockHeader*)pBuff - 1
 
 		if size > block->sizeAvail:
 			var next = __getNextAdjacentAvailBlock(block)
@@ -262,7 +262,7 @@ space std:
 				next = (__MemBlockHeader*)malloc(size)
 				if !next--: return null
 				memcpy(next + 1, block + 1, block->sizeAvail)
-				free(ptr)
+				free(pBuff)
 				block = next
 			return (void*)(block + 1)
 		elif size < block->sizeAvail:
@@ -279,7 +279,7 @@ space std:
 					next = (__MemBlockHeader*)malloc(size)
 					if !next--: return null
 					memcpy(next + 1, block + 1, size)
-					free(ptr)
+					free(pBuff)
 					block = next
 			else:
 				next = __splitBlock(block, size)
@@ -288,12 +288,12 @@ space std:
 				\\ TODO: System free if next is the last block in the list
 			return (void*)(block + 1)
 		
-		return ptr
+		return pBuff
 
-	fn<> free(void* ptr)!:
-		if !ptr: return
+	fn<> free(void* pBuff)!:
+		if !pBuff: return
 
-		var block = (__MemBlockHeader*)ptr - 1
+		var block = (__MemBlockHeader*)pBuff - 1
 		__insertAvailBlock(block)
 		block = __mergeBlockWithNeighbors(block)
 

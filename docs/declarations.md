@@ -21,21 +21,47 @@ Variables can be initialized with an expression.
 Arrays can be declared with a size specified. The size must be a literal integer.
 
 Multidimensional arrays are supported.
-Arrays can not be initialized.
+Arrays can not be initialized at the moment.
 
 #### Usage
 
 > Simple Declaration/Definition
 >
-> var<`datatype`> `name`
+> `declarators`<`datatype`> `name`
 
 > Simple Declaration/Definition with initialization
 >
-> var<`datatype`> `name` = `expression`
+> `declarators`<`datatype`> `name` = `expression`
 
 > Array Declaration/Definition
 >
-> var<`datatype`> `name`[`size`]
+> `declarators`<`datatype`> `name`[`size`]
+
+#### Declarators
+
+The declarators are: `static`, `const`, `ptr`, `ref` and `var`
+
+The declarators `ptr`, `ref` and `var` cannot be used together in a single declaration. The same applies to `const` and `var`
+
+> In a declaration
+> ```qinp
+> ptr<u8>						\\ Datatype: u8*
+> ref<u8>						\\ Datatype: u8&
+> var<u8>						\\ Datatype: u8
+> const ptr<u8>					\\ Datatype: u8* const
+> const ref<u8>					\\ Datatype: u8 const&
+> ```
+
+> In a definition
+> ```qinp
+> ptr a = (i32*)null			\\ Datatype: i32*. Always a pointer.
+> ref b = a					\\ Datatype: i32*&. Always a reference.
+> var c = a					\\ Datatype: i32*. Always drops references.
+> const ptr d = (i32*)null	\\ Datatype: i32* const. The pointer is constant, the data pointed to may or may not be constant.
+> const ref e = c				\\ Datatype i32* const&. The data referenced is constant.
+> ```
+
+While using `var` does not modify the constness of the deduced datatype in implicit datatype deductions, using `const` forces the datatype to be const.
 
 #### Examples
 

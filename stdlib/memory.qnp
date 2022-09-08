@@ -32,14 +32,14 @@ space std:
 	fn<void*> malloc(u64 size)...		\\ Platform dependent implementation
 
 	\\ Reallocate a buffer to a given size
-	\\ @param ptr The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
+	\\ @param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
 	\\ @param size The new size of the buffer
 	\\ @return The pointer to the newly allocated memory.
-	fn<void*> realloc(void* ptr, u64 size)...		\\ Platform dependent implementation
+	fn<void*> realloc(void* pBuff, u64 size)...		\\ Platform dependent implementation
 
 	\\ Free a buffer
-	\\ @param buffer The buffer to free
-	fn<> free(void* buffer)...		\\ Platform dependent implementation
+	\\ @param pBuff The buffer to free
+	fn<> free(void* pBuff)...		\\ Platform dependent implementation
 
 
 
