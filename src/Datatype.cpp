@@ -66,11 +66,11 @@ bool preservesConstness(const Datatype& oldDt, const Datatype& newDt, bool ignor
 		return false;
 	
 	if (hasSubtype(oldDt) && hasSubtype(newDt))
-		return preservesConstness(*oldDt.subType, *newDt.subType);
+		return preservesConstness(*oldDt.subType, *newDt.subType, false);
 	else if (hasSubtype(oldDt))
-		return preservesConstness(*oldDt.subType, newDt);
+		return preservesConstness(*oldDt.subType, newDt, false);
 	else if (hasSubtype(newDt))
-		return preservesConstness(oldDt, *newDt.subType);
+		return preservesConstness(oldDt, *newDt.subType, false);
 	
 	return true;
 }

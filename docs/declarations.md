@@ -39,26 +39,24 @@ Arrays can not be initialized at the moment.
 
 #### Declarators
 
-The declarators are: `static`, `const`, `ptr`, `ref` and `var`
+The declarators are: `static`, `const`, `var` and `ref`
 
-The declarators `ptr`, `ref` and `var` cannot be used together in a single declaration. The same applies to `const` and `var`
+The declarators `const` and `var` cannot be used together. The same applies to `var` and `ref`.
 
 > In a declaration
 > ```qinp
-> ptr<u8>						\\ Datatype: u8*
-> ref<u8>						\\ Datatype: u8&
+> const<u8>						\\ Datatype: u8 const
 > var<u8>						\\ Datatype: u8
-> const ptr<u8>					\\ Datatype: u8* const
+> ref<u8>						\\ Datatype: u8&
 > const ref<u8>					\\ Datatype: u8 const&
 > ```
 
 > In a definition
 > ```qinp
-> ptr a = (i32*)null			\\ Datatype: i32*. Always a pointer.
-> ref b = a					\\ Datatype: i32*&. Always a reference.
-> var c = a					\\ Datatype: i32*. Always drops references.
-> const ptr d = (i32*)null	\\ Datatype: i32* const. The pointer is constant, the data pointed to may or may not be constant.
-> const ref e = c				\\ Datatype i32* const&. The data referenced is constant.
+> const a = (i32*)null		\\ Datatype: i32* const. Pointer is const, data pointed to is not const.
+> var b = a					\\ Datatype: i32*. Always drops references. (Makes a copy)
+> ref c = a					\\ Datatype: i32* const&. Always a reference.
+> const ref d = c				\\ Datatype: i32* const&. The data referenced is constant.
 > ```
 
 While using `var` does not modify the constness of the deduced datatype in implicit datatype deductions, using `const` forces the datatype to be const.

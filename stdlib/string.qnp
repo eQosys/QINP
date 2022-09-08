@@ -171,50 +171,50 @@ space std:
 defer
 space std:
 	fn<u64> strlen(u8 const* str)!:
-		var begin = str
+		const begin = str
 		while *str: ++str
 		return (u64)(str - begin)
 
 	fn<u8*> strlwr(u8* str)!:
-		var begin = str
+		const begin = str
 		while *str: *str++ = tolower(*str)
 		return begin
 
 	fn<u8*> strlwr(u8* str, u64 num)!:
-		var begin = str
+		const begin = str
 		while num--: *str++ = tolower(*str)
 		return begin
 
 	fn<u8*> strupr(u8* str)!:
-		var begin = str
+		const begin = str
 		while *str: *str++ = toupper(*str)
 		return begin
 
 	fn<u8*> strupr(u8* str, u64 num)!:
-		var begin = str
+		const begin = str
 		while num--: *str++ = toupper(*str)
 		return begin
 	
 	fn<u8*> strcat(u8* dest, u8 const* src)!:
-		var begin = dest
+		const begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src)
 		return begin
 
 	fn<u8*> strcat(u8* dest, u8 const* src, u64 num)!:
-		var begin = dest
+		const begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src, num)
 		return begin
 
 	fn<u8*> strcpy(u8* dest, u8 const* src)!:
-		var begin = dest
+		const begin = dest
 		while *src: *dest++ = *src++
 		*dest = null
 		return begin
 
 	fn<u8*> strcpy(u8* dest, u8 const* src, u64 num)!:
-		var begin = dest
+		const begin = dest
 		while num--: *dest++ = *src++
 		*dest = null
 		return begin
@@ -256,8 +256,8 @@ space std:
 		return last
 
 	fn<u8 const*> strstr(u8 const* str, u8 const* substr)!:
-		var sublen = strlen(substr)
-		var lastToCheck = str + strlen(str) - sublen
+		const sublen = strlen(substr)
+		const lastToCheck = str + strlen(str) - sublen
 		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
 				return str
@@ -265,8 +265,8 @@ space std:
 		return null
 
 	fn<u8 const*> strrstr(u8 const* str, u8 const* substr)!:
-		var sublen = strlen(substr)
-		var lastToCheck = str + strlen(str) - sublen
+		const sublen = strlen(substr)
+		const lastToCheck = str + strlen(str) - sublen
 		var<u8 const*> last = null
 		while str <= lastToCheck:
 			if !strcmp(str, substr, sublen):
@@ -275,12 +275,12 @@ space std:
 		return last
 
 	fn<u8*> strset(u8* str, u8 ch)!:
-		var begin = str
+		const begin = str
 		while *str: *str++ = ch
 		return begin
 
 	fn<u8*> strset(u8* str, u8 ch, u64 num)!:
-		var begin = str
+		const begin = str
 		while num--: *str++ = ch
 		return begin
 
@@ -288,10 +288,10 @@ space std:
 		return strrev(str, str + strlen(str))
 
 	fn<u8*> strrev(u8* begin, u8* end)!:
-		var str = begin
+		const str = begin
 
 		while begin < end:
-			var<u8> temp = *begin
+			const<u8> temp = *begin
 			*begin++ = *--end
 			*end = temp
 
@@ -306,7 +306,7 @@ space std:
 
 		if !next: return null
 
-		var begin = next
+		const begin = next
 		while *next:
 			if strchr(delimiters, *next):
 				*next++ = null
@@ -317,9 +317,9 @@ space std:
 		return begin
 
 	fn<u8*> itos(i64 num, u8* str, i64 base)!:
-		static var<u8 const*const> __baseCharsLower = __BASE_CHARS_LOWER
-		var begin = str
-		var negative = num < 0
+		static const<u8 const*> __baseCharsLower = __BASE_CHARS_LOWER
+		const begin = str
+		const negative = num < 0
 
 		if negative: num *= -1
 
@@ -335,9 +335,9 @@ space std:
 		return strrev(begin, str)
 
 	fn<i64> stoi(u8 const* str, i64 base)!:
-		static var<u8 const*const> __baseCharsLower = __BASE_CHARS_LOWER
+		static const<u8 const*> __baseCharsLower = __BASE_CHARS_LOWER
 		var num = 0
-		var negative = *str == '-'
+		const negative = *str == '-'
 
 		if negative: ++str
 

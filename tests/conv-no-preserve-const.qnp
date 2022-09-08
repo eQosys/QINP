@@ -1,1 +1,1 @@
-ptr<u8> str = "Hello world!"
+var<u8*> str = "Hello world!"

@@ -671,7 +671,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 #define CONV_SCORE_PTR_TO_VOID_PTR 0x10
 #define CONV_SCORE_NARROW_CONV 0x20
 
-int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness)
+int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit)
 {
 	auto retCorrect = [&isExplicit](int score) -> int
 	{
@@ -680,13 +680,13 @@ int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit
 
 	from = dtArraysToPointer(from);
 	to = dtArraysToPointer(to);
-	if (dtEqual(from, to, ignoreFirstConstness))
+	if (dtEqual(from, to, true))
 		return retCorrect(CONV_SCORE_NO_CONV);
 
-	if (dtEqualNoConst(from, to) && preservesConstness(from, to, ignoreFirstConstness))
+	if (dtEqualNoConst(from, to) && preservesConstness(from, to, true))
 		return retCorrect(CONV_SCORE_MAKE_CONST);
 
-	if (isPointer(from) && isVoidPtr(to) && preservesConstness(from, to, ignoreFirstConstness))
+	if (isPointer(from) && isVoidPtr(to) && preservesConstness(from, to, true))
 		return retCorrect(CONV_SCORE_PTR_TO_VOID_PTR);
 
 	if (isNull(from))
@@ -828,7 +828,7 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 			}
 			else
 			{
-				int convScore = calcConvScore(info, actualType, expectedType, false, true);
+				int convScore = calcConvScore(info, actualType, expectedType, false);
 				if (convScore == CONV_SCORE_NOT_POSSIBLE)
 					return CONV_SCORE_NOT_POSSIBLE;
 				score += convScore;
@@ -919,7 +919,7 @@ SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vecto
 	for (int i = 0; i < paramExpr.size(); ++i)
 	{
 		if (!dtEqual(paramExpr[i]->datatype, bestCandidate->func.params[i]->var.datatype))
-			paramExpr[i] = genConvertExpression(info, paramExpr[i], bestCandidate->func.params[i]->var.datatype, false, true, true);
+			paramExpr[i] = genConvertExpression(info, paramExpr[i], bestCandidate->func.params[i]->var.datatype, false, true);
 	}
 
 	return bestCandidate;
@@ -1411,14 +1411,14 @@ bool isConvPossible(ProgGenInfo &info, const Datatype &oldDt, const Datatype &ne
 	return false;
 }
 
-ExpressionRef genConvertExpression(ProgGenInfo &info, ExpressionRef expToConvert, const Datatype &newDatatype, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
+ExpressionRef genConvertExpression(ProgGenInfo &info, ExpressionRef expToConvert, const Datatype &newDatatype, bool isExplicit, bool doThrow)
 {
 	expToConvert = genAutoArrayToPtr(expToConvert);
 
 	if (dtEqual(expToConvert->datatype, newDatatype))
 		return expToConvert;
 
-	if (dtEqual(expToConvert->datatype, newDatatype, ignoreFirstConstness))
+	if (dtEqual(expToConvert->datatype, newDatatype))
 		return makeConvertExpression(expToConvert, newDatatype);
 
 	if (isNull(expToConvert->datatype))
@@ -2267,14 +2267,14 @@ ExpressionRef getParseExpression(ProgGenInfo &info, int precLvl)
 	return autoSimplifyExpression(expr);
 }
 
-ExpressionRef getParseExpression(ProgGenInfo &info, int precLvl, const Datatype &targetType, bool isExplicit, bool doThrow, bool ignoreFirstConstness)
+ExpressionRef getParseExpression(ProgGenInfo &info, int precLvl, const Datatype &targetType, bool isExplicit, bool doThrow)
 {
 	auto expr = getParseExpression(info, precLvl);
 	if (!expr)
 		return nullptr;
 
 	if (!dtEqual(expr->datatype, targetType))
-		expr = genConvertExpression(info, expr, targetType, isExplicit, doThrow, ignoreFirstConstness);
+		expr = genConvertExpression(info, expr, targetType, isExplicit, doThrow);
 
 	return expr;
 }
@@ -2401,9 +2401,8 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 {
 	int isStatic = false;
 	int isConst = false;
-	int isPointer = false;
-	int isReference = false;
 	int isVariable = false;
+	int isReference = false;
 	
 	if (isStatic = isKeyword(peekToken(info), "static"))
 		nextToken(info);
@@ -2414,23 +2413,20 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 	if (isConst = isKeyword(peekToken(info), "const"))
 		nextToken(info);
 
-	if (isReference = isKeyword(peekToken(info), "ref"))
-		nextToken(info);
-
-	if (isPointer = isKeyword(peekToken(info), "ptr"))
-		nextToken(info);
-
 	if (isVariable = isKeyword(peekToken(info), "var"))
 		nextToken(info);
-	
-	if (!isStatic && !isConst && !isReference && !isPointer && !isVariable)
-		return { nullptr, nullptr };
 
-	if (isPointer + isReference + isVariable > 1)
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The declarators 'ptr', 'ref' and 'var' cannot be used together!");
+	if (isReference = isKeyword(peekToken(info), "ref"))
+		nextToken(info);
+	
+	if (!isStatic && !isConst && !isVariable)
+		return { nullptr, nullptr };
 
 	if (isConst && isVariable)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The declarators 'const' and 'var' cannot be used together!");
+
+	if (isVariable && isReference)
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The declarators 'var' and 'ref' cannot be used together!");
 
 	Datatype datatype;
 	bool implicitDatatype = true;
@@ -2505,21 +2501,15 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		// Convert arrays to pointers
 		if (sym->var.datatype.type == DTType::Array)
 			sym->var.datatype.type = DTType::Pointer;
-
-		if (isPointer && sym->var.datatype.type != DTType::Pointer)
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The deducted datatype must be a pointer!");
 	}
 
-	// Modify the datatype according to isConst, isPointer, isReference & isVariable
-	if (isPointer && !implicitDatatype) // Pointer handling must happen before constness
-		sym->var.datatype = Datatype(DTType::Pointer, sym->var.datatype);
+	// Modify the datatype according to isConst & isVariable
 
 	if (isConst) // When using 'var' the constness won't be modified
 		sym->var.datatype.isConst = true;
 
 	if (isReference) // Reference handling must happen after constness
 		sym->var.datatype = Datatype(DTType::Reference, sym->var.datatype);
-
 
 	if (isVoid(sym->var.datatype))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot declare variable of type void!");

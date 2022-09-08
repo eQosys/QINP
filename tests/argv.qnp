@@ -1,7 +1,7 @@
 import "stdio.qnp"
 import "system.qnp"
 
-ptr<u8*> argv
+var<u8**> argv
 var<u64> argc = std.getargs(&argv)
 
 var<u64> i = 0

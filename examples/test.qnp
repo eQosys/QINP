@@ -6,9 +6,9 @@ import "stdio.qnp"
 import "time.qnp"
 
 std.print("Allocating 100 bytes\n")
-ptr buff1 = std.malloc(100)
+var buff1 = std.malloc(100)
 std.print("Allocating 10000 bytes\n")
-ptr buff2 = std.malloc(10000)
+const buff2 = std.malloc(10000)
 
 std.print("Freeing 100 bytes\n")
 std.free(buff1)
@@ -27,12 +27,12 @@ buff1 = std.malloc(1024 * 1024 * 1024)
 std.print(" DONE\n")
 
 std.print("Clearing buff1... ")
-var begin = std.getTime()
+const begin = std.getTime()
 std.memset(buff1, 0, 1024 * 1024 * 1024)
-var end = std.getTime()
+const end = std.getTime()
 std.print(" DONE\n -> Time: % ms\n", end - begin)
 
-ptr str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+const str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std.memcpy(str, "..................", 9)
 std.print("%-----------------\n", str)
 
@@ -40,13 +40,13 @@ std.print("Freeing 1024 megabytes...")
 std.free(buff1)
 std.print(" DONE\n")
 
-ptr str1 = (u8*)"Hello world, my name is TecStylos!"
-ptr tok = std.strtok(str1, " ")
+const str1 = (u8*)"Hello world, my name is TecStylos!"
+var tok = std.strtok(str1, " ")
 while tok:
 	std.print(tok, "\n")
 	tok = std.strtok(null, " ")
 
-const ptr str2 = \
+const str2 = \
 	"Hello world, " \
 	"my name is TecStylos!\n"
 std.print(str2)
@@ -65,7 +65,7 @@ std.tolower('A')
 
 var<u8> buff[10000]
 
-ptr f = std.fopen("examples/test.qnp", "r")
+const f = std.fopen("examples/test.qnp", "r")
 std.print("Read % bytes\n", std.fread(f, buff, sizeof(buff) - 1))
 std.fclose(f)
 buff[sizeof(buff) - 1] = 0
@@ -79,8 +79,8 @@ enum Data:
 
 std.print((i64)Data.C, "\n")
 
-ptr testStr1 = (u8*)"This is a test string"
-ptr testStr2 = (u8*)"This is a test string"
+const testStr1 = (u8*)"This is a test string"
+const testStr2 = (u8*)"This is a test string"
 
 testStr1[0] = '.'
 

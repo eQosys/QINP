@@ -117,7 +117,7 @@ bool leftConversionIsProhibited(Expression::ExprType eType);
 
 SymbolRef makeMacroSymbol(const Token::Position& pos, const std::string& name);
 
-ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
+ExpressionRef genConvertExpression(ProgGenInfo& info, ExpressionRef expToConvert, const Datatype& newDatatype, bool isExplicit = false, bool doThrow = true);
 
 void parseGlobalCode(ProgGenInfo& info, bool fromBeginning = true);
 
@@ -137,7 +137,7 @@ SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vecto
 
 SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom);
 
-int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit, bool ignoreFirstConstness);
+int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit);
 
 int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<ExpressionRef>& paramExpr);
 
@@ -201,7 +201,7 @@ void autoFixDatatypeMismatch(ProgGenInfo& info, ExpressionRef exp);
 
 ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl = 0);
 
-ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl, const Datatype& targetType, bool isExplicit = false, bool doThrow = true, bool ignoreFirstConstness = false);
+ExpressionRef getParseExpression(ProgGenInfo& info, int precLvl, const Datatype& targetType, bool isExplicit = false, bool doThrow = true);
 
 ExpressionRef getParseEnumMember(ProgGenInfo& info);
 

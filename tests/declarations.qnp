@@ -4,9 +4,9 @@ var<i32> varDef = 10
 
 var<i32> arrDecl[16]
 
-ptr<i32> ptrDecl
+var<i32*> ptrDecl
 
-ptr<i32> ptrDef = &varDecl
+var<i32*> ptrDef = &varDecl
 
 fn<> funcDecl(i32 arg)...
 
@@ -15,10 +15,10 @@ fn<bool> funcDef(u64 arg):
 
 pack Data...
 
-ptr<Data> pData
+var<Data*> pData
 
 pack Data:
-	ptr<Data> pSub
+	var<Data*> pSub
 	var<i32> val
 
 var<Data> data

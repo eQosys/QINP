@@ -1,7 +1,7 @@
 import "stdio.qnp"
 
 var<i32> variable = 123
-ptr<i32> pVar = &variable
+var<i32*> pVar = &variable
 
 std.print("var = ")
 std.print(variable)
@@ -39,7 +39,7 @@ std.print("data.x = ")
 std.print(data.x)
 std.print("\n")
 
-ptr<Data> pData = &data
+var<Data*> pData = &data
 
 std.print("pData->x = ")
 std.print(pData->x)
