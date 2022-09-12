@@ -105,8 +105,8 @@ space std:
 		return __syscall(__SYS_BRK, size)
 
 	fn<void*> __sbrk(i64 increment)!:
-		var<u64> oldSize = __brk(0)
-		var<u64> newSize = oldSize + increment
+		const<u64> oldSize = __brk(0)
+		const<u64> newSize = oldSize + increment
 		return __brk(newSize) == oldSize ? (void*)null : (void*)oldSize
 
 	fn<u64> __roundUp(u64 value, u64 alignment)!:
@@ -178,7 +178,7 @@ space std:
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
 			return null
 
-		var newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
+		const newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
 		newBlock->sizeAvail = block->sizeAvail - newSizeAvail - sizeof(__MemBlockHeader)
 		block->sizeAvail = newSizeAvail
 
@@ -214,8 +214,8 @@ space std:
 	fn<__MemBlockHeader*> __allocBlock(u64 minSizeAvail)!:
 		if !minSizeAvail: return null
 
-		var<u64> size = __roundUp(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
-		var block = (__MemBlockHeader*)__sbrk(size)
+		const<u64> size = __roundUp(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
+		const block = (__MemBlockHeader*)__sbrk(size)
 		if !block: return null
 
 		block->sizeAvail = size - sizeof(__MemBlockHeader)
@@ -237,7 +237,7 @@ space std:
 
 		if !block: return null
 
-		var newBlock = __splitBlock(block, size)
+		const newBlock = __splitBlock(block, size)
 		if newBlock: __insertAvailBlock(newBlock)
 
 		return block + 1

@@ -50,7 +50,7 @@ The `__line__` keyword is replaced with the line number of the keyword.
 
 The `alias` keyword can be used give an existing symbol a new name.
 
-Aliases and [macros](#define) are not interchangeable.
+Aliases and [macros](#define) are not interchangeable and have different behaviors.
 
 #### Usage
 
@@ -67,9 +67,9 @@ alias print = std.print \\ print is now a synonym for std.print
 ---
 
 ### Inline Assembly
-Inline assembly can written through the `asm` and `assembly` keywords. The former is usually used to write single line assembly code, while the latter is mostly used to write longer blocks of inline assembly, but both can be used in the same way.
+Inline assembly can be written through the `asm` and `assembly` keywords. The former is usually used to write single line assembly code, while the latter is mostly used to write longer blocks of inline assembly, but both can be used in the same way.
 
-Variables can also be used in inline assembly. Global variables are replaced with their mangled name, local variables are replaced by their offset to the base pointer (including a +/- sign).
+Variables can also be used in inline assembly. Global variables are replaced with their mangled name, local variables are replaced by their offset to the base pointer (including a leading +/- sign).
 
 #### Usage
 
@@ -99,8 +99,11 @@ Variables can also be used in inline assembly. Global variables are replaced wit
 #### Examples
 
 ```qinp
-asm: "mov rax, [$(global_var)]"
-assembly: "add rax, [rbp $(local_var)]"
+var u64 global_var
+fn testFunc():
+	var u64 local_var
+	asm: "mov rax, [$(global_var)]"
+	assembly: "add rax, [rbp $(local_var)]"
 ```
 
 ```qinp
@@ -116,7 +119,13 @@ assembly:
 
 ### Const
 
-TODO
+The `const` keyword is a [declarator](declarations.md#declarators) and a datatype specifier. It is used to mark a datatype as constant/not modifiable.
+
+#### Examples
+
+> ```qinp
+> var<u8 const*> str = "Hello world!"
+> ```
 
 ---
 
