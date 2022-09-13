@@ -75,6 +75,7 @@ struct Symbol
 		std::string asmName;
 		bool isBlueprint = false;
 		bool isVariadic = false;
+		bool hasExplicitBlueprintOrder;
 		bool genFromBlueprint = false;
 		TokenListRef blueprintTokens;
 	} func;

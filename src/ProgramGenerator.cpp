@@ -2589,18 +2589,17 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (!isInGlobal(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
 
-	// ----- Previous Source -----
-
 	auto declDefPos = peekToken(info).pos;
 
+	// Create the function symbol
 	SymbolRef funcSym = std::make_shared<Symbol>();
-
 	funcSym->pos.decl = declDefPos;
 	funcSym->type = SymType::FunctionSpec;
 	funcSym->name = name;
 	funcSym->func.body = std::make_shared<Body>();
 	funcSym->func.retType = datatype;
 
+	// Parse the parameter list
 	parseExpected(info, Token::Type::Separator, "(");
 
 	while (!isSeparator(peekToken(info), ")"))
@@ -2642,9 +2641,11 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 	parseExpected(info, Token::Type::Separator, ")");
 
+	// Set blueprint flag
 	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic)
 		funcSym->func.isBlueprint = true;
 
+	// Check whether a pre declaration is required or not
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
 		nextToken(info);
@@ -2659,6 +2660,28 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	else if (!reqPreDecl && preDeclSym && !preDeclSym->func.genFromBlueprint)
 		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
 
+	// Parse the explicit blueprint order if provided
+	if (isSeparator(peekToken(info), "["))
+	{
+		nextToken(info);
+
+		while (true)
+		{
+			if (!isIdentifier(peekToken(info)))
+				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected blueprint macro name!");
+			
+			// TODO: Add the name to a separate blueprint macro list
+
+			if (isSeparator(peekToken(info), "]"))
+				break;
+			
+			parseExpected(info, Token::Type::Separator, ",");
+		}
+
+		parseExpected(info, Token::Type::Separator, "]");
+	}
+
+	// Check if it's a declaration or definition
 	funcSym->state = SymState::Defined;
 	if (isSeparator(peekToken(info), "..."))
 	{

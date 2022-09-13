@@ -10,11 +10,6 @@ fn printPos(i64 x, i64 y)...
 
 printPos(getPos())
 
-fn<bool> testFunc():
-	var<i64> localVariable
-	const<i64> localConstant
-	ptr<i64> \\ same as var<i64*>
-
 enum<i8> Color:
 	...
 
