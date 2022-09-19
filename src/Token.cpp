@@ -3,6 +3,22 @@
 #include <iostream>
 #include <set>
 
+bool operator==(const Token::Position& left, const Token::Position& right)
+{
+	return 
+		left.line == right.line &&
+		left.column == right.column &&
+		left.file == right.file;
+}
+
+bool operator==(const Token& left, const Token& right)
+{
+	return
+		left.type == right.type &&
+		left.value == right.value ;//&&
+		//left.pos == right.pos;
+}
+
 Token makeToken(Token::Position pos, Token::Type type, const std::string& value)
 {
 	Token token;

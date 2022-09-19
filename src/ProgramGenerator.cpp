@@ -1113,6 +1113,9 @@ SymbolRef addFunction(ProgGenInfo &info, SymbolRef func)
 	if (isDefined(existingOverload))
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
 
+	if (func->func.hasExplicitBlueprintOrder != existingOverload->func.hasExplicitBlueprintOrder)
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching explicit blueprint macro list!: " + getPosStr(getBestPos(existingOverload)));
+
 	return replaceSymbol(existingOverload, func);
 }
 
@@ -2403,13 +2406,13 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 	int isConst = false;
 	int isVariable = false;
 	int isReference = false;
-	
+
 	if (isStatic = isKeyword(peekToken(info), "static"))
 		nextToken(info);
 
 	if (isStatic && !isInFunction(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Static keyword can only be used inside of function definitions!");
-	
+
 	if (isConst = isKeyword(peekToken(info), "const"))
 		nextToken(info);
 
@@ -2418,9 +2421,9 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 
 	if (isReference = isKeyword(peekToken(info), "ref"))
 		nextToken(info);
-	
+
 	if (!isStatic && !isConst && !isVariable)
-		return { nullptr, nullptr };
+		return {nullptr, nullptr};
 
 	if (isConst && isVariable)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "The declarators 'const' and 'var' cannot be used together!");
@@ -2554,13 +2557,12 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	auto &varToken = peekToken(info);
 	if (!isKeyword(varToken, "fn"))
 		return false;
-	
-	TokenList::iterator itFuncBegin = info.currToken;
+
+	auto itFuncBegin = info.currToken;
 	while (
 		info.tokens->begin() != itFuncBegin &&
 		isWhitespace(*std::prev(itFuncBegin)) &&
-		!isNewline(*std::prev(itFuncBegin))
-	)
+		!isNewline(*std::prev(itFuncBegin)))
 		--itFuncBegin;
 
 	nextToken(info);
@@ -2641,9 +2643,54 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 	parseExpected(info, Token::Type::Separator, ")");
 
+	// Parse the explicit blueprint order if provided
+	TokenList::iterator itExplicitListBegin = info.currToken;
+	TokenList::iterator itExplicitListEnd = info.currToken;
+	if (isSeparator(peekToken(info), "["))
+	{
+		nextToken(info);
+		funcSym->func.hasExplicitBlueprintOrder = true;
+
+		std::vector<Token> newBlueprintMacroTokens;
+
+		while (true)
+		{
+			if (!isIdentifier(peekToken(info)))
+				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected blueprint macro name!");
+
+			newBlueprintMacroTokens.push_back(nextToken(info));
+
+			if (isSeparator(peekToken(info), "]"))
+				break;
+
+			parseExpected(info, Token::Type::Separator, ",");
+		}
+
+		parseExpected(info, Token::Type::Separator, "]");
+
+		itExplicitListEnd = info.currToken;
+
+		for (auto& tok : newBlueprintMacroTokens)
+		{
+			if (std::count(newBlueprintMacroTokens.begin(), newBlueprintMacroTokens.end(), tok) > 1)
+				THROW_PROG_GEN_ERROR_TOKEN(tok, "Multiple definitions of '" + tok.value + "' in explicit blueprint macro list!");
+		}
+
+		for (auto& tok : blueprintMacroTokens)
+		{
+			if (std::find(newBlueprintMacroTokens.begin(), newBlueprintMacroTokens.end(), tok) == newBlueprintMacroTokens.end())
+				THROW_PROG_GEN_ERROR_TOKEN(tok, "Explicit blueprint macro list must contain all introduced macro names!");
+		}
+
+		blueprintMacroTokens = newBlueprintMacroTokens;
+	}
+
 	// Set blueprint flag
-	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic)
+	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic || funcSym->func.hasExplicitBlueprintOrder)
+	{
 		funcSym->func.isBlueprint = true;
+		funcSym->func.blueprintTokens = std::make_shared<TokenList>();
+	}
 
 	// Check whether a pre declaration is required or not
 	bool reqPreDecl = isOperator(peekToken(info), "!");
@@ -2659,27 +2706,6 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing pre-declaration before explicit function definition!");
 	else if (!reqPreDecl && preDeclSym && !preDeclSym->func.genFromBlueprint)
 		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
-
-	// Parse the explicit blueprint order if provided
-	if (isSeparator(peekToken(info), "["))
-	{
-		nextToken(info);
-
-		while (true)
-		{
-			if (!isIdentifier(peekToken(info)))
-				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected blueprint macro name!");
-			
-			// TODO: Add the name to a separate blueprint macro list
-
-			if (isSeparator(peekToken(info), "]"))
-				break;
-			
-			parseExpected(info, Token::Type::Separator, ",");
-		}
-
-		parseExpected(info, Token::Type::Separator, "]");
-	}
 
 	// Check if it's a declaration or definition
 	funcSym->state = SymState::Defined;
@@ -2701,8 +2727,6 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 	if (funcSym->func.isBlueprint)
 	{
-		funcSym->func.blueprintTokens = std::make_shared<TokenList>();
-
 		if (isDefined(funcSym))
 		{
 			parseExpectedColon(info);
@@ -2724,6 +2748,17 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 		*funcSym->func.blueprintTokens = TokenList(itFuncBegin, info.currToken);
 		funcSym->func.blueprintTokens->push_back(makeToken(Token::Type::EndOfCode, "<end-of-code>"));
+
+		if (itExplicitListBegin != itExplicitListEnd)
+		{
+			uint64_t offset = std::distance(itFuncBegin, itExplicitListBegin);
+			auto length = std::distance(itExplicitListBegin, itExplicitListEnd);
+			auto begin = funcSym->func.blueprintTokens->begin();
+			std::advance(begin, offset);
+			auto end = begin;
+			std::advance(end, length);
+			funcSym->func.blueprintTokens->erase(begin, end);
+		}
 	}
 	else if (isDefined(funcSym))
 	{

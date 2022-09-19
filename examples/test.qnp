@@ -94,7 +94,7 @@ std.print("TestStr1: %\nTestStr2: %\n", testStr1, testStr2)
 std.print("File:Line -> %:%\n", __file__, __line__)
 std.print("File:Line -> ", __file__, ":", __line__, "\n")
 
-fn<?T> sum(?T a, ?T b)...
+fn<?T> sum(?T a, ?T b) [T]...
 
 fn<?T> sum(?T a, ...)...
 
@@ -111,7 +111,7 @@ import "defer.qnp"
 
 print("Imported defer.qnp!\n")
 
-fn<?T> sum(?T a, ?T b)!:
+fn<?T> sum(?T a, ?T b) [T]!:
 	return a + b
 
 fn<?T> sum(?T a, ...)!:

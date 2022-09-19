@@ -36,6 +36,10 @@ struct Token
 	std::vector<Position> posHistory;
 };
 
+bool operator==(const Token::Position& left, const Token::Position& right);
+
+bool operator==(const Token& left, const Token& right);
+
 Token makeToken(Token::Position pos, Token::Type type, const std::string& value);
 
 Token makeToken(Token::Type type, const std::string& value);
