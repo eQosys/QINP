@@ -15,5 +15,5 @@
  - [fn<void*> std.realloc(void* pBuff, u64 size) ...]()
 
 ## Macros
- - [std.MIN_MEM_LEN_USE_ALIGN]()
+ - [std.__MIN_MEM_LEN_USE_ALIGN]()
 

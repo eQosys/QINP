@@ -1,5 +1,6 @@
 import "stdio.qnp"
 import "time.qnp"
+import "memory.qnp"
 
 define WIDTH 20
 define HEIGHT 10
@@ -7,10 +8,10 @@ define N_ITERATIONS 50
 
 pack Grid: var<bool> cells[WIDTH][HEIGHT]
 
-var<Grid> grids[2]
-
-var pMain = grids + 0
-var pBack = grids + 1
+std.print("Allocating required memory...")
+var pMain = (Grid*)std.malloc(sizeof(Grid))
+var pBack = (Grid*)std.malloc(sizeof(Grid))
+std.print(" DONE!\n")
 
 fn<> flip():
 	var pTemp = pMain
@@ -66,11 +67,11 @@ fn<bool> hasChanged():
 				return true
 	return false
 
-grids[0].cells[0][2] = true
-grids[0].cells[1][0] = true
-grids[0].cells[1][2] = true
-grids[0].cells[2][1] = true
-grids[0].cells[2][2] = true
+pMain->cells[0][2] = true
+pMain->cells[1][0] = true
+pMain->cells[1][2] = true
+pMain->cells[2][1] = true
+pMain->cells[2][2] = true
 
 var n = 0
 while n++ < N_ITERATIONS:
@@ -85,3 +86,8 @@ while n++ < N_ITERATIONS:
 show()
 
 std.print("Ran for % iterations\n", n)
+
+std.print("Freeing allocated memory...")
+std.free(pMain)
+std.free(pBack)
+std.print(" DONE\n")
