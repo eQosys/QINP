@@ -8,7 +8,7 @@ space std:
 	fn<i32> __ioctl(i32 fileDesc, u64 request)...
 	fn<i32> __ioctl(i32 fileDesc, u64 request, void* param1)...
 
-	define __IOCTL_NREAD 21531
+	define __IOCTL_NREAD 21531 \\ 0x541B
 
 defer
 space std:

@@ -4,9 +4,9 @@
 import "../../fileio.qnp"
 
 space std:
-	define __STDIN (File*)0
-	define __STDOUT (File*)1
-	define __STDERR (File*)2
+	define __STDIN (.std.File*)0
+	define __STDOUT (.std.File*)1
+	define __STDERR (.std.File*)2
 
 
 
