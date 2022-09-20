@@ -16,6 +16,16 @@ enum<i8> Color:
 
 enum<i64> AnyEnum...
 
+flag<i64> FILEIO: \\ Similar to enum, but uses explicit as bitshifts. (Final values are 1, 2, 4, 8, ...)
+	READ,  \\ = 0; final: 1 << 0 (1)
+	WRITE, \\ = 1; final: 1 << 1 (2)
+	BINARY \\ = 2; final: 1 << 2 (4)
+	\\ Special behavior for some operators:
+	\\ a + b -> Combines two flags								(C++: a | b)
+	\\ a - b -> Removes right operand from left operand			(C++: a & ~b)
+	\\ a | b -> Check if right operand is found in left operand (C++: (bool)(a & b)
+	\\ a & b -> Check if both operands have an exact match		(C++: a == b)
+
 fn<?Tnew> convert(?Told obj) [Told, Tnew]... \\ Specify the order of blueprint macros
 \\ When a macro list is given, every introduced macro must be present in the list.
 \\ The macro list may introduce new macros that can be used inside of the function body.
@@ -31,3 +41,20 @@ pack List [T]:
 	var<ListNode<T>*> m_pLast
 	var<u64> m_size
 	var<u64> m_nReserved
+
+	fn<> __construct()...
+	fn<> __destruct()...
+	fn<u64> size()...
+	fn<> append(T elem)...
+	fn<> insert(u64 index, T elem)...
+	fn<> remove(u64 index)...
+	fn<> remove(u64 first, u64 cound)...
+
+fn<> List.__construct():
+	pass
+
+fn<> List.__destruct():
+	pass
+
+fn<u64> List.size():
+	return m_size

@@ -133,3 +133,10 @@ std.scann(testBuff, 5)
 std.print(" -> ", testBuff)
 
 std.exit(std.EXIT_FAILURE)
+
+
+fn<?T> normalize(?T val) [T, Tnormalized]:
+	var<Tnormalized> temp = val
+	return temp
+
+std.print("Normalized: %\n", normalize(10000))

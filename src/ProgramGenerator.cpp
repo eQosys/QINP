@@ -586,7 +586,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	enterSymbol(info, info.program->symbols);
 
 	// Add macros
-	for (auto &[name, sym] : resolvedMacros)
+	for (auto& [name, sym] : resolvedMacros)
 		addSymbol(currSym(info), sym);
 
 	// Copy the blueprint tokens
@@ -848,7 +848,7 @@ void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidat
 	if (!overloads)
 		return;
 
-	for (auto &[fName, fSym] : overloads->subSymbols)
+	for (auto& [fName, fSym] : overloads->subSymbols)
 	{
 		if (fName == BLUEPRINT_SYMBOL_NAME)
 		{
