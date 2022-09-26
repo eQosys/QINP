@@ -32,7 +32,7 @@ ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo &info)
 	backup.tokens = info.tokens;
 	backup.progPath = info.progPath;
 	backup.currToken = info.currToken;
-	backup.indent = info.indent;
+	backup.indentLvl = info.indentLvl;
 	backup.funcRetOffset = info.funcRetOffset;
 	backup.funcFrameSize = info.funcFrameSize;
 	backup.funcRetType = info.funcRetType;
@@ -44,7 +44,7 @@ void loadProgGenInfoBackup(ProgGenInfo &info, const ProgGenInfoBackup &backup)
 	info.tokens = backup.tokens;
 	info.progPath = backup.progPath;
 	info.currToken = backup.currToken;
-	info.indent = backup.indent;
+	info.indentLvl = backup.indentLvl;
 	info.funcRetOffset = backup.funcRetOffset;
 	info.funcFrameSize = backup.funcFrameSize;
 	info.funcRetType = backup.funcRetType;
@@ -455,7 +455,7 @@ void parseInlineTokens(ProgGenInfo &info, TokenListRef tokens, const std::string
 
 	info.tokens = tokens;
 	info.progPath = progPath;
-	info.indent = {};
+	info.indentLvl = 0;
 	parseGlobalCode(info);
 
 	loadProgGenInfoBackup(info, backup);
@@ -501,25 +501,12 @@ void genBlueprintSpecPreSpace(const SymPath &path, TokenListRef tokens)
 	if (path.empty())
 		return;
 
-	int nPerIndent = 0;
-	for (auto &token : *tokens)
-	{
-		if (!isWhitespace(token))
-			break;
-		++nPerIndent;
-	}
-	nPerIndent /= path.size();
-
-	if (nPerIndent == 0)
-		THROW_QINP_ERROR("Unable to detect indentation!");
-
 	auto it = tokens->begin();
-	auto whitespace = makeToken(Token::Type::Whitespace, it->value);
 
 	for (int i = 0; i < path.size(); ++i)
 	{
-		for (int j = 0; j < nPerIndent * i; ++j)
-			it = ++tokens->insert(it, whitespace);
+		if (i > 0)
+			it = ++tokens->insert(it, makeIndentation(i));
 
 		it = ++tokens->insert(it, makeToken(Token::Type::Keyword, "space"));
 		it = ++tokens->insert(it, makeToken(Token::Type::Identifier, path[i]));
@@ -1006,9 +993,11 @@ void parseExpectedNewline(ProgGenInfo &info)
 bool parseOptionalNewline(ProgGenInfo &info)
 {
 	bool newlineFound = false;
-	auto &token = peekToken(info);
+	auto& token = peekToken(info);
 	if ((newlineFound = (isNewline(token) || isEndOfCode(token))))
 		nextToken(info);
+	else
+		newlineFound = false;
 	return newlineFound;
 }
 
@@ -1206,74 +1195,40 @@ std::string preprocessAsmCode(ProgGenInfo &info, const Token &asmToken)
 	return result;
 }
 
-void increaseIndent(ProgGenInfo::Indent &indent)
+void increaseIndent(ProgGenInfo& info)
 {
-	++indent.lvl;
+	++info.indentLvl;
 }
 
-bool parseIndent(ProgGenInfo &info, bool ignoreLeadingWhitespaces)
+bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 {
-	if (info.indent.chStr.empty())
-	{
-		if (info.indent.lvl == 0)
-		{
-			if (isWhitespace(peekToken(info)))
-				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Unexpected indentation!");
-			return true;
-		}
-
-		if (info.indent.lvl != 1)
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Indentation level must be 1 for the first used indentation!");
-
-		auto &firstToken = peekToken(info);
-		if (!isWhitespace(firstToken))
-			return false;
-
-		nextToken(info);
-		info.indent.chStr = firstToken.value;
-		info.indent.nPerLvl = 1;
-
-		auto pIndentToken = &peekToken(info);
-
-		while (isWhitespace(*pIndentToken))
-		{
-			if (pIndentToken->value != info.indent.chStr)
-				THROW_PROG_GEN_ERROR_TOKEN(*pIndentToken, "Inconsistent indentation!");
-			nextToken(info);
-			++info.indent.nPerLvl;
-			pIndentToken = &peekToken(info);
-		}
-
+	if (info.indentLvl == 0)
 		return true;
-	}
 
-	int indentCount = 0;
-	for (int i = 0; i < info.indent.nPerLvl * info.indent.lvl; ++i)
-	{
-		auto &token = peekToken(info, indentCount);
-		if (!isWhitespace(token) || token.value != info.indent.chStr)
-			return false;
-		++indentCount;
-	}
+	auto& indentToken = peekToken(info);
 
-	nextToken(info, indentCount);
+	if (!isIndentation(indentToken))
+		return false;
+	
+	if (info.indentLvl != std::stoi(indentToken.value))
+		return false;
 
-	if (!ignoreLeadingWhitespaces && peekToken(info).type == Token::Type::Whitespace)
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Inconsistent indentation!");
+	nextToken(info);
 
 	return true;
 }
 
 void unparseIndent(ProgGenInfo &info)
 {
-	nextToken(info, -info.indent.nPerLvl * info.indent.lvl);
+	nextToken(info, -1);
+	assert(isIndentation(peekToken(info)) && "Previous token is not an indentation!");
+		
 }
 
-void decreaseIndent(ProgGenInfo::Indent &indent)
+void decreaseIndent(ProgGenInfo& info)
 {
-	if (indent.lvl == 0)
-		THROW_PROG_GEN_ERROR_POS(Token::Position(), "Indent level already 0!");
-	--indent.lvl;
+	assert(info.indentLvl > 0 && "Indent level cannot be negative!");
+	--info.indentLvl;
 }
 
 void pushTempBody(ProgGenInfo &info, BodyRef body)
@@ -2561,7 +2516,6 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	auto itFuncBegin = info.currToken;
 	while (
 		info.tokens->begin() != itFuncBegin &&
-		isWhitespace(*std::prev(itFuncBegin)) &&
 		!isNewline(*std::prev(itFuncBegin)))
 		--itFuncBegin;
 
@@ -2732,7 +2686,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 			parseExpectedColon(info);
 			bool doParseIndent = parseOptionalNewline(info);
 
-			increaseIndent(info.indent);
+			increaseIndent(info);
 
 			while (!doParseIndent || parseIndent(info, true))
 			{
@@ -2743,7 +2697,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 				parseExpectedNewline(info);
 			}
 
-			decreaseIndent(info.indent);
+			decreaseIndent(info);
 		}
 
 		*funcSym->func.blueprintTokens = TokenList(itFuncBegin, info.currToken);
@@ -2765,7 +2719,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		parseExpectedColon(info);
 		bool parsedNewline = parseOptionalNewline(info);
 
-		increaseIndent(info.indent);
+		increaseIndent(info);
 		pushTempBody(info, funcSym->func.body);
 		enterSymbol(info, funcSym);
 
@@ -2781,7 +2735,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 		exitSymbol(info);
 		popTempBody(info);
-		decreaseIndent(info.indent);
+		decreaseIndent(info);
 	}
 
 	return true;
@@ -2982,7 +2936,7 @@ bool parseInlineAssembly(ProgGenInfo &info)
 	parseExpectedColon(info);
 	bool doParseIndent = parseOptionalNewline(info);
 
-	increaseIndent(info.indent);
+	increaseIndent(info);
 
 	while (!doParseIndent || parseIndent(info))
 	{
@@ -2997,7 +2951,7 @@ bool parseInlineAssembly(ProgGenInfo &info)
 		lastStatement(info)->asmLines.push_back(preprocessAsmCode(info, strToken));
 	}
 
-	decreaseIndent(info.indent);
+	decreaseIndent(info);
 
 	return true;
 }
@@ -3081,7 +3035,7 @@ void parseBody(ProgGenInfo &info, bool doParseIndent)
 
 void parseBodyEx(ProgGenInfo &info, BodyRef body, bool doParseIndent)
 {
-	increaseIndent(info.indent);
+	increaseIndent(info);
 	pushTempBody(info, body);
 	enterSymbol(info, addShadowSpace(info));
 
@@ -3089,7 +3043,7 @@ void parseBodyEx(ProgGenInfo &info, BodyRef body, bool doParseIndent)
 
 	exitSymbol(info);
 	popTempBody(info);
-	decreaseIndent(info.indent);
+	decreaseIndent(info);
 
 	mergeSubUsages(info.program->body, body);
 }
@@ -3116,6 +3070,9 @@ bool parseStatementIf(ProgGenInfo &info)
 		parseExpectedColon(info);
 
 		bool parsedNewline = parseOptionalNewline(info);
+
+		if (parsedNewline)
+			parsedNewline = true;
 
 		parseBodyEx(info, condBody.body, parsedNewline);
 
@@ -3298,7 +3255,7 @@ bool parseStatementSpace(ProgGenInfo &info)
 		addSymbol(currSym(info), spaceSym);
 	}
 
-	increaseIndent(info.indent);
+	increaseIndent(info);
 	enterSymbol(info, spaceSym);
 
 	int codeCount = 0;
@@ -3316,7 +3273,7 @@ bool parseStatementSpace(ProgGenInfo &info)
 		THROW_PROG_GEN_ERROR_TOKEN(spaceToken, "Expected at least one statement!");
 
 	exitSymbol(info);
-	decreaseIndent(info.indent);
+	decreaseIndent(info);
 
 	return true;
 }
@@ -3372,7 +3329,7 @@ bool parsePackUnion(ProgGenInfo &info)
 	if (isDefined(packSym))
 		packSym->pos.def = nameToken.pos;
 
-	increaseIndent(info.indent);
+	increaseIndent(info);
 	enterSymbol(info, packSym);
 
 	while (!doParseIndent || parseIndent(info))
@@ -3385,7 +3342,7 @@ bool parsePackUnion(ProgGenInfo &info)
 	}
 
 	exitSymbol(info);
-	decreaseIndent(info.indent);
+	decreaseIndent(info);
 
 	packSym->state = SymState::Defined;
 
@@ -3419,7 +3376,7 @@ bool parseEnum(ProgGenInfo &info)
 	addSymbol(currSym(info), enumSym);
 
 	int64_t currIndex = 0;
-	increaseIndent(info.indent);
+	increaseIndent(info);
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
@@ -3459,7 +3416,7 @@ bool parseEnum(ProgGenInfo &info)
 
 		parseExpectedNewline(info);
 	}
-	decreaseIndent(info.indent);
+	decreaseIndent(info);
 
 	return true;
 }

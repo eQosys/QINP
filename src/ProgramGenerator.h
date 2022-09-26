@@ -23,19 +23,12 @@ struct BpSpecToDefine
 	Token::Position generatedFrom;
 };
 
-struct ProgGenInfoIndent
-{
-	int lvl = 0;
-	int nPerLvl = 0;
-	std::string chStr = "";
-};
-
 struct ProgGenInfoBackup
 {
 	TokenListRef tokens;
 	std::string progPath;
 	TokenList::iterator currToken;
-	ProgGenInfoIndent indent;
+	int indentLvl;
 	int funcRetOffset;
 	int funcFrameSize;
 	Datatype funcRetType;
@@ -49,8 +42,7 @@ struct ProgGenInfo
 	std::string progPath;
 	TokenList::iterator currToken;
 
-	using Indent = ProgGenInfoIndent;
-	Indent indent;
+	int indentLvl = 0;
 
 	std::stack<BodyRef> mainBodyBackups;
 	int funcRetOffset;
@@ -177,13 +169,13 @@ SymbolRef addPack(ProgGenInfo& info, SymbolRef pack);
 
 std::string preprocessAsmCode(ProgGenInfo& info, const Token& asmToken);
 
-void increaseIndent(ProgGenInfo::Indent& indent);
+void increaseIndent(ProgGenInfo& info);
 
 bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces = false);
 
 void unparseIndent(ProgGenInfo& info);
 
-void decreaseIndent(ProgGenInfo::Indent& indent);
+void decreaseIndent(ProgGenInfo& info);
 
 void pushTempBody(ProgGenInfo& info, BodyRef body);
 

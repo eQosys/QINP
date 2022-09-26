@@ -139,4 +139,4 @@ fn<?T> normalize(?T val) [T, Tnormalized]:
 	var<Tnormalized> temp = val
 	return temp
 
-std.print("Normalized: %\n", normalize(10000))
+\\std.print("Normalized: %\n", normalize(10000))

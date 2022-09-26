@@ -33,6 +33,11 @@ Token makeToken(Token::Type type, const std::string& value)
 	return makeToken(Token::Position(), type, value);
 }
 
+Token makeIndentation(uint64_t depth)
+{
+	return makeToken(Token::Type::Indentation, std::to_string(depth));
+}
+
 void addPosition(Token& token, const Token::Position& pos)
 {
 	token.posHistory.push_back(token.pos);
@@ -111,7 +116,6 @@ std::string TokenTypeToString(Token::Type type)
 	case Token::Type::Identifier: return "Identifier";
 	case Token::Type::String: return "String";
 	case Token::Type::Newline: return "Newline";
-	case Token::Type::Whitespace: return "Whitespace";
 	case Token::Type::Comment: return "Comment";
 	case Token::Type::Operator: return "Operator";
 	case Token::Type::Separator: return "Separator";
@@ -267,9 +271,9 @@ bool isString(const Token& token)
 	return token.type == Token::Type::String;
 }
 
-bool isWhitespace(const Token& token)
+bool isIndentation(const Token& token)
 {
-	return token.type == Token::Type::Whitespace;
+	return token.type == Token::Type::Indentation;
 }
 
 std::string getPosStr(const Token::Position& pos)

@@ -64,6 +64,7 @@ TokenListRef tokenize(const std::string& code, std::string name)
 		TokenizeSpecialKeyword,
 		TokenizeString,
 		TokenizeChar,
+		TokenizeIndentation,
 	} state = State::BeginToken;
 
 	TokenListRef tokens = std::make_shared<TokenList>();
@@ -76,44 +77,53 @@ TokenListRef tokenize(const std::string& code, std::string name)
 	pos.line = 1;
 	pos.column = 0;
 
+	bool lineBeginning = true;
 	bool specialChar = false;
 
 	int litIntBase = 10;
 
+	bool indentDetected = false;
+	char indentChar = '\0';
+	uint64_t indentCount = 0;
+
 	auto handleEndToken = [&]()
 	{
+		lineBeginning = (token.type == Token::Type::Newline);
+
 		state = State::BeginToken;
 		if (token.type == Token::Type::Newline)
 		{
-			while (!tokens->empty())
-			{
-				if (tokens->back().type != Token::Type::Whitespace)
-					break;
-				tokens->pop_back();
-			}
-			if (tokens->empty() || tokens->back().type == Token::Type::Newline)
+			if (tokens->empty() || tokens->back().type == Token::Type::Newline) // Ignore multiple newlines in a row
 				return;
 		}
-		
-		if (
-			token.type == Token::Type::Comment ||
-			(
-				token.type == Token::Type::Whitespace &&
-				tokens->back().type != Token::Type::Newline &&
-				tokens->back().type != Token::Type::Whitespace
-			)
-			)
+		else if (token.type == Token::Type::Indentation) // Convert indentations
+		{
+			if (!indentDetected) // Detect indentation scheme when none appeared yet.
+			{
+				indentDetected = true;
+				indentChar = token.value[0]; // token.value cannot be empty
+				indentCount = token.value.size(); // Check for inconsistencies found below
+			}
+
+			for (auto& c : token.value) // Check for invalid characters
+				if (c != indentChar)
+					THROW_TOKENIZER_ERROR(token.pos, "Inconsistent indentation! (Mixed tabs and spaces)");
+			
+			if (token.value.size() % indentCount) // Number of characters must be a multiple of the char count per indentation
+				THROW_TOKENIZER_ERROR(token.pos, "Inconsistent indentation!");
+
+			token.value = std::to_string(token.value.size() / indentCount);
+		}
+		else if (token.type == Token::Type::Comment) // Ignore comments
 		{
 			return;
 		}
 		else if (token.type == Token::Type::Keyword)
 		{
 			if (token.value == "null")
-			{
 				token.type = Token::Type::LiteralNull;
-			}
 		}
-		else if (
+		else if ( // Concatenate string literals (_"Hello " "world"_ is equivalent to _"Hello world"_)
 			token.type == Token::Type::String &&
 			tokens->back().type == Token::Type::String
 			)
@@ -157,12 +167,17 @@ TokenListRef tokenize(const std::string& code, std::string name)
 			}
 			else if (isWhitespace(c))
 			{
-				token.value.push_back(c);
-				token.type = Token::Type::Whitespace;
-				state = State::EndToken;
+				if (lineBeginning) // Ignore mid-line whitespaces
+				{
+					token.type = Token::Type::Indentation;
+					token.value.push_back(c);
+					state = State::TokenizeIndentation;
+				}
 			}
 			else if (isNewline(c))
 			{
+				lineBeginning = true;
+
 				token.value.push_back(c);
 				token.type = Token::Type::Newline;
 				++pos.line;
@@ -220,10 +235,10 @@ TokenListRef tokenize(const std::string& code, std::string name)
 				token.value.push_back(c);
 				state = State::TokenizeSingleLineComment;
 				break;
-			case ' ':
-			case '\t':
 			case '\n':
 				--index;
+			case ' ':
+			case '\t':
 				state = State::TokenizeNewlineIgnore;
 				break;
 			default:
@@ -240,14 +255,14 @@ TokenListRef tokenize(const std::string& code, std::string name)
 			state = State::EndToken;
 			break;
 		case State::TokenizeNewlineIgnore:
-			if (isNewline(c))
+			if (isWhitespace(c))
+				; // Ignore whitespaces
+			else if (isNewline(c))
 			{
 				++pos.line;
-				token.type = Token::Type::Whitespace;
-				token.value = " ";
 				state = State::EndToken;
 			}
-			else if (c != ' ' && c != '\t')
+			else
 				THROW_TOKENIZER_ERROR(token.pos, "Expected whitespace or newline after '\\'!");
 			break;
 		case State::TokenizeLiteral:
@@ -345,6 +360,17 @@ TokenListRef tokenize(const std::string& code, std::string name)
 			else
 				token.value.push_back(c);
 
+			break;
+		case State::TokenizeIndentation:
+			if (isWhitespace(c))
+			{
+				token.value.push_back(c);
+			}
+			else
+			{
+				--index;
+				state = State::EndToken;
+			}
 			break;
 		case State::EndToken:
 			handleEndToken();

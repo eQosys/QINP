@@ -22,7 +22,6 @@ struct Token
 		Identifier,
 		String,
 		Newline,
-		Whitespace,
 		Comment,
 		Operator,
 		Separator,
@@ -30,6 +29,7 @@ struct Token
 		LiteralChar,
 		LiteralBoolean,
 		LiteralNull,
+		Indentation,
 		EndOfCode,
 	} type;
 	std::string value;
@@ -43,6 +43,8 @@ bool operator==(const Token& left, const Token& right);
 Token makeToken(Token::Position pos, Token::Type type, const std::string& value);
 
 Token makeToken(Token::Type type, const std::string& value);
+
+Token makeIndentation(uint64_t depth);
 
 void addPosition(Token& token, const Token::Position& pos);
 
@@ -87,6 +89,6 @@ bool isIdentifier(const Token& token);
 
 bool isString(const Token& token);
 
-bool isWhitespace(const Token& token);
+bool isIndentation(const Token& token);
 
 std::string getPosStr(const Token::Position& pos);
