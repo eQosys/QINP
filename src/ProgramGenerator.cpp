@@ -1210,8 +1210,18 @@ bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 	if (!isIndentation(indentToken))
 		return false;
 	
-	if (info.indentLvl != std::stoi(indentToken.value))
+	int currIndent = std::stoi(indentToken.value);
+
+	if (info.indentLvl > currIndent)
 		return false;
+
+	if (info.indentLvl < currIndent)
+	{
+		if (ignoreLeadingWhitespaces)
+			return true;
+		
+		THROW_PROG_GEN_ERROR_TOKEN(indentToken, "Unexpected indentation!");
+	}
 
 	nextToken(info);
 
@@ -1612,6 +1622,8 @@ ExpressionRef getParseValue(ProgGenInfo &info, bool localOnly)
 	if (exp)
 		return exp;
 
+	if (isIndentation(peekToken(info)))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Unexpected indentation!");
 	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected symbol name or literal value!");
 }
 

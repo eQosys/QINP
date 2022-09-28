@@ -93,6 +93,9 @@ TokenListRef tokenize(const std::string& code, std::string name)
 		state = State::BeginToken;
 		if (token.type == Token::Type::Newline)
 		{
+			if (!tokens->empty() && tokens->back().type == Token::Type::Indentation)
+				tokens->pop_back();
+
 			if (tokens->empty() || tokens->back().type == Token::Type::Newline) // Ignore multiple newlines in a row
 				return;
 		}
