@@ -132,6 +132,10 @@ std.print(">>> ")
 std.scann(testBuff, 5)
 std.print(" -> ", testBuff)
 
+std.print("The last character in this line should be a percent sign: %\n")
+std.print("The last character in this line should not be '1': %\n", 1)
+std.print("The last character in this line should be a percent sign again: %\n", "%")
+
 std.exit(std.EXIT_FAILURE)
 
 
