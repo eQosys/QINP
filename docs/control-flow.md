@@ -55,8 +55,7 @@ while [condition]:
 ```qinp
 var<u32> i = 0
 while ++i < 10:
-	std.print(i)	\\ Prints the numbers 1 to 9
-	std.print("\n")
+	std.println(i)	\\ Prints the numbers 1 to 9
 ```
 
 ---
@@ -78,8 +77,7 @@ while [condition]
 ```qinp
 var<u32> i = 0
 do:
-	std.print(i)	\\ Prints the numbers 0 to 9
-	std.print("\n")
+	std.println(i)	\\ Prints the numbers 0 to 9
 while ++i < 10
 ```
 

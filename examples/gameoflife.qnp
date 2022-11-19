@@ -23,7 +23,7 @@ fn<> printBorder():
 	var i = 0
 	while i++ < WIDTH: std.print("-")
 	
-	std.print("+\n")
+	std.println("+")
 
 fn<> show():
 	var i = -1
@@ -33,7 +33,7 @@ fn<> show():
 		std.print("|")
 		while ++j < WIDTH:
 			std.print(pMain->cells[j][i] ? "#" : " ")
-		std.print("|\n")
+		std.println("|")
 	printBorder()
 
 fn<> clear():

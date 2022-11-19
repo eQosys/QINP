@@ -50,6 +50,21 @@ space std:
 	\\ @return Positive on success, negative on error.
 	fn<i32> __printf(u8 const** pStr, ?T val)...
 
+	\\ Prints a newline to stdout
+	\\ @return Positive on success, negative on error.
+	fn<i32> println()...
+
+	\\ Same as print but appends a newline
+	\\ @param val The value to print (passed to appropriate print function)
+	\\ @return Positive on success, negative on error.
+	fn<i32> println(?T val)...
+
+	\\ Same as print but appends a newline
+	\\ @param val The value to print (passed to appropriate print function)
+	\\ @param ... The remaining values to print (passed to appropriate print function)
+	\\ @return Positive on success, negative on error.
+	fn<i32> println(?T val, ...)...
+
 	\\ Reads a character from stdin
 	\\ @return The character read
 	fn<u8> getchar()...
@@ -103,6 +118,20 @@ space std:
 
 		if printn(str, (u64)(dropIndex - str)) < 0: return -1
 		if print(val) < 0: return -1
+		return 1
+
+	fn<i32> println()!:
+		if print('\n') < 0: return -1
+		return 1
+
+	fn<i32> println(?T val)!:
+		if print(val) < 0: return -1
+		if println() < 0: return -1
+		return 1
+
+	fn<i32> println(?T val, ...)!:
+		if print(val, ...) < 0: return -1
+		if println() < 0: return -1
 		return 1
 
 	fn<u8> getchar()!:

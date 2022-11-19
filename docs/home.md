@@ -43,7 +43,7 @@ Building:
 
 ```qinp
 import "stdio.qnp"
-std.print("Hello, world!")
+std.println("Hello, world!")
 ```
 
 The [examples](../examples/) can be a good starting point to get to know the QINP language.

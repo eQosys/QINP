@@ -1,7 +1,7 @@
 import "stdio.qnp"
 
-std.print("This is printed before deferring the compilation of this file.\n")
+std.println("This is printed before deferring the compilation of the file '%'.", __file__)
 
 defer
 
-std.print("This is printed after deferring the compilation of this file.\n")
+std.println("This is printed after deferring the compilation of the file '%'.", __file__)

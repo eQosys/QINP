@@ -42,10 +42,7 @@ blueprint [param1], [param2], ...
 ```qinp
 blueprint T
 void printValue(u8 const* name, T value):
-	std.print(name)
-	std.print(": ")
-	std.print(value)
-	std.print("\n")
+	std.print("%: %\n", name, value)
 ```
 
 ---

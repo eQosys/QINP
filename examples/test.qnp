@@ -5,45 +5,45 @@ import "memory.qnp"
 import "stdio.qnp"
 import "time.qnp"
 
-std.print("Allocating 100 bytes\n")
+std.println("Allocating 100 bytes")
 var buff1 = std.malloc(100)
-std.print("Allocating 10000 bytes\n")
+std.println("Allocating 10000 bytes")
 const buff2 = std.malloc(10000)
 
-std.print("Freeing 100 bytes\n")
+std.println("Freeing 100 bytes")
 std.free(buff1)
 
-std.print("Freeing 10000 bytes\n")
+std.println("Freeing 10000 bytes")
 std.free(buff2)
 
-std.print("Allocating 12000 bytes\n")
+std.println("Allocating 12000 bytes")
 buff1 = std.malloc(12000)
 
-std.print("Freeing 12000 bytes\n")
+std.println("Freeing 12000 bytes")
 std.free(buff1)
 
 std.print("Allocating 1024 megabytes...")
 buff1 = std.malloc(1024 * 1024 * 1024)
-std.print(" DONE\n")
+std.println(" DONE")
 
 std.print("Clearing buff1... ")
 const begin = std.getTime()
 std.memset(buff1, 0, 1024 * 1024 * 1024)
 const end = std.getTime()
-std.print(" DONE\n -> Time: % ms\n", end - begin)
+std.println(" DONE\n -> Time: % ms", end - begin)
 
 const str = (u8*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
 std.memcpy(str, "..................", 9)
-std.print("%-----------------\n", str)
+std.println("%-----------------", str)
 
 std.print("Freeing 1024 megabytes...")
 std.free(buff1)
-std.print(" DONE\n")
+std.println(" DONE")
 
 const str1 = (u8*)"Hello world, my name is TecStylos!"
 var tok = std.strtok(str1, " ")
 while tok:
-	std.print(tok, "\n")
+	std.println(tok)
 	tok = std.strtok(null, " ")
 
 const str2 = \
@@ -53,12 +53,12 @@ std.print(str2)
 
 const<i64> variable = 10 * 12 + 100
 
-std.print(variable, "\n")
+std.println(variable, "")
 
 enum Color:
 	Red, Green, Blue
 
-std.print((u64)Color.Green, "\n")
+std.println((u64)Color.Green, "")
 
 std.toupper('a')
 std.tolower('A')
@@ -66,10 +66,10 @@ std.tolower('A')
 var<u8> buff[10000]
 
 const f = std.fopen("examples/test.qnp", "r")
-std.print("Read % bytes\n", std.fread(f, buff, sizeof(buff) - 1))
+std.println("Read % bytes", std.fread(f, buff, sizeof(buff) - 1))
 std.fclose(f)
 buff[sizeof(buff) - 1] = 0
-std.print("Text read:\n%\n", buff)
+std.println("Text read:\n%", buff)
 
 enum Data:
 	A = -10
@@ -77,7 +77,7 @@ enum Data:
 	C
 	D = 10
 
-std.print((i64)Data.C, "\n")
+std.println((i64)Data.C, "")
 
 const testStr1 = (u8*)"This is a test string"
 const testStr2 = (u8*)"This is a test string"
@@ -87,18 +87,18 @@ testStr1[0] = '.'
 std.print("TestStr1: ", testStr1, "\n")
 std.print("TestStr2: %\n", testStr2)
 
-std.print("\n")
+std.println()
 
-std.print("TestStr1: %\nTestStr2: %\n", testStr1, testStr2)
+std.println("TestStr1: %\nTestStr2: %", testStr1, testStr2)
 
-std.print("File:Line -> %:%\n", __file__, __line__)
-std.print("File:Line -> ", __file__, ":", __line__, "\n")
+std.println("File:Line -> %:%", __file__, __line__)
+std.println("File:Line -> ", __file__, ":", __line__, "")
 
 fn<?T> sum(?T a, ?T b) [T]...
 
 fn<?T> sum(?T a, ...)...
 
-std.print("Sum: %\n", sum(1, 2, 3))
+std.println("Sum: %", sum(1, 2, 3))
 
 std.assert(sum(1, 2, 3) == 6, "Sum failed")
 
@@ -117,24 +117,24 @@ fn<?T> sum(?T a, ?T b) [T]!:
 fn<?T> sum(?T a, ...)!:
 	return a + sum(...)
 
-std.print("10^1 = ", std.pow(10, 1), "\n")
-std.print("10^2 = ", std.pow(10, 2), "\n")
-std.print("10^3 = ", std.pow(10, 3), "\n")
-std.print("10^4 = ", std.pow(10, 4), "\n")
-std.print("10^5 = ", std.pow(10, 5), "\n")
-std.print("10^6 = ", std.pow(10, 6), "\n")
-std.print("10^7 = ", std.pow(10, 7), "\n")
-std.print("10^8 = ", std.pow(10, 8), "\n")
-std.print("10^9 = ", std.pow(10, 9), "\n")
+std.println("10^1 = %", std.pow(10, 1))
+std.println("10^2 = %", std.pow(10, 2))
+std.println("10^3 = %", std.pow(10, 3))
+std.println("10^4 = %", std.pow(10, 4))
+std.println("10^5 = %", std.pow(10, 5))
+std.println("10^6 = %", std.pow(10, 6))
+std.println("10^7 = %", std.pow(10, 7))
+std.println("10^8 = %", std.pow(10, 8))
+std.println("10^9 = %", std.pow(10, 9))
 
 var<u8> testBuff[10]
 std.print(">>> ")
 std.scann(testBuff, 5)
 std.print(" -> ", testBuff)
 
-std.print("The last character in this line should be a percent sign: %\n")
-std.print("The last character in this line should not be '1': %\n", 1)
-std.print("The last character in this line should be a percent sign again: %\n", "%")
+std.println("The last character in this line should be a percent sign: %")
+std.println("The last character in this line should not be '1': %", 1)
+std.println("The last character in this line should be a percent sign again: ", "%")
 
 std.exit(std.EXIT_FAILURE)
 
