@@ -19,3 +19,4 @@ tests/__failed.txt
 .vscode/settings.json
 
 CMakeSettings.json
+examples/_comments.json

@@ -49,3 +49,7 @@
 
     Writes the symbols (including unused ones) of the parsed program code
     and additional info to the specified file.
+
+ - -c, --export-comments
+      
+    Writes the comments of the parsed program code to the specified file.

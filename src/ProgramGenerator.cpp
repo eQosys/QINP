@@ -3501,7 +3501,7 @@ void importFile(ProgGenInfo &info, const Token &fileToken)
 
 	parseInlineTokens(
 		info,
-		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string()),
+		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string()).first,
 		path);
 }
 

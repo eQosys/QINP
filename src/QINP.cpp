@@ -13,6 +13,7 @@
 #include "PlatformName.h"
 #include "ExecCmd.h"
 #include "ExportSymbolInfo.h"
+#include "ExportComments.h"
 
 #include "NasmGenerator.h"
 
@@ -51,6 +52,7 @@ std::map<std::string, OptionInfo> argNames =
 	{ "a", { "runarg", OptionInfo::Type::Multi } },
 	{ "x", { "extern", OptionInfo::Type::Multi } },
 	{ "e", { "export-symbol-info", OptionInfo::Type::Single } },
+	{ "c", { "export-comments", OptionInfo::Type::Single } },
 };
 
 #define HELP_TEXT \
@@ -79,7 +81,9 @@ std::map<std::string, OptionInfo> argNames =
 	"    Specifies a library/object file to link against.\n" \
 	"  -e, --export-symbol-info\n" \
 	"    Writes the symbols (including unused ones) of the parsed program code\n" \
-	"    and additional info to the specified file.\n"
+	"    and additional info to the specified file.\n" \
+	"  -c, --export-comments\n" \
+	"    Writes the comments of the parsed program code to the specified file.\n"
 
 class Timer
 {
@@ -149,11 +153,13 @@ int main(int argc, char** argv, char** _env)
 				importDirs.insert(dir);
 
 		ProgramRef program;
+		TokenListRef comments;
 		{
 			Timer timer("Parsing", verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()).string());
-			program = generateProgram(tokens, importDirs, platform, inFilename);
+			comments = tokens.second;
+			program = generateProgram(tokens.first, importDirs, platform, inFilename);
 		}
 
 		if (args.hasOption("export-symbol-info"))
@@ -166,6 +172,19 @@ int main(int argc, char** argv, char** _env)
 				return -1;
 			}
 			exportSymbolInfo(program->symbols, outFile);
+			outFile.close();
+		}
+
+		if (args.hasOption("export-comments"))
+		{
+			auto outFilename = args.getOption("export-comments").front();
+			std::ofstream outFile(outFilename);
+			if (!outFile.is_open())
+			{
+				std::cout << "Failed to open file '" << outFilename << "' for writing!\n";
+				return -1;
+			}
+			exportComments(comments, outFile);
 			outFile.close();
 		}
 
