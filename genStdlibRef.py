@@ -38,10 +38,41 @@ class PageContent:
 	enums: list[str]
 	macros: list[str]
 
-def genLineVariable(symbol, addVarPrefix = False, addStdPrefix = False):
-	return ("", "var<")[addVarPrefix] + symbol["datatype"] + ("", ">")[addVarPrefix] + (" ", " std.")[addStdPrefix] + symbol["name"]
+def commentsFromJSON(comments_json):
+	comments = {}
 
-def genLineFunction(symbol, funcName, isDefine):
+	for comment in comments_json["comments"]:
+		if not comment["file"] in comments:
+			comments[comment["file"]] = {}
+		comments[comment["file"]][comment["line"]] = comment["text"]
+
+	return comments
+
+def wrapLine(line, symbol, comments):
+	mdFile = symbol["pos"]["decl"]["file"] + ".md"
+
+	return " - [" + line + "](" + "" + ")"
+
+def genLineVariable(symbol, comments, addVarPrefix = False, addStdPrefix = False, doWrapLine = True):
+	line = ""
+	if addVarPrefix:
+		line += "var<"
+	
+	line += symbol["datatype"]
+
+	if addVarPrefix:
+		line += "> "
+	else:
+		line += " "
+
+	if addStdPrefix:
+		line += "std."
+
+	line += symbol["name"]
+
+	return wrapLine(line, symbol, comments) if doWrapLine else line
+
+def genLineFunction(symbol, comments, funcName, isDefine, doWrapLine = True):
 	isExtern = funcName is None
 	line = ""
 	if isExtern:
@@ -50,26 +81,77 @@ def genLineFunction(symbol, funcName, isDefine):
 	if symbol["isBlueprint"]:
 		line = "blueprint " + line
 
-	isVoidFunc = symbol["retType"] == "void"
+	isVoidFunc = (symbol["retType"] == "void")
 
-	return line + "fn<" + (symbol["retType"], "")[isVoidFunc] + "> std." + funcName + "(" + ", ".join(map(genLineVariable, symbol["params"])) + ("", ", ...")[symbol["isVariadic"]] + ")" + (" ...", "")[isDefine]
+	line += "fn<"
 
-def genLinePack(symbol, isDefine):
-	return ("pack", "union")[symbol["isUnion"]] + " std." + symbol["name"] + (" ...", "")[isDefine]
+	if not isVoidFunc:
+		line += symbol["retType"]
 
-def genLineEnum(symbol):
-	return "std." + symbol["name"]
+	line += "> std."
 
-def genMacroLine(symbol):
-	return "std." + symbol["name"]
+	line += funcName
+
+	line += "("
+
+	for param in symbol["params"]:
+		line += genLineVariable(param, comments, doWrapLine=False) + ", "
+
+	if len(symbol["params"]) > 0:
+		line = line[:-2]
+
+	if symbol["isVariadic"]:
+		line += ", ..."
+
+	line += ")"
+
+	if not isDefine:
+		line += " ..."
+
+	return wrapLine(line, symbol, comments) if doWrapLine else line
+
+def genLinePack(symbol, comments, isDefine, doWrapLine = True):
+	line = ""
+
+	if symbol["isUnion"]:
+		line += "union"
+	else:
+		line += "pack"
+
+	line += " std."
+
+	line += symbol["name"]
+
+	if not isDefine:
+		line += " ..."
+
+	return wrapLine(line, symbol, comments) if doWrapLine else line
+
+def genLineEnum(symbol, comments, doWrapLine = True):
+	line = ""
+
+	line += "std."
+
+	line += symbol["name"]
+
+	return wrapLine(line, symbol, comments) if doWrapLine else line
+
+def genMacroLine(symbol, comments, doWrapLine = True):
+	line = ""
+
+	line += "std."
+
+	line += symbol["name"]
+
+	return wrapLine(line, symbol, comments) if doWrapLine else line
 
 def generateContent(name, lines):
 	content = "\n## " + name + "\n"
 	for line in lines:
-		content += " - [" + line + "]()\n"
+		content += line + "\n"
 	return content
 
-def generateLines(base, files, funcName = None):
+def generateLines(base, comments, files, funcName = None):
 	for name, symbol in base.items():
 		declFile = symbol["pos"]["decl"]["file"]
 		defFile = symbol["pos"]["def"]["file"]
@@ -83,33 +165,33 @@ def generateLines(base, files, funcName = None):
 			case "None" | "Namespace" | "Global":
 				continue
 			case "Variable":
-				files[declFile].globals.append(genLineVariable(symbol, True, True))
+				files[declFile].globals.append(genLineVariable(symbol, comments, True, True))
 			case "FuncName":
 				if name == "&_BLUEPRINTS_&":
-					generateLines(symbol["subSymbols"], files, funcName)
+					generateLines(symbol["subSymbols"], comments, files, funcName)
 				else:
-					generateLines(symbol["subSymbols"], files, name)
+					generateLines(symbol["subSymbols"], comments, files, name)
 			case "FuncSpec":
 				if symbol["genFromBlueprint"]:
 					continue
 				if declFile != defFile:
-					files[declFile].functions.append(genLineFunction(symbol, funcName, False))
+					files[declFile].functions.append(genLineFunction(symbol, comments, funcName, False))
 				if symbol["state"] == "Defined":
-					files[defFile].functions.append(genLineFunction(symbol, funcName, True))
+					files[defFile].functions.append(genLineFunction(symbol, comments, funcName, True))
 			case "ExtFunc":
-				files[declFile].functions.append(genLineFunction(symbol, None, True))
+				files[declFile].functions.append(genLineFunction(symbol, comments, None, True))
 			case "Pack":
 				if defFile == "<unknown>" or defFile != declFile:
-					files[declFile].packs.append(genLinePack(symbol, False))
+					files[declFile].packs.append(genLinePack(symbol, comments, False))
 
 				if defFile != "<unknown>":
-					files[defFile].packs.append(genLinePack(symbol, True))
+					files[defFile].packs.append(genLinePack(symbol, comments, True))
 			case "Enum":
-				files[declFile].enums.append(genLineEnum(symbol))
+				files[declFile].enums.append(genLineEnum(symbol, comments))
 			case "EnumMember":
 				continue
 			case "Macro":
-				files[declFile].macros.append(genMacroLine(symbol))
+				files[declFile].macros.append(genMacroLine(symbol, comments))
 			case _:
 				print(f"Unknown symbol type: {symbol['type']}")
 
@@ -134,7 +216,7 @@ if __name__ == "__main__":
 	sortedFileList.sort()
 
 	print("Exporting symbols...")
-	if os.system("./bin/Release/QINP -e=/tmp/stdlib-symbols.json -i=stdlib/ /tmp/stdlib-import-all.qnp"):
+	if os.system("./bin/Release/QINP -e=/tmp/stdlib-symbols.json -c=/tmp/stdlib-comments.json -i=stdlib/ /tmp/stdlib-import-all.qnp"):
 		print("Failed to export symbols")
 		exit(1)
 
@@ -142,9 +224,13 @@ if __name__ == "__main__":
 	with open("/tmp/stdlib-symbols.json", "r") as f:
 		symbols = json.load(f)["subSymbols"]["std"]["subSymbols"]
 
+	print("Loading comments...")
+	with open("/tmp/stdlib-comments.json", "r") as f:
+		comments = commentsFromJSON(json.load(f))
+
 	files = {}
 
-	generateLines(symbols, files)
+	generateLines(symbols, comments, files)
 
 	shutil.rmtree(DOCS_DIR + "stdlib", ignore_errors=True)
 

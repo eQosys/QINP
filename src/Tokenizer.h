@@ -6,4 +6,4 @@
 
 std::string readTextFile(const std::string& filename);
 
-std::pair<TokenListRef, TokenListRef> tokenize(const std::string& code, std::string name);
+TokenListRef tokenize(const std::string& code, std::string name, TokenListRef comments);

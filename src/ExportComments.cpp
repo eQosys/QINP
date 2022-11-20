@@ -15,15 +15,19 @@ std::string replace(std::string str, const std::string& from, const std::string&
 void exportComments(TokenListRef tokens, std::ostream& out)
 {
 	out << "{ \"comments\": [";
+	int i = 0;
 	for (const Token& token : *tokens)
 	{
 		assert(token.type == Token::Type::Comment && "Tokenlist should only contain comments!");
 
-		out << "{ \"pos\": \"" << token.pos << "\"";
+		out << "{ \"file\": \"" << token.pos.file << "\", \"line\": " << token.pos.line;
 
 		out << ", \"text\": \"" << replace(replace(token.value, "\\", "\\\\"), "\"", "\\\"") << "\"";
 
-		out << "},";
+		if (++i < tokens->size())
+			out << "},";
+		else
+			out << "}";
 	}
 
 	out << "] }";

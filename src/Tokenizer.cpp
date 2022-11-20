@@ -50,7 +50,7 @@ char getEscapeChar(char c)
 	}
 }
 
-std::pair<TokenListRef, TokenListRef> tokenize(const std::string& code, std::string name)
+TokenListRef tokenize(const std::string& code, std::string name, TokenListRef comments)
 {
 	enum class State
 	{
@@ -68,7 +68,6 @@ std::pair<TokenListRef, TokenListRef> tokenize(const std::string& code, std::str
 	} state = State::BeginToken;
 
 	TokenListRef tokens = std::make_shared<TokenList>();
-	TokenListRef comments = std::make_shared<TokenList>();
 	Token token;
 
 	int index = -1;
@@ -393,5 +392,5 @@ std::pair<TokenListRef, TokenListRef> tokenize(const std::string& code, std::str
 	pos.column = 0;
 	tokens->push_back(Token{ pos, Token::Type::EndOfCode, "<end-of-code>" });
 	
-	return { tokens, comments };
+	return tokens;
 }

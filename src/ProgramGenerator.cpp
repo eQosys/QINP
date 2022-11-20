@@ -3501,7 +3501,7 @@ void importFile(ProgGenInfo &info, const Token &fileToken)
 
 	parseInlineTokens(
 		info,
-		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string()).first,
+		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string(), info.comments),
 		path);
 }
 
@@ -3645,9 +3645,9 @@ void genDeclaredOnlyBpSpecs(ProgGenInfo &info)
 	}
 }
 
-ProgramRef generateProgram(const TokenListRef tokens, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
+ProgramRef generateProgram(const TokenListRef tokens, TokenListRef comments, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
 {
-	ProgGenInfo info = {tokens, ProgramRef(new Program()), importDirs, progPath};
+	ProgGenInfo info = {tokens, comments, ProgramRef(new Program()), importDirs, progPath};
 	info.program->platform = platform;
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();

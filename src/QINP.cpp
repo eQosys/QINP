@@ -153,13 +153,12 @@ int main(int argc, char** argv, char** _env)
 				importDirs.insert(dir);
 
 		ProgramRef program;
-		TokenListRef comments;
+		auto comments = std::make_shared<TokenList>();
 		{
 			Timer timer("Parsing", verbose);
 			auto code = readTextFile(inFilename);
-			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()).string());
-			comments = tokens.second;
-			program = generateProgram(tokens.first, importDirs, platform, inFilename);
+			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()).string(), comments);
+			program = generateProgram(tokens, comments, importDirs, platform, inFilename);
 		}
 
 		if (args.hasOption("export-symbol-info"))
