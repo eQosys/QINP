@@ -4,15 +4,16 @@
 space std:
 	\\ The following __syscall functions are used to invoke system calls.
 	\\ There are multiple overloads, each for a different number of arguments.
+	\\ The rdi, rsi and rdx parameters must be implicitly convertible to u64.
 	\\ @param num The syscall number
 	\\ @param rdi The first argument
 	\\ @param rsi The second argument
 	\\ @param rdx The third argument
 	\\ @return The return value of the syscall (read from rax)
 	fn<u64> __syscall(u64 num)...
-	fn<u64> __syscall(u64 num, u64 rdi)...
-	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi)...
-	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)...
+	fn<u64> __syscall(u64 num, ?T1 rdi)...
+	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi)...
+	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx)...
 
 	\\ Syscalls (Taken from https://filippo.io/linux-syscall-table/)
 	define __SYS_READ 0
@@ -333,6 +334,8 @@ space std:
 
 
 defer
+import "assert.qnp"
+
 space std:
 	fn<u64> __syscall(u64 num)!:
 		var<u64> result
@@ -342,32 +345,41 @@ space std:
 			"mov [rbp $(result)], rax"
 		return result
 
-	fn<u64> __syscall(u64 num, u64 rdi)!:
+	fn<u64> __syscall(u64 num, ?T1 rdi)!:
+		var nrdi = rdi
+
 		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
-			"mov rdi, [rbp $(rdi)]"
+			"mov rdi, [rbp $(nrdi)]"
 			"syscall"
 			"mov [rbp $(result)], rax"
 		return result
 
-	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi)!:
+	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi)!:
+		var nrdi = rdi
+		var nrsi = rsi
+
 		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
-			"mov rdi, [rbp $(rdi)]"
-			"mov rsi, [rbp $(rsi)]"
+			"mov rdi, [rbp $(nrdi)]"
+			"mov rsi, [rbp $(nrsi)]"
 			"syscall"
 			"mov [rbp $(result)], rax"
 		return result
 
-	fn<u64> __syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)!:
+	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx)!:
+		var nrdi = rdi
+		var nrsi = rsi
+		var nrdx = rdx
+
 		var<u64> result
 		assembly:
 			"mov rax, [rbp $(num)]"
-			"mov rdi, [rbp $(rdi)]"
-			"mov rsi, [rbp $(rsi)]"
-			"mov rdx, [rbp $(rdx)]"
+			"mov rdi, [rbp $(nrdi)]"
+			"mov rsi, [rbp $(nrsi)]"
+			"mov rdx, [rbp $(nrdx)]"
 			"syscall"
 			"mov [rbp $(result)], rax"
 		return result

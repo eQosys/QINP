@@ -29,15 +29,15 @@ space std:
 		else:
 			return null
 
-		const fd = __syscall(__SYS_OPEN, (u64)filename, flags)
+		const fd = __syscall(__SYS_OPEN, filename, flags)
 
 		return fd < 0 ? (File*)null : (File*)fd
 
 	fn<u64> fread(File* pFile, void* dest, u64 num)!:
-		return __syscall(__SYS_READ, (u64)pFile, (u64)dest, num)
+		return __syscall(__SYS_READ, pFile, dest, num)
 
 	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
-		return __syscall(__SYS_WRITE, (u64)pFile, (u64)src, num)
+		return __syscall(__SYS_WRITE, pFile, src, num)
 
 	fn<> fclose(File* pFile)!:
-		__syscall(__SYS_CLOSE, (u64)pFile)
+		__syscall(__SYS_CLOSE, pFile)

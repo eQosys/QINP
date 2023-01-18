@@ -117,6 +117,15 @@ TokenList DatatypeToTokenList(const Datatype &datatype)
 		tokens.insert(tokens.begin(), makeToken(type, value));
 	};
 
+	auto insertSymPathFront = [&insertTokenFront](SymPath symPath)
+	{
+		for (auto it = symPath.crbegin(); it != symPath.crend(); ++it)
+		{
+			insertTokenFront(Token::Type::Identifier, *it);
+			insertTokenFront(Token::Type::Operator, ".");
+		}
+	};
+
 	auto pDt = &datatype;
 	while (pDt)
 	{
@@ -124,7 +133,7 @@ TokenList DatatypeToTokenList(const Datatype &datatype)
 			insertTokenFront(Token::Type::Keyword, "const");
 
 		if (isOfType(*pDt, DTType::Name) || isOfType(*pDt, DTType::Macro))
-			insertTokenFront(isBuiltinType(pDt->name) ? Token::Type::BuiltinType : Token::Type::Identifier, pDt->name);
+			isBuiltinType(pDt->name) ? insertTokenFront(Token::Type::BuiltinType, pDt->name) : insertSymPathFront(SymPathFromString(pDt->name));
 		else if (isOfType(*pDt, DTType::Array))
 			assert(false && "Array datatypes not supported!");
 		else if (isOfType(*pDt, DTType::Pointer))
