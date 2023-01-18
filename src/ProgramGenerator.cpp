@@ -2264,6 +2264,9 @@ bool parseExpression(ProgGenInfo &info)
 	if (!expr)
 		return false;
 
+	if (!isVoid(expr->datatype))
+		;//PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!"));
+
 	pushStatement(info, expr);
 	parseExpectedNewline(info);
 	return true;
@@ -2274,6 +2277,9 @@ bool parseExpression(ProgGenInfo &info, const Datatype &targetType)
 	auto expr = getParseExpression(info, 0, targetType);
 	if (!expr)
 		return false;
+
+	if (!isVoid(expr->datatype))
+		;//PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!"));
 
 	pushStatement(info, expr);
 	return true;
