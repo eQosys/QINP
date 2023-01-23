@@ -8,8 +8,8 @@
 
 
 ## Functions
- - [fn<i32> std.__clock_gettime(i32 clockID, std.__timespec* t)]()
- - [fn<u64> std.getTime()]()
+ - [fn<i32> std.__clock_gettime(i32 clockID, std.__timespec* pts)]()
+ - [fn<u64> std.getTime() nodiscard]()
  - [fn<i32> std.sleep(u64 ms)]()
 
 ## Packs/Unions

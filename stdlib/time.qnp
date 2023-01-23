@@ -4,7 +4,7 @@
 space std:
 	\\ Returns the current time in milliseconds since the epoch.
 	\\ @return Current time in milliseconds
-	fn<u64> getTime()...
+	fn<u64> getTime() nodiscard...
 
 	\\ Sleep for the specified number of milliseconds
 	\\ @param ms The number of milliseconds to sleep

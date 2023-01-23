@@ -78,6 +78,7 @@ struct Symbol
 		bool hasExplicitBlueprintOrder = false;
 		bool genFromBlueprint = false;
 		TokenListRef blueprintTokens;
+		bool isNoDiscard = false;
 	} func;
 
 	struct Frame

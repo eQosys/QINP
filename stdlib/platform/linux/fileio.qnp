@@ -18,7 +18,7 @@ space std:
 	pack File!:
 		pass
 
-	fn<File*> fopen(u8 const* filename, u8 const* mode)!:
+	fn<File*> fopen(u8 const* filename, u8 const* mode) nodiscard!:
 		var<i32> flags
 		if strcmp(mode, "r") == 0:
 			flags = __OPEN_READONLY

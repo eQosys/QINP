@@ -67,9 +67,9 @@ space std:
 
 	\\ Reads a character from stdin
 	\\ @return The character read
-	fn<u8> getchar()...
+	fn<u8> getchar() nodiscard...
 
-	\\ Read a specified number of characters from stdin and append a null character
+	\\ Reads a specified number of characters from stdin and appends a null character
 	\\ @param dest The destination buffer (Minimum buffer size: [num] + 1)
 	\\ @param num The number of characters to read
 	\\ @return Number of characters read, negative on error
@@ -134,7 +134,7 @@ space std:
 		if println() < 0: return -1
 		return 1
 
-	fn<u8> getchar()!:
+	fn<u8> getchar() nodiscard!:
 		const<u8> buff[2]
 		scann(buff, 1)
 		return *buff

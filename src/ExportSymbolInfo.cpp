@@ -79,6 +79,7 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 		out << ",\"isBlueprint\": " << (root->func.isBlueprint ? "true" : "false");
 		out << ",\"isVariadic\": " << (root->func.isVariadic ? "true" : "false");
 		out << ",\"genFromBlueprint\": " << (root->func.genFromBlueprint ? "true" : "false");
+		out << ",\"isNoDiscard\": " << (root->func.isNoDiscard ? "true" : "false");
 		break;
 	case SymType::Pack:
 		out << ",\"size\": " << root->frame.size;

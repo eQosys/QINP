@@ -27,7 +27,7 @@ space std:
 	fn<i32> __clock_gettime(i32 clockID, __timespec* pts)!:
 		return __syscall(__SYS_CLOCK_GETTIME, clockID, pts)
 
-	fn<u64> getTime()!:
+	fn<u64> getTime() nodiscard!:
 		var<__timespec> ts
 		return __clock_gettime(__CLOCK_REALTIME, &ts) < 0 ? \
 			-1 : \

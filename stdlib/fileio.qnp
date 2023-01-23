@@ -14,7 +14,7 @@ space std:
 	\\  - "w" for writing.
 	\\  - "rw" for reading and writing.
 	\\ @return The file object.
-	fn<File*> fopen(u8 const* filename, u8 const* mode)...		\\ Platform dependent implementation
+	fn<File*> fopen(u8 const* filename, u8 const* mode) nodiscard...		\\ Platform dependent implementation
 
 	\\ Reads num bytes from the file into the destination buffer.
 	\\ May return less than num bytes if the end of the file is reached.

@@ -7,7 +7,7 @@
 
 ## Functions
  - [blueprint fn<i32> std.__printf(u8 const** pStr, T val)]()
- - [fn<u8> std.getchar()]()
+ - [fn<u8> std.getchar() nodiscard]()
  - [blueprint fn<i32> std.print(T val)]()
  - [blueprint fn<i32> std.print(T val, ...)]()
  - [blueprint fn<i32> std.print(u8 const* str, T val)]()

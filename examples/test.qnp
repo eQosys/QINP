@@ -60,8 +60,8 @@ enum Color:
 
 std.println((u64)Color.Green, "")
 
-std.toupper('a')
-std.tolower('A')
+var _ = std.toupper('a')
+_ = std.tolower('A')
 
 var<u8> buff[10000]
 
@@ -129,7 +129,8 @@ std.println("10^9 = %", std.pow(10, 9))
 
 var<u8> testBuff[10]
 std.print(">>> ")
-std.scann(testBuff, 5)
+\\std.scann(testBuff, 5)
+testBuff[0] = 0
 std.print(" -> ", testBuff)
 
 std.println("The last character in this line should be a percent sign: %")

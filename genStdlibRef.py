@@ -105,6 +105,9 @@ def genLineFunction(symbol, comments, funcName, isDefine, doWrapLine = True):
 
 	line += ")"
 
+	if symbol["isNoDiscard"]:
+		line += " nodiscard"
+
 	if not isDefine:
 		line += " ..."
 

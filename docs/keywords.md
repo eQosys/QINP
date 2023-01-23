@@ -22,6 +22,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [extern](#extern)
  - [_if_](./control-flow.md#if-elif-else)
  - [import](#import)
+ - [nodiscard](#nodiscard)
  - [null](#null)
  - [_pack_](./declarations.md#packs)
  - [pass](#pass)
@@ -249,7 +250,30 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 
 ---
 
-### Null
+### nodiscard
+
+The `nodiscard` keyword is a function specifier. The return value of a function marked with `nodiscard` cannot be omitted.
+
+#### Usage
+
+```qinp
+fn<[return type]> [name]([parameter list]) nodiscard:
+	...
+```
+
+#### Example
+
+```qinp
+fn<u8*> malloc(u64 size) nodiscard:
+	...
+
+var ptr = malloc(100) \\ Correct
+malloc(100) \\ Error: Return value is not used.
+```
+
+---
+
+### null
 
 The `null` keyword is used to represent 0 of any builtin type.
 It can be implicitely converted to any builtin type.

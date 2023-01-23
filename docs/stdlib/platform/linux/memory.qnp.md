@@ -27,8 +27,8 @@
  - [fn<void*> std.__sbrk(i64 increment)]()
  - [fn<std.__MemBlockHeader*> std.__splitBlock(std.__MemBlockHeader* block, u64 newSizeAvail)]()
  - [fn<> std.free(void* pBuff)]()
- - [fn<void*> std.malloc(u64 size)]()
- - [fn<void*> std.realloc(void* pBuff, u64 size)]()
+ - [fn<void*> std.malloc(u64 size) nodiscard]()
+ - [fn<void*> std.realloc(void* pBuff, u64 size) nodiscard]()
 
 ## Packs/Unions
  - [pack std.__MemBlockHeader]()

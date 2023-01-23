@@ -24,18 +24,18 @@ space std:
 	\\ @param b The second buffer
 	\\ @param num The number of bytes to compare
 	\\ @return 0 if the buffers are equal, < 0 if the first byte that differs in a is less than in b, > 0 if the first byte that differs in a is greater than in b
-	fn<i64> memcmp(void const* a, void const* b, u64 num)...
+	fn<i64> memcmp(void const* a, void const* b, u64 num) nodiscard...
 
 	\\ Allocate a buffer of a given size
 	\\ @param size The size of the buffer to allocate
 	\\ @return The allocated buffer (null if failed)
-	fn<void*> malloc(u64 size)...		\\ Platform dependent implementation
+	fn<void*> malloc(u64 size) nodiscard...		\\ Platform dependent implementation
 
 	\\ Reallocate a buffer to a given size
 	\\ @param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
 	\\ @param size The new size of the buffer
 	\\ @return The pointer to the newly allocated memory.
-	fn<void*> realloc(void* pBuff, u64 size)...		\\ Platform dependent implementation
+	fn<void*> realloc(void* pBuff, u64 size) nodiscard...		\\ Platform dependent implementation
 
 	\\ Free a buffer
 	\\ @param pBuff The buffer to free
@@ -97,7 +97,7 @@ space std:
 
 		return dest
 
-	fn<i64> memcmp(void const* a, void const* b, u64 len)!:
+	fn<i64> memcmp(void const* a, void const* b, u64 len) nodiscard!:
 		var a8 = (u8 const*)a
 		var b8 = (u8 const*)b
 		const a8End = a8 + len

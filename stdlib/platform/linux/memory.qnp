@@ -222,7 +222,7 @@ space std:
 		
 		return block
 
-	fn<void*> malloc(u64 size)!:
+	fn<void*> malloc(u64 size) nodiscard!:
 		if !size: return null
 
 		var block = __getAvailBlock(size)
@@ -242,7 +242,7 @@ space std:
 
 		return block + 1
 
-	fn<void*> realloc(void* pBuff, u64 size)!:
+	fn<void*> realloc(void* pBuff, u64 size) nodiscard!:
 		if !pBuff:
 			return malloc(size)
 

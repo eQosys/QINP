@@ -7,10 +7,10 @@
 
 
 ## Functions
+ - [blueprint fn<u64> std.__syscall(u64 num, T1 rdi)]()
+ - [blueprint fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi)]()
+ - [blueprint fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx)]()
  - [fn<u64> std.__syscall(u64 num)]()
- - [fn<u64> std.__syscall(u64 num, u64 rdi)]()
- - [fn<u64> std.__syscall(u64 num, u64 rdi, u64 rsi)]()
- - [fn<u64> std.__syscall(u64 num, u64 rdi, u64 rsi, u64 rdx)]()
 
 ## Macros
  - [std.__SYS_ACCEPT]()

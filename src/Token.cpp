@@ -164,6 +164,7 @@ bool isKeyword(const std::string& name)
 		"fn",
 		"if",
 		"import",
+		"nodiscard",
 		"null",
 		"pack",
 		"pass",

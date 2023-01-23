@@ -8,7 +8,10 @@ space std:
 
 defer
 space std:
-	fn<void*> malloc(u64 size)!:
+	fn<void*> malloc(u64 size) nodiscard!:
+		return null
+
+	fn<void*> realloc(void* pBuff, u64 size) nodiscard!:
 		return null
 
 	fn<> free(void* pBuff)!:

@@ -4,7 +4,7 @@
 space std:
 	define __HANDLE u64
 
-	extern fn<u64>__ex_GetStdHandle(i32 nStdHandle) = "GetStdHandle"
+	extern fn<u64>__ex_GetStdHandle(i32 nStdHandle) nodiscard = "GetStdHandle"
 	extern fn<bool> __ex_WriteConsole(__HANDLE handle, void const* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
 	extern fn<bool> __ex_ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
 	extern fn<> __ex_Sleep(i32 ms) = "Sleep"

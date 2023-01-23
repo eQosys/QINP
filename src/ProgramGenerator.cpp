@@ -605,11 +605,18 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 
 	{ // Remove the '!' specifier if it exists
+		// TODO: Better check for the specifier
 		auto it = tokens->begin();
-		while (!isSeparator(*it++, ")"))
-			; // Do nothing
-		if (isOperator(*it, "!"))
-			it = tokens->erase(it);
+		bool hadSpecifier = false;
+		while (!isNewline(*it++))
+		{
+			if (isOperator(*it, "!"))
+			{
+				tokens->erase(it);
+				hadSpecifier = true;
+				break;
+			}
+		}
 	}
 	// Generate 'space [name]:' tokens
 	genBlueprintSpecPreSpace(getSymbolPath(nullptr, getParent(bpSym, 3)), tokens);
@@ -1113,6 +1120,8 @@ SymbolRef addFunction(ProgGenInfo &info, SymbolRef func)
 
 	if (func->func.hasExplicitBlueprintOrder != existingOverload->func.hasExplicitBlueprintOrder)
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching explicit blueprint macro list!: " + getPosStr(getBestPos(existingOverload)));
+	if (func->func.isNoDiscard != existingOverload->func.isNoDiscard)
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching no-discard attribute!: " + getPosStr(getBestPos(existingOverload)));
 
 	return replaceSymbol(existingOverload, func);
 }
@@ -1263,6 +1272,23 @@ void popTempBody(ProgGenInfo &info)
 
 	info.program->body = info.mainBodyBackups.top();
 	info.mainBodyBackups.pop();
+}
+
+void checkDiscardResult(ProgGenInfo& info, ExpressionRef expr)
+{
+	if (expr->eType != Expression::ExprType::FunctionCall)
+		return;
+
+	if (!expr->left || expr->left->eType != Expression::ExprType::Symbol)
+		return;
+
+	if (expr->left->symbol->type != SymType::FunctionSpec)
+		return;
+
+	if (!expr->left->symbol->func.isNoDiscard)
+		return;
+
+	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!");
 }
 
 Datatype getBestConvDatatype(const Datatype &left, const Datatype &right)
@@ -2264,8 +2290,7 @@ bool parseExpression(ProgGenInfo &info)
 	if (!expr)
 		return false;
 
-	if (!isVoid(expr->datatype))
-		;//PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!"));
+	checkDiscardResult(info, expr);
 
 	pushStatement(info, expr);
 	parseExpectedNewline(info);
@@ -2278,8 +2303,7 @@ bool parseExpression(ProgGenInfo &info, const Datatype &targetType)
 	if (!expr)
 		return false;
 
-	if (!isVoid(expr->datatype))
-		;//PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!"));
+	checkDiscardResult(info, expr);
 
 	pushStatement(info, expr);
 	return true;
@@ -2673,11 +2697,20 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		funcSym->func.blueprintTokens = std::make_shared<TokenList>();
 	}
 
+
+	// Check if the nodiscard attribute is present
+	if (isKeyword(peekToken(info), "nodiscard"))
+	{
+		funcSym->func.isNoDiscard = true;
+		nextToken(info);
+	}
+
 	// Check whether a pre declaration is required or not
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
 		nextToken(info);
 
+	// Show warning if the function is not marked as pre-declared but has a pre-declaration
 	auto preDeclSym = getSymbol(currSym(info), name, true);
 	if (preDeclSym && funcSym->func.isBlueprint)
 		preDeclSym = getSymbol(preDeclSym, BLUEPRINT_SYMBOL_NAME, true);
@@ -2842,6 +2875,13 @@ bool parseDeclExtFunc(ProgGenInfo &info)
 	}
 
 	parseExpected(info, Token::Type::Separator, ")");
+
+	// Check if 'nodiscard' attribute is present
+	if (isKeyword(peekToken(info), "nodiscard"))
+	{
+		funcSym->func.isNoDiscard = true;
+		nextToken(info);
+	}
 
 	parseExpected(info, Token::Type::Operator, "=");
 

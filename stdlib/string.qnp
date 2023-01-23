@@ -8,7 +8,7 @@ space std:
 	\\ Determine the length of a string (without the null terminator)
 	\\ @param str The null-terminated string to measure
 	\\ @return The length of the string
-	fn<u64> strlen(u8 const* str)...
+	fn<u64> strlen(u8 const* str) nodiscard...
 
 	\\ Convert a string to lowercase (in place)
 	\\ @param str The string to convert
@@ -64,51 +64,51 @@ space std:
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmp(u8 const* str1, u8 const* str2)...
+	fn<i64> strcmp(u8 const* str1, u8 const* str2) nodiscard...
 
 	\\ Compare the first num characters of two strings
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @param num The number of characters to compare
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num)...
+	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num) nodiscard...
 
 	\\ Compare two null-terimated strings without case sensitivity
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2)...
+	fn<i64> strcmpi(u8 const* str1, u8 const* str2) nodiscard...
 
 	\\ Compare the first num characters of two strings without case sensitivity
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @param num The number of characters to compare
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num)...
+	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num) nodiscard...
 
 	\\ Locate the first occurencce of a character in a string
 	\\ @param str The string to search
 	\\ @param ch The character to search for
 	\\ @return The address of the first occurence of ch in str, or NULL if not found
-	fn<u8 const*> strchr(u8 const* str, u8 ch)...
+	fn<u8 const*> strchr(u8 const* str, u8 ch) nodiscard...
 	
 	\\ Locate the last occurence of a character in a string
 	\\ @param str The string to search
 	\\ @param ch The character to search for
 	\\ @return The address of the last occurence of ch in str, or NULL if not found
-	fn<u8 const*> strrchr(u8 const* str, u8 ch)...
+	fn<u8 const*> strrchr(u8 const* str, u8 ch) nodiscard...
 
 	\\ Locate the first occurence of a substring in a string
 	\\ @param str The string to search
 	\\ @param substr The substring to search for
 	\\ @return The address of the first occurence of substr in str, or NULL if not found
-	fn<u8 const*> strstr(u8 const* str, u8 const* substr)...
+	fn<u8 const*> strstr(u8 const* str, u8 const* substr) nodiscard...
 
 	\\ Locate the last occurence of a substring in a string
 	\\ @param str The string to search
 	\\ @param substr The substring to search for
 	\\ @return The address of the last occurence of substr in str, or NULL if not found
-	fn<u8 const*> strrstr(u8 const* str, u8 const* substr)...
+	fn<u8 const*> strrstr(u8 const* str, u8 const* substr) nodiscard...
 	
 	\\ Set all characters in a string to a specified character
 	\\ @param str The string to modify
@@ -123,12 +123,12 @@ space std:
 	\\ @return The pointer to the passed string
 	fn<u8*> strset(u8* str, u8 ch, u64 num)...
 
-	\\ Reverse a null-terminated string
+	\\ Reverse a null-terminated string (in-place)
 	\\ @param str The null-terminated string to reverse
 	\\ @return The reversed string
 	fn<u8*> strrev(u8* str)...
 
-	\\ Reverse a string of specified length
+	\\ Reverse a string of specified length (in-place)
 	\\ @param begin Pointer to the first character of the string to reverse
 	\\ @param end Pointer to the character after the last character of the string to reverse (usually the null-terminator)
 	\\ @return The reversed string
@@ -141,36 +141,36 @@ space std:
 	\\ @param str The string to split
 	\\ @param delimiters The delimiters to split on
 	\\ @return A pointer to the next token
-	fn<u8*> strtok(u8* str, u8 const* delimiters)...
+	fn<u8*> strtok(u8* str, u8 const* delimiters) nodiscard...
 
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
 	\\ @param str The string to store the converted integer in
 	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
 	\\ @return The null-terminated string representation of the integer
-	fn<u8*> itos(i64 num, u8* str, i64 base)...
+	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard...
 
 	\\ Convert a string to a base-10 integer
 	\\ @param str The string to convert
 	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
 	\\ @return The integer represented by the string
-	fn<i64> stoi(u8 const* str, i64 base)...
+	fn<i64> stoi(u8 const* str, i64 base) nodiscard...
 
 	\\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
 	\\ @param c The character to convert
 	\\ @return The uppercase character
-	fn<u8> toupper(u8 c)...
+	fn<u8> toupper(u8 c) nodiscard...
 
 	\\ Converts a character to lowercase. Values not in the range 'A' to 'Z' are unchanged.
 	\\ @param c The character to convert
 	\\ @return The lowercase character
-	fn<u8> tolower(u8 c)...
+	fn<u8> tolower(u8 c) nodiscard...
 
 
 
 defer
 space std:
-	fn<u64> strlen(u8 const* str)!:
+	fn<u64> strlen(u8 const* str) nodiscard!:
 		const begin = str
 		while *str: ++str
 		return (u64)(str - begin)
@@ -219,35 +219,35 @@ space std:
 		*dest = null
 		return begin
 	
-	fn<i64> strcmp(u8 const* str1, u8 const* str2)!:
+	fn<i64> strcmp(u8 const* str1, u8 const* str2) nodiscard!:
 		while *str1 == *str2 && *str1 && *str2:
 			++str1
 			++str2
 		return (i64)*str1 - (i64)*str2
 
-	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num)!:
+	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num) nodiscard!:
 		while num-- && *str1 == *str2 && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i64)0 : (i64)*str1 - (i64)*str2
 
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2)!:
+	fn<i64> strcmpi(u8 const* str1, u8 const* str2) nodiscard!:
 		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
 			++str1
 			++str2
 		return (i64)tolower(*str1) - (i64)tolower(*str2)
 
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num)!:
+	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num) nodiscard!:
 		while num-- && tolower(*str1) == tolower(*str2) && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i64)0 : (i64)tolower(*str1) - (i64)tolower(*str2)
 
-	fn<u8 const*> strchr(u8 const* str, u8 ch)!:
+	fn<u8 const*> strchr(u8 const* str, u8 ch) nodiscard!:
 		while *str != ch && *str: ++str
 		return *str == ch ? str : (u8 const*)null
 
-	fn<u8 const*> strrchr(u8 const* str, u8 ch)!:
+	fn<u8 const*> strrchr(u8 const* str, u8 ch) nodiscard!:
 		var<u8 const*> last = null
 		while *str:
 			if *str == ch:
@@ -255,7 +255,7 @@ space std:
 			++str
 		return last
 
-	fn<u8 const*> strstr(u8 const* str, u8 const* substr)!:
+	fn<u8 const*> strstr(u8 const* str, u8 const* substr) nodiscard!:
 		const sublen = strlen(substr)
 		const lastToCheck = str + strlen(str) - sublen
 		while str <= lastToCheck:
@@ -264,7 +264,7 @@ space std:
 			++str
 		return null
 
-	fn<u8 const*> strrstr(u8 const* str, u8 const* substr)!:
+	fn<u8 const*> strrstr(u8 const* str, u8 const* substr) nodiscard!:
 		const sublen = strlen(substr)
 		const lastToCheck = str + strlen(str) - sublen
 		var<u8 const*> last = null
@@ -297,7 +297,7 @@ space std:
 
 		return str
 	
-	fn<u8*> strtok(u8* str, u8 const* delimiters)!:
+	fn<u8*> strtok(u8* str, u8 const* delimiters) nodiscard!:
 		static var<u8*> next = null
 		
 		if str:
@@ -316,7 +316,7 @@ space std:
 		next = null
 		return begin
 
-	fn<u8*> itos(i64 num, u8* str, i64 base)!:
+	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard!:
 		static const __baseCharsLower = __BASE_CHARS_LOWER
 		const begin = str
 		const negative = num < 0
@@ -334,7 +334,7 @@ space std:
 
 		return strrev(begin, str)
 
-	fn<i64> stoi(u8 const* str, i64 base)!:
+	fn<i64> stoi(u8 const* str, i64 base) nodiscard!:
 		static const __baseCharsLower = __BASE_CHARS_LOWER
 		var num = 0
 		const negative = *str == '-'
@@ -347,8 +347,8 @@ space std:
 
 		return negative ? -num : num
 
-	fn<u8> toupper(u8 c)!:
+	fn<u8> toupper(u8 c) nodiscard!:
 		return 'a' <= c && c <= 'z' ? 'A' - 'a' + c : c
 
-	fn<u8> tolower(u8 c)!:
+	fn<u8> tolower(u8 c) nodiscard!:
 		return 'A' <= c && c <= 'Z' ? 'a' - 'A' + c : c
