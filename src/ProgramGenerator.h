@@ -20,6 +20,7 @@ struct BpSpecToDefine
 {
 	SymbolRef bpSym;
 	std::vector<ExpressionRef> paramExpr;
+	std::vector<TokenListRef> bpExplicitMacros;
 	Token::Position generatedFrom;
 };
 
@@ -75,7 +76,7 @@ SymbolRef addShadowSpace(ProgGenInfo& info);
 
 TokenList::iterator moveTokenIterator(TokenList& list, TokenList::iterator it, int offset);
 
-TokenList DatatypeToTokenList(const Datatype& datatype);
+TokenListRef DatatypeToTokenList(const Datatype& datatype);
 
 Token& kwFileToTokString(Token& tok);
 Token& kwLineToTokInteger(Token& tok);
@@ -126,7 +127,7 @@ TokenList genVariadicParamDeclTokenList(const std::vector<int> varParamIDs);
 
 void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens);
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom);
+SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, std::vector<TokenListRef>& explicitMacros, const Token::Position& searchedFrom);
 
 SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom);
 
@@ -135,8 +136,6 @@ int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit
 int calcFuncScore(ProgGenInfo& info, SymbolRef func, const std::vector<ExpressionRef>& paramExpr);
 
 void addPossibleCandidates(ProgGenInfo& info, std::map<SymbolRef, int>& candidates, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr);
-
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const Token::Position& searchedFrom);
 
 SymbolRef getVariable(ProgGenInfo& info, const std::string& name);
 

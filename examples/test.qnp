@@ -137,11 +137,10 @@ std.println("The last character in this line should be a percent sign: %")
 std.println("The last character in this line should not be '1': %", 1)
 std.println("The last character in this line should be a percent sign again: ", "%")
 
-std.exit(std.EXIT_FAILURE)
-
-
 fn<?T> normalize(?T val) [T, Tnormalized]:
 	var<Tnormalized> temp = val
 	return temp
 
-\\std.print("Normalized: %\n", normalize(10000))
+std.print("Normalized: %\n", normalize(<i64, i8>, 10000))
+
+std.exit(std.EXIT_FAILURE)

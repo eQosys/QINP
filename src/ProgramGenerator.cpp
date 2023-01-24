@@ -108,13 +108,13 @@ TokenList::iterator moveTokenIterator(TokenList &list, TokenList::iterator it, i
 	return it;
 }
 
-TokenList DatatypeToTokenList(const Datatype &datatype)
+TokenListRef DatatypeToTokenList(const Datatype &datatype)
 {
-	TokenList tokens;
+	TokenListRef tokens = std::make_shared<TokenList>();
 
 	auto insertTokenFront = [&tokens](const Token::Type type, const std::string &value)
 	{
-		tokens.insert(tokens.begin(), makeToken(type, value));
+		tokens->insert(tokens->begin(), makeToken(type, value));
 	};
 
 	auto insertSymPathFront = [&insertTokenFront](SymPath symPath)
@@ -147,6 +147,32 @@ TokenList DatatypeToTokenList(const Datatype &datatype)
 	}
 
 	return tokens;
+}
+
+Datatype DatatypeFromTokenList(ProgGenInfo& info, TokenListRef tokens)
+{
+	bool appendedEndOfCode = false;
+	if (tokens->back().type != Token::Type::EndOfCode)
+	{
+		tokens->push_back(makeToken(Token::Type::EndOfCode, ""));
+		appendedEndOfCode = true;
+	}
+
+	auto backup = makeProgGenInfoBackup(info);
+
+	info.tokens = tokens;
+	info.progPath = "INTERNAL-PROG-PATH";
+	info.indentLvl = 0;
+	info.currToken = info.tokens->begin();
+	
+	auto dt = getParseDatatype(info);
+
+	loadProgGenInfoBackup(info, backup);
+
+	if (appendedEndOfCode)
+		tokens->pop_back();
+
+	return dt;
 }
 
 Token &kwFileToTokString(Token &tok)
@@ -198,12 +224,12 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 
 	// Replace the macro with its content
 	begin = info.tokens->erase(begin, ++tokIt);
-	begin = info.tokens->insert(begin, sym->macroTokens.begin(), sym->macroTokens.end());
+	begin = info.tokens->insert(begin, sym->macroTokens->begin(), sym->macroTokens->end());
 
 	if (sym->macroIsFunctionLike) // Replace all occurences of the parameters with their provided values
 	{
 		auto it = begin;
-		for (int i = 0; i < sym->macroTokens.size(); ++i, ++it)
+		for (int i = 0; i < sym->macroTokens->size(); ++i, ++it)
 		{
 			if (!isIdentifier(*it))
 				continue;
@@ -231,7 +257,7 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 
 	{ // Add new file/line positions for debugging
 		auto it = begin;
-		int nTokens = sym->macroTokens.size() - macroArgs.size();
+		int nTokens = sym->macroTokens->size() - macroArgs.size();
 		for (auto &arg : macroArgs)
 			nTokens += arg.size();
 		for (int i = 0; i < nTokens; ++i)
@@ -455,6 +481,7 @@ SymbolRef makeMacroSymbol(const Token::Position &pos, const std::string &name)
 	sym->type = SymType::Macro;
 	sym->pos.decl = pos;
 	sym->name = name;
+	sym->macroTokens = std::make_shared<TokenList>();
 	return sym;
 }
 
@@ -524,59 +551,81 @@ void genBlueprintSpecPreSpace(const SymPath &path, TokenListRef tokens)
 	}
 }
 
-SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, const Token::Position &generatedFrom)
+SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, std::vector<TokenListRef>& explicitMacros, const Token::Position &generatedFrom)
 {
-	// Check if the parameters resolve all blueprint macros (+ without conflicts)
 	BlueprintMacroMap resolvedMacros;
 	info.bpVariadicParamIDStack.push({});
-	for (int i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
+
+	if (explicitMacros.empty())
 	{
-		static int variadicParamID = 0;
-
-		SymbolRef param;
-
-		std::string name;
-		std::string mangledName;
-
-		if (i < bpSym->func.params.size()) // If the parameter is not variadic
+		// Check if the parameters resolve all blueprint macros (+ without conflicts)
+		for (int i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
 		{
-			param = bpSym->func.params[i];
+			static int variadicParamID = 0;
 
-			if (param->var.datatype.type != DTType::Macro)
-				continue;
+			SymbolRef param;
 
-			if (resolvedMacros.find(param->var.datatype.name) != resolvedMacros.end())
+			std::string name;
+			std::string mangledName;
+
+			if (i < bpSym->func.params.size()) // If the parameter is not variadic
 			{
-				if (!dtEqual(resolvedMacros[param->var.datatype.name]->var.datatype, paramExpr[i]->datatype))
-					THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
-				continue;
+				param = bpSym->func.params[i];
+
+				if (param->var.datatype.type != DTType::Macro)
+					continue;
+
+				if (resolvedMacros.find(param->var.datatype.name) != resolvedMacros.end())
+				{
+					if (!dtEqual(resolvedMacros[param->var.datatype.name]->var.datatype, paramExpr[i]->datatype))
+						THROW_PROG_GEN_ERROR_POS(param->pos.decl, "Blueprint parameter '" + param->name + "' has conflicting macro types!");
+					continue;
+				}
+
+				name = param->var.datatype.name;
+				mangledName = blueprintMacroNameFromName(name);
+			}
+			else // If the parameter is variadic
+			{
+				int varID = ++variadicParamID;
+				info.bpVariadicParamIDStack.top().push_back(varID);
+
+				param = std::make_shared<Symbol>();
+				param->pos.decl = getBestPos(bpSym);
+				param->var.datatype.name = variadicTypeFromID(varID);
+				name = param->var.datatype.name;
+				mangledName = name;
 			}
 
-			name = param->var.datatype.name;
-			mangledName = blueprintMacroNameFromName(name);
+			auto sym = makeMacroSymbol(param->pos.decl, mangledName);
+			sym->var.datatype = dtArraysToPointer(paramExpr[i]->datatype);
+			sym->macroTokens = DatatypeToTokenList(sym->var.datatype);
+			resolvedMacros[name] = sym;
 		}
-		else // If the parameter is variadic
-		{
-			int varID = ++variadicParamID;
-			info.bpVariadicParamIDStack.top().push_back(varID);
-
-			param = std::make_shared<Symbol>();
-			param->pos.decl = getBestPos(bpSym);
-			param->var.datatype.name = variadicTypeFromID(varID);
-			name = param->var.datatype.name;
-			mangledName = name;
-		}
-
-		auto sym = makeMacroSymbol(param->pos.decl, mangledName);
-		sym->var.datatype = dtArraysToPointer(paramExpr[i]->datatype);
-		sym->macroTokens = DatatypeToTokenList(sym->var.datatype);
-		resolvedMacros[name] = sym;
+		// Check if the return type is a blueprint macro
+		if (
+			bpSym->func.retType.type == DTType::Macro &&
+			resolvedMacros.find(bpSym->func.retType.name) == resolvedMacros.end())
+			THROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "Blueprint return type has not been resolved!");
 	}
-	// Check if the return type is a blueprint macro
-	if (
-		bpSym->func.retType.type == DTType::Macro &&
-		resolvedMacros.find(bpSym->func.retType.name) == resolvedMacros.end())
-		THROW_PROG_GEN_ERROR_POS(getBestPos(bpSym), "Blueprint return type has not been resolved!");
+	else
+	{
+		for (int i = 0; i < bpSym->func.blueprintMacroTokens.size(); ++i)
+		{
+			auto& tok = bpSym->func.blueprintMacroTokens[i];
+			auto& tl = explicitMacros[i];
+
+			auto sym = makeMacroSymbol(tok.pos, blueprintMacroNameFromName(tok.value));
+			sym->macroTokens = tl;
+			resolvedMacros[tok.value] = sym;
+		}
+	}
+
+	for (auto& tok : bpSym->func.blueprintMacroTokens)
+	{
+		if (resolvedMacros.find(tok.value) == resolvedMacros.end())
+			THROW_PROG_GEN_ERROR_TOKEN(tok, "Blueprint macro '" + tok.value + "' has not been resolved!");	
+	}
 
 	// Enter the space the blueprint was defined in
 	enterSymbol(info, info.program->symbols);
@@ -652,11 +701,25 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 
 	info.bpVariadicParamIDStack.pop();
 
-	auto specialization = getMatchingOverload(info, getParent(bpSym, 2), paramExpr, generatedFrom);
+	for (int i = 0; i < bpSym->func.params.size(); ++i)
+	{
+		auto& param = bpSym->func.params[i];
+
+		if (param->var.datatype.type != DTType::Macro)
+			continue;
+
+		auto& macroName = param->var.datatype.name;
+		auto& macro = resolvedMacros[macroName];
+		auto datatype = DatatypeFromTokenList(info, macro->macroTokens);
+
+		if (!dtEqual(paramExpr[i]->datatype, datatype))
+			paramExpr[i] = genConvertExpression(info, paramExpr[i], datatype, false, true);
+	}
+	auto specialization = getMatchingOverload(info, getParent(bpSym, 2), paramExpr, explicitMacros, generatedFrom);
 	specialization->func.genFromBlueprint = true;
 
 	if (isDeclared(specialization))
-		info.bpSpecsToDefine.push_back({bpSym, paramExpr, generatedFrom});
+		info.bpSpecsToDefine.push_back({bpSym, paramExpr, explicitMacros, generatedFrom});
 
 	return specialization;
 }
@@ -670,7 +733,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 #define CONV_SCORE_MAKE_CONST 0x1
 #define CONV_SCORE_MACRO 0x2
 #define CONV_SCORE_VARIADIC 0x4
-#define CONV_SCORE_PROMITION 0x8
+#define CONV_SCORE_PROMOTION 0x8
 #define CONV_SCORE_PTR_TO_VOID_PTR 0x10
 #define CONV_SCORE_NARROW_CONV 0x20
 
@@ -713,20 +776,20 @@ int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit
 		static const std::map<std::pair<std::string, std::string>, int> convScoreMap =
 			{
 				{{"bool", "bool"}, CONV_SCORE_NO_CONV},
-				{{"bool", "i8"}, CONV_SCORE_PROMITION},
-				{{"bool", "i16"}, CONV_SCORE_PROMITION},
-				{{"bool", "i32"}, CONV_SCORE_PROMITION},
-				{{"bool", "i64"}, CONV_SCORE_PROMITION},
-				{{"bool", "u8"}, CONV_SCORE_PROMITION},
-				{{"bool", "u16"}, CONV_SCORE_PROMITION},
-				{{"bool", "u32"}, CONV_SCORE_PROMITION},
-				{{"bool", "u64"}, CONV_SCORE_PROMITION},
+				{{"bool", "i8"}, CONV_SCORE_PROMOTION},
+				{{"bool", "i16"}, CONV_SCORE_PROMOTION},
+				{{"bool", "i32"}, CONV_SCORE_PROMOTION},
+				{{"bool", "i64"}, CONV_SCORE_PROMOTION},
+				{{"bool", "u8"}, CONV_SCORE_PROMOTION},
+				{{"bool", "u16"}, CONV_SCORE_PROMOTION},
+				{{"bool", "u32"}, CONV_SCORE_PROMOTION},
+				{{"bool", "u64"}, CONV_SCORE_PROMOTION},
 
 				{{"i8", "bool"}, CONV_SCORE_NARROW_CONV},
 				{{"i8", "i8"}, CONV_SCORE_NO_CONV},
-				{{"i8", "i16"}, CONV_SCORE_PROMITION},
-				{{"i8", "i32"}, CONV_SCORE_PROMITION},
-				{{"i8", "i64"}, CONV_SCORE_PROMITION},
+				{{"i8", "i16"}, CONV_SCORE_PROMOTION},
+				{{"i8", "i32"}, CONV_SCORE_PROMOTION},
+				{{"i8", "i64"}, CONV_SCORE_PROMOTION},
 				{{"i8", "u8"}, CONV_SCORE_NARROW_CONV},
 				{{"i8", "u16"}, CONV_SCORE_NARROW_CONV},
 				{{"i8", "u32"}, CONV_SCORE_NARROW_CONV},
@@ -735,8 +798,8 @@ int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit
 				{{"i16", "bool"}, CONV_SCORE_NARROW_CONV},
 				{{"i16", "i8"}, CONV_SCORE_NARROW_CONV},
 				{{"i16", "i16"}, CONV_SCORE_NO_CONV},
-				{{"i16", "i32"}, CONV_SCORE_PROMITION},
-				{{"i16", "i64"}, CONV_SCORE_PROMITION},
+				{{"i16", "i32"}, CONV_SCORE_PROMOTION},
+				{{"i16", "i64"}, CONV_SCORE_PROMOTION},
 				{{"i16", "u8"}, CONV_SCORE_NARROW_CONV},
 				{{"i16", "u16"}, CONV_SCORE_NARROW_CONV},
 				{{"i16", "u32"}, CONV_SCORE_NARROW_CONV},
@@ -746,7 +809,7 @@ int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit
 				{{"i32", "i8"}, CONV_SCORE_NARROW_CONV},
 				{{"i32", "i16"}, CONV_SCORE_NARROW_CONV},
 				{{"i32", "i32"}, CONV_SCORE_NO_CONV},
-				{{"i32", "i64"}, CONV_SCORE_PROMITION},
+				{{"i32", "i64"}, CONV_SCORE_PROMOTION},
 				{{"i32", "u8"}, CONV_SCORE_NARROW_CONV},
 				{{"i32", "u16"}, CONV_SCORE_NARROW_CONV},
 				{{"i32", "u32"}, CONV_SCORE_NARROW_CONV},
@@ -764,33 +827,33 @@ int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit
 
 				{{"u8", "bool"}, CONV_SCORE_NARROW_CONV},
 				{{"u8", "i8"}, CONV_SCORE_NARROW_CONV},
-				{{"u8", "i16"}, CONV_SCORE_PROMITION},
-				{{"u8", "i32"}, CONV_SCORE_PROMITION},
-				{{"u8", "i64"}, CONV_SCORE_PROMITION},
+				{{"u8", "i16"}, CONV_SCORE_PROMOTION},
+				{{"u8", "i32"}, CONV_SCORE_PROMOTION},
+				{{"u8", "i64"}, CONV_SCORE_PROMOTION},
 				{{"u8", "u8"}, CONV_SCORE_NO_CONV},
-				{{"u8", "u16"}, CONV_SCORE_PROMITION},
-				{{"u8", "u32"}, CONV_SCORE_PROMITION},
-				{{"u8", "u64"}, CONV_SCORE_PROMITION},
+				{{"u8", "u16"}, CONV_SCORE_PROMOTION},
+				{{"u8", "u32"}, CONV_SCORE_PROMOTION},
+				{{"u8", "u64"}, CONV_SCORE_PROMOTION},
 
 				{{"u16", "bool"}, CONV_SCORE_NARROW_CONV},
 				{{"u16", "i8"}, CONV_SCORE_NARROW_CONV},
 				{{"u16", "i16"}, CONV_SCORE_NARROW_CONV},
-				{{"u16", "i32"}, CONV_SCORE_PROMITION},
-				{{"u16", "i64"}, CONV_SCORE_PROMITION},
+				{{"u16", "i32"}, CONV_SCORE_PROMOTION},
+				{{"u16", "i64"}, CONV_SCORE_PROMOTION},
 				{{"u16", "u8"}, CONV_SCORE_NARROW_CONV},
 				{{"u16", "u16"}, CONV_SCORE_NO_CONV},
-				{{"u16", "u32"}, CONV_SCORE_PROMITION},
-				{{"u16", "u64"}, CONV_SCORE_PROMITION},
+				{{"u16", "u32"}, CONV_SCORE_PROMOTION},
+				{{"u16", "u64"}, CONV_SCORE_PROMOTION},
 
 				{{"u32", "bool"}, CONV_SCORE_NARROW_CONV},
 				{{"u32", "i8"}, CONV_SCORE_NARROW_CONV},
 				{{"u32", "i16"}, CONV_SCORE_NARROW_CONV},
 				{{"u32", "i32"}, CONV_SCORE_NARROW_CONV},
-				{{"u32", "i64"}, CONV_SCORE_PROMITION},
+				{{"u32", "i64"}, CONV_SCORE_PROMOTION},
 				{{"u32", "u8"}, CONV_SCORE_NARROW_CONV},
 				{{"u32", "u16"}, CONV_SCORE_NARROW_CONV},
 				{{"u32", "u32"}, CONV_SCORE_NO_CONV},
-				{{"u32", "u64"}, CONV_SCORE_PROMITION},
+				{{"u32", "u64"}, CONV_SCORE_PROMOTION},
 
 				{{"u64", "bool"}, CONV_SCORE_NARROW_CONV},
 				{{"u64", "i8"}, CONV_SCORE_NARROW_CONV},
@@ -871,7 +934,7 @@ void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidat
 	}
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, const Token::Position &searchedFrom)
+SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, std::vector<TokenListRef>& explicitMacros, const Token::Position &searchedFrom)
 {
 	std::map<SymbolRef, int> candidates;
 
@@ -917,7 +980,7 @@ SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vecto
 	auto bestCandidate = itBest->first;
 
 	if (bestCandidate->func.isBlueprint)
-		bestCandidate = generateBlueprintSpecialization(info, bestCandidate, paramExpr, searchedFrom);
+		bestCandidate = generateBlueprintSpecialization(info, bestCandidate, paramExpr, explicitMacros, searchedFrom);
 
 	for (int i = 0; i < paramExpr.size(); ++i)
 	{
@@ -2013,6 +2076,35 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot call non-function!");
 			exp->isLValue = false;
 
+			// Parse explicit blueprint types if given
+			if (isOperator(peekToken(info), "<"))
+			{
+				nextToken(info);
+				while (!isOperator(peekToken(info), ">"))
+				{
+					TokenListRef tl = std::make_shared<TokenList>();
+
+					while (!isOperator(peekToken(info), ">") && !isSeparator(peekToken(info), ","))
+					{
+						tl->push_back(peekToken(info));
+						nextToken(info);
+					}
+					exp->bpExplicitMacros.push_back(tl);
+
+					if (isSeparator(peekToken(info), ","))
+						nextToken(info);
+					else if (!isOperator(peekToken(info), ">"))
+						THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected ',' or '>'!");
+				}
+
+				parseExpected(info, Token::Type::Operator, ">");
+
+				if (!isSeparator(peekToken(info), ")"))
+				{
+					parseExpected(info, Token::Type::Separator, ",");
+				}
+			}
+
 			while (!isSeparator(peekToken(info), ")"))
 			{
 				if (isSeparator(peekToken(info), "..."))
@@ -2040,7 +2132,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			}
 			else
 			{
-				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr, exp->pos);
+				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr, exp->bpExplicitMacros, exp->pos);
 				if (!func)
 					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getReadableName(exp->left->symbol) + "'! Provided parameters: (" + getReadableName(exp->paramExpr) + ")");
 			}
@@ -2684,11 +2776,13 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		for (auto& tok : blueprintMacroTokens)
 		{
 			if (std::find(newBlueprintMacroTokens.begin(), newBlueprintMacroTokens.end(), tok) == newBlueprintMacroTokens.end())
-				THROW_PROG_GEN_ERROR_TOKEN(tok, "Explicit blueprint macro list must contain all introduced macro names!");
+				THROW_PROG_GEN_ERROR_TOKEN(tok, "Explicit blueprint macro list must contain all implicitly introduced macro names!");
 		}
 
 		blueprintMacroTokens = newBlueprintMacroTokens;
 	}
+
+	funcSym->func.blueprintMacroTokens = blueprintMacroTokens;
 
 	// Set blueprint flag
 	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic || funcSym->func.hasExplicitBlueprintOrder)
@@ -3287,7 +3381,7 @@ bool parseStatementDefine(ProgGenInfo &info)
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Symbol '" + sym->name + "' already exists in the same scope!");
 
 	while (!isNewline(peekToken(info, 0, true)))
-		sym->macroTokens.push_back(nextToken(info, 1, true));
+		sym->macroTokens->push_back(nextToken(info, 1, true));
 
 	parseExpectedNewline(info);
 
@@ -3696,7 +3790,7 @@ void genDeclaredOnlyBpSpecs(ProgGenInfo &info)
 		if (!isDefined(spec.bpSym))
 			THROW_PROG_GEN_ERROR_POS(spec.generatedFrom, "Cannot generate blueprint specialization of undefined blueprint '" + getReadableName(spec.bpSym) + "'!");
 
-		generateBlueprintSpecialization(info, spec.bpSym, spec.paramExpr, spec.generatedFrom);
+		generateBlueprintSpecialization(info, spec.bpSym, spec.paramExpr, spec.bpExplicitMacros, spec.generatedFrom);
 	}
 }
 

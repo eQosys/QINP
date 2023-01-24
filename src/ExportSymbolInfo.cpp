@@ -92,14 +92,14 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 		break;
 	case SymType::Macro:
 		out << ",\"macro\": \"";
-		for (auto it = root->macroTokens.begin(); it != root->macroTokens.end(); )
+		for (auto it = root->macroTokens->begin(); it != root->macroTokens->end(); )
 		{
 			if (it->type == Token::Type::String)
 				out << "\\\"" << it->value << "\\\"";
 			else
 				out << it->value;
 			
-			if (++it != root->macroTokens.end())
+			if (++it != root->macroTokens->end())
 				out << " ";
 		}
 		out << "\"";

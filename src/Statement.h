@@ -160,6 +160,7 @@ struct Expression : public Statement
 		Value(double f64) : f64(f64) {}
 	} value = {};
 	std::vector<ExpressionRef> paramExpr; // Function call
+	std::vector<TokenListRef> bpExplicitMacros; // Function call
 	int paramSizeSum;
 	bool isExtCall = false;
 

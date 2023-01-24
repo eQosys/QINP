@@ -76,6 +76,7 @@ struct Symbol
 		bool isBlueprint = false;
 		bool isVariadic = false;
 		bool hasExplicitBlueprintOrder = false;
+		std::vector<Token> blueprintMacroTokens;
 		bool genFromBlueprint = false;
 		TokenListRef blueprintTokens;
 		bool isNoDiscard = false;
@@ -95,7 +96,7 @@ struct Symbol
 
 	int64_t enumValue;
 
-	TokenList macroTokens;
+	TokenListRef macroTokens;
 	bool macroIsFunctionLike = false;
 	std::vector<std::string> macroParamNames;
 
