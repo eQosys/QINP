@@ -18,13 +18,13 @@
 
 #define ENABLE_EXPR_ONLY_FOR_OBJ(expr) \
 	if (!expr->isObject)               \
-	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
+		THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) \
 	if (expr->isObject)                    \
-	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
+		THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) \
 	if (expr->datatype.isConst)              \
-	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
+		THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
 
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo &info)
 {
@@ -416,6 +416,7 @@ void pushStaticLocalInit(ProgGenInfo &info, ExpressionRef initExpr)
 	statSym->var.context = SymVarContext::Global;
 
 	addVariable(info, statSym);
+	info.program->staticLocalInitIDs.push_back(statSym->var.id);
 
 	// Use the internal variable for the condition of the if statement
 	condBody.condition = makeSymbolExpression(initExpr->pos, statSym);
@@ -1087,8 +1088,9 @@ void parseExpectedColon(ProgGenInfo &info)
 
 void addVariable(ProgGenInfo &info, SymbolRef sym)
 {
+	static int varID = 0;
 	auto &var = sym->var;
-	var.modName = sym->name;
+	var.id = ++varID;
 
 	if (isInPack(currSym(info)))
 	{
@@ -1112,13 +1114,6 @@ void addVariable(ProgGenInfo &info, SymbolRef sym)
 	auto symbol = getSymbol(currSym(info), sym->name, true);
 	if (symbol)
 		THROW_PROG_GEN_ERROR_POS(sym->pos.decl, "Symbol with name '" + sym->name + "' already declared here: " + getPosStr(symbol->pos.decl));
-
-	static int staticID = 0;
-	if (isVarStatic(sym))
-		var.modName = "__#static_" + std::to_string(staticID++) + "~" + sym->name;
-	static int globVarID = 0;
-	if (isInGlobal(currSym(info)))
-		var.modName.append("_#" + std::to_string(globVarID++));
 
 	if (isVarLocal(sym) || isVarStatic(sym))
 	{
@@ -2727,8 +2722,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		if (!isIdentifier(peekToken(info)))
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected identifier!");
 
-		param.modName = nextToken(info).value;
-		paramSym->name = param.modName;
+		paramSym->name = nextToken(info).value;
 
 		funcSym->func.params.push_back(paramSym);
 
@@ -2957,8 +2951,7 @@ bool parseDeclExtFunc(ProgGenInfo &info)
 		if (!isIdentifier(peekToken(info)))
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected identifier!");
 
-		param.modName = nextToken(info).value;
-		paramSym->name = param.modName;
+		paramSym->name = nextToken(info).value;
 
 		funcSym->func.params.push_back(paramSym);
 
@@ -2983,7 +2976,7 @@ bool parseDeclExtFunc(ProgGenInfo &info)
 
 	if (!isString(asmNameTok))
 		THROW_PROG_GEN_ERROR_TOKEN(asmNameTok, "Expected assembly name!");
-	funcSym->func.asmName = asmNameTok.value;
+	funcSym->func.externAsmName = asmNameTok.value;
 
 	parseExpectedNewline(info);
 

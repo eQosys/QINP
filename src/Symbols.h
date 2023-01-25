@@ -50,9 +50,9 @@ struct Symbol
 
 	struct Variable
 	{
-		std::string modName;
 		int offset = -1;
 		Datatype datatype;
+		int id = 0;
 
 		enum class Context
 		{
@@ -72,7 +72,7 @@ struct Symbol
 		std::vector<SymbolRef> params;
 		BodyRef body;
 		bool isReachable = false;
-		std::string asmName;
+		std::string externAsmName;
 		bool isBlueprint = false;
 		bool isVariadic = false;
 		bool hasExplicitBlueprintOrder = false;

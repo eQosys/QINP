@@ -57,7 +57,6 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 	case SymType::FunctionName:
 		break;
 	case SymType::Variable:
-		out << ",\"modName\": \"" << root->var.modName << "\"";
 		out << ",\"offset\": " << root->var.offset;
 		out << ",\"datatype\": \"" << getReadableName(root->var.datatype) << "\"";
 		out << ",\"context\": \"" << SymVarContextToString(root->var.context) << "\"";

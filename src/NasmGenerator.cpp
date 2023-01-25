@@ -1099,7 +1099,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 	{
 		if (isVarLabeled(expr->symbol))
 		{
-			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->symbol->var.modName, expr->datatype) << "\n";
+			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->symbol) << "\n";
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		}
@@ -1107,19 +1107,19 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		{
 			ss << "  mov " << primRegName(8) << ", rbp\n";
 			ss << "  add " << primRegName(8) << ", " << hexString(expr->symbol->var.offset)
-				<< (ngi.generateComments ? " ; local '" + expr->symbol->var.modName + "'\n" : "\n");
+				<< (ngi.generateComments ? " ; local '" + getMangledName(expr->symbol) + "'\n" : "\n");
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = getRValueIfArray(ngi.primReg.datatype);
 		}
 		else if (isFuncSpec(expr->symbol))
 		{
-			ss << "  mov " << primRegName(8) << ", " << SymPathToString(getSymbolPath(nullptr, expr->symbol)) << "\n";
+			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->symbol) << "\n";
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = CellState::rValue;
 		}
 		else if (isExtFunc(expr->symbol))
 		{
-			ss << "  mov " << primRegName(8) << ", " << expr->symbol->func.asmName << "\n";
+			ss << "  mov " << primRegName(8) << ", " << getMangledName(expr->symbol) << "\n";
 			ngi.primReg.datatype = expr->datatype;
 			ngi.primReg.state = CellState::rValue;
 		}
@@ -1317,7 +1317,7 @@ void genPrologue(NasmGenInfo& ngi)
 		ngi.program->symbols->end(),
 		[&](SymbolRef sym) {
 			if (isExtFunc(sym) && isReachable(sym))
-				ngi.ss << "  extern " << sym->func.asmName << "\n";
+				ngi.ss << "  extern " << sym->func.externAsmName << "\n";
 		}
 	);
 
@@ -1345,7 +1345,7 @@ void genPrologue(NasmGenInfo& ngi)
 
 	// Static local initializer test values
 	for (int i = 0; i < ngi.program->staticLocalInitCount; ++i)
-		ngi.ss << "  mov BYTE [" << getMangledName(getStaticLocalInitName(i), { "bool" }) << "], 1\n";
+		ngi.ss << "  mov BYTE [" << getMangledName(getStaticLocalInitName(i), ngi.program->staticLocalInitIDs[i], { "bool" }) << "], 1\n";
 }
 
 void genEpilogue(NasmGenInfo& ngi)

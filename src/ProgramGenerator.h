@@ -9,7 +9,7 @@ ProgramRef generateProgram(const TokenListRef tokens, TokenListRef comments, con
 
 struct LocalStackFrame
 {
-	std::map<std::string, Variable> locals;
+	std::map<std::string, Symbol::Variable> locals;
 	int totalOffset = 0; // The offset of the last local variable pushed onto the stack.
 	int frameSize = 0; // The size of the stack frame. (Sum of the push sizes of all locals)
 };

@@ -9,43 +9,6 @@
 #include "Statement.h"
 #include "Symbols.h"
 
-struct Variable
-{
-	Token::Position pos;
-	std::string name;
-	std::string modName;
-	bool isLocal = false;
-	int offset = -1;
-	Datatype datatype;
-};
-
-struct Function
-{
-	Token::Position pos;
-	std::string name;
-	Datatype retType;
-	int retOffset = 16;
-	int frameSize = 0;
-	std::vector<Variable> params;
-	BodyRef body;
-	bool isDefined;
-
-	bool isReachable = false;
-};
-
-struct Pack
-{
-	Token::Position pos;
-	std::string name;
-	std::map<std::string, Variable> members;
-	int size = 0;
-	bool isDefined = false;
-};
-
-typedef std::shared_ptr<Function> FunctionRef;
-
-typedef std::shared_ptr<Pack> PackRef;
-
 std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes);
 std::string getSignatureNoRet(const SymbolRef func);
 std::string getSignatureNoRet(const Expression* callExpr);
@@ -56,7 +19,7 @@ std::string getSignature(const Expression* callExpr);
 
 std::string getMangledName(const std::string& funcName, const Datatype& retType, const std::vector<Datatype>& paramTypes);
 std::string getMangledName(const std::string& funcName, const Expression* callExpr);
-std::string getMangledName(const std::string& varName, const Datatype& datatype);
+std::string getMangledName(const std::string& varName, int id, const Datatype& datatype);
 std::string getMangledName(SymbolRef symbol);
 
 std::string getReadableName(const std::vector<ExpressionRef>& paramExpr);
@@ -75,6 +38,7 @@ struct Program
 	std::map<std::string, int> strings; // string -> stringID
 	BodyRef body;
 	int staticLocalInitCount = 0;
+	std::vector<int> staticLocalInitIDs;
 
 	std::string platform;
 };

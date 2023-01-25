@@ -52,14 +52,16 @@ std::string getMangledName(const std::string& funcName, const Expression* callEx
 {
 	return funcName + "$" + getSignature(callExpr);
 }
-std::string getMangledName(const std::string& varName, const Datatype& datatype)
+std::string getMangledName(const std::string& basename, int id, const Datatype& datatype)
 {
-	return varName + "$" + getDatatypeStr(datatype);
+	return basename + "#" + std::to_string(id) + "$" + getDatatypeStr(datatype);
 }
 std::string getMangledName(SymbolRef symbol)
 {
 	if (isVariable(symbol))
-		return getMangledName(symbol->var.modName, symbol->var.datatype);
+		return getMangledName(symbol->name, symbol->var.id, symbol->var.datatype);
+	if (isExtFunc(symbol))
+		return symbol->func.externAsmName;
 	if (isFuncSpec(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isFuncName(symbol))
