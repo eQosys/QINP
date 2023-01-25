@@ -106,17 +106,15 @@ space std:
 
 	fn<i32> __printf(u8 const** pStr, ?T val)!:
 		const str = *pStr
-		const dropIndex = strchr(str, '%')
-		if dropIndex == null:
-			*pStr = str + strlen(str)
+		const dropPos = strchr(str, '%')
 
-			if printn(str, (u64)(*pStr - str)) < 0: return -1
-			if print(val) < 0: return -1
-			return 1
+		var<u64> nChars = (u64)(dropPos - str)
+		if dropPos == null:
+			nChars = strlen(str)
 
-		*pStr = dropIndex + 1
-
-		if printn(str, (u64)(dropIndex - str)) < 0: return -1
+		*pStr = str + nChars + (dropPos != null)
+		
+		if printn(str, nChars) < 0: return -1
 		if print(val) < 0: return -1
 		return 1
 

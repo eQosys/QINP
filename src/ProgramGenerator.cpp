@@ -2157,7 +2157,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			exp->eType = Expression::ExprType::MemberAccess;
 			if (!exp->left->isObject)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected object!");
-			if (!isDereferenceable(exp->left->datatype))
+			if (isArray(exp->left->datatype))
+				THROW_PROG_GEN_ERROR_POS(exp->pos, "Use '[0].' to access the first element of an array!");
+			if (!isPointer(exp->left->datatype))
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot dereference non-pointer!");
 			exp->left = genAutoArrayToPtr(exp->left);
 

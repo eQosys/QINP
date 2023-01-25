@@ -56,7 +56,7 @@ Args parseArgs(const std::vector<std::string>& argsVec, const std::map<std::stri
 			auto pos = arg.find("=");
 			auto key = arg.substr(0, pos);
 			auto it = longNameToOptionInfo.find(key);
-			if (it == shortNameToOptionInfo.end())
+			if (it == longNameToOptionInfo.end())
 				THROW_QINP_ERROR("Unknown option: " + key);
 			switch(it->second.type)
 			{

@@ -166,7 +166,25 @@ space std:
 	\\ @return The lowercase character
 	fn<u8> tolower(u8 c) nodiscard...
 
+	\\ Returns wether a character is a number
+	\\ @param c The character to check
+	\\ @return True if the character is a number, false otherwise
+	fn<bool> isnum(u8 c) nodiscard...
+	
+	\\ Returns wether a character is a letter
+	\\ @param c The character to check
+	\\ @return True if the character is a letter, false otherwise
+	fn<bool> isalpha(u8 c) nodiscard...
 
+	\\ Returns wether a character is a letter or a digit
+	\\ @param c The character to check
+	\\ @return True if the character is a letter or a digit, false otherwise
+	fn<bool> isalnum(u8 c) nodiscard...
+
+	\\ Returns wether a character is a whitespace character
+	\\ @param c The character to check
+	\\ @return True if the character is a whitespace character, false otherwise
+	fn<bool> isspace(u8 c) nodiscard...
 
 defer
 space std:
@@ -352,3 +370,15 @@ space std:
 
 	fn<u8> tolower(u8 c) nodiscard!:
 		return 'A' <= c && c <= 'Z' ? 'a' - 'A' + c : c
+
+	fn<bool> isnum(u8 c) nodiscard!:
+		return '0' <= c && c <= '9'
+	
+	fn<bool> isalpha(u8 c) nodiscard!:
+		return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+
+	fn<bool> isalnum(u8 c) nodiscard!:
+		return isnum(c) || isalpha(c)
+	
+	fn<bool> isspace(u8 c) nodiscard!:
+		return c == ' ' || c == '\t'
