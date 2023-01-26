@@ -72,16 +72,16 @@ void exitSymbol(ProgGenInfo &info)
 SymbolRef addShadowSpace(ProgGenInfo &info)
 {
 	static int shadowId = 0;
-	std::string shadowName = "<" + std::to_string(shadowId++) + ">";
-	auto symbol = std::make_shared<Symbol>();
-	symbol->type = SymType::Namespace;
-	symbol->name = shadowName;
 
-	addSymbol(currSym(info), symbol);
+	auto symFrame = std::make_shared<Symbol>();
+	symFrame->type = SymType::Namespace;
+	symFrame->name = "<" + std::to_string(shadowId++) + ">";
 
-	symbol->frame.totalOffset = getParent(symbol)->frame.totalOffset;
+	addSymbol(currSym(info), symFrame);
 
-	return symbol;
+	symFrame->frame.totalOffset = getParent(symFrame)->frame.totalOffset;
+
+	return symFrame;
 }
 
 TokenList::iterator moveTokenIterator(TokenList &list, TokenList::iterator it, int offset)
@@ -179,6 +179,20 @@ Token &kwFileToTokString(Token &tok)
 {
 	tok.type = Token::Type::String;
 	tok.value = std::filesystem::canonical(tok.pos.file).string();
+	return tok;
+}
+
+Token& kwMangledToTokString(ProgGenInfo& info, Token& tok)
+{
+	tok.type = Token::Type::String;
+	tok.value = getMangledName(currSym(info));
+	return tok;
+}
+
+Token& kwPrettyToTokString(ProgGenInfo& info, Token& tok)
+{
+	tok.type = Token::Type::String;
+	tok.value = getReadableName(currSym(info));
 	return tok;
 }
 
@@ -283,6 +297,12 @@ const Token &peekToken(ProgGenInfo &info, int offset, bool ignoreSymDef)
 
 	if (isKeyword(*tokIt, "__line__"))
 		return kwLineToTokInteger(*tokIt);
+
+	if (isKeyword(*tokIt, "__mangled__"))
+		return kwMangledToTokString(info, *tokIt);
+
+	if (isKeyword(*tokIt, "__pretty__"))
+		return kwPrettyToTokString(info, *tokIt);
 
 	auto begin = tokIt;
 
@@ -2492,6 +2512,14 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 		}
 	}
 
+	while (isSeparator(peekToken(info), "["))
+	{
+		nextToken(info);
+		parseExpected(info, Token::Type::LiteralInteger);
+		datatype = Datatype(DTType::Array, datatype, std::stoull(peekToken(info, -1).value));
+		parseExpected(info, Token::Type::Separator, "]");
+	}
+
 	return exitEntered(datatype, false);
 }
 
@@ -2555,17 +2583,6 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		sym->var.context = SymVarContext::PackMember;
 	else
 		sym->var.context = SymVarContext::Global;
-
-	while (isSeparator(peekToken(info), "["))
-	{
-		if (implicitDatatype)
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Arrays must be declared with an explicit datatype!");
-
-		nextToken(info);
-		parseExpected(info, Token::Type::LiteralInteger);
-		sym->var.datatype = Datatype(DTType::Array, sym->var.datatype, std::stoull(peekToken(info, -1).value));
-		parseExpected(info, Token::Type::Separator, "]");
-	}
 
 	// Parse the init expression if present
 	ExpressionRef initExpr = nullptr;
@@ -2842,8 +2859,8 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 			{
 				doParseIndent = true;
 
-				while (!isNewline(peekToken(info)))
-					nextToken(info);
+				while (!isNewline(peekToken(info, 0, true)))
+					nextToken(info, 1, true);
 				parseExpectedNewline(info);
 			}
 
@@ -2898,8 +2915,6 @@ bool parseDeclDef(ProgGenInfo &info)
 	if (parseDeclDefFunction(info))
 		return true;
 	return false;
-
-	// ----------------------
 }
 
 bool parseDeclExtFunc(ProgGenInfo &info)

@@ -63,7 +63,7 @@ std.println((u64)Color.Green, "")
 var _ = std.toupper('a')
 _ = std.tolower('A')
 
-var<u8> buff[10000]
+var<u8[10000]> buff
 
 const f = std.fopen("examples/test.qnp", "r")
 std.println("Read % bytes", std.fread(f, buff, sizeof(buff) - 1))
@@ -127,7 +127,7 @@ std.println("10^7 = %", std.pow(10, 7))
 std.println("10^8 = %", std.pow(10, 8))
 std.println("10^9 = %", std.pow(10, 9))
 
-var<u8> testBuff[10]
+var<u8[10]> testBuff
 std.print(">>> ")
 \\std.scann(testBuff, 5)
 testBuff[0] = 0
@@ -182,12 +182,19 @@ pack Position:
 	var<i32> x
 	var<i32> y
 
-var<Position> positions[10]
+var<Position[10]> positions
 
 positions[0].x = 10
 positions[0].y = 20
 
 std.println("Position: %, %", positions[0].x, positions[0].y)
 
+
+fn<i32> foo(?T a, ?T b) [T]:
+	std.println(__mangled__)
+	std.println(__pretty__)
+	return 0
+
+foo(1, 2)
 
 std.exit(std.EXIT_FAILURE)

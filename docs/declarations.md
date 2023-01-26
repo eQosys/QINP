@@ -35,7 +35,7 @@ Arrays can not be initialized at the moment.
 
 > Array Declaration/Definition
 >
-> `declarators`<`datatype`> `name`[`size`]
+> `declarators`<`datatype`[`size`]> `name`
 
 #### Declarators
 
@@ -75,8 +75,8 @@ While using `var` does not modify the constness of the deduced datatype in impli
 
 > Array Declaration/Definition
 > ```qinp
-> var<u16> baz[10]
-> var<u64> qux[10][8]
+> var<u16[10]> baz
+> var<u64[10][8]> qux
 > ```
 
 #### Note
@@ -102,13 +102,13 @@ They are heavily used in the QINP standard library.
 
 > Declaration
 > ```qinp
-> fn<[return-type]> [name] ( [parameter-list] ) [!*]...
+> fn<`return-type`> `name` ( `parameter-list` ) `nodiscard` `!*`...
 > ```
 
 > Definition
 > ```qinp
-> fn<[return-type]> [name] ( [parameter-list] ) [!*]:
-> 	[body]
+> fn<`return-type`> `name` ( `parameter-list` ) `nodiscard` `!*`:
+> 	`body`
 
 #### Examples
 

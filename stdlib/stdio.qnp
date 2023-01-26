@@ -86,7 +86,7 @@ space std:
 		return printn(&char, 1)
 
 	fn<i32> print(?T val)!:
-		const<u8> str[32]
+		const<u8[32]> str
 		return print(itos(val, str, 10))
 
 	fn<i32> print(?T val, ...)!:
@@ -133,7 +133,7 @@ space std:
 		return 1
 
 	fn<u8> getchar() nodiscard!:
-		const<u8> buff[2]
+		const<u8[2]> buff
 		scann(buff, 1)
 		return *buff
 
