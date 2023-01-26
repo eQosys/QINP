@@ -69,14 +69,13 @@ Next steps (Not in order):
  - [x] Dynamic memory management
  - [ ] Optimizations
  - [ ] Inline functions
- - [ ] Object oriented programming
+ - [ ] Object oriented
  - [ ] Function pointers
  - [ ] Operator overloading
  - [x] Blueprints
  - [x] Variadic functions
  - [ ] Floating point values/operations
  - [ ] Signal handling
- - [ ] Full Windows support
  - [x] Literal expressions
  - [ ] Exceptions
 
