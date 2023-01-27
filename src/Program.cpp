@@ -84,17 +84,33 @@ std::string getReadableName(const std::vector<ExpressionRef>& paramExpr)
 	return paramStr;
 }
 
-std::string getReadableName(const std::vector<SymbolRef>& paramSym, bool isVariadic)
+std::string getReadableName(const std::vector<SymbolRef>& paramSym, const std::vector<Token>& bpMacroTokens, bool isVariadic)
 {
-	std::string paramStr;
+	std::string paramStr = "(";
 	for (int i = 0; i < paramSym.size(); ++i)
 	{
 		if (i != 0)
 			paramStr += ", ";
 		paramStr += getReadableName(paramSym[i]->var.datatype);
 	}
+
 	if (isVariadic)
 		paramStr += paramSym.empty() ? "..." : ", ...";
+
+	paramStr += ")";
+
+	if (!bpMacroTokens.empty())
+	{
+		paramStr += " [";
+		for (int i = 0; i < bpMacroTokens.size(); ++i)
+		{
+			if (i != 0)
+				paramStr += ", ";
+			paramStr += bpMacroTokens[i].value;
+		}
+		paramStr += "]";
+	}
+
 	return paramStr;
 }
 
@@ -103,7 +119,7 @@ std::string getReadableName(SymbolRef symbol)
 	if (isVariable(symbol))
 		return getReadableName(symbol->var.datatype) + " " + symbol->name;
 	if (isFuncSpec(symbol))
-		return getReadableName(symbol->func.retType) + " " + SymPathToString(getSymbolPath(nullptr, getParent(symbol))) + "(" + getReadableName(symbol->func.params, symbol->func.isVariadic) + ")";
+		return getReadableName(symbol->func.retType) + " " + SymPathToString(getSymbolPath(nullptr, getParent(symbol))) + getReadableName(symbol->func.params, symbol->func.explicitBpMacroTokens, symbol->func.isVariadic);
 	if (isFuncName(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isEnum(symbol))

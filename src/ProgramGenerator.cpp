@@ -572,7 +572,7 @@ void genBlueprintSpecPreSpace(const SymPath &path, TokenListRef tokens)
 	}
 }
 
-SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, std::vector<TokenListRef>& explicitMacros, const Token::Position &generatedFrom)
+SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef>& explicitMacros, const Token::Position &generatedFrom)
 {
 	BlueprintMacroMap resolvedMacros;
 	info.bpVariadicParamIDStack.push({});
@@ -631,9 +631,9 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 	else
 	{
-		for (int i = 0; i < bpSym->func.blueprintMacroTokens.size(); ++i)
+		for (int i = 0; i < bpSym->func.explicitBpMacroTokens.size(); ++i)
 		{
-			auto& tok = bpSym->func.blueprintMacroTokens[i];
+			auto& tok = bpSym->func.explicitBpMacroTokens[i];
 			auto& tl = explicitMacros[i];
 
 			auto sym = makeMacroSymbol(tok.pos, blueprintMacroNameFromName(tok.value));
@@ -642,7 +642,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 		}
 	}
 
-	for (auto& tok : bpSym->func.blueprintMacroTokens)
+	for (auto& tok : bpSym->func.explicitBpMacroTokens)
 	{
 		if (resolvedMacros.find(tok.value) == resolvedMacros.end())
 			THROW_PROG_GEN_ERROR_TOKEN(tok, "Blueprint macro '" + tok.value + "' has not been resolved!");	
@@ -708,14 +708,14 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 	catch (const QinpError &err)
 	{
-		std::string paramStr = getReadableName(bpSym->func.params, false);
+		std::string paramStr = getReadableName(bpSym->func.params, {}, false);
 		if (bpSym->func.params.size() < paramExpr.size())
 			paramStr += ", ";
 		paramStr += getReadableName(std::vector(paramExpr.begin() + bpSym->func.params.size(), paramExpr.end()));
 
 		auto symPathStr = SymPathToString(getSymbolPath(nullptr, getParent(bpSym, 2)));
 
-		RETHROW_PROG_GEN_ERROR_POS(generatedFrom, "While generating a blueprint specialization for the function '" + symPathStr + "' with parameters (" + paramStr + ")", err);
+		RETHROW_PROG_GEN_ERROR_POS(generatedFrom, "While generating a blueprint specialization for the function '" + symPathStr + "' with parameters " + paramStr, err);
 	}
 
 	exitSymbol(info);
@@ -736,7 +736,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 		if (!dtEqual(paramExpr[i]->datatype, datatype))
 			paramExpr[i] = genConvertExpression(info, paramExpr[i], datatype, false, true);
 	}
-	auto specialization = getMatchingOverload(info, getParent(bpSym, 2), paramExpr, explicitMacros, generatedFrom);
+	auto specialization = getMatchingOverload(info, getParent(bpSym, 2), paramExpr, {}, generatedFrom);
 	specialization->func.genFromBlueprint = true;
 
 	if (isDeclared(specialization))
@@ -930,7 +930,7 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 	return score;
 }
 
-void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidates, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr)
+void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidates, SymbolRef overloads, const std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef>& explicitMacros)
 {
 	if (!overloads)
 		return;
@@ -939,13 +939,17 @@ void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidat
 	{
 		if (fName == BLUEPRINT_SYMBOL_NAME)
 		{
-			addPossibleCandidates(info, candidates, fSym, paramExpr);
+			addPossibleCandidates(info, candidates, fSym, paramExpr, explicitMacros);
 		}
 		else
 		{
 			if (fSym->func.isVariadic && paramExpr.size() <= fSym->func.params.size())
 				continue;
 			if (!fSym->func.isVariadic && paramExpr.size() != fSym->func.params.size())
+				continue;
+			if (!fSym->func.isBlueprint && !fSym->func.genFromBlueprint && !explicitMacros.empty())
+				continue;
+			if (fSym->func.hasExplicitBlueprintOrder && fSym->func.implicitBpMacroCount != fSym->func.explicitBpMacroTokens.size() && fSym->func.explicitBpMacroTokens.size() != explicitMacros.size())
 				continue;
 
 			int score = calcFuncScore(info, fSym, paramExpr);
@@ -955,11 +959,11 @@ void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidat
 	}
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, std::vector<TokenListRef>& explicitMacros, const Token::Position &searchedFrom)
+SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef>& explicitMacros, const Token::Position &searchedFrom)
 {
 	std::map<SymbolRef, int> candidates;
 
-	addPossibleCandidates(info, candidates, overloads, paramExpr);
+	addPossibleCandidates(info, candidates, overloads, paramExpr, explicitMacros);
 
 	if (candidates.empty())
 		return nullptr;
@@ -990,12 +994,12 @@ SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vecto
 
 	if (candidates.size() > 1)
 	{
-		auto paramStr = getReadableName(paramExpr);
+		auto callStr = overloads->name + "(" + getReadableName(paramExpr) + ")";
 		std::string candidatesStr;
 		for (auto &[fSym, _] : candidates)
-			candidatesStr += "  " + getPosStr(getBestPos(fSym)) + ": " + overloads->name + "(" + getReadableName(fSym->func.params, fSym->func.isVariadic) + ")\n";
+			candidatesStr += "  " + getPosStr(getBestPos(fSym)) + ": " + getReadableName(fSym) + "\n";
 		candidatesStr.pop_back();
-		THROW_PROG_GEN_ERROR_POS(searchedFrom, "Ambiguous function call: " + overloads->name + "(" + paramStr + ")\nPossible candidates are:\n" + candidatesStr);
+		THROW_PROG_GEN_ERROR_POS(searchedFrom, "Ambiguous function call: " + callStr + "\nPossible candidates are:\n" + candidatesStr);
 	}
 
 	auto bestCandidate = itBest->first;
@@ -2753,6 +2757,8 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 	parseExpected(info, Token::Type::Separator, ")");
 
+	funcSym->func.implicitBpMacroCount = blueprintMacroTokens.size();
+
 	// Parse the explicit blueprint order if provided
 	TokenList::iterator itExplicitListBegin = info.currToken;
 	TokenList::iterator itExplicitListEnd = info.currToken;
@@ -2795,7 +2801,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		blueprintMacroTokens = newBlueprintMacroTokens;
 	}
 
-	funcSym->func.blueprintMacroTokens = blueprintMacroTokens;
+	funcSym->func.explicitBpMacroTokens = blueprintMacroTokens;
 
 	// Set blueprint flag
 	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic || funcSym->func.hasExplicitBlueprintOrder)

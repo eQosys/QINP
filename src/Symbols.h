@@ -76,7 +76,8 @@ struct Symbol
 		bool isBlueprint = false;
 		bool isVariadic = false;
 		bool hasExplicitBlueprintOrder = false;
-		std::vector<Token> blueprintMacroTokens;
+		std::vector<Token> explicitBpMacroTokens;
+		int implicitBpMacroCount = 0;
 		bool genFromBlueprint = false;
 		TokenListRef blueprintTokens;
 		bool isNoDiscard = false;

@@ -23,7 +23,7 @@ std::string getMangledName(const std::string& varName, int id, const Datatype& d
 std::string getMangledName(SymbolRef symbol);
 
 std::string getReadableName(const std::vector<ExpressionRef>& paramExpr);
-std::string getReadableName(const std::vector<SymbolRef>& paramSym, bool isVariadic);
+std::string getReadableName(const std::vector<SymbolRef>& paramSym, const std::vector<Token>& bpMacroTokens, bool isVariadic);
 std::string getReadableName(SymbolRef symbol);
 
 std::string getLiteralStringName(int strID);

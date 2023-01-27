@@ -190,11 +190,12 @@ positions[0].y = 20
 std.println("Position: %, %", positions[0].x, positions[0].y)
 
 
-fn<i32> foo(?T a, ?T b) [T]:
+fn<i32> foo(i32 a, i32 b) [T]:
 	std.println(__mangled__)
 	std.println(__pretty__)
 	return 0
 
-foo(1, 2)
+foo(<x>, 1, 2)
+foo(<y>, 1, 2)
 
 std.exit(std.EXIT_FAILURE)

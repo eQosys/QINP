@@ -127,9 +127,9 @@ TokenList genVariadicParamDeclTokenList(const std::vector<int> varParamIDs);
 
 void genBlueprintSpecPreSpace(const SymPath& path, TokenListRef tokens);
 
-SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, std::vector<TokenListRef>& explicitMacros, const Token::Position& searchedFrom);
+SymbolRef getMatchingOverload(ProgGenInfo& info, SymbolRef overloads, std::vector<ExpressionRef>& paramExpr, const std::vector<TokenListRef>& explicitMacros, const Token::Position& searchedFrom);
 
-SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const Token::Position& generatedFrom);
+SymbolRef generateBlueprintSpecialization(ProgGenInfo& info, SymbolRef& bpSym, std::vector<ExpressionRef>& paramExpr, const std::vector<TokenListRef>& explicitMacros, const Token::Position& generatedFrom);
 
 int calcConvScore(ProgGenInfo& info, Datatype from, Datatype to, bool isExplicit);
 
