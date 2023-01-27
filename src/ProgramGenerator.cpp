@@ -708,7 +708,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 	catch (const QinpError &err)
 	{
-		std::string paramStr = getReadableName(bpSym->func.params, {}, false);
+		std::string paramStr = getReadableName(bpSym->func.params, {}, {}, false);
 		if (bpSym->func.params.size() < paramExpr.size())
 			paramStr += ", ";
 		paramStr += getReadableName(std::vector(paramExpr.begin() + bpSym->func.params.size(), paramExpr.end()));
@@ -738,6 +738,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 	auto specialization = getMatchingOverload(info, getParent(bpSym, 2), paramExpr, {}, generatedFrom);
 	specialization->func.genFromBlueprint = true;
+	specialization->func.bpMacroTokenEmplacements = explicitMacros;
 
 	if (isDeclared(specialization))
 		info.bpSpecsToDefine.push_back({bpSym, paramExpr, explicitMacros, generatedFrom});
