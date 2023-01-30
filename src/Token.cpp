@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <set>
+#include <cassert>
 
 bool operator==(const Token::Position& left, const Token::Position& right)
 {
@@ -42,6 +43,19 @@ void addPosition(Token& token, const Token::Position& pos)
 {
 	token.posHistory.push_back(token.pos);
 	token.pos = pos;
+}
+
+void addComment(CommentTokenMapRef comments, const Token& token)
+{
+	assert(token.type == Token::Type::Comment);
+
+	auto it = comments->find(token.pos.file);
+	if (it == comments->end())
+	{
+		comments->insert(std::make_pair(token.pos.file, std::map<int, std::string>()));
+		it = comments->find(token.pos.file);
+	}
+	it->second.insert(std::make_pair(token.pos.line, token.value));
 }
 
 const std::map<std::string, Token::Type> specialKeywords = 

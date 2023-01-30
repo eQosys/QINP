@@ -3811,7 +3811,7 @@ void genDeclaredOnlyBpSpecs(ProgGenInfo &info)
 	}
 }
 
-ProgramRef generateProgram(const TokenListRef tokens, TokenListRef comments, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
+ProgramRef generateProgram(const TokenListRef tokens, CommentTokenMapRef comments, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
 {
 	ProgGenInfo info = {tokens, comments, ProgramRef(new Program()), importDirs, progPath};
 	info.program->platform = platform;

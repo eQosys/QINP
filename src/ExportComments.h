@@ -2,4 +2,4 @@
 
 #include "Token.h"
 
-void exportComments(TokenListRef tokens, std::ostream& out);
+void exportComments(CommentTokenMapRef comments, std::ostream& out);

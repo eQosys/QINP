@@ -22,6 +22,7 @@ struct Token
 		Identifier,
 		String,
 		Newline,
+		NewlineIgnore,
 		Comment,
 		Operator,
 		Separator,
@@ -50,6 +51,10 @@ void addPosition(Token& token, const Token::Position& pos);
 
 typedef std::list<Token> TokenList;
 typedef std::shared_ptr<TokenList> TokenListRef;
+typedef std::map<std::string, std::map<int, std::string>> CommentTokenMap;
+typedef std::shared_ptr<CommentTokenMap> CommentTokenMapRef;
+
+void addComment(CommentTokenMapRef comments, const Token& token);
 
 extern const std::map<std::string, Token::Type> specialKeywords;
 

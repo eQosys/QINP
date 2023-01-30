@@ -153,7 +153,7 @@ int main(int argc, char** argv, char** _env)
 				importDirs.insert(dir);
 
 		ProgramRef program;
-		auto comments = std::make_shared<TokenList>();
+		auto comments = std::make_shared<CommentTokenMap>();
 		{
 			Timer timer("Parsing", verbose);
 			auto code = readTextFile(inFilename);

@@ -50,7 +50,7 @@ char getEscapeChar(char c)
 	}
 }
 
-TokenListRef tokenize(const std::string& code, std::string name, TokenListRef comments)
+TokenListRef tokenize(const std::string& code, std::string name, CommentTokenMapRef comments)
 {
 	enum class State
 	{
@@ -117,9 +117,13 @@ TokenListRef tokenize(const std::string& code, std::string name, TokenListRef co
 
 			token.value = std::to_string(token.value.size() / indentCount);
 		}
+		else if (token.type == Token::Type::NewlineIgnore)
+		{
+			return;
+		}
 		else if (token.type == Token::Type::Comment)
 		{
-			comments->push_back(token);
+			addComment(comments, token);
 			return;
 		}
 		else if (token.type == Token::Type::Keyword)
@@ -243,6 +247,7 @@ TokenListRef tokenize(const std::string& code, std::string name, TokenListRef co
 				--index;
 			case ' ':
 			case '\t':
+				token.type = Token::Type::NewlineIgnore;
 				state = State::TokenizeNewlineIgnore;
 				break;
 			default:

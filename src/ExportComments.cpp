@@ -12,23 +12,29 @@ std::string replace(std::string str, const std::string& from, const std::string&
     return str;
 }
 
-void exportComments(TokenListRef tokens, std::ostream& out)
+void exportComments(CommentTokenMapRef comments, std::ostream& out)
 {
-	out << "{ \"comments\": [";
+	out << "{ \"comments\": {";
 	int i = 0;
-	for (const Token& token : *tokens)
+	for (const auto& [file, tokens] : *comments)
 	{
-		assert(token.type == Token::Type::Comment && "Tokenlist should only contain comments!");
+		out << "\"" << file << "\": {";
 
-		out << "{ \"file\": \"" << token.pos.file << "\", \"line\": " << token.pos.line;
+		int j = 0;
+		for (const auto& [line, text] : tokens)
+		{
+		
+			out << "\"" <<  line << "\": \"" << replace(replace(text, "\\", "\\\\"), "\"", "\\\"") << "\"";
+			
+			if (++j < tokens.size())
+				out << ",";
+		}
 
-		out << ", \"text\": \"" << replace(replace(token.value, "\\", "\\\\"), "\"", "\\\"") << "\"";
-
-		if (++i < tokens->size())
+		if (++i < comments->size())
 			out << "},";
 		else
 			out << "}";
 	}
 
-	out << "] }";
+	out << "} }";
 }
