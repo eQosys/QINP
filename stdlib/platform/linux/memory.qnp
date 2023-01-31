@@ -24,18 +24,6 @@ space std:
 	\\ @return A pointer pointing to the previous data segment end (null on failure)
 	fn<void*> __sbrk(i64 increment)...
 
-	\\ Rounds the given value up to the nearest multiple of the given alignment
-	\\ @param value The value to round
-	\\ @param alignment The alignment to round to
-	\\ @return The rounded value
-	fn<u64> __roundUp(u64 value, u64 alignment)...
-
-	\\ Rounds the given value down to the nearest multiple of the given alignment
-	\\ @param value The value to round
-	\\ @param alignment The alignment to round to
-	\\ @return The rounded value
-	fn<u64> __roundDown(u64 value, u64 alignment)...
-
 	\\ Returns the smallest block of memory that is large enough to hold the given size.
 	\\ If no block is large enough, returns the last block in the list.
 	\\ @param minSizeAvail The available size of the block to find
@@ -109,12 +97,6 @@ space std:
 		const<u64> newSize = oldSize + increment
 		return __brk(newSize) == oldSize ? (void*)null : (void*)oldSize
 
-	fn<u64> __roundUp(u64 value, u64 alignment)!:
-		return ((value + alignment - 1) / alignment) * alignment
-
-	fn<u64> __roundDown(u64 value, u64 alignment)!:
-		return (value / alignment) * alignment
-
 	fn<__MemBlockHeader*> __getAvailBlock(u64 minSizeAvail)!:
 		\\ No check for minSizeAvail == 0 because a block may have 0 bytes of available space
 		var<__MemBlockHeader*> smallest = null
@@ -174,7 +156,7 @@ space std:
 	fn<__MemBlockHeader*> __splitBlock(__MemBlockHeader* block, u64 newSizeAvail)!:
 		if !block || !newSizeAvail: return null
 
-		newSizeAvail = __roundUp(newSizeAvail, __MEM_ALIGNMENT_SIZE)
+		newSizeAvail = roundUpTo(newSizeAvail, __MEM_ALIGNMENT_SIZE)
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
 			return null
 
@@ -214,7 +196,7 @@ space std:
 	fn<__MemBlockHeader*> __allocBlock(u64 minSizeAvail)!:
 		if !minSizeAvail: return null
 
-		const<u64> size = __roundUp(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
+		const<u64> size = roundUpTo(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
 		const block = (__MemBlockHeader*)__sbrk(size)
 		if !block: return null
 
@@ -228,7 +210,7 @@ space std:
 		var block = __getAvailBlock(size)
 		if block:
 			if block->sizeAvail < size: \\ Expand the last block if it is not big enough
-				var<u64> newAllocatedSize = __roundUp(size - block->sizeAvail, __PAGE_SIZE)
+				var<u64> newAllocatedSize = roundUpTo(size - block->sizeAvail, __PAGE_SIZE)
 				if !__sbrk(newAllocatedSize): return null
 				block->sizeAvail += newAllocatedSize
 			__removeAvailBlock(block)
@@ -300,6 +282,6 @@ space std:
 		if !block->next: \\ Block is the last one in the list
 			var<u64> size = block->sizeAvail
 			if size > __PAGE_SIZE * __FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
-				size = __roundDown(size, __PAGE_SIZE)
+				size = roundDownTo(size, __PAGE_SIZE)
 				__sbrk(-size)
 				block->sizeAvail -= size

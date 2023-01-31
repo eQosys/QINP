@@ -22,8 +22,6 @@
  - [fn<std.__MemBlockHeader*> std.__mergeBlockWithNeighbors(std.__MemBlockHeader* block)]()
  - [fn<std.__MemBlockHeader*> std.__mergeBlockWithNext(std.__MemBlockHeader* block)]()
  - [fn<> std.__removeAvailBlock(std.__MemBlockHeader* block)]()
- - [fn<u64> std.__roundDown(u64 value, u64 alignment)]()
- - [fn<u64> std.__roundUp(u64 value, u64 alignment)]()
  - [fn<void*> std.__sbrk(i64 increment)]()
  - [fn<std.__MemBlockHeader*> std.__splitBlock(std.__MemBlockHeader* block, u64 newSizeAvail)]()
  - [fn<> std.free(void* pBuff)]()

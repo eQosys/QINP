@@ -2,7 +2,7 @@ var<i32> varDecl
 
 var<i32> varDef = 10
 
-var<i32> arrDecl[16]
+var<i32[16]> arrDecl
 
 var<i32*> ptrDecl
 

@@ -2,7 +2,7 @@ import "stdio.qnp"
 
 pack User:
 	var<i32> age
-	var<u8> name[32]
+	var<u8[32]> name
 
 std.print("sizeof(User) = ")
 std.print(sizeof(User))

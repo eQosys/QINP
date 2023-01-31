@@ -7,6 +7,10 @@
 
 
 ## Functions
+ - [fn<bool> std.isalnum(u8 c) nodiscard]()
+ - [fn<bool> std.isalpha(u8 c) nodiscard]()
+ - [fn<bool> std.isnum(u8 c) nodiscard]()
+ - [fn<bool> std.isspace(u8 c) nodiscard]()
  - [fn<u8*> std.itos(i64 num, u8* str, i64 base) nodiscard]()
  - [fn<i64> std.stoi(u8 const* str, i64 base) nodiscard]()
  - [fn<u8*> std.strcat(u8* dest, u8 const* src)]()

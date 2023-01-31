@@ -2,8 +2,8 @@ import "stdio.qnp"
 
 union Data:
 	var<i32> asInt
-	var<u8> asBytes[4]
-	var<bool> asBool[4]
+	var<u8[4]> asBytes
+	var<bool[4]> asBool
 
 var<Data> data
 data.asBytes[0] = 0

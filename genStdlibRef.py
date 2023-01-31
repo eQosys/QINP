@@ -41,10 +41,10 @@ class PageContent:
 def commentsFromJSON(comments_json):
 	comments = {}
 
-	for comment in comments_json["comments"]:
-		if not comment["file"] in comments:
-			comments[comment["file"]] = {}
-		comments[comment["file"]][comment["line"]] = comment["text"]
+	#for comment in comments_json["comments"]:
+	#	if not comment["file"] in comments:
+	#		comments[comment["file"]] = {}
+	#	comments[comment["file"]][comment["line"]] = comment["text"]
 
 	return comments
 

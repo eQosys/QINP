@@ -1,6 +1,6 @@
 import "stdio.qnp"
 
-var<u8> buff[1024]
+var<u8[1024]> buff
 var<u8 const*> helloWorld = "Hello, World!\n"
 std.print(std.strlen(helloWorld))
 std.print("\n")

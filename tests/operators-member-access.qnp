@@ -13,7 +13,7 @@ std.print("var = ")
 std.print(variable)
 std.print("\n")
 
-var<u8> arr[4]
+var<u8[4]> arr
 arr[0] = 1
 arr[1] = 2
 arr[2] = 3
