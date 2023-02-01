@@ -10,7 +10,7 @@
 
 
 ## Globals
- - [var<std.__MemBlockHeader*> std.__memBlocks]
+ - var<std.__MemBlockHeader*> std.__memBlocks
 
 ## Functions
  - [fn<std.__MemBlockHeader*> std.__allocBlock(u64 minSizeAvail)](#ref_044c7126caa3710257ace62a290def2a)
@@ -30,12 +30,12 @@
  - [fn<void*> std.realloc(void* pBuff, u64 size) nodiscard](#ref_73224cc2d187a9780b454e06431870b8)
 
 ## Packs/Unions
- - [pack std.__MemBlockHeader]
+ - pack std.__MemBlockHeader
 
 ## Macros
- - [std.__FREE_PAGES_COUNT_MAX]
- - [std.__MEM_ALIGNMENT_SIZE]
- - [std.__PAGE_SIZE]
+ - std.__FREE_PAGES_COUNT_MAX
+ - std.__MEM_ALIGNMENT_SIZE
+ - std.__PAGE_SIZE
 
 ## Details
 #### <a id="ref_044c7126caa3710257ace62a290def2a"/>fn<std.__MemBlockHeader*> std.__allocBlock(u64 minSizeAvail)

@@ -93,12 +93,11 @@ def lineLink(line):
 	return "ref_" + str(hashlib.md5(line.encode()).hexdigest())
 
 def wrapLine(line, symbol, hasDetail):
-	mdFile = getDeclPos(symbol)["file"] + ".md"
-
-	result = " - [" + line + "]"
-
+	result = " - "
 	if hasDetail:
-		result += "(#" + lineLink(line) + ")"
+		result += "[" + line + "](#" + lineLink(line) + ")"
+	else:
+		result += line
 
 	return result
 

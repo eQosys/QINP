@@ -13,8 +13,8 @@
  - [fn<u8 const* const*> std.getenv() nodiscard](#ref_8fb6ec3ee7f8ab51d6e5b5dbaf79d88c)
 
 ## Macros
- - [std.EXIT_FAILURE]
- - [std.EXIT_SUCCESS]
+ - std.EXIT_FAILURE
+ - std.EXIT_SUCCESS
 
 ## Details
 #### <a id="ref_f46683071af5a6ec20a057000130973f"/>fn<> std.exit(i32 status) ...

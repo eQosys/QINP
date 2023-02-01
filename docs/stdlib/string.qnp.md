@@ -40,7 +40,7 @@
  - [fn<u8> std.toupper(u8 c) nodiscard](#ref_dbe44cd709c6558a6db8e50f7491693d)
 
 ## Macros
- - [std.__BASE_CHARS_LOWER]
+ - std.__BASE_CHARS_LOWER
 
 ## Details
 #### <a id="ref_fe9a83d9c4ccd2be5e7ebe64ef638e38"/>fn<bool> std.isalnum(u8 c) nodiscard

@@ -16,7 +16,7 @@
  - [fn<void*> std.realloc(void* pBuff, u64 size) nodiscard ...](#ref_923326336bf1d21529fc06af7cdf46fa)
 
 ## Macros
- - [std.__MIN_MEM_LEN_USE_ALIGN]
+ - std.__MIN_MEM_LEN_USE_ALIGN
 
 ## Details
 #### <a id="ref_66d06a03afaac7bb74892566623ddaa3"/>fn<> std.free(void* pBuff) ...

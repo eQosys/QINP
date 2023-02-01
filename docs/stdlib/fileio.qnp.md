@@ -14,7 +14,7 @@
  - [fn<u64> std.fwrite(std.File* pFile, void const* src, u64 num) ...](#ref_1f8563dcf12abebac75334241dac213a)
 
 ## Packs/Unions
- - [pack std.File ...]
+ - pack std.File ...
 
 ## Details
 #### <a id="ref_9d88eebd2af888dcce049ae45aa49bb8"/>fn<> std.fclose(std.File* pFile) ...

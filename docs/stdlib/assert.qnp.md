@@ -11,7 +11,7 @@
  - [fn<> std.__assert(bool check, u8 const* msg, u8 const* file, i32 line)](#ref_cc86eb6f489467900e0c6ad5b1b0bbbf)
 
 ## Macros
- - [std.assert]
+ - std.assert
 
 ## Details
 #### <a id="ref_cc86eb6f489467900e0c6ad5b1b0bbbf"/>fn<> std.__assert(bool check, u8 const* msg, u8 const* file, i32 line)

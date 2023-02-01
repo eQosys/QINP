@@ -12,9 +12,9 @@
  - [fn<i32> std.scann(u8* dest, u64 num)](#ref_2bdda4e7dcc08093e0fdd68f7839ace1)
 
 ## Macros
- - [std.__STDERR]
- - [std.__STDIN]
- - [std.__STDOUT]
+ - std.__STDERR
+ - std.__STDIN
+ - std.__STDOUT
 
 ## Details
 #### <a id="ref_c86762adc7164b6ece39cb4872a7bd68"/>fn<i32> std.printn(u8 const* str, u64 num)

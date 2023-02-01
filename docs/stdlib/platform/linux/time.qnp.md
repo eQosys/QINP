@@ -14,13 +14,13 @@
  - [fn<i32> std.sleep(u64 ms)](#ref_a24a6505449e20f9ee3e4c93c8cd73d5)
 
 ## Packs/Unions
- - [pack std.__timespec]
+ - pack std.__timespec
 
 ## Macros
- - [std.__CLOCK_MONOTONIC]
- - [std.__CLOCK_PROCESS_CPUTIME_ID]
- - [std.__CLOCK_REALTIME]
- - [std.__CLOCK_THREAD_CPUTIME_ID]
+ - std.__CLOCK_MONOTONIC
+ - std.__CLOCK_PROCESS_CPUTIME_ID
+ - std.__CLOCK_REALTIME
+ - std.__CLOCK_THREAD_CPUTIME_ID
 
 ## Details
 #### <a id="ref_b2a541613ccc739589d4abf777dec202"/>fn<i32> std.__clock_gettime(i32 clockID, std.__timespec* pts)

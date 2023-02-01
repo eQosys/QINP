@@ -15,12 +15,12 @@
  - [fn<u64> std.fwrite(std.File* pFile, void const* src, u64 num)](#ref_e0a479a319c37a1d66962080214f3742)
 
 ## Packs/Unions
- - [pack std.File]
+ - pack std.File
 
 ## Macros
- - [std.__OPEN_READONLY]
- - [std.__OPEN_READWRITE]
- - [std.__OPEN_WRITEONLY]
+ - std.__OPEN_READONLY
+ - std.__OPEN_READWRITE
+ - std.__OPEN_WRITEONLY
 
 ## Details
 #### <a id="ref_35169ca5dd216e528e147ea957cba2d8"/>fn<> std.fclose(std.File* pFile)
