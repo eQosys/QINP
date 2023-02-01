@@ -3,6 +3,7 @@
 import os
 import json
 import shutil
+import hashlib
 
 from typing import Dict
 from dataclasses import dataclass
@@ -37,21 +38,56 @@ class PageContent:
 	packs: list[str]
 	enums: list[str]
 	macros: list[str]
+	details: dict[str, str]
+
+FILES = {}
 
 def commentsFromJSON(comments_json):
 	comments = {}
 
-	#for comment in comments_json["comments"]:
-	#	if not comment["file"] in comments:
-	#		comments[comment["file"]] = {}
-	#	comments[comment["file"]][comment["line"]] = comment["text"]
+	for file in comments_json["comments"]:
+		if not file in comments:
+			comments[file] = {}
+		for line in comments_json["comments"][file]:
+			comments[file][int(line)] = comments_json["comments"][file][line]
 
 	return comments
 
-def wrapLine(line, symbol, comments):
-	mdFile = symbol["pos"]["decl"]["file"] + ".md"
+def getDeclPos(symbol):
+	if "decl" in symbol["pos"]:
+		return symbol["pos"]["decl"]
+	return symbol["pos"]["def"]
 
-	return " - [" + line + "](" + "" + ")"
+def commentExists(comments, symbol):
+	pos = getDeclPos(symbol)
+	return pos["file"] in comments and (pos["line"] - 1) in comments[pos["file"]]
+
+def getPreExtendedComment(comments, symbol):
+	pos = getDeclPos(symbol)
+	file = pos["file"]
+	line = pos["line"] - 1
+	comment = comments[file][line]
+	while line - 1 in comments[file]:
+		comment = comments[file][line - 1] + "\n" + comment
+		line -= 1
+	return comment
+
+def autoAddDetail(file, lineStr, comments, symbol):
+	if commentExists(comments, symbol):
+		FILES[file].details[lineStr] = getPreExtendedComment(comments, symbol)
+
+def lineLink(line):
+	return "ref_" + str(hashlib.md5(line.encode()).hexdigest())
+
+def wrapLine(line, symbol, hasDetail):
+	mdFile = getDeclPos(symbol)["file"] + ".md"
+
+	result = " - [" + line + "]"
+
+	if hasDetail:
+		result += "(#" + lineLink(line) + ")"
+
+	return result
 
 def genLineVariable(symbol, comments, addVarPrefix = False, addStdPrefix = False, doWrapLine = True):
 	line = ""
@@ -70,9 +106,9 @@ def genLineVariable(symbol, comments, addVarPrefix = False, addStdPrefix = False
 
 	line += symbol["name"]
 
-	return wrapLine(line, symbol, comments) if doWrapLine else line
+	return wrapLine(line, symbol, False) if doWrapLine else line
 
-def genLineFunction(symbol, comments, funcName, isDefine, doWrapLine = True):
+def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = True):
 	isExtern = funcName is None
 	line = ""
 	if isExtern:
@@ -111,7 +147,8 @@ def genLineFunction(symbol, comments, funcName, isDefine, doWrapLine = True):
 	if not isDefine:
 		line += " ..."
 
-	return wrapLine(line, symbol, comments) if doWrapLine else line
+	autoAddDetail(file, line, comments, symbol)
+	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
 def genLinePack(symbol, comments, isDefine, doWrapLine = True):
 	line = ""
@@ -128,7 +165,7 @@ def genLinePack(symbol, comments, isDefine, doWrapLine = True):
 	if not isDefine:
 		line += " ..."
 
-	return wrapLine(line, symbol, comments) if doWrapLine else line
+	return wrapLine(line, symbol, False) if doWrapLine else line
 
 def genLineEnum(symbol, comments, doWrapLine = True):
 	line = ""
@@ -137,7 +174,7 @@ def genLineEnum(symbol, comments, doWrapLine = True):
 
 	line += symbol["name"]
 
-	return wrapLine(line, symbol, comments) if doWrapLine else line
+	return wrapLine(line, symbol, False) if doWrapLine else line
 
 def genMacroLine(symbol, comments, doWrapLine = True):
 	line = ""
@@ -146,12 +183,21 @@ def genMacroLine(symbol, comments, doWrapLine = True):
 
 	line += symbol["name"]
 
-	return wrapLine(line, symbol, comments) if doWrapLine else line
+	return wrapLine(line, symbol, False) if doWrapLine else line
 
 def generateContent(name, lines):
 	content = "\n## " + name + "\n"
 	for line in lines:
 		content += line + "\n"
+	return content
+
+def generateDetails(details):
+	content = "\n## Details\n"
+
+	for name, detail in details.items():
+		content += "#### <a id=\"" + lineLink(name) + "\"/>" + name + "\n"
+		content += "```qinp\n" + detail + "\n```\n"
+
 	return content
 
 def generateLines(base, comments, files, funcName = None):
@@ -160,9 +206,9 @@ def generateLines(base, comments, files, funcName = None):
 		defFile = symbol["pos"]["def"]["file"]
 
 		if declFile not in files:
-			files[declFile] = PageContent([], [], [], [], [])
+			files[declFile] = PageContent([], [], [], [], [], {})
 		if defFile not in files:
-			files[defFile] = PageContent([], [], [], [], [])
+			files[defFile] = PageContent([], [], [], [], [], {})
 
 		match symbol["type"]:
 			case "None" | "Namespace" | "Global":
@@ -178,11 +224,11 @@ def generateLines(base, comments, files, funcName = None):
 				if symbol["genFromBlueprint"]:
 					continue
 				if declFile != defFile:
-					files[declFile].functions.append(genLineFunction(symbol, comments, funcName, False))
+					files[declFile].functions.append(genLineFunction(declFile, symbol, comments, funcName, False))
 				if symbol["state"] == "Defined":
-					files[defFile].functions.append(genLineFunction(symbol, comments, funcName, True))
+					files[defFile].functions.append(genLineFunction(defFile, symbol, comments, funcName, True))
 			case "ExtFunc":
-				files[declFile].functions.append(genLineFunction(symbol, comments, None, True))
+				files[declFile].functions.append(genLineFunction(declFile, symbol, comments, None, True))
 			case "Pack":
 				if defFile == "<unknown>" or defFile != declFile:
 					files[declFile].packs.append(genLinePack(symbol, comments, False))
@@ -231,13 +277,11 @@ if __name__ == "__main__":
 	with open("/tmp/stdlib-comments.json", "r") as f:
 		comments = commentsFromJSON(json.load(f))
 
-	files = {}
-
-	generateLines(symbols, comments, files)
+	generateLines(symbols, comments, FILES)
 
 	shutil.rmtree(DOCS_DIR + "stdlib", ignore_errors=True)
 
-	for file, pageContent in files.items():
+	for file, pageContent in FILES.items():
 		if not file.startswith("stdlib/"):
 			print("Skipping file: " + file)
 			continue
@@ -262,6 +306,9 @@ if __name__ == "__main__":
 		if len(pageContent.macros) > 0:
 			overview += " - [Macros](#macros)\n"
 			content += generateContent("Macros", pageContent.macros)
+		if (len(pageContent.details) > 0):
+			overview += " - [Details](#details)\n"
+			content += generateDetails(pageContent.details)
 
 		page = PAGE_MD_TEMPLATE
 		page = page.replace("<filename>", file)
@@ -278,7 +325,7 @@ if __name__ == "__main__":
 		for file in sortedFileList:
 			if not file.startswith("stdlib/"):
 				continue
-			if file not in files:
+			if file not in FILES:
 				continue
 			fileShort = os.sep.join(file.split(os.sep)[1:])
 			filelist += " - [./" + fileShort + "](" + fileShort + ".md)\n"

@@ -4,14 +4,50 @@
 ## Overview
  - [Functions](#functions)
  - [Packs/Unions](#packs-unions)
+ - [Details](#details)
 
 
 ## Functions
- - [fn<> std.fclose(std.File* pFile) ...]()
- - [fn<std.File*> std.fopen(u8 const* filename, u8 const* mode) nodiscard ...]()
- - [fn<u64> std.fread(std.File* pFile, void* dest, u64 num) ...]()
- - [fn<u64> std.fwrite(std.File* pFile, void const* src, u64 num) ...]()
+ - [fn<> std.fclose(std.File* pFile) ...](#ref_9d88eebd2af888dcce049ae45aa49bb8)
+ - [fn<std.File*> std.fopen(u8 const* filename, u8 const* mode) nodiscard ...](#ref_8b5607b8ea33422886283e593c621d1f)
+ - [fn<u64> std.fread(std.File* pFile, void* dest, u64 num) ...](#ref_50cc280d0699a1cd11a369f7ae47577b)
+ - [fn<u64> std.fwrite(std.File* pFile, void const* src, u64 num) ...](#ref_1f8563dcf12abebac75334241dac213a)
 
 ## Packs/Unions
- - [pack std.File ...]()
+ - [pack std.File ...]
+
+## Details
+#### <a id="ref_9d88eebd2af888dcce049ae45aa49bb8"/>fn<> std.fclose(std.File* pFile) ...
+```qinp
+\\ Closes the file.
+\\ @param pFile The file object.
+```
+#### <a id="ref_8b5607b8ea33422886283e593c621d1f"/>fn<std.File*> std.fopen(u8 const* filename, u8 const* mode) nodiscard ...
+```qinp
+\\ Opens a file for reading and/or writing.
+\\ If the file could not be opened, null is returned.
+\\ @param filename The name of the file to open.
+\\ @param mode The mode to open the file in. The mode can be one of the following:
+\\  - "r" for reading.
+\\  - "w" for writing.
+\\  - "rw" for reading and writing.
+\\ @return The file object.
+```
+#### <a id="ref_50cc280d0699a1cd11a369f7ae47577b"/>fn<u64> std.fread(std.File* pFile, void* dest, u64 num) ...
+```qinp
+\\ Reads num bytes from the file into the destination buffer.
+\\ May return less than num bytes if the end of the file is reached.
+\\ @param pFile The file object.
+\\ @param dest The destination buffer.
+\\ @param num The number of bytes to read.
+\\ @return The number of bytes read.
+```
+#### <a id="ref_1f8563dcf12abebac75334241dac213a"/>fn<u64> std.fwrite(std.File* pFile, void const* src, u64 num) ...
+```qinp
+\\ Writes num bytes from the source buffer to the file.
+\\ @param pFile The file object.
+\\ @param src The source buffer.
+\\ @param num The number of bytes to write.
+\\ @return The number of bytes written.
+```
 

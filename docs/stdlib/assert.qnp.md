@@ -4,11 +4,22 @@
 ## Overview
  - [Functions](#functions)
  - [Macros](#macros)
+ - [Details](#details)
 
 
 ## Functions
- - [fn<> std.__assert(bool check, u8 const* msg, u8 const* file, i32 line)]()
+ - [fn<> std.__assert(bool check, u8 const* msg, u8 const* file, i32 line)](#ref_cc86eb6f489467900e0c6ad5b1b0bbbf)
 
 ## Macros
- - [std.assert]()
+ - [std.assert]
+
+## Details
+#### <a id="ref_cc86eb6f489467900e0c6ad5b1b0bbbf"/>fn<> std.__assert(bool check, u8 const* msg, u8 const* file, i32 line)
+```qinp
+\\ Internal assert function. Prints error message and exits if check is false.
+\\ @param check Boolean expression to check.
+\\ @param msg Error message to print.
+\\ @param file File name where assert was called.
+\\ @param line Line number where assert was called.
+```
 
