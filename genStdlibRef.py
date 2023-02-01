@@ -40,6 +40,12 @@ class PageContent:
 	macros: list[str]
 	details: dict[str, str]
 
+@dataclass
+class Detail:
+	detailStr: str
+	declLink: str
+	defLink: str
+
 FILES = {}
 
 def commentsFromJSON(comments_json):
@@ -72,9 +78,16 @@ def getPreExtendedComment(comments, symbol):
 		line -= 1
 	return comment
 
+def codeLink(file, line):
+	return "/" + file + "?plain=1#L" + str(line)
+
 def autoAddDetail(file, lineStr, comments, symbol):
 	if commentExists(comments, symbol):
-		FILES[file].details[lineStr] = getPreExtendedComment(comments, symbol)
+		FILES[file].details[lineStr] = Detail(
+			getPreExtendedComment(comments, symbol),
+			codeLink(symbol["pos"]["decl"]["file"], symbol["pos"]["decl"]["line"]),
+			codeLink(symbol["pos"]["def"]["file"], symbol["pos"]["def"]["line"])
+			)
 
 def lineLink(line):
 	return "ref_" + str(hashlib.md5(line.encode()).hexdigest())
@@ -196,7 +209,22 @@ def generateDetails(details):
 
 	for name, detail in details.items():
 		content += "#### <a id=\"" + lineLink(name) + "\"/>" + name + "\n"
-		content += "```qinp\n" + detail + "\n```\n"
+
+		addedLink = False
+
+		if detail.declLink != "" and detail.declLink != detail.defLink:
+			content += "> [Declaration](" + detail.declLink + ")"
+			addedLink = True
+
+		if detail.defLink != "":
+			content += " | " if addedLink else "> "
+			addedLink = True
+			content += "[Definition](" + detail.defLink + ")"
+
+		if addedLink:
+			content += "\n"
+		
+		content += "```qinp\n" + detail.detailStr + "\n```\n"
 
 	return content
 

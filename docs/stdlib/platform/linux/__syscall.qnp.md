@@ -331,6 +331,7 @@
 
 ## Details
 #### <a id="ref_7388c1195f3af4206104987460061420"/>fn<u64> std.__syscall(u64 num)
+> [Declaration](/stdlib/platform/linux/__syscall.qnp?plain=1#L13) | [Definition](/stdlib/platform/linux/__syscall.qnp?plain=1#L340)
 ```qinp
 \\ The following __syscall functions are used to invoke system calls.
 \\ There are multiple overloads, each for a different number of arguments.

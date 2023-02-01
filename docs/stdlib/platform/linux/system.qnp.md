@@ -11,6 +11,7 @@
 
 ## Details
 #### <a id="ref_eb78693fadf04010c87ebfa3ac55eadf"/>fn<> std.exit(i32 status)
+> [Declaration](/stdlib/system.qnp?plain=1#L10) | [Definition](/stdlib/platform/linux/system.qnp?plain=1#L13)
 ```qinp
 \\ Terminate the calling process and return the specified exit status.
 \\ @param status The exit status to return to the parent process.

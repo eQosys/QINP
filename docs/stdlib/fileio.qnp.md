@@ -18,11 +18,13 @@
 
 ## Details
 #### <a id="ref_9d88eebd2af888dcce049ae45aa49bb8"/>fn<> std.fclose(std.File* pFile) ...
+> [Declaration](/stdlib/fileio.qnp?plain=1#L36) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L42)
 ```qinp
 \\ Closes the file.
 \\ @param pFile The file object.
 ```
 #### <a id="ref_8b5607b8ea33422886283e593c621d1f"/>fn<std.File*> std.fopen(u8 const* filename, u8 const* mode) nodiscard ...
+> [Declaration](/stdlib/fileio.qnp?plain=1#L17) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L21)
 ```qinp
 \\ Opens a file for reading and/or writing.
 \\ If the file could not be opened, null is returned.
@@ -34,6 +36,7 @@
 \\ @return The file object.
 ```
 #### <a id="ref_50cc280d0699a1cd11a369f7ae47577b"/>fn<u64> std.fread(std.File* pFile, void* dest, u64 num) ...
+> [Declaration](/stdlib/fileio.qnp?plain=1#L25) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L36)
 ```qinp
 \\ Reads num bytes from the file into the destination buffer.
 \\ May return less than num bytes if the end of the file is reached.
@@ -43,6 +46,7 @@
 \\ @return The number of bytes read.
 ```
 #### <a id="ref_1f8563dcf12abebac75334241dac213a"/>fn<u64> std.fwrite(std.File* pFile, void const* src, u64 num) ...
+> [Declaration](/stdlib/fileio.qnp?plain=1#L32) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L39)
 ```qinp
 \\ Writes num bytes from the source buffer to the file.
 \\ @param pFile The file object.
