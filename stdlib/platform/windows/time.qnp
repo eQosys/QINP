@@ -2,14 +2,15 @@
 \\ Time - Windows Specific
 
 space std:
-	pass
+	extern fn<> __ex_Sleep(u64 ms) = "Sleep"
 
 
 
 defer
 space std:
-	fn<u64> getTime()!:
+	fn<u64> getTime() nodiscard!:
 		return 0
 
 	fn<i32> sleep(u64 ms)!:
+		__ex_Sleep(ms)
 		return 0

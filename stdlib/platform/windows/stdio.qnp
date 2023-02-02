@@ -2,14 +2,24 @@
 \\ Standard Input/Output - Windows Specific
 
 space std:
-	pass
+	define __HANDLE u64
+
+	extern fn<__HANDLE>__ex_GetStdHandle(i32 nStdHandle) nodiscard = "GetStdHandle"
+	extern fn<bool> __ex_WriteConsole(__HANDLE handle, void const* buff, i32 charNum, i32* nWritten, void* reserved) = "WriteConsoleA"
+	extern fn<bool> __ex_ReadConsole(__HANDLE handle, void* buff, i32 charNum, i32* nRead, void* pInputControl) = "ReadConsoleA"
 
 
 
 defer
 space std:
 	fn<i32> printn(u8 const* str, u64 num)!:
-		return 0
+		static hStdOut = __ex_GetStdHandle(-11)
+		var<i32> nWritten
+		__ex_WriteConsole(hStdOut, str, num, &nWritten, null)
+		return nWritten
 
 	fn<i32> scann(u8* dest, u64 num)!:
-		return 0
+		static hStdIn = __ex_GetStdHandle(-10)
+		var<i32> nRead
+		__ex_ReadConsole(hStdIn, dest, num, &nRead, null)
+		return nRead

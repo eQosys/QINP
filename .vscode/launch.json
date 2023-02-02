@@ -18,7 +18,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/Debug/QINP.exe",
-            "args": [ "-v", "-k", "-r", "-e=exampes/_symbols.json", "-c=examples/_comments.json", "-i=stdlib/", "examples/test.qnp" ],
+            "args": [ "-v", "-k", "-r", "-e=examples/_symbols.json", "-c=examples/_comments.json", "-i=stdlib/", "examples/hello.qnp" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",

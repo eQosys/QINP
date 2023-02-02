@@ -17,6 +17,9 @@
 
 #include "NasmGenerator.h"
 
+#include <windows.h>
+
+
 void writeTextFileOverwrite(const std::string& filename, const std::string& text)
 {
 	std::ofstream file(filename, std::ios::trunc);
