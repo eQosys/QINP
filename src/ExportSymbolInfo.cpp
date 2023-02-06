@@ -26,6 +26,7 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 	out << "{";
 
 	out << "\"name\": \"" << root->name << "\"";
+	out << ",\"fullName\": \"" << SymPathToString(getSymbolPath(nullptr, root)) << "\"";
 
 	out << ",\"pos\": ";
 	exportPosition(root->pos, out);

@@ -101,7 +101,7 @@ def wrapLine(line, symbol, hasDetail):
 
 	return result
 
-def genLineVariable(symbol, comments, addVarPrefix = False, addStdPrefix = False, doWrapLine = True):
+def genLineVariable(symbol, comments, addVarPrefix = False, useFullName = False, doWrapLine = True):
 	line = ""
 	if addVarPrefix:
 		line += "var<"
@@ -113,10 +113,10 @@ def genLineVariable(symbol, comments, addVarPrefix = False, addStdPrefix = False
 	else:
 		line += " "
 
-	if addStdPrefix:
-		line += "std."
-
-	line += symbol["name"]
+	if useFullName:
+		line += symbol["fullName"]
+	else:
+		line += symbol["name"]
 
 	return wrapLine(line, symbol, False) if doWrapLine else line
 
@@ -124,7 +124,7 @@ def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = Tru
 	isExtern = funcName is None
 	line = ""
 	if isExtern:
-		funcName = symbol["name"]
+		funcName = symbol["fullName"]
 		line = "extern " + line
 	if symbol["isBlueprint"]:
 		line = "blueprint " + line
@@ -136,7 +136,7 @@ def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = Tru
 	if not isVoidFunc:
 		line += symbol["retType"]
 
-	line += "> std."
+	line += "> "
 
 	line += funcName
 
@@ -170,9 +170,7 @@ def genLinePack(symbol, comments, isDefine, doWrapLine = True):
 	else:
 		line += "pack"
 
-	line += " std."
-
-	line += symbol["name"]
+	line += " " + symbol["fullName"]
 
 	if not isDefine:
 		line += " ..."
@@ -182,18 +180,14 @@ def genLinePack(symbol, comments, isDefine, doWrapLine = True):
 def genLineEnum(symbol, comments, doWrapLine = True):
 	line = ""
 
-	line += "std."
-
-	line += symbol["name"]
+	line += symbol["fullName"]
 
 	return wrapLine(line, symbol, False) if doWrapLine else line
 
 def genMacroLine(symbol, comments, doWrapLine = True):
 	line = ""
 
-	line += "std."
-
-	line += symbol["name"]
+	line += symbol["fullName"]
 
 	return wrapLine(line, symbol, False) if doWrapLine else line
 
@@ -238,15 +232,17 @@ def generateLines(base, comments, files, funcName = None):
 			files[defFile] = PageContent([], [], [], [], [], {})
 
 		match symbol["type"]:
-			case "None" | "Namespace" | "Global":
+			case "None" | "Global":
 				continue
+			case "Namespace":
+				generateLines(symbol["subSymbols"], comments, files, funcName)
 			case "Variable":
 				files[declFile].globals.append(genLineVariable(symbol, comments, True, True))
 			case "FuncName":
 				if name == "&_BLUEPRINTS_&":
 					generateLines(symbol["subSymbols"], comments, files, funcName)
 				else:
-					generateLines(symbol["subSymbols"], comments, files, name)
+					generateLines(symbol["subSymbols"], comments, files, symbol["fullName"])
 			case "FuncSpec":
 				if symbol["genFromBlueprint"]:
 					continue

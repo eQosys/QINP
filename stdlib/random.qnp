@@ -16,7 +16,7 @@ space std:
 		\\ @returns A random integer between T_MIN and T_MAX
 		fn<?T> random() nodiscard...
 
-		\\ Generates a random number in a range
+		\\ Generates a random number in a specified range
 		\\ @param min The minimum value
 		\\ @param max The maximum value
 		\\ @returns A random integer between min and max (inclusive)
