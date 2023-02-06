@@ -4,6 +4,7 @@ import "math.qnp"
 import "memory.qnp"
 import "stdio.qnp"
 import "time.qnp"
+import "random.qnp"
 
 std.println("Allocating 100 bytes")
 var buff1 = std.malloc(100)
@@ -197,5 +198,38 @@ fn<i32> foo(i32 a, i32 b) [T]:
 
 foo(<x>, 1, 2)
 \\foo(<y>, 1, 2)
+
+define RAND_MAX 160
+define N_VALUES 1000000
+define N_LINES 30
+
+var<i32[RAND_MAX]> rand_arr
+var loop_count = -1
+while ++loop_count < N_VALUES:
+	++rand_arr[std.random.range(0, RAND_MAX - 1)]
+
+var max_val = 0
+var min_val = N_VALUES
+loop_count = -1
+while ++loop_count < RAND_MAX:
+	if rand_arr[loop_count] > max_val:
+		max_val = rand_arr[loop_count]
+	if rand_arr[loop_count] < min_val:
+		min_val = rand_arr[loop_count]
+
+loop_count = -1
+while ++loop_count < RAND_MAX:
+	rand_arr[loop_count] -= min_val
+max_val -= min_val
+
+var line_count = -1
+while ++line_count < N_LINES:
+	var col_count = -1
+	while ++col_count < RAND_MAX:
+		if rand_arr[col_count] >= max_val * (N_LINES - line_count + 1) / N_LINES:
+			std.print("#")
+		else:
+			std.print(" ")
+	std.println("  %", min_val + max_val * (N_LINES - line_count + 1) / N_LINES)
 
 std.exit(std.EXIT_FAILURE)

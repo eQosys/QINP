@@ -1,0 +1,44 @@
+\\ QINP Standard Library
+\\ Random
+
+space std:
+	space random:
+		\\ Seeds the random number generator
+		\\ @param seed The seed to use
+		fn<> seed(u64 seed)...
+
+		\\ Random number generator
+		\\ @returns A random integer between U64_MIN and U64_MAX
+		fn<u64> randU64() nodiscard...
+
+		\\ Random number generator
+		\\ T must be a integer type
+		\\ @returns A random integer between T_MIN and T_MAX
+		fn<?T> random() nodiscard...
+
+		\\ Generates a random number in a range
+		\\ @param min The minimum value
+		\\ @param max The maximum value
+		\\ @returns A random integer between min and max (inclusive)
+		fn<?T> range(?T min, ?T max) nodiscard...
+
+
+
+defer
+space std:
+	space random:
+		\\ The seed used by the random number generator
+		var<u64> __seed = 0
+
+		fn<> seed(u64 seed)!:
+			__seed = seed
+
+		fn<u64> randU64() nodiscard!:
+			return __seed = __seed * 6364136223846793005 + 1442695040888963407 + __seed % 12345
+
+		fn<?T> random() nodiscard!:
+			const r = randU64()
+			return *(T*)&r
+
+		fn<?T> range(?T min, ?T max) nodiscard!:
+			return min + randU64() % (max - min + 1)
