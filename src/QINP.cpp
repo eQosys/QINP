@@ -232,13 +232,15 @@ int main(int argc, char** argv, char** _env)
 
 		{
 			Timer timer("Assembling", verbose);
-			if (execCmd(nasmCmd))
-				THROW_QINP_ERROR("Assembler Error!");
+			ExecCmdResult r;
+			if ((r = execCmd(nasmCmd)).first)
+				THROW_QINP_ERROR("Assembler Error:\n" + r.second);
 		}
 		{
 			Timer timer("Linking", verbose);
-			if (execCmd(linkCmd))
-				THROW_QINP_ERROR("Linker Error!");
+			ExecCmdResult r;
+			if ((r = execCmd(linkCmd)).first)
+				THROW_QINP_ERROR("Linker Error:\n" + r.second);
 		}
 
 		std::filesystem::remove(objFilename);
@@ -252,7 +254,7 @@ int main(int argc, char** argv, char** _env)
 				for (auto& arg : args.getOption("runarg"))
 					runCmd += " \"" + arg + "\""; // TODO: Proper quoting
 			if (verbose) std::cout << "Running generated program..." << std::endl;
-			runRet = execCmd(runCmd);
+			runRet = execCmd(runCmd, false).first;
 			if (verbose) std::cout << std::endl << "Exit code: " << runRet << std::endl;
 		}
 	}
