@@ -94,6 +94,11 @@ struct Symbol
 	{
 		int size = 0;
 		bool isUnion = false;
+		bool isBlueprint = false;
+		bool genFromBlueprint = false;
+		std::vector<Token> bpMacroTokens;
+		std::vector<TokenListRef> bpMacroTokenEmplacements;
+		TokenListRef blueprintTokens;
 	} pack;
 
 	int64_t enumValue;

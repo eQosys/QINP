@@ -142,7 +142,7 @@ fn<?T> normalize(?T val) [T, Tnormalized]:
 	var<Tnormalized> temp = val
 	return temp
 
-std.print("Normalized: %\n", normalize(<i64, i8>, 10000))
+std.print("Normalized: %\n", normalize({i64, i8}, 10000))
 
 fn<?T> limit(?T val) [T, min, max]:
 	if val < min:
@@ -164,7 +164,7 @@ fn<?T> limit(?T val, ?T min, ?T max):
 const begin1 = std.getTime()
 var<i64> i = 0
 while i < 50000000:
-	limit(<i64, 0, 10>, 10000)
+	limit({i64, 0, 10}, 10000)
 	i += 1
 const end1 = std.getTime()
 std.println("Time: % ms", end1 - begin1)
@@ -196,7 +196,7 @@ fn<i32> foo(i32 a, i32 b) [T]:
 	std.println("Pretty:  %", __pretty__)
 	return 0
 
-foo(<x>, 1, 2)
+foo({x}, 1, 2)
 \\foo(<y>, 1, 2)
 
 define RAND_MAX 160
@@ -231,5 +231,13 @@ while ++line_count < N_LINES:
 		else:
 			std.print(" ")
 	std.println("  %", min_val + max_val * (N_LINES - line_count + 1) / N_LINES)
+
+\\ pack TestPack [T]:
+\\ 	var<T> a
+\\ 	var<T> b
+
+\\ var<TestPack{i32}> testPack
+\\ testPack.a = 100
+\\ std.println("testPack.a = %", testPack.a)
 
 std.exit(std.EXIT_FAILURE)

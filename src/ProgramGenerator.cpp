@@ -1213,6 +1213,21 @@ SymbolRef addPack(ProgGenInfo &info, SymbolRef pack)
 {
 	auto existingPack = getSymbol(currSym(info), pack->name, true);
 
+	// if (func->func.isBlueprint)
+	// {
+	// 	auto bpFuncs = getSymbol(funcs, BLUEPRINT_SYMBOL_NAME, true);
+
+	// 	if (!bpFuncs)
+	// 	{
+	// 		bpFuncs = std::make_shared<Symbol>();
+	// 		bpFuncs->name = BLUEPRINT_SYMBOL_NAME;
+	// 		bpFuncs->type = SymType::FunctionName;
+
+	// 		addSymbol(funcs, bpFuncs);
+	// 	}
+	// 	funcs = bpFuncs;
+	// }
+
 	if (!existingPack)
 	{
 		addSymbol(currSym(info), pack);
@@ -2097,14 +2112,14 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			exp->isLValue = false;
 
 			// Parse explicit blueprint types if given
-			if (isOperator(peekToken(info), "<"))
+			if (isSeparator(peekToken(info), "{"))
 			{
 				nextToken(info);
-				while (!isOperator(peekToken(info), ">"))
+				while (!isSeparator(peekToken(info), "}"))
 				{
 					TokenListRef tl = std::make_shared<TokenList>();
 
-					while (!isOperator(peekToken(info), ">") && !isSeparator(peekToken(info), ","))
+					while (!isSeparator(peekToken(info), "}") && !isSeparator(peekToken(info), ","))
 					{
 						tl->push_back(peekToken(info));
 						nextToken(info);
@@ -2113,11 +2128,11 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 
 					if (isSeparator(peekToken(info), ","))
 						nextToken(info);
-					else if (!isOperator(peekToken(info), ">"))
-						THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected ',' or '>'!");
+					else if (!isSeparator(peekToken(info), "}"))
+						THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected ',' or '}'!");
 				}
 
-				parseExpected(info, Token::Type::Operator, ">");
+				parseExpected(info, Token::Type::Separator, "}");
 
 				if (!isSeparator(peekToken(info), ")"))
 				{
@@ -2489,6 +2504,26 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 			if (!sym)
 				return exitEntered({}, true);
 			localOnly = true;
+
+			if (isSeparator(peekToken(info), "{"))
+			{
+				nextToken(info);
+
+				std::vector<TokenListRef> bpMacroTokenEmplacements;
+
+				while (!isSeparator(peekToken(info), "}"))
+				{
+					bpMacroTokenEmplacements.push_back(std::make_shared<TokenList>());
+
+					while (!isSeparator(peekToken(info), "}") && !isSeparator(peekToken(info), ","))
+						bpMacroTokenEmplacements.back()->push_back(nextToken(info));
+
+					if (isSeparator(peekToken(info), ","))
+						nextToken(info);
+				}
+
+				parseExpected(info, Token::Type::Separator, "}");
+			}
 		} while (isOperator(nextToken(info), "."));
 		nextToken(info, -1);
 
@@ -2808,7 +2843,6 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic || funcSym->func.hasExplicitBlueprintOrder)
 	{
 		funcSym->func.isBlueprint = true;
-		funcSym->func.blueprintTokens = std::make_shared<TokenList>();
 	}
 
 
@@ -2874,7 +2908,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 			decreaseIndent(info);
 		}
 
-		*funcSym->func.blueprintTokens = TokenList(itFuncBegin, info.currToken);
+		funcSym->func.blueprintTokens = std::make_shared<TokenList>(itFuncBegin, info.currToken);
 		funcSym->func.blueprintTokens->push_back(makeToken(Token::Type::EndOfCode, "<end-of-code>"));
 
 		if (itExplicitListBegin != itExplicitListEnd)
@@ -3461,6 +3495,13 @@ bool parsePackUnion(ProgGenInfo &info)
 	auto &packToken = peekToken(info);
 	if (!isKeyword(packToken, "pack") && !isKeyword(packToken, "union"))
 		return false;
+
+	auto itPackBegin = info.currToken;
+	while (
+		info.tokens->begin() != itPackBegin &&
+		!isNewline(*std::prev(itPackBegin)))
+		--itPackBegin;
+
 	nextToken(info);
 
 	auto &nameToken = peekToken(info);
@@ -3474,6 +3515,25 @@ bool parsePackUnion(ProgGenInfo &info)
 	packSym->name = nameToken.value;
 	packSym->pack.isUnion = isKeyword(packToken, "union");
 	auto &pack = packSym->pack;
+
+	TokenList::iterator itExplicitListBegin = info.currToken;
+	TokenList::iterator itExplicitListEnd = info.currToken;
+	if (isSeparator(peekToken(info), "["))
+	{
+		nextToken(info);
+		while (isIdentifier(peekToken(info)))
+		{
+			packSym->pack.bpMacroTokens.push_back(nextToken(info));
+			if (isSeparator(peekToken(info), ","))
+				nextToken(info);
+		}
+		parseExpected(info, Token::Type::Separator, "]");
+
+		itExplicitListEnd = info.currToken;
+	}
+
+	packSym->pack.isBlueprint = !packSym->pack.bpMacroTokens.empty();
+
 
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
@@ -3506,6 +3566,38 @@ bool parsePackUnion(ProgGenInfo &info)
 
 	if (isDefined(packSym))
 		packSym->pos.def = nameToken.pos;
+
+	if (packSym->pack.isBlueprint)
+	{
+		if (isDefined(packSym))
+		{
+			increaseIndent(info);
+
+			while (!doParseIndent || parseIndent(info, true))
+			{
+				doParseIndent = true;
+
+				while (!isNewline(peekToken(info, 0, true)))
+					nextToken(info, 1, true);
+				parseExpectedNewline(info);
+			}
+
+			decreaseIndent(info);
+		}
+		packSym->pack.blueprintTokens = std::make_shared<TokenList>(itPackBegin, info.currToken);
+		packSym->pack.blueprintTokens->push_back(makeToken(Token::Type::EndOfCode, "<end-of-code>"));
+
+		if (itExplicitListBegin != itExplicitListEnd)
+		{
+			uint64_t offset = std::distance(itPackBegin, itExplicitListBegin);
+			auto length = std::distance(itExplicitListBegin, itExplicitListEnd);
+			auto begin = packSym->pack.blueprintTokens->begin();
+			std::advance(begin, offset);
+			auto end = begin;
+			std::advance(end, length);
+			packSym->pack.blueprintTokens->erase(begin, end);
+		}
+	}
 
 	increaseIndent(info);
 	enterSymbol(info, packSym);
