@@ -22,6 +22,11 @@ space std:
 		\\ @returns A random integer between min and max (inclusive)
 		fn<?T> range(?T min, ?T max) nodiscard...
 
+		\\ Fill a buffer with random data
+		\\ @param buffer The buffer to fill
+		\\ @param size The size of the buffer
+		\\ @returns The buffer
+		fn<void*> fill(void* buffer, u64 size)...
 
 
 defer
@@ -42,3 +47,9 @@ space std:
 
 		fn<?T> range(?T min, ?T max) nodiscard!:
 			return min + randU64() % (max - min + 1)
+
+		fn<void*> fill(void* buffer, u64 size)!:
+			var buff = (u8*)buffer
+			while size-- > 0:
+				*buff++ = randU64() \\TODO: Replace with random({u8})
+			return buffer

@@ -240,4 +240,9 @@ while ++line_count < N_LINES:
 \\ testPack.a = 100
 \\ std.println("testPack.a = %", testPack.a)
 
+var<u8[64]> buffasdf
+std.random.fill(buffasdf, 63)
+buffasdf[63] = 0
+std.println("Random: %", buffasdf)
+
 std.exit(std.EXIT_FAILURE)
