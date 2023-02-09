@@ -51,5 +51,5 @@ space std:
 		fn<void*> fill(void* buffer, u64 size)!:
 			var buff = (u8*)buffer
 			while size-- > 0:
-				*buff++ = randU64() \\TODO: Replace with random({u8})
+				*buff++ = random({u8})
 			return buffer

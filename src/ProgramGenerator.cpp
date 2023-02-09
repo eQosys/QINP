@@ -631,9 +631,9 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 	else
 	{
-		for (int i = 0; i < bpSym->func.explicitBpMacroTokens.size(); ++i)
+		for (int i = 0; i < bpSym->func.bpMacroTokens.size(); ++i)
 		{
-			auto& tok = bpSym->func.explicitBpMacroTokens[i];
+			auto& tok = bpSym->func.bpMacroTokens[i];
 			auto& tl = explicitMacros[i];
 
 			auto sym = makeMacroSymbol(tok.pos, blueprintMacroNameFromName(tok.value));
@@ -642,7 +642,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 		}
 	}
 
-	for (auto& tok : bpSym->func.explicitBpMacroTokens)
+	for (auto& tok : bpSym->func.bpMacroTokens)
 	{
 		if (resolvedMacros.find(tok.value) == resolvedMacros.end())
 			THROW_PROG_GEN_ERROR_TOKEN(tok, "Blueprint macro '" + tok.value + "' has not been resolved!");	
@@ -752,12 +752,13 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 #define CONV_SCORE_NOT_POSSIBLE -0xFFFF
 #define CONV_SCORE_NO_CONV 0x0
 #define CONV_SCORE_EXPLICIT 0x0
-#define CONV_SCORE_MAKE_CONST 0x1
-#define CONV_SCORE_MACRO 0x2
-#define CONV_SCORE_VARIADIC 0x4
-#define CONV_SCORE_PROMOTION 0x8
-#define CONV_SCORE_PTR_TO_VOID_PTR 0x10
-#define CONV_SCORE_NARROW_CONV 0x20
+#define CONV_SCORE_BLUEPRINT 0x1
+#define CONV_SCORE_MAKE_CONST 0x2
+#define CONV_SCORE_MACRO 0x4
+#define CONV_SCORE_VARIADIC 0x8
+#define CONV_SCORE_PROMOTION 0x10
+#define CONV_SCORE_PTR_TO_VOID_PTR 0x20
+#define CONV_SCORE_NARROW_CONV 0x40
 
 int calcConvScore(ProgGenInfo &info, Datatype from, Datatype to, bool isExplicit)
 {
@@ -903,6 +904,10 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 		return CONV_SCORE_NOT_POSSIBLE;
 
 	int score = CONV_SCORE_BEGIN;
+
+	if (func->func.isBlueprint)
+		score += CONV_SCORE_BLUEPRINT;
+
 	for (int i = 0; i < paramExpr.size(); ++i)
 	{
 		if (i < func->func.params.size()) // If the parameter is not variadic
@@ -948,9 +953,7 @@ void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidat
 				continue;
 			if (!fSym->func.isVariadic && paramExpr.size() != fSym->func.params.size())
 				continue;
-			if (!fSym->func.isBlueprint && !fSym->func.genFromBlueprint && !explicitMacros.empty())
-				continue;
-			if (fSym->func.hasExplicitBlueprintOrder && fSym->func.implicitBpMacroCount != fSym->func.explicitBpMacroTokens.size() && fSym->func.explicitBpMacroTokens.size() != explicitMacros.size())
+			if (fSym->func.requiresExplicitBpMacroList && explicitMacros.size() != fSym->func.bpMacroTokens.size())
 				continue;
 
 			int score = calcFuncScore(info, fSym, paramExpr);
@@ -1201,8 +1204,21 @@ SymbolRef addFunction(ProgGenInfo &info, SymbolRef func)
 	if (isDefined(existingOverload))
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' already defined here: " + getPosStr(getBestPos(existingOverload)));
 
-	if (func->func.hasExplicitBlueprintOrder != existingOverload->func.hasExplicitBlueprintOrder)
-		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching explicit blueprint macro list!: " + getPosStr(getBestPos(existingOverload)));
+	bool bpEqual = func->func.bpMacroTokens.size() == existingOverload->func.bpMacroTokens.size();
+	if (bpEqual)
+	{
+		for (int i = 0; i < func->func.bpMacroTokens.size(); ++i)
+		{
+			if (func->func.bpMacroTokens[i].value != existingOverload->func.bpMacroTokens[i].value)
+			{
+				bpEqual = false;
+				break;
+			}
+		}
+	}
+	if (!bpEqual)
+		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching blueprint macro list!: " + getPosStr(getBestPos(existingOverload)));
+	
 	if (func->func.isNoDiscard != existingOverload->func.isNoDiscard)
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching no-discard attribute!: " + getPosStr(getBestPos(existingOverload)));
 
@@ -2718,15 +2734,18 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 	nextToken(info);
 
-	std::vector<Token> blueprintMacroTokens;
+	// Create the function symbol
+	SymbolRef funcSym = std::make_shared<Symbol>();
+	funcSym->type = SymType::FunctionSpec;
+	funcSym->func.body = std::make_shared<Body>();
 
 	// Parse the return type
-	Datatype datatype("void");
+	funcSym->func.retType = Datatype("void");
 	if (isOperator(peekToken(info), "<"))
 	{
 		parseExpected(info, Token::Type::Operator, "<");
 		if (!isOperator(peekToken(info), ">")) // Makes 'fn<>' possible (same as 'fn' and 'fn<void>')
-			datatype = getParseDatatype(info, &blueprintMacroTokens);
+			funcSym->func.retType = getParseDatatype(info, &funcSym->func.bpMacroTokens);
 		parseExpected(info, Token::Type::Operator, ">");
 	}
 
@@ -2734,23 +2753,15 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
-	auto &name = nameToken.value;
+	funcSym->name = nameToken.value;
 
 	if (!isSeparator(peekToken(info), "("))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing parameter list for function declaration!");
 
 	if (!isInGlobal(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
-
-	auto declDefPos = peekToken(info).pos;
-
-	// Create the function symbol
-	SymbolRef funcSym = std::make_shared<Symbol>();
-	funcSym->pos.decl = declDefPos;
-	funcSym->type = SymType::FunctionSpec;
-	funcSym->name = name;
-	funcSym->func.body = std::make_shared<Body>();
-	funcSym->func.retType = datatype;
+	
+	funcSym->pos.decl = peekToken(info).pos;
 
 	// Parse the parameter list
 	parseExpected(info, Token::Type::Separator, "(");
@@ -2771,7 +2782,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		auto &param = paramSym->var;
 		param.context = SymVarContext::Parameter;
 
-		param.datatype = getParseDatatype(info, &blueprintMacroTokens);
+		param.datatype = getParseDatatype(info, &funcSym->func.bpMacroTokens);
 		if (!param.datatype)
 			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 
@@ -2793,7 +2804,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 	parseExpected(info, Token::Type::Separator, ")");
 
-	funcSym->func.implicitBpMacroCount = blueprintMacroTokens.size();
+	funcSym->func.implicitBpMacroCount = funcSym->func.bpMacroTokens.size();
 
 	// Parse the explicit blueprint order if provided
 	TokenList::iterator itExplicitListBegin = info.currToken;
@@ -2801,7 +2812,6 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (isSeparator(peekToken(info), "["))
 	{
 		nextToken(info);
-		funcSym->func.hasExplicitBlueprintOrder = true;
 
 		std::vector<Token> newBlueprintMacroTokens;
 
@@ -2828,19 +2838,19 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 				THROW_PROG_GEN_ERROR_TOKEN(tok, "Multiple definitions of '" + tok.value + "' in explicit blueprint macro list!");
 		}
 
-		for (auto& tok : blueprintMacroTokens)
+		for (auto& tok : funcSym->func.bpMacroTokens)
 		{
 			if (std::find(newBlueprintMacroTokens.begin(), newBlueprintMacroTokens.end(), tok) == newBlueprintMacroTokens.end())
 				THROW_PROG_GEN_ERROR_TOKEN(tok, "Explicit blueprint macro list must contain all implicitly introduced macro names!");
 		}
 
-		blueprintMacroTokens = newBlueprintMacroTokens;
+		funcSym->func.requiresExplicitBpMacroList = funcSym->func.bpMacroTokens.size() != newBlueprintMacroTokens.size();
+
+		funcSym->func.bpMacroTokens = newBlueprintMacroTokens;
 	}
 
-	funcSym->func.explicitBpMacroTokens = blueprintMacroTokens;
-
 	// Set blueprint flag
-	if (!blueprintMacroTokens.empty() || funcSym->func.isVariadic || funcSym->func.hasExplicitBlueprintOrder)
+	if (!funcSym->func.bpMacroTokens.empty() || funcSym->func.isVariadic)
 	{
 		funcSym->func.isBlueprint = true;
 	}
@@ -2859,7 +2869,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		nextToken(info);
 
 	// Show warning if the function is not marked as pre-declared but has a pre-declaration
-	auto preDeclSym = getSymbol(currSym(info), name, true);
+	auto preDeclSym = getSymbol(currSym(info), funcSym->name, true);
 	if (preDeclSym && funcSym->func.isBlueprint)
 		preDeclSym = getSymbol(preDeclSym, BLUEPRINT_SYMBOL_NAME, true);
 	if (preDeclSym)
@@ -2867,7 +2877,7 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (reqPreDecl && !preDeclSym)
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing pre-declaration before explicit function definition!");
 	else if (!reqPreDecl && preDeclSym && !preDeclSym->func.genFromBlueprint)
-		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Function '" + name + "' was pre-declared but not marked as such. You may want to do so."));
+		PRINT_WARNING(MAKE_PROG_GEN_ERROR_TOKEN(peekToken(info), "Function '" + funcSym->name + "' was pre-declared but not marked as such. You may want to do so."));
 
 	// Check if it's a declaration or definition
 	funcSym->state = SymState::Defined;
@@ -2880,12 +2890,9 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	}
 
 	if (isDefined(funcSym))
-		funcSym->pos.def = declDefPos;
+		funcSym->pos.def = funcSym->pos.decl;
 
 	funcSym = addFunction(info, funcSym);
-
-	if (isDefined(funcSym))
-		funcSym->pos.def = declDefPos;
 
 	if (funcSym->func.isBlueprint)
 	{

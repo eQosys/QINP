@@ -131,7 +131,7 @@ std::string getReadableName(SymbolRef symbol)
 	if (isVariable(symbol))
 		return getReadableName(symbol->var.datatype) + " " + symbol->name;
 	if (isFuncSpec(symbol))
-		return getReadableName(symbol->func.retType) + " " + SymPathToString(getSymbolPath(nullptr, getParent(symbol))) + getReadableName(symbol->func.params, symbol->func.explicitBpMacroTokens, symbol->func.bpMacroTokenEmplacements, symbol->func.isVariadic);
+		return getReadableName(symbol->func.retType) + " " + SymPathToString(getSymbolPath(nullptr, getParent(symbol))) + getReadableName(symbol->func.params, symbol->func.bpMacroTokens, symbol->func.bpMacroTokenEmplacements, symbol->func.isVariadic);
 	if (isFuncName(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isEnum(symbol))

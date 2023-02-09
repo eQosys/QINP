@@ -75,10 +75,10 @@ struct Symbol
 		std::string externAsmName;
 		bool isBlueprint = false;
 		bool isVariadic = false;
-		bool hasExplicitBlueprintOrder = false;
-		std::vector<Token> explicitBpMacroTokens;
+		std::vector<Token> bpMacroTokens;
 		std::vector<TokenListRef> bpMacroTokenEmplacements;
 		int implicitBpMacroCount = 0;
+		bool requiresExplicitBpMacroList = false;
 		bool genFromBlueprint = false;
 		TokenListRef blueprintTokens;
 		bool isNoDiscard = false;
