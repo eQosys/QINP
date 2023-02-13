@@ -50,10 +50,8 @@ struct NasmGenInfo
 	bool generateComments;
 };
 
-std::string hexString(int64_t val)
+std::string hexString(uint64_t val)
 {
-	if (val < 0)
-		return "-" + hexString(-val);
 	std::stringstream ss;
 	ss << "0x" << std::hex << val;
 	return ss.str();

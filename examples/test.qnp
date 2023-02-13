@@ -245,4 +245,13 @@ std.random.fill(buffasdf, 63)
 buffasdf[63] = 0
 std.println("Random: %", buffasdf)
 
+import "limits.qnp"
+std.println(std.limits.I64_MIN)
+
+pack List:
+	pack Node:
+		var<i32> value
+		var<Node*> next
+	var<Node*> head
+
 std.exit(std.EXIT_FAILURE)

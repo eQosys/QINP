@@ -3618,8 +3618,9 @@ bool parsePackUnion(ProgGenInfo &info)
 		doParseIndent = true;
 		if (parseStatementPass(info))
 			continue;
-		if (!parseDeclDef(info))
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected member definition!");
+		if (parseDeclDef(info))
+			continue;
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected member definition!");
 	}
 
 	exitSymbol(info);
