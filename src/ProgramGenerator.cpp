@@ -2761,7 +2761,8 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (!isInGlobal(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
 	
-	funcSym->pos.decl = peekToken(info).pos;
+	auto& declDefPos = peekToken(info).pos;
+	funcSym->pos.decl = declDefPos;
 
 	// Parse the parameter list
 	parseExpected(info, Token::Type::Separator, "(");
@@ -2893,6 +2894,9 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		funcSym->pos.def = funcSym->pos.decl;
 
 	funcSym = addFunction(info, funcSym);
+
+	if (isDefined(funcSym))
+		funcSym->pos.def = declDefPos;
 
 	if (funcSym->func.isBlueprint)
 	{
