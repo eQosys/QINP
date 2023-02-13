@@ -41,5 +41,4 @@ defer
 space std:
 	pass
 
-import.linux "platform/linux/fileio.qnp"
-import.windows "platform/windows/fileio.qnp"
+import "platform/{platform}/fileio.qnp"

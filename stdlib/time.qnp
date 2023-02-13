@@ -17,5 +17,4 @@ defer
 space std:
 	pass
 
-import.linux "platform/linux/time.qnp"
-import.windows "platform/windows/time.qnp"
+import "platform/{platform}/time.qnp"

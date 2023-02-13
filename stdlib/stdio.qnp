@@ -137,5 +137,4 @@ space std:
 		scann(buff, 1)
 		return *buff
 
-import.linux "platform/linux/stdio.qnp"
-import.windows "platform/windows/stdio.qnp"
+import "platform/{platform}/stdio.qnp"

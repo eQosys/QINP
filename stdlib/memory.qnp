@@ -124,5 +124,4 @@ space std:
 
 		return 0
 
-import.linux "platform/linux/memory.qnp"
-import.windows "platform/windows/memory.qnp"
+import "platform/{platform}/memory.qnp"

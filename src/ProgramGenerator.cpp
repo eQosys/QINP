@@ -3804,9 +3804,16 @@ bool parseStatementImport(ProgGenInfo &info)
 		}
 	}
 
-	auto &fileToken = nextToken(info);
+	auto fileToken = nextToken(info);
 	if (!isString(fileToken))
 		THROW_PROG_GEN_ERROR_TOKEN(fileToken, "Expected file path!");
+
+	uint64_t posPlatformPlaceholder;
+	if ((posPlatformPlaceholder = fileToken.value.find("{platform}")) != std::string::npos)
+	{
+		fileToken.value.erase(posPlatformPlaceholder, sizeof("{platform}") - 1);
+		fileToken.value.insert(posPlatformPlaceholder, info.program->platform);
+	}
 
 	if (!platformMatch)
 		return true;
