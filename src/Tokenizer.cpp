@@ -111,7 +111,7 @@ TokenListRef tokenize(const std::string& code, std::string name, CommentTokenMap
 			for (auto& c : token.value) // Check for invalid characters
 				if (c != indentChar)
 					THROW_TOKENIZER_ERROR(token.pos, "Inconsistent indentation! (Mixed tabs and spaces)");
-			
+
 			if (token.value.size() % indentCount) // Number of characters must be a multiple of the char count per indentation
 				THROW_TOKENIZER_ERROR(token.pos, "Inconsistent indentation!");
 
@@ -233,7 +233,7 @@ TokenListRef tokenize(const std::string& code, std::string name, CommentTokenMap
 				token.type = Token::Type::BuiltinType;
 			else if (isBooleanValue(token.value))
 				token.type = Token::Type::LiteralBoolean;
-			
+
 			state = State::EndToken;
 			break;
 		case State::CheckCommentOrNewlineIgnore:
@@ -285,12 +285,11 @@ TokenListRef tokenize(const std::string& code, std::string name, CommentTokenMap
 				c = tolower(c);
 				litIntBase = (c == 'x') ? 16 : 2;
 				token.value.clear();
-				token.value.push_back(c);
 				break;
 			}
 			if (isNum(c))
 			{
-				if (token.value.size() >= 2 && token.value.find('b') == 1 && '1' < c)
+				if (litIntBase == 2 && '1' < c)
 					THROW_TOKENIZER_ERROR(token.pos, "Binary literals can only contain '0' or '1'!");
 				token.value.push_back(c);
 				break;
@@ -307,7 +306,7 @@ TokenListRef tokenize(const std::string& code, std::string name, CommentTokenMap
 				('A' <= c && c <= 'F')
 				)
 			{
-				if (token.value.find('x') != 1)
+				if (litIntBase != 16)
 					THROW_TOKENIZER_ERROR(token.pos, "'" + std::string(1, c) + "' can only be used in hex literals!");
 				token.value.push_back(tolower(c));
 				break;
