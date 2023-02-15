@@ -346,7 +346,7 @@ space std:
 		return result
 
 	fn<u64> __syscall(u64 num, ?T1 rdi)!:
-		var nrdi = rdi
+		var<u64> nrdi = (u64)rdi
 
 		var<u64> result
 		assembly:
@@ -357,8 +357,8 @@ space std:
 		return result
 
 	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi)!:
-		var nrdi = rdi
-		var nrsi = rsi
+		var<u64> nrdi = (u64)rdi
+		var<u64> nrsi = (u64)rsi
 
 		var<u64> result
 		assembly:
@@ -370,9 +370,9 @@ space std:
 		return result
 
 	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx)!:
-		var nrdi = rdi
-		var nrsi = rsi
-		var nrdx = rdx
+		var<u64> nrdi = (u64)rdi
+		var<u64> nrsi = (u64)rsi
+		var<u64> nrdx = (u64)rdx
 
 		var<u64> result
 		assembly:
