@@ -54,12 +54,12 @@ std.print(str2)
 
 const<i64> variable = 10 * 12 + 100
 
-std.println(variable, "")
+std.println(variable)
 
 enum Color:
 	Red, Green, Blue
 
-std.println((u64)Color.Green, "")
+std.println((u64)Color.Green)
 
 var _ = std.toupper('a')
 _ = std.tolower('A')
@@ -78,7 +78,7 @@ enum Data:
 	C
 	D = 10
 
-std.println((i64)Data.C, "")
+std.println((i64)Data.C)
 
 const testStr1 = (u8*)"This is a test string"
 const testStr2 = (u8*)"This is a test string"
@@ -93,7 +93,7 @@ std.println()
 std.println("TestStr1: %\nTestStr2: %", testStr1, testStr2)
 
 std.println("File:Line -> %:%", __file__, __line__)
-std.println("File:Line -> ", __file__, ":", __line__, "")
+std.println("File:Line -> ", __file__, ":", __line__)
 
 fn<?T> sum(?T a, ?T b) [T]...
 
