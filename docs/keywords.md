@@ -221,6 +221,8 @@ Possible platform values are:
 
 Only the first given platform is checked.
 
+The `{platform}` placeholder is replaced with the selected platform to compile for. This feature is heavily used in platform dependent code in the standard library. See [stdlib/memory.qnp](../stdlib/memory.qnp#L127)
+
 The `defer` specifier can be used to import a file after all other imports.
 It can be used to mimic the behavior of C/C++'s header and source file inclusion.
 
@@ -236,6 +238,11 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 > import.[specifier1].... [file_string]
 > ```
 
+> Platform placeholder:
+> ```qinp
+> import "...{platform}..."
+> ```
+
 #### Example
 
 > Standard import:
@@ -247,6 +254,12 @@ It can be used to mimic the behavior of C/C++'s header and source file inclusion
 > ```qinp
 > import.linux "platform/linux/stdio.qnp"
 > ```
+
+> Platform placeholder:
+> ```qinp
+> import "platform/{platform}/memory.qnp"
+> ```
+
 
 ---
 

@@ -248,10 +248,15 @@ std.println("Random: %", buffasdf)
 import "limits.qnp"
 std.println(std.limits.I64_MIN)
 
-pack List:
-	pack Node:
-		var<i32> value
-		var<Node*> next
-	var<Node*> head
+\\ pack List:
+\\ 	pack Node:
+\\ 		var<i32> value
+\\ 		var<Node*> next
+\\ 	var<Node*> head
+
+var<u8**> argv
+var argc = std.getargs(&argv)
+while argc--:
+	std.println(*(argv++))
 
 std.exit(std.EXIT_FAILURE)
