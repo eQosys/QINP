@@ -8,9 +8,9 @@
 
 
 ## Functions
- - blueprint fn<u64> std.__syscall(u64 num, T1 rdi)
- - blueprint fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi)
- - blueprint fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx)
+ - fn<u64> std.__syscall(u64 num, T1 rdi)
+ - fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi)
+ - fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx)
  - [fn<u64> std.__syscall(u64 num)](#ref_7388c1195f3af4206104987460061420)
 
 ## Macros

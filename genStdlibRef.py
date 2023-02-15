@@ -127,7 +127,7 @@ def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = Tru
 		funcName = symbol["fullName"]
 		line = "extern " + line
 	if symbol["isBlueprint"]:
-		line = "blueprint " + line
+		pass #line = "blueprint " + line
 
 	isVoidFunc = (symbol["retType"] == "void")
 
