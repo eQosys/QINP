@@ -64,12 +64,14 @@ std.println((u64)Color.Green)
 var _ = std.toupper('a')
 _ = std.tolower('A')
 
-var<u8[10000]> buff
-
 const f = std.fopen("examples/test.qnp", "r")
-std.println("Read % bytes", std.fread(f, buff, sizeof(buff) - 1))
+const fSize = std.fseek(f, 0, std.Seek.End)
+std.fseek(f, 0, std.Seek.Begin)
+std.println("File size: % bytes", fSize)
+var buff = (u8*)std.malloc(fSize + 1)
+std.println("Read % bytes", std.fread(f, buff, fSize))
 std.fclose(f)
-buff[sizeof(buff) - 1] = 0
+buff[fSize] = 0
 std.println("Text read:\n%", buff)
 
 enum Data:

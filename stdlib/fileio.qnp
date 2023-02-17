@@ -6,6 +6,9 @@ space std:
 	\\ It should not be used directly/dereferenced outside of the implementation.
 	pack File...
 
+	enum Seek:
+		Begin, Current, End
+
 	\\ Opens a file for reading and/or writing.
 	\\ If the file could not be opened, null is returned.
 	\\ @param filename The name of the file to open.
@@ -30,6 +33,16 @@ space std:
 	\\ @param num The number of bytes to write.
 	\\ @return The number of bytes written.
 	fn<u64> fwrite(File* pFile, void const* src, u64 num)...		\\ Platform dependent implementation
+
+	\\ Seeks to the specified offset in the file.
+	\\ @param pFile The file object.
+	\\ @param offset The offset to seek to.
+	\\ @param origin The origin to seek from. The origin can be one of the following:
+	\\  - Seek.Begin for the beginning of the file.
+	\\  - Seek.Current for the current position in the file.
+	\\  - Seek.End for the end of the file.
+	\\ @return The new position in the file, negative on error
+	fn<u64> fseek(File* pFile, u64 offset, Seek origin)...		\\ Platform dependent implementation
 
 	\\ Closes the file.
 	\\ @param pFile The file object.

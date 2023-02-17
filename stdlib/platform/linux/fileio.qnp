@@ -39,5 +39,15 @@ space std:
 	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
 		return __syscall(__SYS_WRITE, pFile, src, num)
 
+	fn<u64> fseek(File* pFile, u64 offset, Seek origin)!:
+		var<u64> uOrigin
+
+		if origin == Seek.Begin: uOrigin = 0
+		elif origin == Seek.Current: uOrigin = 1
+		elif origin == Seek.End: uOrigin = 2
+		else: return -1
+
+		return __syscall(__SYS_LSEEK, pFile, offset, uOrigin)
+
 	fn<> fclose(File* pFile)!:
 		__syscall(__SYS_CLOSE, pFile)
