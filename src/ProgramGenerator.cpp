@@ -1712,9 +1712,12 @@ ExpressionRef getParseSymbol(ProgGenInfo &info, bool localOnly)
 		exp->datatype = sym->var.datatype;
 		exp->isLValue = isArray(exp->datatype) ? false : true;
 	}
-	else if (isFuncName(sym))
+	else if (isEnum(getParent(sym)))
 	{
-		bool x = true;
+		exp->eType = Expression::ExprType::Literal;
+		exp->datatype = getMangledName(getParent(sym));
+		exp->isLValue = false;
+		exp->value = EValue((uint64_t)sym->enumValue);
 	}
 
 	switch (sym->type)
@@ -1727,10 +1730,10 @@ ExpressionRef getParseSymbol(ProgGenInfo &info, bool localOnly)
 	case SymType::ExtFunc:
 	case SymType::Pack:
 	case SymType::Macro:
+	case SymType::EnumMember:
 		exp->isObject = false;
 		break;
 	case SymType::FunctionSpec:
-	case SymType::EnumMember:
 		exp->isObject = true;
 		break;
 	case SymType::Variable:
