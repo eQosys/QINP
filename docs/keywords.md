@@ -4,8 +4,10 @@ This page lists the keywords in the QINP language.
 Keywords are special identifiers in the QINP language and cannot be used for any other purpose. The [builtin types](./builtin-types.md) are also treated as keywords.
 
 ## Overview
- - [_\_\_file\_\__](#file)
- - [_\_\_line\_\__](#line)
+ - [\_\_file\_\_](#file)
+ - [\_\_line\_\_](#line)
+ - [\_\_mangled\_\_](#mangled)
+ - [\_\_pretty\_\_](#pretty)
  - [alias](#alias)
  - [asm](#inline-assembly)
  - [assembly](#inline-assembly)
@@ -22,6 +24,7 @@ Keywords are special identifiers in the QINP language and cannot be used for any
  - [extern](#extern)
  - [_if_](./control-flow.md#if-elif-else)
  - [import](#import)
+ - [_lambda_](./lambdas.md)
  - [nodiscard](#nodiscard)
  - [null](#null)
  - [_pack_](./declarations.md#packs)
@@ -37,13 +40,25 @@ Keywords are special identifiers in the QINP language and cannot be used for any
 
 ### \_\_file\_\_
 
-The `__file__` keyword is replaced with the canonical path of the file containing the keyword.
+The `__file__` keyword is replaced with a string representing the canonical path of the file containing the keyword.
 
 ---
 
 ### \_\_line\_\_
 
-The `__line__` keyword is replaced with the line number of the keyword.
+The `__line__` keyword is replaced with a literal integer representing the line number of the keyword.
+
+---
+
+### \_\_mangled\_\_
+
+The `__mangled__` keyword is replaced with a string representing the mangled name of the symbol containing the keyword.
+
+---
+
+### \_\_pretty\_\_
+
+The `__pretty__` keyword is replaced with  a string representing the pretty name of the symbol containing the keyword.
 
 ---
 

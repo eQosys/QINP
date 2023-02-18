@@ -6,6 +6,7 @@ The QINP language follows the ODR (One Definition Rule).
 ## Overview
  - [Variables](#variables)
  - [Functions](#functions)
+ - [Function Pointers](#function-pointers)
  - [Packs](#packs)
  - [Unions](#unions)
  - [Static](#static)
@@ -140,6 +141,21 @@ The following three function declarations are all equally valid.
 > fn<> func2()...		\\ Used in the standard library
 > fn func3()...
 > ```
+
+---
+
+### Function Pointers
+
+Function pointers are used to store the address of a function.
+They can be used just like normal functions.
+
+#### Usage
+
+TODO
+
+#### Examples
+
+TODO
 
 ---
 
