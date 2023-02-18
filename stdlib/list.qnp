@@ -1,0 +1,130 @@
+\\ QINP Standard Library
+\\ List
+
+import "memory.qnp"
+
+space std:
+	space List:
+		\\ A single node in a list.
+		pack Node:
+			var<Node*> next
+			var<void*> data
+
+		\\ Creates a new node with the given data.
+		\\ @param data The data to store in the node.
+		\\ @return The new node.
+		fn<Node*> create(void* data)...
+
+		\\ Destroys the given node.
+		\\ @param node The node to destroy.
+		fn<> destroy(Node* node)...
+	
+		\\ Creates a new node with the given data and append it to the list.
+		\\ @param list The list to append to. If null, a new list will be created.
+		\\ @param data The data to append.
+		\\ @return The new node.
+		fn<Node*> append(Node* list, void* data)...
+
+		\\ Appends the given node to the list.
+		\\ @param list The list to append to.
+		\\ @param node The node to append.
+		\\ @return The appended node.
+		fn<Node*> append(Node* list, Node* node)...
+
+		\\ Inserts a new node with the given data after the given node.
+		\\ @param node The node to insert after. If null, a new list will be created.
+		\\ @param data The data to insert.
+		\\ @return The new node.
+		fn<Node*> insert(Node* node, void* data)...
+
+		\\ Inserts the given node (of a list) after the given node of a list.
+		\\ @param list The node to insert after.
+		\\ @param node The node to insert.
+		\\ @return The inserted node.
+		fn<Node*> insert(Node* list, Node* node)...
+
+		\\ Removes and destroys the given node from the list.
+		\\ @param list The list to remove from.
+		\\ @param node The node to remove.
+		\\ @return The node after the removed node. If the removed node was the last node, null is returned.
+		fn<Node*> remove(Node* list, Node* node)...
+
+		\\ Returns the length of the given list.
+		\\ @param list The list to get the length of.
+		\\ @return The length of the list.
+		fn<u64> length(Node const* list)...
+
+		\\ Returns the last node of the given list.
+		\\ @param list The list to get the last node of.
+		\\ @return The last node of the list.
+		fn<Node*> last(Node* list)...
+
+
+
+defer
+space std:
+	space List:
+		fn<Node*> create(void* data)!:
+			var<Node*> node = (Node*)std.malloc(sizeof(Node))
+			node->next = null
+			node->data = data
+			return node
+
+		fn<> destroy(Node* node)!:
+			std.free(node)
+
+		fn<Node*> append(Node* list, void* data)!:
+			return append(list, create(data))
+
+		fn<Node*> append(Node* list, Node* node)!:
+			list = last(list)
+			if list == null || node == null:
+				return node
+			list->next = node
+			return node
+
+		fn<Node*> insert(Node* node, void* data)!:
+			return insert(node, create(data))
+
+		fn<Node*> insert(Node* list, Node* node)!:
+			if list == null || node == null:
+				return node
+			
+			last(node)->next = list->next
+			list->next = node
+			return node
+
+		fn<Node*> remove(Node* list, Node* node)!:
+			if list == null || node == null:
+				return null
+
+			if list == node:
+				var next = list->next
+				destroy(list)
+				return next
+
+			while list->next != null:
+				if list->next == node:
+					var next = list->next->next
+					list->next->next = null
+					destroy(list->next)
+					list->next = next
+					return next
+				list = list->next
+			
+			return null
+
+		fn<u64> length(Node const* list)!:
+			var<u64> length = 0
+			while list != null:
+				++length
+				list = list->next
+			return length
+
+		fn<Node*> last(Node* list)!:
+			if list == null:
+				return null
+
+			while list->next != null:
+				list = list->next
+			return list
