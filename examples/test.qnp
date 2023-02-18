@@ -279,4 +279,12 @@ var<fn<i64>(i64, i64)> func = sub
 
 std.println("calc(1, 2, add) = %", calc(1, 2, func))
 
+
+var<fn<u64>(u64, u64)> fLambda = lambda<u64>(u64 a, u64 b): return a + b;
+
+fn<u64> call(fn<u64>(u64, u64) f, u64 a, u64 b):
+	return f(a, b)
+
+std.println("Result: %", call(fLambda, 1, 5))
+
 std.exit(std.EXIT_FAILURE)

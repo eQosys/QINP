@@ -111,6 +111,7 @@ std::vector<OpPrecLvl> opPrecLvls =
 			{ "(", Expression::ExprType::Explicit_Cast },
 			{ "sizeof", Expression::ExprType::SizeOf },
 			{ ".", Expression::ExprType::MemberAccess },
+			{ "lambda", Expression::ExprType::Lambda },
 		},
 		OpPrecLvl::Type::Unary_Prefix,
 	},

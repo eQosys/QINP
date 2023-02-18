@@ -58,3 +58,11 @@ fn<> List.__destruct():
 
 fn<u64> List.size():
 	return m_size
+
+var<fn<u64>(u64, u64)> f = lambda<u64>(u64 a, u64 b): return a + b;
+
+
+fn<u64> call(fn<u64>(u64, u64) f, u64 a, u64 b):
+	return f(a, b)
+
+std.println("Result: %", call(lambda<u64>(u64, u64): return a + b;, 1, 1))

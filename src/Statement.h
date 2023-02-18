@@ -119,6 +119,7 @@ struct Expression : public Statement
 		Prefix_Decrement,
 		Explicit_Cast,
 		SizeOf,
+		Lambda,
 
 		Subscript,
 		FunctionCall,

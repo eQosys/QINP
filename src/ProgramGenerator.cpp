@@ -2469,6 +2469,45 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 		exp = getParseExpression(info, precLvl + 1);
 		exitSymbol(info);
 		break;
+	case Expression::ExprType::Lambda:
+	{
+		static int lambdaID = 0;
+		auto lambdaName = "lambda__" + std::to_string(++lambdaID);
+		parseExpected(info, Token::Type::Operator, "<");
+		auto retType = getParseDatatype(info);
+		auto retTypeTokens = DatatypeToTokenList(retType);
+		parseExpected(info, Token::Type::Operator, ">");
+
+		TokenListRef tokens = std::make_shared<TokenList>();
+		tokens->push_back(makeToken(opToken.pos, Token::Type::Keyword, "fn"));
+		tokens->push_back(makeToken(opToken.pos, Token::Type::Operator, "<"));
+		tokens->insert(tokens->end(), retTypeTokens->begin(), retTypeTokens->end());
+		tokens->push_back(makeToken(opToken.pos, Token::Type::Operator, ">"));
+		tokens->push_back(makeToken(opToken.pos, Token::Type::Identifier, lambdaName));
+		while (!isEndOfCode(peekToken(info)))
+		{
+			if (isSeparator(peekToken(info), ";"))
+				break;
+			tokens->push_back(nextToken(info));
+		}
+		tokens->push_back(makeToken(opToken.pos, Token::Type::EndOfCode, "<eoc>"));
+
+		parseExpected(info, Token::Type::Separator, ";");
+
+		parseInlineTokens(info, tokens, "lambda@" + getPosStr(opToken.pos));
+		
+		auto lambda = getSymbol(currSym(info), lambdaName);
+		if (!lambda)
+			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Could not find lambda function!");
+		if (lambda->subSymbols.size() != 1)
+			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
+		//lambda = lambda->subSymbols.begin()->second;
+		//if (!isFuncSpec(lambda))
+		//	THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
+
+		exp = makeSymbolExpression(opToken.pos, lambda);
+	}
+		break;
 	default:
 		THROW_PROG_GEN_ERROR_TOKEN(opToken, "Unknown unary prefix expression!");
 	}

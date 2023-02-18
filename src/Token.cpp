@@ -106,6 +106,7 @@ const std::map<std::string, Token::Type> specialKeywords =
 	{ ":",   Token::Type::Separator },
 	{ ",",   Token::Type::Separator },
 	{ "...", Token::Type::Separator },
+	{ ";",   Token::Type::Separator },
 };
 
 bool isSpecialKeywordBegin(const std::string& str)
@@ -180,6 +181,7 @@ bool isKeyword(const std::string& name)
 		"fn",
 		"if",
 		"import",
+		"lambda",
 		"nodiscard",
 		"null",
 		"pack",
