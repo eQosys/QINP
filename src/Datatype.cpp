@@ -7,11 +7,15 @@
 #include "Program.h"
 
 Datatype::Datatype(const std::string& name)
-	: name(name), type(Type::Name)
+	: Datatype(DTType::Name, name)
 {}
 
 Datatype::Datatype(Type type, const Datatype& subType, int arraySize)
 	: type(type), subType(std::make_shared<Datatype>(subType)), arraySize(arraySize)
+{}
+
+Datatype::Datatype(Type type, const std::string& name)
+	: type(type), name(name)
 {}
 
 bool dtEqual(const Datatype& a, const Datatype& b, bool ignoreFirstConstness)
@@ -47,12 +51,12 @@ bool dtEqualNoConst(const Datatype& a, const Datatype& b)
 		return true;
 	case DTType::Name:
 	case DTType::Macro:
+	case DTType::FuncPtr:
 		return a.name == b.name;
 	case DTType::Array:
 		if (a.arraySize != b.arraySize)
 			return false; // Fallthrough to subtype check
 	case DTType::Pointer:
-	case DTType::FuncPtr:
 	case DTType::Reference:
 		return dtEqualNoConst(*a.subType, *b.subType);
 	default:
@@ -264,13 +268,13 @@ std::string getDatatypeStr(const Datatype& datatype)
 	if (isOfType(datatype, DTType::Name))
 		result += "?" + datatype.name;
 	else if (isOfType(datatype, DTType::Macro))
-		result += "%"; // On purpose, datatypes of type macro should never be used in nasm generated code. Assembling them throws an error.
+		result += "%" + datatype.name; // On purpose, datatypes of type macro should never be used in nasm generated code. Assembling them throws an error.
 	else if (isOfType(datatype, DTType::Array))
 		result += "a" + std::to_string(datatype.arraySize) + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Pointer))
 		result += "p" + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::FuncPtr))
-		result += "f" + getDatatypeStr(*datatype.subType);
+		result += "f" + datatype.name;
 	else if (isOfType(datatype, DTType::Reference))
 		result += "r" + getDatatypeStr(*datatype.subType);
 	else
@@ -288,6 +292,20 @@ std::string getReadableName(const Datatype& datatype)
 		result += getReadableName(*datatype.subType) + "[" + std::to_string(datatype.arraySize) + "]";
 	else if (isOfType(datatype, DTType::Pointer))
 		result += getReadableName(*datatype.subType) + "*";
+	else if (isOfType(datatype, DTType::FuncPtr))
+	{
+		result += "fn<" + getReadableName(*datatype.funcPtrRetType) + ">(";
+
+		for (int i = 0; i < datatype.funcPtrParams.size(); ++i)
+		{
+			if (i > 0)
+				result += ", ";
+
+			result += getReadableName(datatype.funcPtrParams[i]);
+		}
+
+		result += ")";
+	}
 	else if (isOfType(datatype, DTType::Reference))
 		result += getReadableName(*datatype.subType) + "&";
 

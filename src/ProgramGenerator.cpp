@@ -129,16 +129,16 @@ TokenListRef DatatypeToTokenList(const Datatype &datatype)
 	auto insertFuncPtrFront = [&tokens, &insertTokenFront](const Datatype& dt)
 	{
 		insertTokenFront(Token::Type::Separator, ")");
-		for (int i = dt.subType->funcPtrParams.size() - 1; i >= 0; --i)
+		for (int i = dt.funcPtrParams.size() - 1; i >= 0; --i)
 		{
-			auto tl = DatatypeToTokenList(dt.subType->funcPtrParams[i]);
+			auto tl = DatatypeToTokenList(dt.funcPtrParams[i]);
 			tokens->insert(tokens->begin(), tl->begin(), tl->end());
 			if (i > 0)
 				insertTokenFront(Token::Type::Separator, ",");
 		}
 		insertTokenFront(Token::Type::Separator, "(");
 		insertTokenFront(Token::Type::Operator, ">");
-		auto tl = DatatypeToTokenList(*dt.subType->funcPtrRetType);
+		auto tl = DatatypeToTokenList(*dt.funcPtrRetType);
 		tokens->insert(tokens->begin(), tl->begin(), tl->end());
 		insertTokenFront(Token::Type::Operator, "<");
 		insertTokenFront(Token::Type::Keyword, "fn");
@@ -766,6 +766,24 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	return specialization;
 }
 
+SymbolRef getFuncSpecFromSignature(ProgGenInfo& info, SymbolRef symFuncName, const std::string& sig)
+{
+	if (!isFuncName(symFuncName))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected function name!");
+
+	// TODO: Support blueprints
+	for (auto& [name, spec] : symFuncName->subSymbols)
+	{
+		if (spec->type != SymType::FunctionSpec)
+			continue;
+
+		if (getSignature(spec) == sig)
+			return spec;
+	}
+
+	return nullptr;
+}
+
 #define CONV_SCORE_MIN -0xFF
 #define CONV_SCORE_BEGIN 0x0
 #define CONV_SCORE_MAX 0x7FFFFFFF
@@ -932,19 +950,38 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 	{
 		if (i < func->func.params.size()) // If the parameter is not variadic
 		{
-			auto &expectedType = func->func.params[i]->var.datatype;
-			auto &actualType = paramExpr[i]->datatype;
+			auto& expectedParam = func->func.params[i];
+			auto& providedParam = paramExpr[i];
 
-			if (expectedType.type == DTType::Macro) // If the parameter is a blueprint macro
+			if (isFuncPtr(expectedParam->var.datatype))
 			{
-				score += CONV_SCORE_MACRO;
+				if (!isFuncPtr(providedParam->datatype))		
+				{	
+					if (providedParam->eType != Expression::ExprType::Symbol || !isFuncName(providedParam->symbol))
+						return CONV_SCORE_NOT_POSSIBLE;
+
+					if (!getFuncSpecFromSignature(info, providedParam->symbol, expectedParam->var.datatype.name))
+						return CONV_SCORE_NOT_POSSIBLE;
+				}
+
+				score += CONV_SCORE_NO_CONV;
 			}
 			else
 			{
-				int convScore = calcConvScore(info, actualType, expectedType, false);
-				if (convScore == CONV_SCORE_NOT_POSSIBLE)
-					return CONV_SCORE_NOT_POSSIBLE;
-				score += convScore;
+				auto &expectedType = expectedParam->var.datatype;
+				auto &providedType = providedParam->datatype;
+
+				if (expectedType.type == DTType::Macro) // If the parameter is a blueprint macro
+				{
+					score += CONV_SCORE_MACRO;
+				}
+				else
+				{
+					int convScore = calcConvScore(info, providedType, expectedType, false);
+					if (convScore == CONV_SCORE_NOT_POSSIBLE)
+						return CONV_SCORE_NOT_POSSIBLE;
+					score += convScore;
+				}
 			}
 		}
 		else // If the parameter is variadic
@@ -1425,24 +1462,6 @@ void checkDiscardResult(ProgGenInfo& info, ExpressionRef expr)
 	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!");
 }
 
-SymbolRef getFuncSpecFromSignature(ProgGenInfo& info, SymbolRef symFuncName, const std::string& sig)
-{
-	if (!isFuncName(symFuncName))
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected function name!");
-
-	// TODO: Support blueprints
-	for (auto& [name, spec] : symFuncName->subSymbols)
-	{
-		if (spec->type != SymType::FunctionSpec)
-			continue;
-
-		if (getSignature(spec) == sig)
-			return spec;
-	}
-
-	return nullptr;
-}
-
 Datatype getBestConvDatatype(const Datatype &left, const Datatype &right)
 {
 	if (isNull(left))
@@ -1581,7 +1600,7 @@ ExpressionRef genConvertExpression(ProgGenInfo &info, ExpressionRef expToConvert
 
 	if (isFuncPtr(newDatatype) && expToConvert->eType == Expression::ExprType::Symbol && isFuncName(expToConvert->symbol))
 	{
-		auto spec = getFuncSpecFromSignature(info, expToConvert->symbol, newDatatype.subType->name);
+		auto spec = getFuncSpecFromSignature(info, expToConvert->symbol, newDatatype.name);
 		if (!spec)
 			THROW_PROG_GEN_ERROR_POS(expToConvert->pos, "Cannot find function '" + getReadableName(expToConvert->symbol) + "' with a matching signature!");
 		expToConvert->symbol = spec;
@@ -2240,8 +2259,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			else if (isFPtr)
 			{
 				for (int i = 0; i < exp->paramExpr.size(); ++i)
-					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->datatype.subType->funcPtrParams[i]);
-				exp->datatype = *exp->left->datatype.subType->funcPtrRetType;
+					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->datatype.funcPtrParams[i]);
+				exp->datatype = *exp->left->datatype.funcPtrRetType;
 			}
 			else
 			{
@@ -2253,7 +2272,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			if (!isFPtr)
 			{
 				exp->datatype = func->func.retType;
-				exp->left->datatype = Datatype(DTType::FuncPtr, Datatype(getSignature(func)));
+				exp->left->datatype = Datatype(DTType::FuncPtr, getSignature(func));
 				exp->left->symbol = func;
 
 				info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
@@ -2588,10 +2607,8 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 		}
 		parseExpected(info, Token::Type::Separator, ")");
 
-		datatype.type = DTType::Name;
+		datatype.type = DTType::FuncPtr;
 		datatype.name = getSignature(*datatype.funcPtrRetType, datatype.funcPtrParams);
-
-		datatype = Datatype(DTType::FuncPtr, datatype);
 	}
 	else
 	{

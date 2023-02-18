@@ -19,6 +19,7 @@ struct Datatype
 		Array, // Has subtype
 		Pointer, // Has subtype
 		FuncPtr, // Has subtype
+		FuncName, // Has no subtype
 		Reference, // Has subtype
 		Macro, // Has subtype
 	} type = Type::None;
@@ -33,6 +34,7 @@ struct Datatype
 	Datatype(const Datatype& other) = default;
 	Datatype(const std::string& name);
 	Datatype(Type type, const Datatype& subType, int arraySize = 0);
+	Datatype(Type type, const std::string& name);
 	Datatype& operator=(Datatype&& other) = default;
 	Datatype& operator=(const Datatype& other) = default;
 };

@@ -266,11 +266,17 @@ fn<u64> bar(u64 a, u64 b):
 fn<u64> bang(u64 a, u64 b):
 	return a - b
 
-var<fn<u64>(u64, u64)> baz = bar
-std.println("baz(1, 2) = %", baz(1, 2))
+fn<i64> add(i64 a, i64 b):
+	return a + b
 
-baz = bang
-std.println("baz(10, 2) = %", baz(10, 2))
+fn<i64> sub(i64 a, i64 b):
+	return a - b
 
+fn<i64> calc(i64 a, i64 b, fn<i64>(i64, i64) func):
+	return func(a, b)
+
+var<fn<i64>(i64, i64)> func = sub
+
+std.println("calc(1, 2, add) = %", calc(1, 2, func))
 
 std.exit(std.EXIT_FAILURE)

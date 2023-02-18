@@ -404,7 +404,7 @@ void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
 	}
 
 	genExpr(ngi, expr->left.get());
-	auto exprType = Datatype(DTType::FuncPtr, Datatype(getSignature(expr)));
+	auto exprType = Datatype(DTType::FuncPtr, getSignature(expr));
 	bool typesMatch = dtEqual(ngi.primReg.datatype, exprType);
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
@@ -444,7 +444,7 @@ void genExtCall(NasmGenInfo& ngi, const Expression* expr)
 		ngi.ss << "  pop " << paramRegs[i] << "\n";
 
 	genExpr(ngi, expr->left.get());
-	bool typesMatch = dtEqual(ngi.primReg.datatype, Datatype(DTType::FuncPtr, Datatype(getSignature(expr))));
+	bool typesMatch = dtEqual(ngi.primReg.datatype, Datatype(DTType::FuncPtr, getSignature(expr)));
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
 
