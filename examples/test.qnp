@@ -261,4 +261,16 @@ var argc = std.getargs(&argv)
 while argc--:
 	std.println(*(argv++))
 
+fn<u64> bar(u64 a, u64 b):
+	return a + b
+fn<u64> bang(u64 a, u64 b):
+	return a - b
+
+var<fn<u64>(u64, u64)> baz = bar
+std.println("baz(1, 2) = %", baz(1, 2))
+
+baz = bang
+std.println("baz(10, 2) = %", baz(10, 2))
+
+
 std.exit(std.EXIT_FAILURE)

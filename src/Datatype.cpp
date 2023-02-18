@@ -52,6 +52,7 @@ bool dtEqualNoConst(const Datatype& a, const Datatype& b)
 		if (a.arraySize != b.arraySize)
 			return false; // Fallthrough to subtype check
 	case DTType::Pointer:
+	case DTType::FuncPtr:
 	case DTType::Reference:
 		return dtEqualNoConst(*a.subType, *b.subType);
 	default:
@@ -175,6 +176,11 @@ bool isSignedInt(const Datatype& datatype)
 		);
 }
 
+bool isFuncPtr(const Datatype& datatype)
+{
+	return isOfType(datatype, DTType::FuncPtr);
+}
+
 void dereferenceDatatype(Datatype& datatype)
 {
 	if (isDereferenceable(datatype))
@@ -263,6 +269,8 @@ std::string getDatatypeStr(const Datatype& datatype)
 		result += "a" + std::to_string(datatype.arraySize) + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Pointer))
 		result += "p" + getDatatypeStr(*datatype.subType);
+	else if (isOfType(datatype, DTType::FuncPtr))
+		result += "f" + getDatatypeStr(*datatype.subType);
 	else if (isOfType(datatype, DTType::Reference))
 		result += "r" + getDatatypeStr(*datatype.subType);
 	else

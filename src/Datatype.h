@@ -18,12 +18,15 @@ struct Datatype
 		Name, // Has no subtype
 		Array, // Has subtype
 		Pointer, // Has subtype
+		FuncPtr, // Has subtype
 		Reference, // Has subtype
 		Macro, // Has subtype
 	} type = Type::None;
 	bool isConst = false;
 	DatatypeRef subType = nullptr;
 	int arraySize = 0;
+	DatatypeRef funcPtrRetType;
+	std::vector<Datatype> funcPtrParams;
 
 	Datatype() = default;
 	Datatype(Datatype&& other) = default;
@@ -54,6 +57,9 @@ bool isNull(const Datatype& datatype);
 bool isInteger(const Datatype& datatype);
 bool isUnsignedInt(const Datatype& datatype);
 bool isSignedInt(const Datatype& datatype);
+bool isFuncPtr(const Datatype& datatype);
+
+std::pair<Datatype, std::vector<Datatype>> funcSigToDatatypes(const std::string& sig);
 
 void dereferenceDatatype(Datatype& datatype);
 

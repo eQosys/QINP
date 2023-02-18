@@ -191,7 +191,7 @@ int main(int argc, char** argv, char** _env)
 		if (verbose)
 			for (auto sym : *program->symbols)
 				if (isFuncSpec(sym) && !isDefined(sym))
-					PRINT_WARNING(MAKE_QINP_ERROR("Undefined function '" + getMangledName(sym) + "' declared at " + getPosStr(sym->pos.decl) + "!"));
+					PRINT_WARNING(MAKE_QINP_ERROR("Undefined function '" + getReadableName(sym) + "' declared at " + getPosStr(sym->pos.decl) + "!"));
 
 		std::string output = genAsm(program, args.hasOption("verbose") && args.hasOption("keep"));
 	

@@ -126,6 +126,24 @@ TokenListRef DatatypeToTokenList(const Datatype &datatype)
 		}
 	};
 
+	auto insertFuncPtrFront = [&tokens, &insertTokenFront](const Datatype& dt)
+	{
+		insertTokenFront(Token::Type::Separator, ")");
+		for (int i = dt.subType->funcPtrParams.size() - 1; i >= 0; --i)
+		{
+			auto tl = DatatypeToTokenList(dt.subType->funcPtrParams[i]);
+			tokens->insert(tokens->begin(), tl->begin(), tl->end());
+			if (i > 0)
+				insertTokenFront(Token::Type::Separator, ",");
+		}
+		insertTokenFront(Token::Type::Separator, "(");
+		insertTokenFront(Token::Type::Operator, ">");
+		auto tl = DatatypeToTokenList(*dt.subType->funcPtrRetType);
+		tokens->insert(tokens->begin(), tl->begin(), tl->end());
+		insertTokenFront(Token::Type::Operator, "<");
+		insertTokenFront(Token::Type::Keyword, "fn");
+	};
+
 	auto pDt = &datatype;
 	while (pDt)
 	{
@@ -138,6 +156,8 @@ TokenListRef DatatypeToTokenList(const Datatype &datatype)
 			assert(false && "Array datatypes not supported!");
 		else if (isOfType(*pDt, DTType::Pointer))
 			insertTokenFront(Token::Type::Operator, "*");
+		else if (isOfType(*pDt, DTType::FuncPtr))
+			insertFuncPtrFront(*pDt);
 		else if (isOfType(*pDt, DTType::Reference))
 			assert(false && "Reference datatypes not supported!");
 		else
@@ -1405,6 +1425,24 @@ void checkDiscardResult(ProgGenInfo& info, ExpressionRef expr)
 	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Discarding result of non-void expression!");
 }
 
+SymbolRef getFuncSpecFromSignature(ProgGenInfo& info, SymbolRef symFuncName, const std::string& sig)
+{
+	if (!isFuncName(symFuncName))
+		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected function name!");
+
+	// TODO: Support blueprints
+	for (auto& [name, spec] : symFuncName->subSymbols)
+	{
+		if (spec->type != SymType::FunctionSpec)
+			continue;
+
+		if (getSignature(spec) == sig)
+			return spec;
+	}
+
+	return nullptr;
+}
+
 Datatype getBestConvDatatype(const Datatype &left, const Datatype &right)
 {
 	if (isNull(left))
@@ -1540,6 +1578,20 @@ ExpressionRef genConvertExpression(ProgGenInfo &info, ExpressionRef expToConvert
 
 	if (isNull(expToConvert->datatype))
 		return makeConvertExpression(expToConvert, newDatatype);
+
+	if (isFuncPtr(newDatatype) && expToConvert->eType == Expression::ExprType::Symbol && isFuncName(expToConvert->symbol))
+	{
+		auto spec = getFuncSpecFromSignature(info, expToConvert->symbol, newDatatype.subType->name);
+		if (!spec)
+			THROW_PROG_GEN_ERROR_POS(expToConvert->pos, "Cannot find function '" + getReadableName(expToConvert->symbol) + "' with a matching signature!");
+		expToConvert->symbol = spec;
+		expToConvert->isLValue = false;
+		expToConvert->isObject = true;
+		expToConvert->datatype = newDatatype;
+		
+		info.program->body->usedFunctions.insert(getSymbolPath(nullptr, spec));
+		return makeConvertExpression(expToConvert, newDatatype);
+	}
 
 	if (isConvPossible(info, expToConvert->datatype, newDatatype, isExplicit))
 	{
@@ -1724,7 +1776,6 @@ ExpressionRef getParseSymbol(ProgGenInfo &info, bool localOnly)
 	{
 	case SymType::None:
 	case SymType::Enum:
-	case SymType::FunctionName:
 	case SymType::Global:
 	case SymType::Namespace:
 	case SymType::ExtFunc:
@@ -1733,6 +1784,7 @@ ExpressionRef getParseSymbol(ProgGenInfo &info, bool localOnly)
 	case SymType::EnumMember:
 		exp->isObject = false;
 		break;
+	case SymType::FunctionName:
 	case SymType::FunctionSpec:
 		exp->isObject = true;
 		break;
@@ -2125,8 +2177,9 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 		case Expression::ExprType::FunctionCall:
 		{
 			exp->isExtCall = isExtFunc(exp->left->symbol);
+			bool isFPtr = isFuncPtr(exp->left->datatype);
 
-			if (exp->left->eType != Expression::ExprType::Symbol || (!isFuncName(exp->left->symbol) && !exp->isExtCall))
+			if (!isFuncName(exp->left->symbol) && !exp->isExtCall && !isFPtr)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot call non-function!");
 			exp->isLValue = false;
 
@@ -2184,6 +2237,12 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 				for (int i = 0; i < exp->paramExpr.size(); ++i)
 					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->symbol->func.params[i]->var.datatype);
 			}
+			else if (isFPtr)
+			{
+				for (int i = 0; i < exp->paramExpr.size(); ++i)
+					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->datatype.subType->funcPtrParams[i]);
+				exp->datatype = *exp->left->datatype.subType->funcPtrRetType;
+			}
 			else
 			{
 				func = getMatchingOverload(info, exp->left->symbol, exp->paramExpr, exp->bpExplicitMacros, exp->pos);
@@ -2191,12 +2250,16 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 					THROW_PROG_GEN_ERROR_POS(exp->pos, "No matching overload found for function '" + getReadableName(exp->left->symbol) + "'! Provided parameters: (" + getReadableName(exp->paramExpr) + ")");
 			}
 
-			exp->datatype = func->func.retType;
-			exp->left->datatype = Datatype(DTType::Pointer, Datatype(getSignature(func)));
-			exp->left->symbol = func;
-			exp->isObject = !isVoid(func->func.retType);
+			if (!isFPtr)
+			{
+				exp->datatype = func->func.retType;
+				exp->left->datatype = Datatype(DTType::FuncPtr, Datatype(getSignature(func)));
+				exp->left->symbol = func;
 
-			info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
+				info.program->body->usedFunctions.insert(getSymbolPath(nullptr, func));
+			}
+
+			exp->isObject = !isVoid(exp->datatype);
 
 			exp->paramSizeSum = 0;
 			for (auto &param : exp->paramExpr)
@@ -2499,8 +2562,36 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 
 	if (isBuiltinType(dtBeginTok))
 	{
-		datatype.name = nextToken(info).value;
 		datatype.type = DTType::Name;
+		datatype.name = nextToken(info).value;
+	}
+	else if (isKeyword(peekToken(info), "fn"))
+	{
+		nextToken(info);
+
+		parseExpected(info, Token::Type::Operator, "<");
+		datatype.funcPtrRetType = std::make_shared<Datatype>(getParseDatatype(info));
+		if (!*datatype.funcPtrRetType)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
+		parseExpected(info, Token::Type::Operator, ">");
+
+		parseExpected(info, Token::Type::Separator, "(");
+		datatype.funcPtrParams;
+		while (!isSeparator(peekToken(info), ")"))
+		{
+			auto argType = getParseDatatype(info);
+			if (!argType)
+				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
+			if (!isSeparator(peekToken(info), ")"))
+				parseExpected(info, Token::Type::Separator, ",");
+			datatype.funcPtrParams.push_back(argType);
+		}
+		parseExpected(info, Token::Type::Separator, ")");
+
+		datatype.type = DTType::Name;
+		datatype.name = getSignature(*datatype.funcPtrRetType, datatype.funcPtrParams);
+
+		datatype = Datatype(DTType::FuncPtr, datatype);
 	}
 	else
 	{
@@ -2620,6 +2711,8 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		implicitDatatype = false;
 		parseExpected(info, Token::Type::Operator, "<");
 		datatype = getParseDatatype(info);
+		if (!datatype)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
 		parseExpected(info, Token::Type::Operator, ">");
 	}
 

@@ -4,6 +4,25 @@
 
 #include "Errors/QinpError.h"
 
+std::vector<std::string> splitString(const std::string& str, char delim)
+{
+	std::vector<std::string> parts;
+	std::string part;
+	for (const auto& c : str)
+	{
+		if (c == delim)
+		{
+			parts.push_back(part);
+			part.clear();
+		}
+		else
+			part += c;
+	}
+	if (!part.empty())
+		parts.push_back(part);
+	return parts;
+}
+
 std::string getSignatureNoRet(const std::vector<Datatype>& paramTypes)
 {
 	std::string signature;
@@ -176,7 +195,7 @@ int getDatatypeSize(const ProgramRef program, const Datatype& datatype, bool tre
 	if (isNull(datatype))
 		return sizeof(void*);
 
-	if (isPointer(datatype) || (treatArrayAsPointer && isArray(datatype)))
+	if (isPointer(datatype) || isFuncPtr(datatype) || (treatArrayAsPointer && isArray(datatype)))
 		return sizeof(void*);
 
 	if (isEnum(program, datatype))
