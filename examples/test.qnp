@@ -5,6 +5,7 @@ import "memory.qnp"
 import "stdio.qnp"
 import "time.qnp"
 import "random.qnp"
+import "algorithm.qnp"
 
 std.println("Allocating 100 bytes")
 var buff1 = std.malloc(100)
@@ -286,5 +287,25 @@ fn<u64> call(fn<u64>(u64, u64) f, u64 a, u64 b):
 	return f(a, b)
 
 std.println("Result: %", call(fLambda, 1, 5))
+
+
+var<i64[10]> arrToSort
+arrToSort[0] = 324
+arrToSort[1] = 534
+arrToSort[2] = 83
+arrToSort[3] = 374
+arrToSort[4] = 192
+arrToSort[5] = 6846
+arrToSort[6] = 172
+arrToSort[7] = 859
+arrToSort[8] = 174
+arrToSort[9] = 34
+
+std.sort(arrToSort, 10, sizeof(i64), lambda<bool>(void const* a, void const* b): return *(i64*)a < *(i64*)b;)
+
+const<i64> key = 6846
+std.println("Index of %: %", key, std.bsearch(&key, arrToSort, 10, sizeof(i64), lambda<bool>(void const* a, void const* b): return *(i64*)a < *(i64*)b;))
+
+std.println("Sorted: % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
 
 std.exit(std.EXIT_FAILURE)

@@ -1,0 +1,68 @@
+\\ QINP Standard Library
+\\ Algorithms
+
+space std:
+	\\ Sorts an array of elements.
+	\\ @param array The array to sort.
+	\\ @param count The number of elements in the array.
+	\\ @param elemSize The size of each element.
+	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
+	\\ @return The sorted array.
+	fn<void*> sort(void* array, u64 size, u64 elemSize, fn<bool>(void const*, void const*) compare)...
+
+	\\ Swaps the content of two arrays.
+	\\ @param a The first array.
+	\\ @param b The second array.
+	\\ @param size The size of each array.
+	fn<> swap(void* a, void* b, u64 size)...
+
+	\\ Returns the index of any elemnt in an array that matches the given key.
+	\\ @param key The key to search for.
+	\\ @param array The array to search. (Must be sorted in the same order as compare would sort the array)
+	\\ @param count The number of elements in the array.
+	\\ @param elemSize The size of each element.
+	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
+	\\ @return The index of the element that matches the key, or -1 if no element matches the key.
+	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare)...
+
+
+
+defer
+space std:
+	fn<void*> sort(void* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare)!:			
+		var<u64> end = count
+
+		while end > 0:
+			var<u64> i = 0
+			while i + 1 < end:
+				if compare(array + (i + 1) * elemSize, array + i * elemSize):
+					swap(array + (i + 1) * elemSize, array + i * elemSize, elemSize)
+				++i
+			--end
+
+		return array
+			
+
+	fn<> swap(void* a, void* b, u64 size)!:
+		var<u8> temp
+		var<u64> i = -1
+		while ++i < size:
+			temp = ((u8*)a)[i]
+			((u8*)a)[i] = ((u8*)b)[i]
+			((u8*)b)[i] = temp
+
+	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare)!:
+		var<u64> start = 0
+		var<u64> end = count
+		var<u64> mid
+
+		while start < end:
+			mid = (start + end) / 2
+			if compare(key, array + mid * elemSize):
+				end = mid
+			elif compare(array + mid * elemSize, key):
+				start = mid + 1
+			else:
+				return mid
+		
+		return -1
