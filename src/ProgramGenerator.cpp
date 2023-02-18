@@ -1651,7 +1651,7 @@ void autoFixDatatypeMismatch(ProgGenInfo &info, ExpressionRef exp)
 				temp->right = exp->right;
 				temp->datatype = {"u64"};
 
-				temp->left = makeLiteralExpression(exp->pos, {"u64"}, {(uint64_t)getDatatypePointedToSize(info.program, exp->left->datatype)});
+				temp->left = makeLiteralExpression(exp->pos, {"u64"}, {(uint64_t)(isVoidPtr(exp->left->datatype) ? 1 : getDatatypePointedToSize(info.program, exp->left->datatype))});
 
 				exp->right = temp;
 			}
