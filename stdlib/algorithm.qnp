@@ -8,7 +8,7 @@ space std:
 	\\ @param elemSize The size of each element.
 	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
 	\\ @return The sorted array.
-	fn<void*> sort(void* array, u64 size, u64 elemSize, fn<bool>(void const*, void const*) compare)...
+	fn<void*> sort(void* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare)...
 
 	\\ Swaps the content of two arrays.
 	\\ @param a The first array.

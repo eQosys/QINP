@@ -277,7 +277,7 @@ fn<i64> sub(i64 a, i64 b):
 fn<i64> calc(i64 a, i64 b, fn<i64>(i64, i64) func):
 	return func(a, b)
 
-var<fn<i64>(i64, i64)> func = sub
+var<fn<i64>(i64, i64)> func = add
 
 std.println("calc(1, 2, add) = %", calc(1, 2, func))
 
@@ -316,7 +316,7 @@ std.List.insert(std.List.create((void*)400), list)
 
 std.println("List: % %", (u64)list->data, (u64)list->next->data)
 
-const lambdaSum = lambda<i64>(i64 a, i64 b): return a + b;
+var lambdaSum = (fn<i64>(i64, i64))lambda<i64>(i64 a, i64 b): return a + b;
 
 std.println("lambdaSum(13, 4) = %", lambdaSum(13, 4))
 
