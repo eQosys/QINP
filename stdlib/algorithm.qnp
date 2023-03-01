@@ -2,13 +2,22 @@
 \\ Algorithms
 
 space std:
+	\\ Function signature for a comparison function.
+	define FN_COMPARE fn<bool>(void const*, void const*)
+
+	\\ Function signature for a swap function.
+	define FN_SWAP fn<void>(void*, void*)
+
+	\\ Function signature for a random number generator.
+	define FN_RANDOM fn<u64>()
+
 	\\ Macro to define a lambda function that swaps two elements by copying them per byte.
 	\\ @param size The size of the elements.
-	define swap_lmbd(size) lambda<void>(void* a, void* b): std.swap(a, b, size); \\ TODO: Use `.std.swap` instead of `std.swap` (Add leading dot)
+	define LMBD_SWAP(size) lambda<void>(void* a, void* b): std.swap(a, b, size); \\ TODO: Use `.std.swap` instead of `std.swap` (Add leading dot)
 
 	\\ Macro to define a lambda function that compares two elements according to the given check.
 	\\ @param check The check to use. (e.g. *(i64*)a < *(i64*)b)
-	define compare_lmbd(check) lambda<bool>(void const* a, void const* b): return check;
+	define LMBD_COMPARE(check) lambda<bool>(void const* a, void const* b): return check;
 
 	\\ Sorts an array of elements.
 	\\ @param array The array to sort.
@@ -17,7 +26,15 @@ space std:
 	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
 	\\ @param swap A function that swaps two elements.
 	\\ @return The sorted array.
-	fn<void*> sort(void* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare, fn<void>(void*, void*) swap)...
+	fn<void*> sort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, FN_SWAP swap)...
+
+	\\ Shuffles an array of elements.
+	\\ @param array The array to shuffle.
+	\\ @param count The number of elements in the array.
+	\\ @param elemSize The size of each element.
+	\\ @param swap A function that swaps two elements.
+	\\ @param random A function that returns a random number.
+	fn<> shuffle(void* array, u64 count, u64 elemSize, FN_SWAP swap, FN_RANDOM random)...
 
 	\\ Swaps the content of two arrays.
 	\\ @param a The first array.
@@ -32,13 +49,13 @@ space std:
 	\\ @param elemSize The size of each element.
 	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
 	\\ @return The index of the element that matches the key, or -1 if no element matches the key.
-	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare)...
+	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, FN_COMPARE compare)...
 
 
 
 defer
 space std:
-	fn<void*> sort(void* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare, fn<void>(void*, void*) swap)!:			
+	fn<void*> sort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, FN_SWAP swap)!:			
 		var<u64> end = count
 
 		while end > 0:
@@ -50,7 +67,11 @@ space std:
 			--end
 
 		return array
-			
+
+	fn<> shuffle(void* array, u64 count, u64 elemSize, FN_SWAP swap, FN_RANDOM random)!:
+		var<u64> i = -1
+		while ++i < count:
+			std.swap(array + i * elemSize, array + random() % count * elemSize, elemSize)
 
 	fn<> swap(void* a, void* b, u64 size)!:
 		var<u8> temp
@@ -60,7 +81,7 @@ space std:
 			((u8*)a)[i] = ((u8*)b)[i]
 			((u8*)b)[i] = temp
 
-	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, fn<bool>(void const*, void const*) compare)!:
+	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, FN_COMPARE compare)!:
 		var<u64> start = 0
 		var<u64> end = count
 		var<u64> mid

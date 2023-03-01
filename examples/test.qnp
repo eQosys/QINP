@@ -302,12 +302,20 @@ arrToSort[7] = 859
 arrToSort[8] = 174
 arrToSort[9] = 34
 
-std.sort(arrToSort, 10, sizeof(i64), std.compare_lmbd(*(i64 const*)a < *(i64 const*)b), std.swap_lmbd(sizeof(i64)))
+std.sort(arrToSort, 10, sizeof(i64), std.LMBD_COMPARE(*(i64 const*)a < *(i64 const*)b), std.LMBD_SWAP(sizeof(i64)))
 
 const<i64> key = 6846
-std.println("Index of %: %", key, std.bsearch(&key, arrToSort, 10, sizeof(i64), std.compare_lmbd(*(i64 const*)a < *(i64 const*)b)))
+std.println("Index of %: %", key, std.bsearch(&key, arrToSort, 10, sizeof(i64), std.LMBD_COMPARE(*(i64 const*)a < *(i64 const*)b)))
 
-std.println("Sorted: % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
+std.println("Sorted:     % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
+
+std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
+
+std.println("Shuffled:   % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
+
+std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
+
+std.println("Reshuffled: % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
 
 var list = std.List.create((void*)100)
 std.List.append(list, (void*)200)
