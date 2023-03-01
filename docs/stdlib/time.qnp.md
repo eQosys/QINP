@@ -7,17 +7,17 @@
 
 
 ## Functions
- - [fn<u64> std.getTime() nodiscard ...](#ref_b6a0c9f4f9da322ffb97cc5522ba6586)
- - [fn<i32> std.sleep(u64 ms) ...](#ref_977fd3d0a570cb32c6fc18422594dd9f)
+ - [fn\<u64\> std.getTime() nodiscard ...](#ref_d6617d835a52997b1a3b0e2015bf811c)
+ - [fn\<i32\> std.sleep(u64 ms) ...](#ref_79c78e99cd6aa4ad1529f8670b76c4a0)
 
 ## Details
-#### <a id="ref_b6a0c9f4f9da322ffb97cc5522ba6586"/>fn<u64> std.getTime() nodiscard ...
+#### <a id="ref_d6617d835a52997b1a3b0e2015bf811c"/>fn\<u64\> std.getTime() nodiscard ...
 > [Declaration](/stdlib/time.qnp?plain=1#L7) | [Definition](/stdlib/platform/linux/time.qnp?plain=1#L30)
 ```qinp
 \\ Returns the current time in milliseconds since the epoch.
 \\ @return Current time in milliseconds
 ```
-#### <a id="ref_977fd3d0a570cb32c6fc18422594dd9f"/>fn<i32> std.sleep(u64 ms) ...
+#### <a id="ref_79c78e99cd6aa4ad1529f8670b76c4a0"/>fn\<i32\> std.sleep(u64 ms) ...
 > [Declaration](/stdlib/time.qnp?plain=1#L12) | [Definition](/stdlib/platform/linux/time.qnp?plain=1#L36)
 ```qinp
 \\ Sleep for the specified number of milliseconds

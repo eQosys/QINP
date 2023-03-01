@@ -104,12 +104,12 @@ def wrapLine(line, symbol, hasDetail):
 def genLineVariable(symbol, comments, addVarPrefix = False, useFullName = False, doWrapLine = True):
 	line = ""
 	if addVarPrefix:
-		line += "var<"
+		line += "var\<"
 	
-	line += symbol["datatype"]
+	line += symbol["datatype"].replace("<", "\<").replace(">", "\>")
 
 	if addVarPrefix:
-		line += "> "
+		line += "\> "
 	else:
 		line += " "
 
@@ -131,12 +131,12 @@ def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = Tru
 
 	isVoidFunc = (symbol["retType"] == "void")
 
-	line += "fn<"
+	line += "fn\<"
 
 	if not isVoidFunc:
-		line += symbol["retType"]
+		line += symbol["retType"].replace("<", "\<").replace(">", "\>")
 
-	line += "> "
+	line += "\> "
 
 	line += funcName
 

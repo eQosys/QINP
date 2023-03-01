@@ -8,10 +8,10 @@
 
 
 ## Functions
- - fn<u64> std.__syscall(u64 num, T1 rdi)
- - fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi)
- - fn<u64> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx)
- - [fn<u64> std.__syscall(u64 num)](#ref_7388c1195f3af4206104987460061420)
+ - fn\<u64\> std.__syscall(u64 num, T1 rdi)
+ - fn\<u64\> std.__syscall(u64 num, T1 rdi, T2 rsi)
+ - fn\<u64\> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx)
+ - [fn\<u64\> std.__syscall(u64 num)](#ref_915956373e7747c9bbfa457b4b9931a5)
 
 ## Macros
  - std.__SYS_ACCEPT
@@ -330,7 +330,7 @@
  - std.__SYS__SYSCTL
 
 ## Details
-#### <a id="ref_7388c1195f3af4206104987460061420"/>fn<u64> std.__syscall(u64 num)
+#### <a id="ref_915956373e7747c9bbfa457b4b9931a5"/>fn\<u64\> std.__syscall(u64 num)
 > [Declaration](/stdlib/platform/linux/__syscall.qnp?plain=1#L13) | [Definition](/stdlib/platform/linux/__syscall.qnp?plain=1#L340)
 ```qinp
 \\ The following __syscall functions are used to invoke system calls.
