@@ -317,6 +317,11 @@ std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.r
 
 std.println("Reshuffled: % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
 
+var asdf = std.strlen(null)
+std.println("Error: %", std.error.toString(std.error.get()))
+std.error.clear()
+std.println("Error: %", std.error.toString(std.error.get()))
+
 var list = std.List.create((void*)100)
 std.List.append(list, (void*)200)
 std.List.insert(list, (void*)300)

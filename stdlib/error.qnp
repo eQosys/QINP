@@ -15,6 +15,9 @@ space std:
 		\\ @return Last error id that has been set.
 		fn<ID> get()...
 
+		\\ Clears the last error set.
+		fn<> clear()...
+
 		\\ Returns a string containing a description for the provided error.
 		\\ @param err ID of the error to return a description for. (null if no description is present)
 		\\ @return Description of the error. null on error.
@@ -33,5 +36,11 @@ space std:
 		fn<ID> get()!:
 			return __lastErrorID
 
+		fn<> clear()!:
+			__lastErrorID = ID.Success
+
 		fn<u8 const*> toString(ID err)!:
+			if err == ID.Success: return "Success"
+			if err == ID.InvalidArgument: return "Invalid Argument"
+
 			return null
