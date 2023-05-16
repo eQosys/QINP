@@ -1,6 +1,8 @@
 \\ QINP Standard Library
 \\ Strings
 
+import "error.qnp"
+
 space std:
 	\\ Used to convert between string and integer
 	define __BASE_CHARS_LOWER "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -146,13 +148,13 @@ space std:
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
 	\\ @param str The string to store the converted integer in
-	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
+	\\ @param base The base to use for the conversion (Valid values are 2 to 36 (inclusive))
 	\\ @return The null-terminated string representation of the integer
 	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard...
 
 	\\ Convert a string to a base-10 integer
 	\\ @param str The string to convert
-	\\ @param base The base to use for the conversion (Valid values are 2 to 36)
+	\\ @param base The base to use for the conversion (Valid values are 2 to 36 (inclusive))
 	\\ @return The integer represented by the string
 	fn<i64> stoi(u8 const* str, i64 base) nodiscard...
 
@@ -189,83 +191,143 @@ space std:
 defer
 space std:
 	fn<u64> strlen(u8 const* str) nodiscard!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while *str: ++str
 		return (u64)(str - begin)
 
 	fn<u8*> strlwr(u8* str)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while *str: *str++ = tolower(*str)
 		return begin
 
 	fn<u8*> strlwr(u8* str, u64 num)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while num--: *str++ = tolower(*str)
 		return begin
 
 	fn<u8*> strupr(u8* str)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while *str: *str++ = toupper(*str)
 		return begin
 
 	fn<u8*> strupr(u8* str, u64 num)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while num--: *str++ = toupper(*str)
 		return begin
 	
 	fn<u8*> strcat(u8* dest, u8 const* src)!:
+		if !dest || !src:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src)
 		return begin
 
 	fn<u8*> strcat(u8* dest, u8 const* src, u64 num)!:
+		if !dest || !src:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = dest
 		dest += strlen(dest)
 		strcpy(dest, src, num)
 		return begin
 
 	fn<u8*> strcpy(u8* dest, u8 const* src)!:
+		if !dest || !src:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = dest
 		while *src: *dest++ = *src++
 		*dest = null
 		return begin
 
 	fn<u8*> strcpy(u8* dest, u8 const* src, u64 num)!:
+		if !dest || !src:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = dest
 		while num--: *dest++ = *src++
 		*dest = null
 		return begin
 	
 	fn<i64> strcmp(u8 const* str1, u8 const* str2) nodiscard!:
+		if !str1 || !str2:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		while *str1 == *str2 && *str1 && *str2:
 			++str1
 			++str2
 		return (i64)*str1 - (i64)*str2
 
 	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num) nodiscard!:
+		if !str1 || !str2:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		while num-- && *str1 == *str2 && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i64)0 : (i64)*str1 - (i64)*str2
 
 	fn<i64> strcmpi(u8 const* str1, u8 const* str2) nodiscard!:
+		if !str1 || !str2:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
 			++str1
 			++str2
 		return (i64)tolower(*str1) - (i64)tolower(*str2)
 
 	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num) nodiscard!:
+		if !str1 || !str2:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		while num-- && tolower(*str1) == tolower(*str2) && *str1:
 			++str1
 			++str2
 		return num == -1 ? (i64)0 : (i64)tolower(*str1) - (i64)tolower(*str2)
 
 	fn<u8 const*> strchr(u8 const* str, u8 ch) nodiscard!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		while *str != ch && *str: ++str
 		return *str == ch ? str : (u8 const*)null
 
 	fn<u8 const*> strrchr(u8 const* str, u8 ch) nodiscard!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		var<u8 const*> last = null
 		while *str:
 			if *str == ch:
@@ -274,6 +336,10 @@ space std:
 		return last
 
 	fn<u8 const*> strstr(u8 const* str, u8 const* substr) nodiscard!:
+		if !str || !substr:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const sublen = strlen(substr)
 		const lastToCheck = str + strlen(str) - sublen
 		while str <= lastToCheck:
@@ -283,6 +349,10 @@ space std:
 		return null
 
 	fn<u8 const*> strrstr(u8 const* str, u8 const* substr) nodiscard!:
+		if !str || !substr:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const sublen = strlen(substr)
 		const lastToCheck = str + strlen(str) - sublen
 		var<u8 const*> last = null
@@ -293,19 +363,35 @@ space std:
 		return last
 
 	fn<u8*> strset(u8* str, u8 ch)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while *str: *str++ = ch
 		return begin
 
 	fn<u8*> strset(u8* str, u8 ch, u64 num)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const begin = str
 		while num--: *str++ = ch
 		return begin
 
 	fn<u8*> strrev(u8* str)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		return strrev(str, str + strlen(str))
 
 	fn<u8*> strrev(u8* begin, u8* end)!:
+		if !begin || !end:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const str = begin
 
 		while begin < end:
@@ -316,6 +402,10 @@ space std:
 		return str
 	
 	fn<u8*> strtok(u8* str, u8 const* delimiters) nodiscard!:
+		if !delimiters:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		static var<u8*> next = null
 		
 		if str:
@@ -335,6 +425,10 @@ space std:
 		return begin
 
 	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard!:
+		if !str || base < 2 || base > 36:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		static const __baseCharsLower = __BASE_CHARS_LOWER
 		const begin = str
 		const negative = num < 0
@@ -353,6 +447,10 @@ space std:
 		return strrev(begin, str)
 
 	fn<i64> stoi(u8 const* str, i64 base) nodiscard!:
+		if !str || base < 2 || base > 36:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		static const __baseCharsLower = __BASE_CHARS_LOWER
 		var num = 0
 		const negative = *str == '-'
