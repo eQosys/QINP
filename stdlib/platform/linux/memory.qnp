@@ -2,6 +2,7 @@
 \\ Memory - Linux Specific
 
 import "__syscall.qnp"
+import "../../error.qnp"
 
 space std:
 	define __PAGE_SIZE 4096
@@ -95,7 +96,10 @@ space std:
 	fn<void*> __sbrk(i64 increment)!:
 		const<u64> oldSize = __brk(0)
 		const<u64> newSize = oldSize + increment
-		return __brk(newSize) == oldSize ? (void*)null : (void*)oldSize
+		if __brk(newSize) == oldSize:
+			error.set(error.ID.OutOfMemory)
+			return null
+		return (void*)oldSize
 
 	fn<__MemBlockHeader*> __getAvailBlock(u64 minSizeAvail)!:
 		\\ No check for minSizeAvail == 0 because a block may have 0 bytes of available space
@@ -112,7 +116,9 @@ space std:
 		return smallest ? smallest : last
 
 	fn<__MemBlockHeader*> __getNextAdjacentAvailBlock(__MemBlockHeader* block)!:
-		if !block: return null
+		if !block:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		var curr = __memBlocks
 		
@@ -124,7 +130,9 @@ space std:
 		return curr
 
 	fn<__MemBlockHeader*> __insertAvailBlock(__MemBlockHeader* block)!:
-		if !block: return null
+		if !block:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		var<__MemBlockHeader*> prev = null
 		var curr = __memBlocks
@@ -144,7 +152,10 @@ space std:
 		return prev
 
 	fn<> __removeAvailBlock(__MemBlockHeader* block)!:
-		if !block: return
+		if !block:
+			error.set(error.ID.InvalidArgument)
+			return
+
 		if block == __memBlocks: __memBlocks = block->next
 		
 		if block->prev: block->prev->next = block->next
@@ -154,10 +165,13 @@ space std:
 		block->next = null
 
 	fn<__MemBlockHeader*> __splitBlock(__MemBlockHeader* block, u64 newSizeAvail)!:
-		if !block || !newSizeAvail: return null
+		if !block || !newSizeAvail:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		newSizeAvail = roundUpTo(newSizeAvail, __MEM_ALIGNMENT_SIZE)
 		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
+			error.set(error.ID.InvalidArgument)
 			return null
 
 		const newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
@@ -167,7 +181,9 @@ space std:
 		return newBlock
 
 	fn<__MemBlockHeader*> __mergeBlockWithNext(__MemBlockHeader* block)!:
-		if !block || !block->next: return null
+		if !block || !block->next:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		block->sizeAvail += sizeof(__MemBlockHeader) + block->next->sizeAvail
 		block->next = block->next->next
@@ -176,15 +192,22 @@ space std:
 		return block
 
 	fn<bool> __isAdjacentToNext(__MemBlockHeader const* block)!:
-		if !block: return false
+		if !block:
+			error.set(error.ID.InvalidArgument)
+			return false
+
 		return __isAdjacentToNext(block, block->next)
 
 	fn<bool> __isAdjacentToNext(__MemBlockHeader const* block, __MemBlockHeader const* next)!:
-		if !block || !next: return false
+		if !block || !next:
+			return false
+		
 		return ((u64)block + sizeof(__MemBlockHeader) + block->sizeAvail) == (u64)next
 
 	fn<__MemBlockHeader*> __mergeBlockWithNeighbors(__MemBlockHeader* block)!:
-		if !block: return null
+		if !block:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		if __isAdjacentToNext(block->prev):
 			block = __mergeBlockWithNext(block->prev)
@@ -194,7 +217,9 @@ space std:
 		return block
 
 	fn<__MemBlockHeader*> __allocBlock(u64 minSizeAvail)!:
-		if !minSizeAvail: return null
+		if !minSizeAvail:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		const<u64> size = roundUpTo(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
 		const block = (__MemBlockHeader*)__sbrk(size)
@@ -205,7 +230,9 @@ space std:
 		return block
 
 	fn<void*> malloc(u64 size) nodiscard!:
-		if !size: return null
+		if !size:
+			error.set(error.ID.InvalidArgument)
+			return null
 
 		var block = __getAvailBlock(size)
 		if block:
@@ -273,7 +300,9 @@ space std:
 		return pBuff
 
 	fn<> free(void* pBuff)!:
-		if !pBuff: return
+		if !pBuff:
+			error.set(error.ID.InvalidArgument)
+			return
 
 		var block = (__MemBlockHeader*)pBuff - 1
 		__insertAvailBlock(block)

@@ -2,6 +2,7 @@
 \\ Standard Input/Output
 
 import "string.qnp"
+import "error.qnp"
 
 space std:
 	\\ Print the first num chars of a string to stdout
@@ -80,6 +81,10 @@ space std:
 defer
 space std:
 	fn<i32> print(u8 const* str)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		return printn(str, strlen(str))
 
 	fn<i32> print(u8 char)!:
@@ -95,16 +100,28 @@ space std:
 		return 1
 
 	fn<i32> print(u8 const* str, ?T val)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		if __printf(&str, val) < 0: return -1
 		if print(str) < 0: return -1
 		return 1
 
 	fn<i32> print(u8 const* str, ?T val, ...)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		if __printf(&str, val) < 0: return -1
 		if print(str, ...) < 0: return -1
 		return 1
 
 	fn<i32> __printf(u8 const** pStr, ?T val)!:
+		if !pStr || !*pStr:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		const str = *pStr
 		const dropPos = strchr(str, '%')
 

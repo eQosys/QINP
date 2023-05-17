@@ -3,6 +3,7 @@
 
 import "stdio.qnp"
 import "system.qnp"
+import "error.qnp"
 
 space std:
 	define assert(check, msg) .std.__assert(check, msg, __file__, __line__)
@@ -20,5 +21,6 @@ defer
 space std:
 	fn<> __assert(bool check, u8 const* msg, u8 const* file, i32 line)!:
 		if !check:
+			error.set(error.ID.AssertionFailed)
 			print("%:%: Assertion failed with message '%'!\n", file, line, msg)
 			exit(1)

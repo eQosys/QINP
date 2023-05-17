@@ -2,6 +2,7 @@
 \\ List
 
 import "memory.qnp"
+import "error.qnp"
 
 space std:
 	space List:
@@ -71,6 +72,10 @@ space std:
 			return node
 
 		fn<> destroy(Node* node)!:
+			if !node:
+				error.set(error.ID.InvalidArgument)
+				return
+
 			std.free(node)
 
 		fn<Node*> append(Node* list, void* data)!:

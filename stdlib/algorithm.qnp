@@ -1,6 +1,8 @@
 \\ QINP Standard Library
 \\ Algorithms
 
+import "error.qnp"
+
 space std:
 	\\ Function signature for a comparison function.
 	define FN_COMPARE fn<bool>(void const*, void const*)
@@ -55,7 +57,11 @@ space std:
 
 defer
 space std:
-	fn<void*> sort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, FN_SWAP swap)!:			
+	fn<void*> sort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, FN_SWAP swap)!:	
+		if !array || !compare || !swap:
+			error.set(error.ID.InvalidArgument)
+			return null
+		
 		var<u64> end = count
 
 		while end > 0:
@@ -69,11 +75,19 @@ space std:
 		return array
 
 	fn<> shuffle(void* array, u64 count, u64 elemSize, FN_SWAP swap, FN_RANDOM random)!:
+		if !array || !swap || !random:
+			error.set(error.ID.InvalidArgument)
+			return
+
 		var<u64> i = -1
 		while ++i < count:
 			std.swap(array + i * elemSize, array + random() % count * elemSize, elemSize)
 
 	fn<> swap(void* a, void* b, u64 size)!:
+		if !a || !b:
+			error.set(error.ID.InvalidArgument)
+			return
+
 		var<u8> temp
 		var<u64> i = -1
 		while ++i < size:
@@ -82,6 +96,10 @@ space std:
 			((u8*)b)[i] = temp
 
 	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, FN_COMPARE compare)!:
+		if !key || !array || !compare:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		var<u64> start = 0
 		var<u64> end = count
 		var<u64> mid

@@ -2,6 +2,7 @@
 \\ Time - Linux Specific
 
 import "__syscall.qnp"
+import "../../error.qnp"
 
 space std:
 	define __CLOCK_REALTIME 0
@@ -25,6 +26,9 @@ space std:
 defer
 space std:
 	fn<i32> __clock_gettime(i32 clockID, __timespec* pts)!:
+		if !pts:
+			error.set(error.ID.InvalidArgument)
+			return -1
 		return __syscall(__SYS_CLOCK_GETTIME, clockID, pts)
 
 	fn<u64> getTime() nodiscard!:

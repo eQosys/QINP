@@ -6,6 +6,8 @@ space std:
 		enum ID:
 			Success
 			InvalidArgument
+			AssertionFailed
+			OutOfMemory
 
 		\\ Sets the global error value. Can be retrieved via a call to 'getError'
 		\\ @param err id of the error to be set.

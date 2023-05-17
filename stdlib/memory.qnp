@@ -1,6 +1,8 @@
 \\ QINP Standard Library
 \\ Memory
 
+import "error.qnp"
+
 space std:
 	define __MIN_MEM_LEN_USE_ALIGN 32 \\ minimum length of memory to use aligned algorithms on
 
@@ -46,6 +48,10 @@ space std:
 defer
 space std:
 	fn<void*> memcpy(void* dest, void const* src, u64 len)!:
+		if !dest || !src:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const d8End = (u8*)dest + len
 
 		var d8 = (u8*)dest
@@ -71,6 +77,10 @@ space std:
 		return dest
 
 	fn<void*> memset(void* dest, u8 val, u64 len)!:
+		if !dest:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		const d8End = (u8*)dest + len
 
 		var d8 = (u8*)dest
@@ -98,6 +108,10 @@ space std:
 		return dest
 
 	fn<i64> memcmp(void const* a, void const* b, u64 len) nodiscard!:
+		if !a || !b:
+			error.set(error.ID.InvalidArgument)
+			return 0
+
 		var a8 = (u8 const*)a
 		var b8 = (u8 const*)b
 		const a8End = a8 + len

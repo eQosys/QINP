@@ -5,6 +5,7 @@ import "__syscall.qnp"
 import "__ioctl.qnp"
 
 import "../../string.qnp"
+import "../../error.qnp"
 
 space std:
 	define __OPEN_READONLY 00
@@ -19,6 +20,10 @@ space std:
 		pass
 
 	fn<File*> fopen(u8 const* filename, u8 const* mode) nodiscard!:
+		if !filename || !mode:
+			error.set(error.ID.InvalidArgument)
+			return null
+
 		var<i32> flags
 		if strcmp(mode, "r") == 0:
 			flags = __OPEN_READONLY
@@ -27,27 +32,50 @@ space std:
 		elif strcmp(mode, "rw") == 0:
 			flags = __OPEN_READWRITE
 		else:
+			error.set(error.ID.InvalidArgument)
 			return null
 
 		const fd = __syscall(__SYS_OPEN, filename, flags)
 
-		return fd < 0 ? (File*)null : (File*)fd
+		if fd < 0:
+			error.set(error.ID.FileIO)
+			return null
+		
+		return (File*)fd
 
 	fn<u64> fread(File* pFile, void* dest, u64 num)!:
+		if !pFile || !dest:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		return __syscall(__SYS_READ, pFile, dest, num)
 
 	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
+		if !pFile || !dest:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		return __syscall(__SYS_WRITE, pFile, src, num)
 
 	fn<u64> fseek(File* pFile, u64 offset, Seek origin)!:
+		if !pFile:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
 		var<u64> uOrigin
 
 		if origin == Seek.Begin: uOrigin = 0
 		elif origin == Seek.Current: uOrigin = 1
 		elif origin == Seek.End: uOrigin = 2
-		else: return -1
+		else:
+			error.set(error.ID.InvalidArgument)
+			return -1
 
 		return __syscall(__SYS_LSEEK, pFile, offset, uOrigin)
 
 	fn<> fclose(File* pFile)!:
+		if !pFile:
+			error.set(error.ID.InvalidArgument)
+			return
+
 		__syscall(__SYS_CLOSE, pFile)
