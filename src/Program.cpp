@@ -94,7 +94,7 @@ std::string getMangledName(SymbolRef symbol)
 std::string getReadableName(const std::vector<ExpressionRef>& paramExpr)
 {
 	std::string paramStr;
-	for (int i = 0; i < paramExpr.size(); ++i)
+	for (uint64_t i = 0; i < paramExpr.size(); ++i)
 	{
 		if (i != 0)
 			paramStr += ", ";
@@ -106,7 +106,7 @@ std::string getReadableName(const std::vector<ExpressionRef>& paramExpr)
 std::string getReadableName(const std::vector<SymbolRef>& paramSym, const std::vector<Token>& bpMacroTokens, const std::vector<TokenListRef>& bpMacroTokenEmplacements, bool isVariadic)
 {
 	std::string paramStr = "(";
-	for (int i = 0; i < paramSym.size(); ++i)
+	for (uint64_t i = 0; i < paramSym.size(); ++i)
 	{
 		if (i != 0)
 			paramStr += ", ";
@@ -121,7 +121,7 @@ std::string getReadableName(const std::vector<SymbolRef>& paramSym, const std::v
 	if (!bpMacroTokens.empty())
 	{
 		paramStr += " [";
-		for (int i = 0; i < bpMacroTokens.size(); ++i)
+		for (uint64_t i = 0; i < bpMacroTokens.size(); ++i)
 		{
 			if (i != 0)
 				paramStr += ", ";
@@ -132,7 +132,7 @@ std::string getReadableName(const std::vector<SymbolRef>& paramSym, const std::v
 	if (!bpMacroTokenEmplacements.empty())
 	{
 		paramStr += " [";
-		for (int i = 0; i < bpMacroTokenEmplacements.size(); ++i)
+		for (uint64_t i = 0; i < bpMacroTokenEmplacements.size(); ++i)
 		{
 			if (i != 0)
 				paramStr += ", ";

@@ -235,7 +235,7 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 		if (!isSeparator(*++tokIt, "("))
 			THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected '(' after function-like macro!");
 
-		for (int i = 0; i < sym->macroParamNames.size(); ++i)
+		for (uint64_t i = 0; i < sym->macroParamNames.size(); ++i)
 		{
 			++tokIt;
 			macroArgs.push_back({});
@@ -263,12 +263,12 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 	if (sym->macroIsFunctionLike) // Replace all occurences of the parameters with their provided values
 	{
 		auto it = begin;
-		for (int i = 0; i < sym->macroTokens->size(); ++i, ++it)
+		for (uint64_t i = 0; i < sym->macroTokens->size(); ++i, ++it)
 		{
 			if (!isIdentifier(*it))
 				continue;
 
-			for (int paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
+			for (uint64_t paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
 			{
 				if (sym->macroParamNames[paramIndex] != it->value)
 					continue;
@@ -281,7 +281,7 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 				if (updateBegin)
 					begin = it;
 
-				for (int i = 0; i < macroArgs[paramIndex].size(); ++i)
+				for (uint64_t i = 0; i < macroArgs[paramIndex].size(); ++i)
 					++it;
 
 				break;
@@ -337,8 +337,6 @@ const Token &peekToken(ProgGenInfo &info, int offset, bool ignoreSymDef)
 
 	while (tokIt != info.tokens->end() && isIdentifier(*tokIt))
 	{
-		auto &tok = *tokIt;
-
 		auto sym = getSymbol(curr, tokIt->value, localOnly);
 		if (!sym)
 			break;
@@ -580,7 +578,7 @@ void genBlueprintSpecPreSpace(const SymPath &path, TokenListRef tokens)
 
 	auto it = tokens->begin();
 
-	for (int i = 0; i < path.size(); ++i)
+	for (uint64_t i = 0; i < path.size(); ++i)
 	{
 		if (i > 0)
 			it = ++tokens->insert(it, makeIndentation(i));
@@ -600,7 +598,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	if (explicitMacros.empty())
 	{
 		// Check if the parameters resolve all blueprint macros (+ without conflicts)
-		for (int i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
+		for (uint64_t i = 0; i < paramExpr.size(); ++i) // Loop over all parameters (including variadic)
 		{
 			static int variadicParamID = 0;
 
@@ -651,7 +649,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	}
 	else
 	{
-		for (int i = 0; i < bpSym->func.bpMacroTokens.size(); ++i)
+		for (uint64_t i = 0; i < bpSym->func.bpMacroTokens.size(); ++i)
 		{
 			auto& tok = bpSym->func.bpMacroTokens[i];
 			auto& tl = explicitMacros[i];
@@ -697,13 +695,11 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	{ // Remove the '!' specifier if it exists
 		// TODO: Better check for the specifier
 		auto it = tokens->begin();
-		bool hadSpecifier = false;
 		while (!isNewline(*it++))
 		{
 			if (isOperator(*it, "!"))
 			{
 				tokens->erase(it);
-				hadSpecifier = true;
 				break;
 			}
 		}
@@ -742,7 +738,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 
 	info.bpVariadicParamIDStack.pop();
 
-	for (int i = 0; i < bpSym->func.params.size(); ++i)
+	for (uint64_t i = 0; i < bpSym->func.params.size(); ++i)
 	{
 		auto& param = bpSym->func.params[i];
 
@@ -946,7 +942,7 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 	if (func->func.isBlueprint)
 		score += CONV_SCORE_BLUEPRINT;
 
-	for (int i = 0; i < paramExpr.size(); ++i)
+	for (uint64_t i = 0; i < paramExpr.size(); ++i)
 	{
 		if (i < func->func.params.size()) // If the parameter is not variadic
 		{
@@ -1068,7 +1064,7 @@ SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vecto
 	if (bestCandidate->func.isBlueprint)
 		bestCandidate = generateBlueprintSpecialization(info, bestCandidate, paramExpr, explicitMacros, searchedFrom);
 
-	for (int i = 0; i < paramExpr.size(); ++i)
+	for (uint64_t i = 0; i < paramExpr.size(); ++i)
 	{
 		if (!dtEqual(paramExpr[i]->datatype, bestCandidate->func.params[i]->var.datatype))
 			paramExpr[i] = genConvertExpression(info, paramExpr[i], bestCandidate->func.params[i]->var.datatype, false, true);
@@ -1264,7 +1260,7 @@ SymbolRef addFunction(ProgGenInfo &info, SymbolRef func)
 	bool bpEqual = func->func.bpMacroTokens.size() == existingOverload->func.bpMacroTokens.size();
 	if (bpEqual)
 	{
-		for (int i = 0; i < func->func.bpMacroTokens.size(); ++i)
+		for (uint64_t i = 0; i < func->func.bpMacroTokens.size(); ++i)
 		{
 			if (func->func.bpMacroTokens[i].value != existingOverload->func.bpMacroTokens[i].value)
 			{
@@ -1327,7 +1323,7 @@ std::string preprocessAsmCode(ProgGenInfo &info, const Token &asmToken)
 	bool parseVar = false;
 	bool parsedParen = false;
 	std::string varName = "";
-	for (int i = 0; i < asmToken.value.size(); ++i)
+	for (uint64_t i = 0; i < asmToken.value.size(); ++i)
 	{
 		char c = asmToken.value[i];
 
@@ -1881,7 +1877,7 @@ ExpressionRef autoSimplifyExpression(ExpressionRef expr)
 
 	bool leftLiteral = false;
 	bool rightLiteral = false;
-	bool farRightLiteral = false;
+	bool farRightLiteral = false; // TODO: Implement ternary operator
 
 	// Simplify subexpression before simplifying the current expression
 	// Check every operand whether it is a literal or not
@@ -2261,12 +2257,12 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			if (exp->isExtCall)
 			{
 				func = exp->left->symbol;
-				for (int i = 0; i < exp->paramExpr.size(); ++i)
+				for (uint64_t i = 0; i < exp->paramExpr.size(); ++i)
 					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->symbol->func.params[i]->var.datatype);
 			}
 			else if (isFPtr)
 			{
-				for (int i = 0; i < exp->paramExpr.size(); ++i)
+				for (uint64_t i = 0; i < exp->paramExpr.size(); ++i)
 					exp->paramExpr[i] = genConvertExpression(info, exp->paramExpr[i], exp->left->datatype.funcPtrParams[i]);
 				exp->datatype = *exp->left->datatype.funcPtrRetType;
 			}
@@ -2324,7 +2320,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			temp->isObject = true;
 
 			exp->left = temp;
-			// fallthrough
+			[[fallthrough]];
 		}
 		case Expression::ExprType::MemberAccess:
 		{
@@ -2642,7 +2638,6 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 		parseExpected(info, Token::Type::Operator, ">");
 
 		parseExpected(info, Token::Type::Separator, "(");
-		datatype.funcPtrParams;
 		while (!isSeparator(peekToken(info), ")"))
 		{
 			auto argType = getParseDatatype(info);
@@ -2744,19 +2739,19 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 	int isVariable = false;
 	int isReference = false;
 
-	if (isStatic = isKeyword(peekToken(info), "static"))
+	if ((isStatic = isKeyword(peekToken(info), "static")))
 		nextToken(info);
 
 	if (isStatic && !isInFunction(currSym(info)))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Static keyword can only be used inside of function definitions!");
 
-	if (isConst = isKeyword(peekToken(info), "const"))
+	if ((isConst = isKeyword(peekToken(info), "const")))
 		nextToken(info);
 
-	if (isVariable = isKeyword(peekToken(info), "var"))
+	if ((isVariable = isKeyword(peekToken(info), "var")))
 		nextToken(info);
 
-	if (isReference = isKeyword(peekToken(info), "ref"))
+	if ((isReference = isKeyword(peekToken(info), "ref")))
 		nextToken(info);
 
 	if (!isStatic && !isConst && !isVariable)
@@ -3580,7 +3575,7 @@ bool parseStatementDefine(ProgGenInfo &info)
 
 	auto sym = makeMacroSymbol(nameToken.pos, nameToken.value);
 
-	if (isSeparator(peekToken(info, 0, true), "(") && peekToken(info, 0, true).pos.column - nameToken.pos.column == nameToken.value.size())
+	if (isSeparator(peekToken(info, 0, true), "(") && (uint64_t)peekToken(info, 0, true).pos.column - nameToken.pos.column == nameToken.value.size())
 	{
 		nextToken(info, 1, true);
 		sym->macroIsFunctionLike = true;
@@ -3685,7 +3680,6 @@ bool parsePackUnion(ProgGenInfo &info)
 	packSym->pos.decl = nameToken.pos;
 	packSym->name = nameToken.value;
 	packSym->pack.isUnion = isKeyword(packToken, "union");
-	auto &pack = packSym->pack;
 
 	TokenList::iterator itExplicitListBegin = info.currToken;
 	TokenList::iterator itExplicitListEnd = info.currToken;
@@ -4056,7 +4050,7 @@ void detectUndefinedFunctions(ProgGenInfo &info)
 
 void importDeferredImports(ProgGenInfo &info)
 {
-	for (int i = 0; i < info.deferredImports.size(); ++i)
+	for (uint64_t i = 0; i < info.deferredImports.size(); ++i)
 		importFile(info, info.deferredImports[i]);
 }
 
@@ -4084,7 +4078,7 @@ void genDeclaredOnlyBpSpecs(ProgGenInfo &info)
 
 ProgramRef generateProgram(const TokenListRef tokens, CommentTokenMapRef comments, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
 {
-	ProgGenInfo info = {tokens, comments, ProgramRef(new Program()), importDirs, progPath};
+	ProgGenInfo info = { tokens, comments, ProgramRef(new Program()), importDirs, progPath, tokens->begin() };
 	info.program->platform = platform;
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();
