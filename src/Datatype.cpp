@@ -101,6 +101,11 @@ bool isPointer(const Datatype& datatype)
 	return isOfType(datatype, DTType::Pointer);
 }
 
+bool isFuncPtr(const Datatype& datatype)
+{
+	return isOfType(datatype, DTType::FuncPtr);
+}
+
 bool isArray(const Datatype& datatype)
 {
 	return isOfType(datatype, DTType::Array);
@@ -178,11 +183,6 @@ bool isSignedInt(const Datatype& datatype)
 			datatype.name == "i32" ||
 			datatype.name == "i64"
 		);
-}
-
-bool isFuncPtr(const Datatype& datatype)
-{
-	return isOfType(datatype, DTType::FuncPtr);
 }
 
 void dereferenceDatatype(Datatype& datatype)

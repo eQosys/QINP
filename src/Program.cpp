@@ -155,6 +155,8 @@ std::string getReadableName(SymbolRef symbol)
 		return SymPathToString(getSymbolPath(nullptr, symbol));
 	if (isEnum(symbol))
 		return SymPathToString(getSymbolPath(nullptr, symbol));
+	if (isSymType(SymType::Global, symbol))
+		return "<global>";
 	assert(false && "Unhandled symbol type!");
 	return "";
 }

@@ -1539,6 +1539,8 @@ bool isConvPossible(ProgGenInfo &info, const Datatype &oldDt, const Datatype &ne
 			return true;
 		if (isPointer(oldDt))
 			return true;
+		if (isFuncPtr(oldDt))
+			return true;
 		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;
 		return false;
@@ -1551,6 +1553,8 @@ bool isConvPossible(ProgGenInfo &info, const Datatype &oldDt, const Datatype &ne
 			return true;
 		if (isPointer(oldDt) && isExplicit)
 			return true;
+		if (isFuncPtr(oldDt) && isExplicit)
+			return true;
 		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;
 		return false;
@@ -1562,6 +1566,8 @@ bool isConvPossible(ProgGenInfo &info, const Datatype &oldDt, const Datatype &ne
 		if (isInteger(oldDt) && isExplicit)
 			return true;
 		if (isPointer(oldDt) && isExplicit)
+			return true;
+		if (isFuncPtr(oldDt) && isExplicit)
 			return true;
 		if (isPointer(oldDt) && isVoidPtr(newDt) && preservesConstness(oldDt, newDt))
 			return true;
@@ -1576,6 +1582,8 @@ bool isConvPossible(ProgGenInfo &info, const Datatype &oldDt, const Datatype &ne
 		if (isInteger(oldDt) && isExplicit)
 			return true;
 		if (isPointer(oldDt) && isExplicit)
+			return true;
+		if (isFuncPtr(oldDt) && isExplicit)
 			return true;
 		if (isEnum(info.program, oldDt) && isExplicit)
 			return true;

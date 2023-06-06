@@ -51,7 +51,7 @@ space std:
 		return __syscall(__SYS_READ, pFile, dest, num)
 
 	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
-		if !pFile || !dest:
+		if !pFile || !src:
 			error.set(error.ID.InvalidArgument)
 			return -1
 

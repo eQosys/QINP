@@ -49,6 +49,7 @@ bool operator!(const Datatype& datatype);
 bool hasSubtype(const Datatype& datatype);
 bool isOfType(const Datatype& datatype, DTType type);
 bool isPointer(const Datatype& datatype);
+bool isFuncPtr(const Datatype& datatype);
 bool isArray(const Datatype& datatype);
 bool isDereferenceable(const Datatype& datatype);
 bool isEnum(const ProgramRef program, const Datatype& datatype);
@@ -59,7 +60,6 @@ bool isNull(const Datatype& datatype);
 bool isInteger(const Datatype& datatype);
 bool isUnsignedInt(const Datatype& datatype);
 bool isSignedInt(const Datatype& datatype);
-bool isFuncPtr(const Datatype& datatype);
 
 std::pair<Datatype, std::vector<Datatype>> funcSigToDatatypes(const std::string& sig);
 
