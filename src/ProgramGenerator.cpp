@@ -307,21 +307,26 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 
 const Token &peekToken(ProgGenInfo &info, int offset, bool ignoreSymDef)
 {
+	static const std::string kwFileStr = "__file__";
+	static const std::string kwLineStr = "__line__";
+	static const std::string kwMangledStr = "__mangled__";
+	static const std::string kwPrettyStr = "__pretty__";
+
 	auto tokIt = moveTokenIterator(*info.tokens, info.currToken, offset);
 
 	if (ignoreSymDef)
 		return *tokIt;
 
-	if (isKeyword(*tokIt, "__file__"))
+	if (isKeyword(*tokIt, kwFileStr))
 		return kwFileToTokString(*tokIt);
 
-	if (isKeyword(*tokIt, "__line__"))
+	if (isKeyword(*tokIt, kwLineStr))
 		return kwLineToTokInteger(*tokIt);
 
-	if (isKeyword(*tokIt, "__mangled__"))
+	if (isKeyword(*tokIt, kwMangledStr))
 		return kwMangledToTokString(info, *tokIt);
 
-	if (isKeyword(*tokIt, "__pretty__"))
+	if (isKeyword(*tokIt, kwPrettyStr))
 		return kwPrettyToTokString(info, *tokIt);
 
 	auto begin = tokIt;
