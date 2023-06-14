@@ -45,7 +45,7 @@ space std:
 
 		fn<?T> random() nodiscard!:
 			const r = randU64()
-			return *(T*)&r
+			return *(T const*)&r
 
 		fn<?T> range(?T min, ?T max) nodiscard!:
 			return min + randU64() % (max - min + 1)

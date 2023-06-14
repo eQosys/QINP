@@ -21,6 +21,11 @@ space std:
 	\\ @return Positive on success, negative on error.
 	fn<i32> print(u8 char)...
 
+	\\ Print a boolean value to stdout
+	\\ @param val The boolean to print (printed as "true" or "false")
+	\\ @return Positive on success, negative on error.
+	fn<i32> print(bool val)...
+
 	\\ Print a base-10 value with any other integral type to stdout
 	\\ @param num The integer to print
 	\\ @return The number of characters printed. Negative on error.
@@ -89,6 +94,9 @@ space std:
 
 	fn<i32> print(u8 char)!:
 		return printn(&char, 1)
+
+	fn<i32> print(bool val)!:
+		return print(val ? "true" : "false")
 
 	fn<i32> print(?T val)!:
 		const<u8[32]> str

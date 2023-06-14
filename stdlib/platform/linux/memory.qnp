@@ -2,6 +2,7 @@
 \\ Memory - Linux Specific
 
 import "__syscall.qnp"
+import "../../math.qnp"
 import "../../error.qnp"
 
 space std:
