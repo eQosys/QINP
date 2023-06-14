@@ -25,13 +25,13 @@
 
 ## Details
 #### <a id="ref_5d668723bcfba6ce11011f7b6ae97bf6"/>fn\<\> std.fclose(std.File* pFile)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L49) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L52)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L49) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L76)
 ```qinp
 \\ Closes the file.
 \\ @param pFile The file object.
 ```
 #### <a id="ref_174f1f1586984f8670abcd96daf4e0aa"/>fn\<std.File*\> std.fopen(u8 const* filename, u8 const* mode) nodiscard
-> [Declaration](/stdlib/fileio.qnp?plain=1#L20) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L21)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L20) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L22)
 ```qinp
 \\ Opens a file for reading and/or writing.
 \\ If the file could not be opened, null is returned.
@@ -43,7 +43,7 @@
 \\ @return The file object.
 ```
 #### <a id="ref_2fef09ea4725ef1fccbc8a59e2265bd5"/>fn\<u64\> std.fread(std.File* pFile, void* dest, u64 num)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L28) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L36)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L28) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L46)
 ```qinp
 \\ Reads num bytes from the file into the destination buffer.
 \\ May return less than num bytes if the end of the file is reached.
@@ -53,7 +53,7 @@
 \\ @return The number of bytes read.
 ```
 #### <a id="ref_e88978765371b1f5ab1497fa5b56b8b5"/>fn\<u64\> std.fseek(std.File* pFile, u64 offset, std.Seek origin)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L45) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L42)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L45) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L60)
 ```qinp
 \\ Seeks to the specified offset in the file.
 \\ @param pFile The file object.
@@ -65,7 +65,7 @@
 \\ @return The new position in the file, negative on error
 ```
 #### <a id="ref_a90a02b94bce7e88b866031f0500b730"/>fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L35) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L39)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L35) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L53)
 ```qinp
 \\ Writes num bytes from the source buffer to the file.
 \\ @param pFile The file object.

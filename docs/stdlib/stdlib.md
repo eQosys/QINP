@@ -6,6 +6,7 @@ The Standard Library is a collection of functions, packs and definitions that ar
 All files building the Standard Library can be found in the [stdlib](../../stdlib/) directory:
  - [./algorithm.qnp](algorithm.qnp.md)
  - [./assert.qnp](assert.qnp.md)
+ - [./error.qnp](error.qnp.md)
  - [./fileio.qnp](fileio.qnp.md)
  - [./limits.qnp](limits.qnp.md)
  - [./list.qnp](list.qnp.md)
