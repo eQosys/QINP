@@ -2729,8 +2729,12 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 	while (isSeparator(peekToken(info), "["))
 	{
 		nextToken(info);
-		parseExpected(info, Token::Type::LiteralInteger);
-		datatype = Datatype(DTType::Array, datatype, std::stoull(peekToken(info, -1).value));
+		auto expr = getParseExpression(info);
+		if (!expr)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected expression!");
+		if (expr->eType != Expression::ExprType::Literal)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected integer literal!");
+		datatype = Datatype(DTType::Array, datatype, expr->value.u64);
 		parseExpected(info, Token::Type::Separator, "]");
 	}
 

@@ -9,6 +9,7 @@ space std:
 			AssertionFailed
 			OutOfMemory
 			FileIO
+			__ERR_ID_COUNT
 
 		\\ Sets the global error value. Can be retrieved via a call to 'getError'
 		\\ @param err id of the error to be set.
@@ -26,6 +27,9 @@ space std:
 		\\ @return Description of the error. null on error.
 		fn<u8 const*> toString(ID err)...
 
+		\\ Generates the error strings for the error IDs.
+		\\ @return Array of error strings.
+		fn<u8 const**> __genErrorStrings()...
 
 defer
 space std:
@@ -43,7 +47,23 @@ space std:
 			__lastErrorID = ID.Success
 
 		fn<u8 const*> toString(ID err)!:
+			static<u8 const**> errorStrings = __genErrorStrings()
 			if err == ID.Success: return "Success"
 			if err == ID.InvalidArgument: return "Invalid Argument"
 
 			return null
+
+		fn<u8 const**> __genErrorStrings()!:
+			static<bool> initialized = false
+			static<u8 const*[ID.__ERR_ID_COUNT]> strings
+			if initialized:
+				return strings
+
+			strings[(u64)ID.Success] = "Success"
+			strings[(u64)ID.InvalidArgument] = "Invalid Argument"
+			strings[(u64)ID.AssertionFailed] = "Assertion Failed"
+			strings[(u64)ID.OutOfMemory] = "Out of Memory"
+			strings[(u64)ID.FileIO] = "File IO Error"
+			
+			initialized = true
+			return strings
