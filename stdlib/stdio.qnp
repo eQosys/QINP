@@ -157,19 +157,21 @@ space std:
 		const format = *pFormat
 		const dropPos = strchr(format, '%')
 
-		var<u64> nChars
+		var<u64> nCharsToPrint
+		var<u64> modChars
 		var<__PrintFmtMod> mod
+		mod.type = __PrintFmtMod_Type.Default
 
 		if dropPos:
-			nChars = (u64)(dropPos - format) + 1
-			nChars += __extractFmtMod(format + nChars, &mod)
+			nCharsToPrint = (u64)(dropPos - format)
+			modChars = __extractFmtMod(format + nCharsToPrint, &mod)
 		else:
-			nChars = strlen(format)
-			mod.type = __PrintFmtMod_Type.Default
+			nCharsToPrint = strlen(format)
+			modChars = 0
 
-		*pFormat = format + nChars
+		*pFormat = format + nCharsToPrint + modChars
 		
-		if printn(format, nChars - (dropPos != null)) < 0: return -1
+		if printn(format, nCharsToPrint) < 0: return -1
 		if __printmod(val, &mod) < 0: return -1
 		return 1
 
@@ -177,27 +179,29 @@ space std:
 		if !pMod:
 			return 0
 		if !format:
-			pMod->type = __PrintFmtMod_Type.Default
+			return 0
+
+		if *format++ != '%':
 			return 0
 
 		var first = *format
 		if first == 'b':
 			pMod->type = __PrintFmtMod_Type.Int_Bin
-			return 1
+			return 2
 		if first == 'o':
 			pMod->type = __PrintFmtMod_Type.Int_Oct
-			return 1
+			return 2
 		if first == 'd':
 			pMod->type = __PrintFmtMod_Type.Int_Dec
-			return 1
+			return 2
 		if first == 'x':
 			pMod->type = __PrintFmtMod_Type.Int_Hex
-			return 1
+			return 2
 		if first == 'c':
 			pMod->type = __PrintFmtMod_Type.Int_Chr
-			return 1
+			return 2
 
-		return 0
+		return 1
 
 	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)!:
 		var<u8[32]> buf
