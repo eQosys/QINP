@@ -23,7 +23,7 @@
 
 ## Details
 #### <a id="ref_1da32c02d2e1b84dd73106f6242bfb20"/>fn\<u8 const**\> std.error.__genErrorStrings()
-> [Declaration](/stdlib/error.qnp?plain=1#L32) | [Definition](/stdlib/error.qnp?plain=1#L56)
+> [Declaration](/stdlib/error.qnp?plain=1#L32) | [Definition](/stdlib/error.qnp?plain=1#L61)
 ```qinp
 \\ Generates the error strings for the error IDs.
 \\ @return Array of error strings.

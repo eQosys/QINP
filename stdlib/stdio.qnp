@@ -5,6 +5,13 @@ import "string.qnp"
 import "error.qnp"
 
 space std:
+	enum __PrintFmtMod_Type:
+		Default
+		Int_Bin, Int_Oct, Int_Dec, Int_Hex, Int_Chr
+	
+	\\ Pack used to store a format modifier for printing
+	pack __PrintFmtMod...
+
 	\\ Print the first num chars of a string to stdout
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
@@ -31,30 +38,48 @@ space std:
 	\\ @return The number of characters printed. Negative on error.
 	fn<i32> print(?T val)...
 
-	\\ Print two or more values of different types consecutively to stdout
-	\\ @param val The first value to print
-	\\ @param ... The remaining values to print
-	\\ @return Positive on success, negative on error.
-	fn<i32> print(?T val, ...)...
-
 	\\ Format a string and print it to stdout
-	\\ @param str The string to print
+	\\ @param format Format string
 	\\ @param val The first argument placed in the string
 	\\ @return Positive on success, negative on error.
-	fn<i32> print(u8 const* str, ?T val)...
+	fn<i32> print(u8 const* format, ?T val)...
 
 	\\ Format a string and print it to stdout
-	\\ @param str The string to print
+	\\ @param format Format string
 	\\ @param val The first argument placed in the string
 	\\ @param ... The remaining arguments placed in the string
 	\\ @return Positive on success, negative on error.
-	fn<i32> print(u8 const* str, ?T val, ...)...
+	fn<i32> print(u8 const* format, ?T val, ...)...
 
 	\\ Internal function to print a formatted string to stdout
-	\\ @param pStr A pointer to the string to print
+	\\ @param pFormat A pointer to the format string
 	\\ @param val The value to place in the string
 	\\ @return Positive on success, negative on error.
-	fn<i32> __printf(u8 const** pStr, ?T val)...
+	fn<i32> __printf(u8 const** pFormat, ?T val)...
+
+	\\ Internal function to extract the format modifier from the format string
+	\\ @param format Format string
+	\\ @param pMod Pointer to a format modifier pack to store the info in
+	\\ @return Number of characters read (Length of the format modifier)
+	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)...
+
+	\\ Internal function to print a value using a specified format modifier
+	\\ @param val The value to print
+	\\ @param mod The format modifier to use
+	\\ @return Positive on success, negative on error.
+	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)...
+
+	\\ Internal function to print a value using a specified format modifier
+	\\ @param str The string to print
+	\\ @param mod The format modifier to use
+	\\ @return Positive on success, negative on error.
+	fn<i32> __printmod(u8 const* str, __PrintFmtMod const* pMod)...
+
+	\\ Internal function to print a value using a specified format modifier
+	\\ @param val The value to print
+	\\ @param mod The format modifier to use
+	\\ @return Positive on success, negative on error.
+	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)...
 
 	\\ Prints a newline to stdout
 	\\ @return Positive on success, negative on error.
@@ -66,10 +91,10 @@ space std:
 	fn<i32> println(?T val)...
 
 	\\ Same as print but appends a newline
-	\\ @param val The value to print (passed to appropriate print function)
+	\\ @param format Format string
 	\\ @param ... The remaining values to print (passed to appropriate print function)
 	\\ @return Positive on success, negative on error.
-	fn<i32> println(?T val, ...)...
+	fn<i32> println(u8 const* format, ...)...
 
 	\\ Reads a character from stdin
 	\\ @return The character read
@@ -85,6 +110,10 @@ space std:
 
 defer
 space std:
+	pack __PrintFmtMod!:
+		var<__PrintFmtMod_Type> type
+		var<i64> data
+
 	fn<i32> print(u8 const* str)!:
 		if !str:
 			error.set(error.ID.InvalidArgument)
@@ -99,61 +128,109 @@ space std:
 		return print(val ? "true" : "false")
 
 	fn<i32> print(?T val)!:
-		const<u8[32]> str
-		return print(itos(val, str, 10))
+		const<u8[32]> buf
+		return print(itos(val, buf, 10))
 
-	fn<i32> print(?T val, ...)!:
-		if print(val) < 0: return -1
-		if print(...) < 0: return -1
-		return 1
-
-	fn<i32> print(u8 const* str, ?T val)!:
-		if !str:
+	fn<i32> print(u8 const* format, ?T val)!:
+		if !format:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		if __printf(&str, val) < 0: return -1
-		if print(str) < 0: return -1
+		if __printf(&format, val) < 0: return -1
+		if print(format) < 0: return -1
 		return 1
 
-	fn<i32> print(u8 const* str, ?T val, ...)!:
-		if !str:
+	fn<i32> print(u8 const* format, ?T val, ...)!:
+		if !format:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		if __printf(&str, val) < 0: return -1
-		if print(str, ...) < 0: return -1
+		if __printf(&format, val) < 0: return -1
+		if print(format, ...) < 0: return -1
 		return 1
 
-	fn<i32> __printf(u8 const** pStr, ?T val)!:
-		if !pStr || !*pStr:
+	fn<i32> __printf(u8 const** pFormat, ?T val)!:
+		if !pFormat:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		const str = *pStr
-		const dropPos = strchr(str, '%')
+		const format = *pFormat
+		const dropPos = strchr(format, '%')
 
-		var<u64> nChars = (u64)(dropPos - str)
-		if dropPos == null:
-			nChars = strlen(str)
+		var<u64> nChars
+		var<__PrintFmtMod> mod
 
-		*pStr = str + nChars + (dropPos != null)
+		if dropPos:
+			nChars = (u64)(dropPos - format) + 1
+			nChars += __extractFmtMod(format + nChars, &mod)
+		else:
+			nChars = strlen(format)
+			mod.type = __PrintFmtMod_Type.Default
+
+		*pFormat = format + nChars
 		
-		if printn(str, nChars) < 0: return -1
-		if print(val) < 0: return -1
+		if printn(format, nChars - (dropPos != null)) < 0: return -1
+		if __printmod(val, &mod) < 0: return -1
 		return 1
+
+	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:
+		if !pMod:
+			return 0
+		if !format:
+			pMod->type = __PrintFmtMod_Type.Default
+			return 0
+
+		var first = *format
+		if first == 'b':
+			pMod->type = __PrintFmtMod_Type.Int_Bin
+			return 1
+		if first == 'o':
+			pMod->type = __PrintFmtMod_Type.Int_Oct
+			return 1
+		if first == 'd':
+			pMod->type = __PrintFmtMod_Type.Int_Dec
+			return 1
+		if first == 'x':
+			pMod->type = __PrintFmtMod_Type.Int_Hex
+			return 1
+		if first == 'c':
+			pMod->type = __PrintFmtMod_Type.Int_Chr
+			return 1
+
+		return 0
+
+	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)!:
+		var<u8[32]> buf
+		if pMod->type == __PrintFmtMod_Type.Int_Bin:
+			return print(itos(val, buf, 2))
+		if pMod->type == __PrintFmtMod_Type.Int_Oct:
+			return print(itos(val, buf, 8))
+		if pMod->type == __PrintFmtMod_Type.Int_Dec:
+			return print(itos(val, buf, 10))
+		if pMod->type == __PrintFmtMod_Type.Int_Hex:
+			return print(itos(val, buf, 16))
+		if pMod->type == __PrintFmtMod_Type.Int_Chr:
+			return print((u8)val)
+		return print(val)
+
+	fn<i32> __printmod(u8 const* str, __PrintFmtMod const* pMod)!:
+		\\ TODO: Implementation
+		return print(str)
+
+	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)!:
+		\\ TODO: Implementation
+		return print(val)
 
 	fn<i32> println()!:
-		if print('\n') < 0: return -1
-		return 1
+		return print('\n')
 
 	fn<i32> println(?T val)!:
 		if print(val) < 0: return -1
 		if println() < 0: return -1
 		return 1
 
-	fn<i32> println(?T val, ...)!:
-		if print(val, ...) < 0: return -1
+	fn<i32> println(u8 const* format, ...)!:
+		if print(format, ...) < 0: return -1
 		if println() < 0: return -1
 		return 1
 

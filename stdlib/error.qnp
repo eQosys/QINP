@@ -48,10 +48,15 @@ space std:
 
 		fn<u8 const*> toString(ID err)!:
 			static<u8 const**> errorStrings = __genErrorStrings()
-			if err == ID.Success: return "Success"
-			if err == ID.InvalidArgument: return "Invalid Argument"
 
-			return null
+			if err >= ID.__ERR_ID_COUNT:
+				return "error.toString: Invalid Error ID"
+
+			var str = errorStrings[(u64)err]
+			if !str:
+				str = "error.toString: No information available"
+
+			return str
 
 		fn<u8 const**> __genErrorStrings()!:
 			static<bool> initialized = false
