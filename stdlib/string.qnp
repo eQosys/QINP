@@ -459,7 +459,11 @@ space std:
 
 		while *str:
 			num *= base
-			num += (i64)(strchr(__baseCharsLower, tolower(*str++)) - __baseCharsLower)
+			var c = tolower(*str++)
+			var i = strchr(__baseCharsLower, c)
+			if !i || (i64)(i -= __baseCharsLower) >= base:
+				break
+			num += (i64)(i)
 
 		return negative ? -num : num
 
