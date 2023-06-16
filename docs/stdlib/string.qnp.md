@@ -44,28 +44,28 @@
 
 ## Details
 #### <a id="ref_8f439e4c57f68e41f372499cbbc726f3"/>fn\<bool\> std.isalnum(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L184) | [Definition](/stdlib/string.qnp?plain=1#L478)
+> [Declaration](/stdlib/string.qnp?plain=1#L184) | [Definition](/stdlib/string.qnp?plain=1#L482)
 ```qinp
 \\ Returns wether a character is a letter or a digit
 \\ @param c The character to check
 \\ @return True if the character is a letter or a digit, false otherwise
 ```
 #### <a id="ref_1810b29239e4f51451bfa0cdf36bc00b"/>fn\<bool\> std.isalpha(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L179) | [Definition](/stdlib/string.qnp?plain=1#L475)
+> [Declaration](/stdlib/string.qnp?plain=1#L179) | [Definition](/stdlib/string.qnp?plain=1#L479)
 ```qinp
 \\ Returns wether a character is a letter
 \\ @param c The character to check
 \\ @return True if the character is a letter, false otherwise
 ```
 #### <a id="ref_5cce27e95be0c2bbcf08898292a3d97a"/>fn\<bool\> std.isnum(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L174) | [Definition](/stdlib/string.qnp?plain=1#L472)
+> [Declaration](/stdlib/string.qnp?plain=1#L174) | [Definition](/stdlib/string.qnp?plain=1#L476)
 ```qinp
 \\ Returns wether a character is a number
 \\ @param c The character to check
 \\ @return True if the character is a number, false otherwise
 ```
 #### <a id="ref_e2ca17504d3e1a69b4336ffa868d87c8"/>fn\<bool\> std.isspace(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L189) | [Definition](/stdlib/string.qnp?plain=1#L481)
+> [Declaration](/stdlib/string.qnp?plain=1#L189) | [Definition](/stdlib/string.qnp?plain=1#L485)
 ```qinp
 \\ Returns wether a character is a whitespace character
 \\ @param c The character to check
@@ -271,14 +271,14 @@
 \\ @return The pointer to the passed string
 ```
 #### <a id="ref_39608303a9ea8c9a53b85e065cd581ca"/>fn\<u8\> std.tolower(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L169) | [Definition](/stdlib/string.qnp?plain=1#L469)
+> [Declaration](/stdlib/string.qnp?plain=1#L169) | [Definition](/stdlib/string.qnp?plain=1#L473)
 ```qinp
 \\ Converts a character to lowercase. Values not in the range 'A' to 'Z' are unchanged.
 \\ @param c The character to convert
 \\ @return The lowercase character
 ```
 #### <a id="ref_d5143f66f35780c2301272595fa2e37e"/>fn\<u8\> std.toupper(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L164) | [Definition](/stdlib/string.qnp?plain=1#L466)
+> [Declaration](/stdlib/string.qnp?plain=1#L164) | [Definition](/stdlib/string.qnp?plain=1#L470)
 ```qinp
 \\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
 \\ @param c The character to convert
