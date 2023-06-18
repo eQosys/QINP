@@ -31,12 +31,12 @@ space std:
 
 	\\ Print a single character to stdout
 	\\ @param char The character to print
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> print(u8 char)...
 
 	\\ Print a boolean value to stdout
 	\\ @param val The boolean to print (printed as "true" or "false")
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> print(bool val)...
 
 	\\ Print a base-10 value with any other integral type to stdout
@@ -47,20 +47,20 @@ space std:
 	\\ Format a string and print it to stdout
 	\\ @param format Format string
 	\\ @param val The first argument placed in the string
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> print(u8 const* format, ?T val)...
 
 	\\ Format a string and print it to stdout
 	\\ @param format Format string
 	\\ @param val The first argument placed in the string
 	\\ @param ... The remaining arguments placed in the string
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> print(u8 const* format, ?T val, ...)...
 
 	\\ Internal function to print a formatted string to stdout
 	\\ @param pFormat A pointer to the format string
 	\\ @param val The value to place in the string
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> __printf(u8 const** pFormat, ?T val)...
 
 	\\ Internal function to extract the format modifier from the format string
@@ -72,25 +72,25 @@ space std:
 	\\ Internal function to print a value using a specified format modifier
 	\\ @param val The value to print
 	\\ @param mod The format modifier to use
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to print a value using a specified format modifier
 	\\ @param str The string to print
 	\\ @param mod The format modifier to use
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> __printmod(u8 const* str, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to print a value using a specified format modifier
 	\\ @param val The value to print
 	\\ @param mod The format modifier to use
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to print len characters of a string or less.
 	\\ @param str The string to print
 	\\ @param len The maximum number of characters to print
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> __printmaxlen(u8 const* str, u64 len)...
 
 	\\ Prints a newline to stdout
@@ -99,13 +99,13 @@ space std:
 
 	\\ Same as print but appends a newline
 	\\ @param val The value to print (passed to appropriate print function)
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> println(?T val)...
 
 	\\ Same as print but appends a newline
 	\\ @param format Format string
 	\\ @param ... The remaining values to print (passed to appropriate print function)
-	\\ @return Positive on success, negative on error.
+	\\ @return The number of characters printed, negative on error.
 	fn<i32> println(u8 const* format, ...)...
 
 	\\ Reads a character from stdin
@@ -151,18 +151,24 @@ space std:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		if __printf(&format, val) < 0: return -1
-		if print(format) < 0: return -1
-		return 1
+		var<i32> n1
+		var<i32> n2
+
+		if (n1 = __printf(&format, val)) < 0: return -1
+		if (n2 = print(format)) < 0: return -1
+		return n1 + n2
 
 	fn<i32> print(u8 const* format, ?T val, ...)!:
 		if !format:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		if __printf(&format, val) < 0: return -1
-		if print(format, ...) < 0: return -1
-		return 1
+		var<i32> n1
+		var<i32> n2
+
+		if (n1 = __printf(&format, val)) < 0: return -1
+		if (n2 = print(format, ...)) < 0: return -1
+		return n1 + n2
 
 	fn<i32> __printf(u8 const** pFormat, ?T val)!:
 		if !pFormat:
@@ -190,9 +196,12 @@ space std:
 
 		*pFormat = format + nCharsToPrint + modChars
 		
-		if printn(format, nCharsToPrint) < 0: return -1
-		if __printmod(val, &mod) < 0: return -1
-		return 1
+		var<i32> n1
+		var<i32> n2
+
+		if (n1 = printn(format, nCharsToPrint)) < 0: return -1
+		if (n2 = __printmod(val, &mod)) < 0: return -1
+		return n1 + n2
 
 	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:		
 		if !format || !pMod:
@@ -281,14 +290,16 @@ space std:
 		return print('\n')
 
 	fn<i32> println(?T val)!:
-		if print(val) < 0: return -1
+		var<i32> n
+		if (n = print(val)) < 0: return -1
 		if println() < 0: return -1
-		return 1
+		return n + 1
 
 	fn<i32> println(u8 const* format, ...)!:
-		if print(format, ...) < 0: return -1
+		var<i32> n
+		if (n = print(format, ...)) < 0: return -1
 		if println() < 0: return -1
-		return 1
+		return n + 1
 
 	fn<u8> getchar() nodiscard!:
 		const<u8[2]> buff

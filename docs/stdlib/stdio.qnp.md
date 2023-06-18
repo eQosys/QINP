@@ -37,7 +37,7 @@
 
 ## Details
 #### <a id="ref_8d858898d0b08f9b97737f3c3eff04cd"/>fn\<i32\> std.__extractFmtMod(u8 const* format, std.__PrintFmtMod* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L70) | [Definition](/stdlib/stdio.qnp?plain=1#L197)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L70) | [Definition](/stdlib/stdio.qnp?plain=1#L206)
 ```qinp
 \\ Internal function to extract the format modifier from the format string
 \\ @param format Format string
@@ -45,47 +45,47 @@
 \\ @return Number of characters read (Length of the format modifier)
 ```
 #### <a id="ref_a6781587f4aa25c30fa24af9483e6dc1"/>fn\<i32\> std.__printf(u8 const** pFormat, T val)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L64) | [Definition](/stdlib/stdio.qnp?plain=1#L167)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L64) | [Definition](/stdlib/stdio.qnp?plain=1#L173)
 ```qinp
 \\ Internal function to print a formatted string to stdout
 \\ @param pFormat A pointer to the format string
 \\ @param val The value to place in the string
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_daaa067b4ee600cdf316a1dc2bae6cca"/>fn\<i32\> std.__printmaxlen(u8 const* str, u64 len)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L94) | [Definition](/stdlib/stdio.qnp?plain=1#L273)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L94) | [Definition](/stdlib/stdio.qnp?plain=1#L282)
 ```qinp
 \\ Internal function to print len characters of a string or less.
 \\ @param str The string to print
 \\ @param len The maximum number of characters to print
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_246c44f1a6c757d657171d337587bfc6"/>fn\<i32\> std.__printmod(T val, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L76) | [Definition](/stdlib/stdio.qnp?plain=1#L250)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L76) | [Definition](/stdlib/stdio.qnp?plain=1#L259)
 ```qinp
 \\ Internal function to print a value using a specified format modifier
 \\ @param val The value to print
 \\ @param mod The format modifier to use
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_5ef7e271131125b22a8aba81bae2e1b9"/>fn\<i32\> std.__printmod(bool val, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L88) | [Definition](/stdlib/stdio.qnp?plain=1#L269)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L88) | [Definition](/stdlib/stdio.qnp?plain=1#L278)
 ```qinp
 \\ Internal function to print a value using a specified format modifier
 \\ @param val The value to print
 \\ @param mod The format modifier to use
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_11895996fe419c7cd2c1eaa601d53d16"/>fn\<i32\> std.__printmod(u8 const* str, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L82) | [Definition](/stdlib/stdio.qnp?plain=1#L264)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L82) | [Definition](/stdlib/stdio.qnp?plain=1#L273)
 ```qinp
 \\ Internal function to print a value using a specified format modifier
 \\ @param str The string to print
 \\ @param mod The format modifier to use
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_2429c551516f61cdca2e363ab9b74350"/>fn\<u8\> std.getchar() nodiscard
-> [Declaration](/stdlib/stdio.qnp?plain=1#L113) | [Definition](/stdlib/stdio.qnp?plain=1#L293)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L113) | [Definition](/stdlib/stdio.qnp?plain=1#L304)
 ```qinp
 \\ Reads a character from stdin
 \\ @return The character read
@@ -103,30 +103,30 @@
 \\ Format a string and print it to stdout
 \\ @param format Format string
 \\ @param val The first argument placed in the string
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_586b298024c5f840d713391c45c1f481"/>fn\<i32\> std.print(u8 const* format, T val, ...)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L58) | [Definition](/stdlib/stdio.qnp?plain=1#L158)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L58) | [Definition](/stdlib/stdio.qnp?plain=1#L161)
 ```qinp
 \\ Format a string and print it to stdout
 \\ @param format Format string
 \\ @param val The first argument placed in the string
 \\ @param ... The remaining arguments placed in the string
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_6edaa46df87737c2fd35cd07f677c122"/>fn\<i32\> std.print(bool val)
 > [Declaration](/stdlib/stdio.qnp?plain=1#L40) | [Definition](/stdlib/stdio.qnp?plain=1#L142)
 ```qinp
 \\ Print a boolean value to stdout
 \\ @param val The boolean to print (printed as "true" or "false")
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_2a64ebd9be54c8488f7cf98a5c2b5837"/>fn\<i32\> std.print(u8 char)
 > [Declaration](/stdlib/stdio.qnp?plain=1#L35) | [Definition](/stdlib/stdio.qnp?plain=1#L139)
 ```qinp
 \\ Print a single character to stdout
 \\ @param char The character to print
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_29740113bb79b0cb7d1c131548ff0e1f"/>fn\<i32\> std.print(u8 const* str)
 > [Declaration](/stdlib/stdio.qnp?plain=1#L30) | [Definition](/stdlib/stdio.qnp?plain=1#L132)
@@ -136,25 +136,25 @@
 \\ @return The number of characters printed. Negative on error.
 ```
 #### <a id="ref_37010d86dac151fe6c59b96e986d8278"/>fn\<i32\> std.println()
-> [Declaration](/stdlib/stdio.qnp?plain=1#L98) | [Definition](/stdlib/stdio.qnp?plain=1#L280)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L98) | [Definition](/stdlib/stdio.qnp?plain=1#L289)
 ```qinp
 \\ Prints a newline to stdout
 \\ @return Positive on success, negative on error.
 ```
 #### <a id="ref_9e2171085cb5b7b5490df6abe30bfbe1"/>fn\<i32\> std.println(T val)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L103) | [Definition](/stdlib/stdio.qnp?plain=1#L283)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L103) | [Definition](/stdlib/stdio.qnp?plain=1#L292)
 ```qinp
 \\ Same as print but appends a newline
 \\ @param val The value to print (passed to appropriate print function)
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_6bf6d9c9c0fb93b9a3744f05bb3e75c9"/>fn\<i32\> std.println(u8 const* format, ...)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L109) | [Definition](/stdlib/stdio.qnp?plain=1#L288)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L109) | [Definition](/stdlib/stdio.qnp?plain=1#L298)
 ```qinp
 \\ Same as print but appends a newline
 \\ @param format Format string
 \\ @param ... The remaining values to print (passed to appropriate print function)
-\\ @return Positive on success, negative on error.
+\\ @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_136b6a7ba51a95ace40f4bab7a28482a"/>fn\<i32\> std.printn(u8 const* str, u64 num) ...
 > [Declaration](/stdlib/stdio.qnp?plain=1#L25) | [Definition](/stdlib/platform/linux/stdio.qnp?plain=1#L16)
