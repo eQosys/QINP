@@ -1,0 +1,3 @@
+import "stdio.qnp"
+
+std.print("--- %s ---", "Hello World!")

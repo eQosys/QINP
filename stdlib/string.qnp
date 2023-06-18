@@ -158,6 +158,13 @@ space std:
 	\\ @return The integer represented by the string
 	fn<i64> stoi(u8 const* str, i64 base) nodiscard...
 
+	\\ Convert a string to a base-10 integer
+	\\ @param str The string to convert
+	\\ @param pNextOut A pointer to a pointer to the first character after the converted integer (set by the function)
+	\\ @param base The base to use for the conversion (Valid values are 2 to 36 (inclusive))
+	\\ @return The integer represented by the string
+	fn<i64> stoi(u8 const* str, u8 const** pNextOut, i64 base) nodiscard...
+
 	\\ Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
 	\\ @param c The character to convert
 	\\ @return The uppercase character
@@ -447,23 +454,32 @@ space std:
 		return strrev(begin, str)
 
 	fn<i64> stoi(u8 const* str, i64 base) nodiscard!:
+		return stoi(str, null, base)
+
+	fn<i64> stoi(u8 const* str, u8 const** pNextOut, i64 base) nodiscard!:
 		if !str || base < 2 || base > 36:
 			error.set(error.ID.InvalidArgument)
 			return null
 
 		static const __baseCharsLower = __BASE_CHARS_LOWER
 		var num = 0
+
+		if *str == '+': ++str
+
 		const negative = *str == '-'
 
 		if negative: ++str
 
-		while *str:
-			num *= base
-			var c = tolower(*str++)
+		var<u8> c
+		while (c = tolower(*str)):
 			var i = strchr(__baseCharsLower, c)
-			if !i || (i64)(i -= __baseCharsLower) >= base:
+			if i == null || (i64)(i -= __baseCharsLower) >= base:
 				break
+			num *= base
 			num += (i64)(i)
+			++str
+
+		if pNextOut: *pNextOut = str
 
 		return negative ? -num : num
 

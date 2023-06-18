@@ -1,13 +1,19 @@
 \\ QINP Standard Library
 \\ Standard Input/Output
 
-import "string.qnp"
+import "math.qnp"
 import "error.qnp"
+import "string.qnp"
+import "limits.qnp"
 
 space std:
 	enum __PrintFmtMod_Type:
 		Default
-		Int_Bin, Int_Oct, Int_Dec, Int_Hex, Int_Chr
+		Int_Bin, Int_Oct, Int_Dec, Int_Hex, Int_Chr,
+		Str
+	
+	enum __PrintFmtMod_Padding:
+		None, Left, Right
 	
 	\\ Pack used to store a format modifier for printing
 	pack __PrintFmtMod...
@@ -81,6 +87,12 @@ space std:
 	\\ @return Positive on success, negative on error.
 	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)...
 
+	\\ Internal function to print len characters of a string or less.
+	\\ @param str The string to print
+	\\ @param len The maximum number of characters to print
+	\\ @return Positive on success, negative on error.
+	fn<i32> __printmaxlen(u8 const* str, u64 len)...
+
 	\\ Prints a newline to stdout
 	\\ @return Positive on success, negative on error.
 	fn<i32> println()...
@@ -112,7 +124,10 @@ defer
 space std:
 	pack __PrintFmtMod!:
 		var<__PrintFmtMod_Type> type
-		var<i64> data
+		var<u64> strLen
+		var<__PrintFmtMod_Padding> padding
+		var<i64> fieldWidth
+		var<u8> fillChar
 
 	fn<i32> print(u8 const* str)!:
 		if !str:
@@ -161,6 +176,10 @@ space std:
 		var<u64> modChars
 		var<__PrintFmtMod> mod
 		mod.type = __PrintFmtMod_Type.Default
+		mod.strLen = -1
+		mod.padding = __PrintFmtMod_Padding.None
+		mod.fieldWidth = -1
+		mod.fillChar = ' '
 
 		if dropPos:
 			nCharsToPrint = (u64)(dropPos - format)
@@ -175,33 +194,58 @@ space std:
 		if __printmod(val, &mod) < 0: return -1
 		return 1
 
-	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:
-		if !pMod:
-			return 0
-		if !format:
+	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:		
+		if !format || !pMod:
 			return 0
 
 		if *format++ != '%':
 			return 0
 
-		var first = *format
-		if first == 'b':
-			pMod->type = __PrintFmtMod_Type.Int_Bin
-			return 2
-		if first == 'o':
-			pMod->type = __PrintFmtMod_Type.Int_Oct
-			return 2
-		if first == 'd':
-			pMod->type = __PrintFmtMod_Type.Int_Dec
-			return 2
-		if first == 'x':
-			pMod->type = __PrintFmtMod_Type.Int_Hex
-			return 2
-		if first == 'c':
-			pMod->type = __PrintFmtMod_Type.Int_Chr
-			return 2
+		var nChars = 1
 
-		return 1
+		while true:
+			var ch = *format++
+			if ch == 'b':
+				pMod->type = __PrintFmtMod_Type.Int_Bin
+				++nChars 
+			elif ch == 'o':
+				pMod->type = __PrintFmtMod_Type.Int_Oct
+				++nChars
+			elif ch == 'd':
+				pMod->type = __PrintFmtMod_Type.Int_Dec
+				++nChars 
+			elif ch == 'x':
+				pMod->type = __PrintFmtMod_Type.Int_Hex
+				++nChars 
+			elif ch == 'c':
+				pMod->type = __PrintFmtMod_Type.Int_Chr
+				++nChars 
+			elif ch == 's':
+				pMod->type = __PrintFmtMod_Type.Str
+				var<u8 const*> pNext
+				pMod->strLen = stoi(format, &pNext, 10)
+				if pNext == format:
+					pMod->strLen = limits.I64_MAX
+				nChars += 1 + (u64)(pNext - format)
+				format = pNext
+			elif ch == '+':
+				pMod->padding = __PrintFmtMod_Padding.Right
+				var<u8 const*> pNext
+				pMod->fieldWidth = stoi(format, &pNext, 10)
+				nChars += 1 + (u64)(pNext - format)
+				format = pNext
+			elif ch == '-':
+				pMod->padding = __PrintFmtMod_Padding.Left
+				var<u8 const*> pNext
+				pMod->fieldWidth = stoi(format, &pNext, 10)
+				nChars += 1 + (u64)(pNext - format)
+				format = pNext
+			elif ch == 'f':
+				pMod->fillChar = *format++
+			else:
+				break
+
+		return nChars
 
 	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)!:
 		var<u8[32]> buf
@@ -218,12 +262,20 @@ space std:
 		return print(val)
 
 	fn<i32> __printmod(u8 const* str, __PrintFmtMod const* pMod)!:
-		\\ TODO: Implementation
+		if pMod->type == __PrintFmtMod_Type.Str:
+			return __printmaxlen(str, pMod->strLen)
 		return print(str)
 
 	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)!:
 		\\ TODO: Implementation
 		return print(val)
+
+	fn<i32> __printmaxlen(u8 const* str, u64 len)!:
+		if !str:
+			error.set(error.ID.InvalidArgument)
+			return -1
+		
+		return printn(str, min(strlen(str), len))
 
 	fn<i32> println()!:
 		return print('\n')
