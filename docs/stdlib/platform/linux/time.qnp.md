@@ -14,7 +14,7 @@
  - [fn\<i32\> std.sleep(u64 ms)](#ref_811d72065394f0ca8d3b5353ef372bde)
 
 ## Packs/Unions
- - pack std.__timespec
+ - [pack std.__timespec](#ref_4bd8c6071cb91df520e55dd10367b01e)
 
 ## Macros
  - std.__CLOCK_MONOTONIC
@@ -30,6 +30,11 @@ Retrieves the current time of the system
 @param clockID The clock to use
 @param t A pointer to a __timespec pack to store the time in
 @return 0 on success, -1 on error
+```
+#### <a id="ref_4bd8c6071cb91df520e55dd10367b01e"/>pack std.__timespec
+> [Definition](/stdlib/platform/linux/time.qnp?plain=1#L14)
+```qinp
+Holds a time value in seconds and nanoseconds
 ```
 #### <a id="ref_3625b747e3afa4a403f29c51f9886bc5"/>fn\<u64\> std.getTime() nodiscard
 > [Declaration](/stdlib/time.qnp?plain=1#L7) | [Definition](/stdlib/platform/linux/time.qnp?plain=1#L34)

@@ -8,7 +8,7 @@
 
 
 ## Globals
- - var\<u64\> std.random.__seed
+ - [var\<u64\> std.random.__seed](#ref_c3f15f919ff5c47263ff53a63125bb67)
 
 ## Functions
  - [fn\<void*\> std.random.fill(void* buffer, u64 size)](#ref_49c7956de099810e259ea53538d5c1ea)
@@ -18,6 +18,11 @@
  - [fn\<\> std.random.seed(u64 seed)](#ref_6640e06ad3641d2c0d88029c0a2c0fbc)
 
 ## Details
+#### <a id="ref_c3f15f919ff5c47263ff53a63125bb67"/>var\<u64\> std.random.__seed
+> [Declaration](/stdlib/random.qnp?plain=1#L38)
+```qinp
+The seed used by the random number generator
+```
 #### <a id="ref_49c7956de099810e259ea53538d5c1ea"/>fn\<void*\> std.random.fill(void* buffer, u64 size)
 > [Declaration](/stdlib/random.qnp?plain=1#L31) | [Definition](/stdlib/random.qnp?plain=1#L53)
 ```qinp

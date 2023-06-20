@@ -19,9 +19,14 @@
  - [fn\<std.List.Node*\> std.List.remove(std.List.Node* list, std.List.Node* node)](#ref_319f469b689e913cd3fd5191616b5665)
 
 ## Packs/Unions
- - pack std.List.Node
+ - [pack std.List.Node](#ref_a29906608954c2e8c41ec76c00e691cf)
 
 ## Details
+#### <a id="ref_a29906608954c2e8c41ec76c00e691cf"/>pack std.List.Node
+> [Definition](/stdlib/list.qnp?plain=1#L10)
+```qinp
+A single node in a list.
+```
 #### <a id="ref_3a6d9635c886314aad8acd25e2874d6a"/>fn\<std.List.Node*\> std.List.append(std.List.Node* list, std.List.Node* node)
 > [Declaration](/stdlib/list.qnp?plain=1#L33) | [Definition](/stdlib/list.qnp?plain=1#L84)
 ```qinp

@@ -108,7 +108,7 @@ def wrapLine(line, symbol, hasDetail):
 
 	return result
 
-def genLineVariable(symbol, comments, addVarPrefix = False, useFullName = False, doWrapLine = True):
+def genLineVariable(file, symbol, comments, addVarPrefix = False, useFullName = False, doWrapLine = True):
 	line = ""
 	if addVarPrefix:
 		line += "var\<"
@@ -151,7 +151,7 @@ def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = Tru
 	line += "("
 
 	for param in symbol["params"]:
-		line += genLineVariable(param, comments, doWrapLine=False) + ", "
+		line += genLineVariable(file, param, comments, doWrapLine=False) + ", "
 
 	if len(symbol["params"]) > 0:
 		line = line[:-2]
@@ -170,7 +170,7 @@ def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = Tru
 	autoAddDetail(file, line, comments, symbol)
 	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
-def genLinePack(symbol, comments, isDefine, doWrapLine = True):
+def genLinePack(file, symbol, comments, isDefine, doWrapLine = True):
 	line = ""
 
 	if symbol["isUnion"]:
@@ -186,7 +186,7 @@ def genLinePack(symbol, comments, isDefine, doWrapLine = True):
 	autoAddDetail(file, line, comments, symbol)
 	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
-def genLineEnum(symbol, comments, doWrapLine = True):
+def genLineEnum(file, symbol, comments, doWrapLine = True):
 	line = "enum "
 
 	line += symbol["fullName"]
@@ -256,7 +256,7 @@ def generateLines(base, comments, files, funcName = None):
 			case "Namespace":
 				generateLines(symbol["subSymbols"], comments, files, funcName)
 			case "Variable":
-				files[declFile].globals.append(genLineVariable(symbol, comments, True, True))
+				files[declFile].globals.append(genLineVariable(declFile, symbol, comments, True, True))
 			case "FuncName":
 				if name == "&_BLUEPRINTS_&":
 					generateLines(symbol["subSymbols"], comments, files, funcName)
@@ -273,12 +273,12 @@ def generateLines(base, comments, files, funcName = None):
 				files[declFile].functions.append(genLineFunction(declFile, symbol, comments, None, True))
 			case "Pack":
 				if defFile == "<unknown>" or defFile != declFile:
-					files[declFile].packs.append(genLinePack(symbol, comments, False))
+					files[declFile].packs.append(genLinePack(declFile, symbol, comments, False))
 
 				if defFile != "<unknown>":
-					files[defFile].packs.append(genLinePack(symbol, comments, True))
+					files[defFile].packs.append(genLinePack(defFile, symbol, comments, True))
 			case "Enum":
-				files[declFile].enums.append(genLineEnum(symbol, comments))
+				files[declFile].enums.append(genLineEnum(declFile, symbol, comments))
 			case "EnumMember":
 				continue
 			case "Macro":

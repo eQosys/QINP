@@ -37,7 +37,7 @@
  - [fn\<i32\> std.scann(u8* dest, u64 num) ...](#ref_14749def6dac39e09280b4ed5ffa05ca)
 
 ## Packs/Unions
- - pack std.__PrintFmtMod
+ - [pack std.__PrintFmtMod](#ref_c3200582f96c5cf5a6c65b486e805ae2)
 
 ## Enums
  - enum std.__PrintFmtMod_Alignment
@@ -57,6 +57,11 @@ Function signature for a function printing a single element of an array
 > [Declaration](/stdlib/stdio.qnp?plain=1#L14)
 ```qinp
 Macro to define a lambda function that prints a single element of an array
+```
+#### <a id="ref_c3200582f96c5cf5a6c65b486e805ae2"/>pack std.__PrintFmtMod
+> [Declaration](/stdlib/stdio.qnp?plain=1#L25) | [Definition](/stdlib/stdio.qnp?plain=1#L179)
+```qinp
+Pack used to store a format modifier for printing
 ```
 #### <a id="ref_8d858898d0b08f9b97737f3c3eff04cd"/>fn\<i32\> std.__extractFmtMod(u8 const* format, std.__PrintFmtMod* pMod)
 > [Declaration](/stdlib/stdio.qnp?plain=1#L102) | [Definition](/stdlib/stdio.qnp?plain=1#L299)

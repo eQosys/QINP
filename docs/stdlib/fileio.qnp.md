@@ -16,12 +16,18 @@
  - [fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num) ...](#ref_a43f0347f6eb625132afa900f842f059)
 
 ## Packs/Unions
- - pack std.File ...
+ - [pack std.File ...](#ref_5a673db54053d0f4c25fcdd59770fdb8)
 
 ## Enums
  - enum std.Seek
 
 ## Details
+#### <a id="ref_5a673db54053d0f4c25fcdd59770fdb8"/>pack std.File ...
+> [Declaration](/stdlib/fileio.qnp?plain=1#L7) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L19)
+```qinp
+The implementation dependent file pack.
+It should not be used directly/dereferenced outside of the implementation.
+```
 #### <a id="ref_b22f7c263f044a29e642117d2d39847a"/>fn\<\> std.fclose(std.File* pFile) ...
 > [Declaration](/stdlib/fileio.qnp?plain=1#L49) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L76)
 ```qinp

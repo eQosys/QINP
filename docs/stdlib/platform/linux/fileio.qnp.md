@@ -16,7 +16,7 @@
  - [fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num)](#ref_a90a02b94bce7e88b866031f0500b730)
 
 ## Packs/Unions
- - pack std.File
+ - [pack std.File](#ref_b25eae4d8f926169fb555cf1169a353f)
 
 ## Macros
  - std.__OPEN_READONLY
@@ -24,6 +24,12 @@
  - std.__OPEN_WRITEONLY
 
 ## Details
+#### <a id="ref_b25eae4d8f926169fb555cf1169a353f"/>pack std.File
+> [Declaration](/stdlib/fileio.qnp?plain=1#L7) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L19)
+```qinp
+The implementation dependent file pack.
+It should not be used directly/dereferenced outside of the implementation.
+```
 #### <a id="ref_5d668723bcfba6ce11011f7b6ae97bf6"/>fn\<\> std.fclose(std.File* pFile)
 > [Declaration](/stdlib/fileio.qnp?plain=1#L49) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L76)
 ```qinp

@@ -10,7 +10,7 @@
 
 
 ## Globals
- - var\<std.__MemBlockHeader*\> std.__memBlocks
+ - [var\<std.__MemBlockHeader*\> std.__memBlocks](#ref_d94fdb461948cf19fa7fd5656137a6f8)
 
 ## Functions
  - [fn\<std.__MemBlockHeader*\> std.__allocBlock(u64 minSizeAvail)](#ref_5284f03abb7acb24462f8a7a937481d7)
@@ -30,7 +30,7 @@
  - [fn\<void*\> std.realloc(void* pBuff, u64 size) nodiscard](#ref_04a1fa7a62588505a449a3b241dbaab1)
 
 ## Packs/Unions
- - pack std.__MemBlockHeader
+ - [pack std.__MemBlockHeader](#ref_fea58120e31b62b4fa2945aed315480d)
 
 ## Macros
  - std.__FREE_PAGES_COUNT_MAX
@@ -38,6 +38,11 @@
  - std.__PAGE_SIZE
 
 ## Details
+#### <a id="ref_fea58120e31b62b4fa2945aed315480d"/>pack std.__MemBlockHeader
+> [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L14)
+```qinp
+The header for every allocated block of memory (used for freeing/keeping track of allocated, unused memory)
+```
 #### <a id="ref_5284f03abb7acb24462f8a7a937481d7"/>fn\<std.__MemBlockHeader*\> std.__allocBlock(u64 minSizeAvail)
 > [Declaration](/stdlib/platform/linux/memory.qnp?plain=1#L83) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L220)
 ```qinp
@@ -88,6 +93,11 @@ Checks whether the given blocks of memory are adjacent.
 @param block The block of memory to check
 @param next The block of memory that may be adjacent to block
 @return True if block is adjacent to next, otherwise false
+```
+#### <a id="ref_d94fdb461948cf19fa7fd5656137a6f8"/>var\<std.__MemBlockHeader*\> std.__memBlocks
+> [Declaration](/stdlib/platform/linux/memory.qnp?plain=1#L88)
+```qinp
+First node in the list of allocated data blocks sorted by address
 ```
 #### <a id="ref_e1595932126d7e8bcbe0747eb7b7aff5"/>fn\<std.__MemBlockHeader*\> std.__mergeBlockWithNeighbors(std.__MemBlockHeader* block)
 > [Declaration](/stdlib/platform/linux/memory.qnp?plain=1#L78) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L208)

@@ -9,7 +9,7 @@
 
 
 ## Globals
- - var\<std.error.ID\> std.error.__lastErrorID
+ - [var\<std.error.ID\> std.error.__lastErrorID](#ref_38b19f655517fdcc2e574db8ef85aa9c)
 
 ## Functions
  - [fn\<u8 const**\> std.error.__genErrorStrings()](#ref_1da32c02d2e1b84dd73106f6242bfb20)
@@ -27,6 +27,11 @@
 ```qinp
 Generates the error strings for the error IDs.
 @return Array of error strings.
+```
+#### <a id="ref_38b19f655517fdcc2e574db8ef85aa9c"/>var\<std.error.ID\> std.error.__lastErrorID
+> [Declaration](/stdlib/error.qnp?plain=1#L15)
+```qinp
+Internal variable to hold the set error.
 ```
 #### <a id="ref_4a5ec4c965dca5c596e82065f9b44eae"/>fn\<\> std.error.clear()
 > [Declaration](/stdlib/error.qnp?plain=1#L26) | [Definition](/stdlib/error.qnp?plain=1#L46)
