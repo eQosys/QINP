@@ -7,6 +7,12 @@ import "string.qnp"
 import "limits.qnp"
 
 space std:
+	\\ Function signature for a function printing a single element of an array
+	define FN_PRINT_ELEM fn<i32>(void const*)
+
+	\\ Macro to define a lambda function that prints a single element of an array
+	define LMBD_PRINT_ELEM(type, fmt) lambda<i32>(void const* elem): return std.print(fmt, *(type*)elem);
+
 	enum __PrintFmtMod_Type:
 		Default
 		Int_Bin, Int_Oct, Int_Dec, Int_Hex, Int_Chr,
@@ -62,6 +68,26 @@ space std:
 	\\ @param n The number of times to print it
 	\\ @return The number of characters printed, negative on error.
 	fn<i32> printRep(?T val, u64 n)...
+
+	\\ Print an array of values to stdout
+	\\ @param arr The array to print
+	\\ @param count The number of elements in the array
+	\\ @param elemSize The size of each element in the array
+	\\ @param printElem The function to use to print each element
+	\\ @param sep The separator to print between each element
+	\\ @return The number of characters printed, negative on error.
+	fn<i32> printArray(void const* arr, u64 count, u64 elemSize, FN_PRINT_ELEM printElem, u8 const* sep)...
+
+	\\ Print an array of values to stdout, surrounded by pre/post strings
+	\\ @param arr The array to print
+	\\ @param count The number of elements in the array
+	\\ @param elemSize The size of each element in the array
+	\\ @param printElem The function to use to print each element
+	\\ @param pre The string to print before the array
+	\\ @param sep The separator to print between each element
+	\\ @param post The string to print after the array
+	\\ @return The number of characters printed, negative on error.
+	fn<i32> printArray(void const* arr, u64 count, u64 elemSize, FN_PRINT_ELEM printElem, u8 const* pre, u8 const* sep, u8 const* post)...
 
 	\\ Internal function to print a formatted string to stdout
 	\\ @param pFormat A pointer to the format string
@@ -205,6 +231,30 @@ space std:
 			if (nSinglePrint = print(val)) < 0: return -1
 			nPrinted += nSinglePrint
 		return nPrinted
+
+	fn<i32> printArray(void const* arr, u64 count, u64 elemSize, FN_PRINT_ELEM printElem, u8 const* sep)!:
+		var<i32> nPrinted = 0
+
+		while count-- > 0:
+			var<i32> nPrintedElem
+			var<i32> nPrintedSep = 0
+
+			if (nPrintedElem = printElem(arr)) < 0: return -1
+			if count > 0 && (nPrintedSep = print(sep)) < 0: return -1
+
+			nPrinted += nPrintedElem + nPrintedSep
+			arr += elemSize
+
+		return nPrinted
+
+	fn<i32> printArray(void const* arr, u64 count, u64 elemSize, FN_PRINT_ELEM printElem, u8 const* pre, u8 const* sep, u8 const* post)!:
+		var<i32> nPre
+		var<i32> nArray
+		var<i32> nPost
+		if (nPre = print(pre)) < 0: return -1
+		if (nArray = printArray(arr, count, elemSize, printElem, sep)) < 0: return -1
+		if (nPost = print(post)) < 0: return -1
+		return nPre + nArray + nPost
 
 	fn<i32> __printf(u8 const** pFormat, ?T val)!:
 		if !pFormat:
@@ -360,16 +410,18 @@ space std:
 		return print('\n')
 
 	fn<i32> println(?T val)!:
-		var<i32> n
-		if (n = print(val)) < 0: return -1
-		if println() < 0: return -1
-		return n + 1
+		var<i32> n1
+		var<i32> n2
+		if (n1 = print(val)) < 0: return -1
+		if (n2 = println()) < 0: return -1
+		return n1 + n2
 
 	fn<i32> println(u8 const* format, ...)!:
-		var<i32> n
-		if (n = print(format, ...)) < 0: return -1
-		if println() < 0: return -1
-		return n + 1
+		var<i32> n1
+		var<i32> n2
+		if (n1 = print(format, ...)) < 0: return -1
+		if (n2 = println()) < 0: return -1
+		return n1 + n2
 
 	fn<u8> getchar() nodiscard!:
 		const<u8[2]> buff

@@ -2636,11 +2636,21 @@ Datatype getParseDatatype(ProgGenInfo &info, std::vector<Token> *pBlueprintMacro
 	{
 		nextToken(info);
 
-		parseExpected(info, Token::Type::Operator, "<");
-		datatype.funcPtrRetType = std::make_shared<Datatype>(getParseDatatype(info));
-		if (!*datatype.funcPtrRetType)
-			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
-		parseExpected(info, Token::Type::Operator, ">");
+		if (isOperator(peekToken(info), "<"))
+		{
+			parseExpected(info, Token::Type::Operator, "<");
+			if (isOperator(peekToken(info), ">"))
+			{
+				datatype.funcPtrRetType = std::make_shared<Datatype>("void");
+			}
+			else
+			{
+				datatype.funcPtrRetType = std::make_shared<Datatype>(getParseDatatype(info));
+				if (!*datatype.funcPtrRetType)
+					THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected datatype!");
+			}
+			parseExpected(info, Token::Type::Operator, ">");
+		}
 
 		parseExpected(info, Token::Type::Separator, "(");
 		while (!isSeparator(peekToken(info), ")"))

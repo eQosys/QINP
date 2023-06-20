@@ -80,6 +80,8 @@ bool isSeparator(const Token& token, const std::string& name);
 
 bool isOperator(const Token& token, const std::string& name);
 
+bool isToken(const Token& token, Token::Type type, const std::string& value);
+
 bool isSepOpKey(const Token& token);
 
 bool isLiteral(const Token& token);

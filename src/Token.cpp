@@ -226,23 +226,24 @@ bool isBooleanValue(const std::string& value)
 
 bool isKeyword(const Token& token, const std::string& name)
 {
-	return
-		token.type == Token::Type::Keyword &&
-		token.value == name;
+	return isToken(token, Token::Type::Keyword, name);
 }
 
 bool isSeparator(const Token& token, const std::string& name)
 {
-	return
-		token.type == Token::Type::Separator &&
-		token.value == name;
+	return isToken(token, Token::Type::Separator, name);
 }
 
 bool isOperator(const Token& token, const std::string& name)
 {
+	return isToken(token, Token::Type::Operator, name);
+}
+
+bool isToken(const Token& token, Token::Type type, const std::string& value)
+{
 	return
-		token.type == Token::Type::Operator &&
-		token.value == name;
+		token.type == type &&
+		token.value == value;
 }
 
 bool isSepOpKey(const Token& token)

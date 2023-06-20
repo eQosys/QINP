@@ -307,15 +307,14 @@ std.sort(arrToSort, 10, sizeof(i64), std.LMBD_COMPARE_DT(i64), std.LMBD_SWAP_DT(
 const<i64> key = 6846
 std.println("Index of %: %", key, std.bsearch(&key, arrToSort, 10, sizeof(i64), std.LMBD_COMPARE(*(i64 const*)a < *(i64 const*)b)))
 
-std.println("Sorted:     % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
+std.printArray(arrToSort, 10, sizeof(i64), std.LMBD_PRINT_ELEM(i64, "%+4"), "Sorted:     ", " ", "\n")
+std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
+
+std.printArray(arrToSort, 10, sizeof(i64), std.LMBD_PRINT_ELEM(i64 const, "%+4"), "Shuffled:   ", " ", "\n")
 
 std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
 
-std.println("Shuffled:   % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
-
-std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
-
-std.println("Reshuffled: % % % % % % % % % %", arrToSort[0], arrToSort[1], arrToSort[2], arrToSort[3], arrToSort[4], arrToSort[5], arrToSort[6], arrToSort[7], arrToSort[8], arrToSort[9])
+std.printArray(arrToSort, 10, sizeof(i64), std.LMBD_PRINT_ELEM(i64 const, "%+4"), "Reshuffled: ", " ", "\n")
 
 var asdf = std.strlen(null)
 std.println("Error: %", std.error.toString(std.error.get()))
