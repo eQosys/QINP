@@ -19,7 +19,7 @@
  - pack std.File ...
 
 ## Enums
- - std.Seek
+ - enum std.Seek
 
 ## Details
 #### <a id="ref_b22f7c263f044a29e642117d2d39847a"/>fn\<\> std.fclose(std.File* pFile) ...

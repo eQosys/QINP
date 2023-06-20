@@ -19,7 +19,7 @@
  - [fn\<u8 const*\> std.error.toString(std.error.ID err)](#ref_576f588031db164d77fe8b235ad0f8bb)
 
 ## Enums
- - std.error.ID
+ - enum std.error.ID
 
 ## Details
 #### <a id="ref_1da32c02d2e1b84dd73106f6242bfb20"/>fn\<u8 const**\> std.error.__genErrorStrings()

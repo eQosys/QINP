@@ -40,8 +40,8 @@
  - pack std.__PrintFmtMod
 
 ## Enums
- - std.__PrintFmtMod_Alignment
- - std.__PrintFmtMod_Type
+ - enum std.__PrintFmtMod_Alignment
+ - enum std.__PrintFmtMod_Type
 
 ## Macros
  - [std.FN_PRINT_ELEM](#ref_8bc662deaf09131583628995e3fcb002)

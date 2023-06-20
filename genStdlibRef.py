@@ -125,7 +125,8 @@ def genLineVariable(symbol, comments, addVarPrefix = False, useFullName = False,
 	else:
 		line += symbol["name"]
 
-	return wrapLine(line, symbol, False) if doWrapLine else line
+	autoAddDetail(file, line, comments, symbol)
+	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
 def genLineFunction(file, symbol, comments, funcName, isDefine, doWrapLine = True):
 	isExtern = funcName is None
@@ -182,14 +183,16 @@ def genLinePack(symbol, comments, isDefine, doWrapLine = True):
 	if not isDefine:
 		line += " ..."
 
-	return wrapLine(line, symbol, False) if doWrapLine else line
+	autoAddDetail(file, line, comments, symbol)
+	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
 def genLineEnum(symbol, comments, doWrapLine = True):
-	line = ""
+	line = "enum "
 
 	line += symbol["fullName"]
 
-	return wrapLine(line, symbol, False) if doWrapLine else line
+	autoAddDetail(file, line, comments, symbol)
+	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
 def genMacroLine(file, symbol, comments, doWrapLine = True):
 	line = ""
