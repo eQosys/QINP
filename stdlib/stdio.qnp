@@ -57,6 +57,12 @@ space std:
 	\\ @return The number of characters printed, negative on error.
 	fn<i32> print(u8 const* format, ?T val, ...)...
 
+	\\ Print a value n timess to stdout
+	\\ @param val The value to print
+	\\ @param n The number of times to print it
+	\\ @return The number of characters printed, negative on error.
+	fn<i32> printRep(?T val, u64 n)...
+
 	\\ Internal function to print a formatted string to stdout
 	\\ @param pFormat A pointer to the format string
 	\\ @param val The value to place in the string
@@ -93,9 +99,27 @@ space std:
 	\\ @return The number of characters printed, negative on error.
 	fn<i32> __printMaxLen(u8 const* str, u64 len)...
 
-	fn<i32> __printPadding(u8 ch, u64 num)...
-
+	\\ Internal function to initialize a format modifier
+	\\ @param pMod Pointer to the format modifier to initialize
 	fn<> __initFmtMod(__PrintFmtMod* pMod)...
+
+	\\ Internal function to retrieve the length of a value to print
+	\\ @param val The value to get the length of
+	\\ @param pMod The format modifier used to print the value
+	\\ @return The length of the value
+	fn<i32> __printLen(?T val, __PrintFmtMod const* pMod)...
+
+	\\ Internal function to retrieve the length of a string to print
+	\\ @param val The value to get the length of
+	\\ @param pMod The format modifier used to print the value
+	\\ @return The length of the value
+	fn<i32> __printLen(u8 const* str, __PrintFmtMod const* pMod)...
+
+	\\ Internal function to retrieve the length of a boolean value to print
+	\\ @param val The value to get the length of
+	\\ @param pMod The format modifier used to print the value
+	\\ @return The length of the value
+	fn<i32> __printLen(bool val, __PrintFmtMod const* pMod)...
 
 	\\ Prints a newline to stdout
 	\\ @return Positive on success, negative on error.
@@ -174,6 +198,14 @@ space std:
 		if (n2 = print(format, ...)) < 0: return -1
 		return n1 + n2
 
+	fn<i32> printRep(?T val, u64 n)!:
+		var<u64> nSinglePrint
+		var<u64> nPrinted = 0
+		while n-- > 0:
+			if (nSinglePrint = print(val)) < 0: return -1
+			nPrinted += nSinglePrint
+		return nPrinted
+
 	fn<i32> __printf(u8 const** pFormat, ?T val)!:
 		if !pFormat:
 			error.set(error.ID.InvalidArgument)
@@ -204,10 +236,10 @@ space std:
 
 		if mod.alignment == __PrintFmtMod_Alignment.Left:
 			if (n2 = __printMod(val, &mod)) < 0: return -1
-			if (nPadding = __printPadding(mod.fillChar, mod.fieldWidth - n2)) < 0: return -1
+			if (nPadding = printRep(mod.fillChar, mod.fieldWidth - n2)) < 0: return -1
 		elif mod.alignment == __PrintFmtMod_Alignment.Right:
-			\\var pl = printLen(...)
-			\\if (nPadding = __printpadding(mod.fillChar, mod.fieldWidth - pl)) < 0: return -1
+			var pl = __printLen(val, &mod)
+			if (nPadding = printRep(mod.fillChar, mod.fieldWidth - pl)) < 0: return -1
 			if (n2 = __printMod(val, &mod)) < 0: return -1
 		else:
 			if (n2 = __printMod(val, &mod)) < 0: return -1
@@ -297,18 +329,32 @@ space std:
 		
 		return printn(str, min(strlen(str), len))
 
-	fn<i32> __printPadding(u8 ch, u64 num)!:
-		var<u64> i = 0
-		while i++ < num:
-			if print(ch) < 0: return -1
-		return num
-
 	fn<> __initFmtMod(__PrintFmtMod* pMod)!:
 		pMod->type = __PrintFmtMod_Type.Default
-		pMod->strLen = -1
+		pMod->strLen = limits.I64_MAX
 		pMod->alignment = __PrintFmtMod_Alignment.None
 		pMod->fieldWidth = -1
 		pMod->fillChar = ' '
+
+	fn<i32> __printLen(?T val, __PrintFmtMod const* pMod)!:
+		var<u8[32]> buf
+		if pMod->type == __PrintFmtMod_Type.Int_Bin:
+			return strlen(itos(val, buf, 2))
+		if pMod->type == __PrintFmtMod_Type.Int_Oct:
+			return strlen(itos(val, buf, 8))
+		if pMod->type == __PrintFmtMod_Type.Int_Dec:
+			return strlen(itos(val, buf, 10))
+		if pMod->type == __PrintFmtMod_Type.Int_Hex:
+			return strlen(itos(val, buf, 16))
+		if pMod->type == __PrintFmtMod_Type.Int_Chr:
+			return 1
+		return strlen(itos(val, buf, 10))
+
+	fn<i32> __printLen(u8 const* str, __PrintFmtMod const* pMod)!:
+		return min(strlen(str), pMod->strLen)
+
+	fn<i32> __printLen(bool val, __PrintFmtMod const* pMod)!:
+		return val ? strlen("true") : strlen("false")
 
 	fn<i32> println()!:
 		return print('\n')
