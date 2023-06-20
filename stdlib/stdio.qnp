@@ -133,19 +133,19 @@ space std:
 	\\ @param val The value to get the length of
 	\\ @param pMod The format modifier used to print the value
 	\\ @return The length of the value
-	fn<i32> __printLen(?T val, __PrintFmtMod const* pMod)...
+	fn<i32> __getPrintLen(?T val, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to retrieve the length of a string to print
 	\\ @param val The value to get the length of
 	\\ @param pMod The format modifier used to print the value
 	\\ @return The length of the value
-	fn<i32> __printLen(u8 const* str, __PrintFmtMod const* pMod)...
+	fn<i32> __getPrintLen(u8 const* str, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to retrieve the length of a boolean value to print
 	\\ @param val The value to get the length of
 	\\ @param pMod The format modifier used to print the value
 	\\ @return The length of the value
-	fn<i32> __printLen(bool val, __PrintFmtMod const* pMod)...
+	fn<i32> __getPrintLen(bool val, __PrintFmtMod const* pMod)...
 
 	\\ Prints a newline to stdout
 	\\ @return Positive on success, negative on error.
@@ -288,7 +288,7 @@ space std:
 			if (n2 = __printMod(val, &mod)) < 0: return -1
 			if (nPadding = printRep(mod.fillChar, mod.fieldWidth - n2)) < 0: return -1
 		elif mod.alignment == __PrintFmtMod_Alignment.Right:
-			var pl = __printLen(val, &mod)
+			var pl = __getPrintLen(val, &mod)
 			if (nPadding = printRep(mod.fillChar, mod.fieldWidth - pl)) < 0: return -1
 			if (n2 = __printMod(val, &mod)) < 0: return -1
 		else:
@@ -296,7 +296,7 @@ space std:
 
 		return n1 + n2 + nPadding
 
-	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:		
+	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:
 		if !format || !pMod:
 			return 0
 
@@ -324,26 +324,42 @@ space std:
 				++nChars 
 			elif ch == 's':
 				pMod->type = __PrintFmtMod_Type.Str
-				var<u8 const*> pNext
-				pMod->strLen = stoi(format, &pNext, 10)
-				if pNext == format:
-					pMod->strLen = limits.I64_MAX
-				nChars += 1 + (u64)(pNext - format)
-				format = pNext
+				if *format == '*':
+					++nChars
+					++format
+				else:
+					var<u8 const*> pNext
+					pMod->strLen = stoi(format, &pNext, 10)
+					if pNext == format:
+						pMod->strLen = limits.I64_MAX
+					nChars += 1 + (u64)(pNext - format)
+					format = pNext
 			elif ch == '-':
 				pMod->alignment = __PrintFmtMod_Alignment.Left
-				var<u8 const*> pNext
-				pMod->fieldWidth = stoi(format, &pNext, 10)
-				nChars += 1 + (u64)(pNext - format)
-				format = pNext
+				if *format == '*':
+					++nChars
+					++format
+				else:
+					var<u8 const*> pNext
+					pMod->fieldWidth = stoi(format, &pNext, 10)
+					nChars += 1 + (u64)(pNext - format)
+					format = pNext
 			elif ch == '+':
 				pMod->alignment = __PrintFmtMod_Alignment.Right
-				var<u8 const*> pNext
-				pMod->fieldWidth = stoi(format, &pNext, 10)
-				nChars += 1 + (u64)(pNext - format)
-				format = pNext
+				if *format == '*':
+					++nChars
+					++format
+				else:
+					var<u8 const*> pNext
+					pMod->fieldWidth = stoi(format, &pNext, 10)
+					nChars += 1 + (u64)(pNext - format)
+					format = pNext
 			elif ch == 'f':
 				pMod->fillChar = *format++
+				nChars += 2
+			elif ch == '\\':
+				++nChars
+				break
 			else:
 				break
 
@@ -386,7 +402,7 @@ space std:
 		pMod->fieldWidth = -1
 		pMod->fillChar = ' '
 
-	fn<i32> __printLen(?T val, __PrintFmtMod const* pMod)!:
+	fn<i32> __getPrintLen(?T val, __PrintFmtMod const* pMod)!:
 		var<u8[32]> buf
 		if pMod->type == __PrintFmtMod_Type.Int_Bin:
 			return strlen(itos(val, buf, 2))
@@ -400,10 +416,10 @@ space std:
 			return 1
 		return strlen(itos(val, buf, 10))
 
-	fn<i32> __printLen(u8 const* str, __PrintFmtMod const* pMod)!:
+	fn<i32> __getPrintLen(u8 const* str, __PrintFmtMod const* pMod)!:
 		return min(strlen(str), pMod->strLen)
 
-	fn<i32> __printLen(bool val, __PrintFmtMod const* pMod)!:
+	fn<i32> __getPrintLen(bool val, __PrintFmtMod const* pMod)!:
 		return val ? strlen("true") : strlen("false")
 
 	fn<i32> println()!:

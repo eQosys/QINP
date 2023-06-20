@@ -6,7 +6,7 @@ define WIDTH 20
 define HEIGHT 10
 define N_ITERATIONS 50
 
-pack Grid: var<bool> cells[WIDTH][HEIGHT]
+pack Grid: var<bool[WIDTH][HEIGHT]> cells
 
 std.print("Allocating required memory...")
 var pMain = (Grid*)std.malloc(sizeof(Grid))
@@ -19,11 +19,7 @@ fn<> flip():
 	pBack = pTemp
 
 fn<> printBorder():
-	std.print("+")
-	var i = 0
-	while i++ < WIDTH: std.print("-")
-	
-	std.println("+")
+	std.println("+%-*f-\\+", "", WIDTH)
 
 fn<> show():
 	var i = -1
