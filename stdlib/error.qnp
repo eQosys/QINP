@@ -11,6 +11,9 @@ space std:
 			FileIO
 			__ERR_ID_COUNT
 
+		\\ Internal variable to hold the set error.
+		var<ID> __lastErrorID = ID.Success
+
 		\\ Sets the global error value. Can be retrieved via a call to 'getError'
 		\\ @param err id of the error to be set.
 		fn<> set(ID err)...
@@ -34,9 +37,6 @@ space std:
 defer
 space std:
 	space error:
-		\\ Internal variable to hold the set error.
-		var<ID> __lastErrorID = ID.Success
-
 		fn<> set(ID err)!:
 			__lastErrorID = err
 
