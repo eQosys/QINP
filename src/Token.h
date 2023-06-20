@@ -10,7 +10,7 @@ struct Token
 {
 	struct Position
 	{
-		std::string file = "<unknown>";
+		std::string file = "";
 		int line = 0;
 		int column = 0;
 	} pos;

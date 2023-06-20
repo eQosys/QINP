@@ -49,12 +49,12 @@
 
 ## Details
 #### <a id="ref_8bc662deaf09131583628995e3fcb002"/>std.FN_PRINT_ELEM
-> [Declaration](/stdlib/stdio.qnp?plain=1#L11) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L11)
 ```qinp
 Function signature for a function printing a single element of an array
 ```
 #### <a id="ref_d4cb127c2e88afe9ddbbf9de7e19b025"/>std.LMBD_PRINT_ELEM(type, fmt)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L14) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L14)
 ```qinp
 Macro to define a lambda function that prints a single element of an array
 ```

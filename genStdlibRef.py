@@ -87,11 +87,13 @@ def codeLink(file, line):
 	return "/" + file + "?plain=1#L" + str(line)
 
 def autoAddDetail(file, lineStr, comments, symbol):
+	declFile = symbol["pos"]["decl"]["file"]
+	defFile = symbol["pos"]["def"]["file"]
 	if commentExists(comments, symbol):
 		FILES[file].details[lineStr] = Detail(
 			getPreExtendedComment(comments, symbol),
-			codeLink(symbol["pos"]["decl"]["file"], symbol["pos"]["decl"]["line"]),
-			codeLink(symbol["pos"]["def"]["file"], symbol["pos"]["def"]["line"])
+			codeLink(symbol["pos"]["decl"]["file"], symbol["pos"]["decl"]["line"]) if declFile != "" else "",
+			codeLink(symbol["pos"]["def"]["file"], symbol["pos"]["def"]["line"]) if defFile != "" else ""
 			)
 
 def lineLink(line):

@@ -45,7 +45,7 @@
 
 ## Details
 #### <a id="ref_077bd649d47868cdfff08a8a6c8d2cdf"/>std.__BASE_CHARS_LOWER
-> [Declaration](/stdlib/string.qnp?plain=1#L8) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/string.qnp?plain=1#L8)
 ```qinp
 Used to convert between string and integer
 ```

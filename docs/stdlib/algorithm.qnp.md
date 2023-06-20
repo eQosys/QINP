@@ -24,40 +24,40 @@
 
 ## Details
 #### <a id="ref_3108e91a5c48769163cc6624f068efd4"/>std.FN_COMPARE
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L8) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L8)
 ```qinp
 Function signature for a comparison function.
 ```
 #### <a id="ref_0bb2a59d76a8ee4551a6e71931197b31"/>std.FN_RANDOM
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L14) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L14)
 ```qinp
 Function signature for a random number generator.
 ```
 #### <a id="ref_c21fea908082a6590afa66534aac291d"/>std.FN_SWAP
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L11) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L11)
 ```qinp
 Function signature for a swap function.
 ```
 #### <a id="ref_ddc596d61f92363c82dbffbe1da9f53d"/>std.LMBD_COMPARE(check)
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L26) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L26)
 ```qinp
 Macro to define a lambda function that compares two elements according to the given check.
 @param check The check to use. (e.g. *(i64*)a < *(i64*)b)
 ```
 #### <a id="ref_5b91eafb258b9be7e596d2d9179b6b43"/>std.LMBD_COMPARE_DT(type)
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L30) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L30)
 ```qinp
 Macro to define a lambda function that compares two elements of the given type using the `<` operator.
 @param type The type of the elements.
 ```
 #### <a id="ref_90e85b2068dfe6c3582b342c4b67c5b4"/>std.LMBD_SWAP(size)
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L18) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L18)
 ```qinp
 Macro to define a lambda function that swaps two elements by copying them per byte.
 @param size The size of the elements.
 ```
 #### <a id="ref_37571d12e94a9eb9c066cc52c7b39c74"/>std.LMBD_SWAP_DT(type)
-> [Declaration](/stdlib/algorithm.qnp?plain=1#L22) | [Definition](/<unknown>?plain=1#L0)
+> [Declaration](/stdlib/algorithm.qnp?plain=1#L22)
 ```qinp
 Macro to define a lambda function that swaps two elements of the given type by copying them per byte.
 @param type The type of the elements.
