@@ -12,7 +12,7 @@ space std:
 		Int_Bin, Int_Oct, Int_Dec, Int_Hex, Int_Chr,
 		Str
 	
-	enum __PrintFmtMod_Padding:
+	enum __PrintFmtMod_Alignment:
 		None, Left, Right
 	
 	\\ Pack used to store a format modifier for printing
@@ -73,25 +73,29 @@ space std:
 	\\ @param val The value to print
 	\\ @param mod The format modifier to use
 	\\ @return The number of characters printed, negative on error.
-	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)...
+	fn<i32> __printMod(?T val, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to print a value using a specified format modifier
 	\\ @param str The string to print
 	\\ @param mod The format modifier to use
 	\\ @return The number of characters printed, negative on error.
-	fn<i32> __printmod(u8 const* str, __PrintFmtMod const* pMod)...
+	fn<i32> __printMod(u8 const* str, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to print a value using a specified format modifier
 	\\ @param val The value to print
 	\\ @param mod The format modifier to use
 	\\ @return The number of characters printed, negative on error.
-	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)...
+	fn<i32> __printMod(bool val, __PrintFmtMod const* pMod)...
 
 	\\ Internal function to print len characters of a string or less.
 	\\ @param str The string to print
 	\\ @param len The maximum number of characters to print
 	\\ @return The number of characters printed, negative on error.
-	fn<i32> __printmaxlen(u8 const* str, u64 len)...
+	fn<i32> __printMaxLen(u8 const* str, u64 len)...
+
+	fn<i32> __printPadding(u8 ch, u64 num)...
+
+	fn<> __initFmtMod(__PrintFmtMod* pMod)...
 
 	\\ Prints a newline to stdout
 	\\ @return Positive on success, negative on error.
@@ -125,7 +129,7 @@ space std:
 	pack __PrintFmtMod!:
 		var<__PrintFmtMod_Type> type
 		var<u64> strLen
-		var<__PrintFmtMod_Padding> padding
+		var<__PrintFmtMod_Alignment> alignment
 		var<i64> fieldWidth
 		var<u8> fillChar
 
@@ -181,11 +185,7 @@ space std:
 		var<u64> nCharsToPrint
 		var<u64> modChars
 		var<__PrintFmtMod> mod
-		mod.type = __PrintFmtMod_Type.Default
-		mod.strLen = -1
-		mod.padding = __PrintFmtMod_Padding.None
-		mod.fieldWidth = -1
-		mod.fillChar = ' '
+		__initFmtMod(&mod)
 
 		if dropPos:
 			nCharsToPrint = (u64)(dropPos - format)
@@ -198,10 +198,21 @@ space std:
 		
 		var<i32> n1
 		var<i32> n2
+		var<i32> nPadding = 0
 
 		if (n1 = printn(format, nCharsToPrint)) < 0: return -1
-		if (n2 = __printmod(val, &mod)) < 0: return -1
-		return n1 + n2
+
+		if mod.alignment == __PrintFmtMod_Alignment.Left:
+			if (n2 = __printMod(val, &mod)) < 0: return -1
+			if (nPadding = __printPadding(mod.fillChar, mod.fieldWidth - n2)) < 0: return -1
+		elif mod.alignment == __PrintFmtMod_Alignment.Right:
+			\\var pl = printLen(...)
+			\\if (nPadding = __printpadding(mod.fillChar, mod.fieldWidth - pl)) < 0: return -1
+			if (n2 = __printMod(val, &mod)) < 0: return -1
+		else:
+			if (n2 = __printMod(val, &mod)) < 0: return -1
+
+		return n1 + n2 + nPadding
 
 	fn<i32> __extractFmtMod(u8 const* format, __PrintFmtMod* pMod)!:		
 		if !format || !pMod:
@@ -237,14 +248,14 @@ space std:
 					pMod->strLen = limits.I64_MAX
 				nChars += 1 + (u64)(pNext - format)
 				format = pNext
-			elif ch == '+':
-				pMod->padding = __PrintFmtMod_Padding.Right
+			elif ch == '-':
+				pMod->alignment = __PrintFmtMod_Alignment.Left
 				var<u8 const*> pNext
 				pMod->fieldWidth = stoi(format, &pNext, 10)
 				nChars += 1 + (u64)(pNext - format)
 				format = pNext
-			elif ch == '-':
-				pMod->padding = __PrintFmtMod_Padding.Left
+			elif ch == '+':
+				pMod->alignment = __PrintFmtMod_Alignment.Right
 				var<u8 const*> pNext
 				pMod->fieldWidth = stoi(format, &pNext, 10)
 				nChars += 1 + (u64)(pNext - format)
@@ -256,7 +267,7 @@ space std:
 
 		return nChars
 
-	fn<i32> __printmod(?T val, __PrintFmtMod const* pMod)!:
+	fn<i32> __printMod(?T val, __PrintFmtMod const* pMod)!:
 		var<u8[32]> buf
 		if pMod->type == __PrintFmtMod_Type.Int_Bin:
 			return print(itos(val, buf, 2))
@@ -270,21 +281,34 @@ space std:
 			return print((u8)val)
 		return print(val)
 
-	fn<i32> __printmod(u8 const* str, __PrintFmtMod const* pMod)!:
+	fn<i32> __printMod(u8 const* str, __PrintFmtMod const* pMod)!:
 		if pMod->type == __PrintFmtMod_Type.Str:
-			return __printmaxlen(str, pMod->strLen)
+			return __printMaxLen(str, pMod->strLen)
 		return print(str)
 
-	fn<i32> __printmod(bool val, __PrintFmtMod const* pMod)!:
+	fn<i32> __printMod(bool val, __PrintFmtMod const* pMod)!:
 		\\ TODO: Implementation
 		return print(val)
 
-	fn<i32> __printmaxlen(u8 const* str, u64 len)!:
+	fn<i32> __printMaxLen(u8 const* str, u64 len)!:
 		if !str:
 			error.set(error.ID.InvalidArgument)
 			return -1
 		
 		return printn(str, min(strlen(str), len))
+
+	fn<i32> __printPadding(u8 ch, u64 num)!:
+		var<u64> i = 0
+		while i++ < num:
+			if print(ch) < 0: return -1
+		return num
+
+	fn<> __initFmtMod(__PrintFmtMod* pMod)!:
+		pMod->type = __PrintFmtMod_Type.Default
+		pMod->strLen = -1
+		pMod->alignment = __PrintFmtMod_Alignment.None
+		pMod->fieldWidth = -1
+		pMod->fillChar = ' '
 
 	fn<i32> println()!:
 		return print('\n')

@@ -8,7 +8,7 @@ space std:
 	define FN_COMPARE fn<bool>(void const*, void const*)
 
 	\\ Function signature for a swap function.
-	define FN_SWAP fn<void>(void*, void*)
+	define FN_SWAP fn<>(void*, void*)
 
 	\\ Function signature for a random number generator.
 	define FN_RANDOM fn<u64>()
