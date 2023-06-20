@@ -73,9 +73,14 @@ def getPreExtendedComment(comments, symbol):
 	file = pos["file"]
 	line = pos["line"] - 1
 	comment = comments[file][line]
+
 	while line - 1 in comments[file]:
 		comment = comments[file][line - 1] + "\n" + comment
 		line -= 1
+	
+	comment = comment.replace("\n\\\\ ", "\n")
+	if comment.startswith("\\\\ "):
+		comment = comment[3:]
 	return comment
 
 def codeLink(file, line):
@@ -184,12 +189,21 @@ def genLineEnum(symbol, comments, doWrapLine = True):
 
 	return wrapLine(line, symbol, False) if doWrapLine else line
 
-def genMacroLine(symbol, comments, doWrapLine = True):
+def genMacroLine(file, symbol, comments, doWrapLine = True):
 	line = ""
 
 	line += symbol["fullName"]
 
-	return wrapLine(line, symbol, False) if doWrapLine else line
+	if "params" in symbol:
+		line += "("
+		for param in symbol["params"]:
+			line += param + ", "
+		if len(symbol["params"]) > 0:
+			line = line[:-2]
+		line += ")"
+
+	autoAddDetail(file, line, comments, symbol)
+	return wrapLine(line, symbol, commentExists(comments, symbol)) if doWrapLine else line
 
 def generateContent(name, lines):
 	content = "\n## " + name + "\n"
@@ -263,7 +277,7 @@ def generateLines(base, comments, files, funcName = None):
 			case "EnumMember":
 				continue
 			case "Macro":
-				files[declFile].macros.append(genMacroLine(symbol, comments))
+				files[declFile].macros.append(genMacroLine(declFile, symbol, comments))
 			case _:
 				print(f"Unknown symbol type: {symbol['type']}")
 

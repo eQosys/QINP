@@ -16,6 +16,7 @@ space std:
 	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx)...
 
 	\\ Syscalls (Taken from https://filippo.io/linux-syscall-table/)
+	
 	define __SYS_READ 0
 	define __SYS_WRITE 1
 	define __SYS_OPEN 2

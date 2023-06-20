@@ -331,15 +331,15 @@
 
 ## Details
 #### <a id="ref_915956373e7747c9bbfa457b4b9931a5"/>fn\<u64\> std.__syscall(u64 num)
-> [Declaration](/stdlib/platform/linux/__syscall.qnp?plain=1#L13) | [Definition](/stdlib/platform/linux/__syscall.qnp?plain=1#L340)
+> [Declaration](/stdlib/platform/linux/__syscall.qnp?plain=1#L13) | [Definition](/stdlib/platform/linux/__syscall.qnp?plain=1#L341)
 ```qinp
-\\ The following __syscall functions are used to invoke system calls.
-\\ There are multiple overloads, each for a different number of arguments.
-\\ The rdi, rsi and rdx parameters must be implicitly convertible to u64.
-\\ @param num The syscall number
-\\ @param rdi The first argument
-\\ @param rsi The second argument
-\\ @param rdx The third argument
-\\ @return The return value of the syscall (read from rax)
+The following __syscall functions are used to invoke system calls.
+There are multiple overloads, each for a different number of arguments.
+The rdi, rsi and rdx parameters must be implicitly convertible to u64.
+@param num The syscall number
+@param rdi The first argument
+@param rsi The second argument
+@param rdx The third argument
+@return The return value of the syscall (read from rax)
 ```
 

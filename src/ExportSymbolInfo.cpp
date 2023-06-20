@@ -103,6 +103,18 @@ void exportSymbolInfo(SymbolRef root, std::ostream& out)
 				out << " ";
 		}
 		out << "\"";
+
+		if (root->macroIsFunctionLike)
+		{
+			out << ",\"params\": [";
+			for (auto it = root->macroParamNames.begin(); it != root->macroParamNames.end();)
+			{
+				out << "\"" << *it << "\"";
+				if (++it != root->macroParamNames.end())
+					out << ",";
+			}
+			out << "]";
+		}
 		break;
 	}
 
