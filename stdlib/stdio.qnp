@@ -5,6 +5,7 @@ import "math.qnp"
 import "error.qnp"
 import "string.qnp"
 import "limits.qnp"
+import "memory.qnp"
 
 space std:
 	\\ Function signature for a function printing a single element of an array
@@ -12,6 +13,8 @@ space std:
 
 	\\ Macro to define a lambda function that prints a single element of an array
 	define LMBD_PRINT_ELEM(type, fmt) lambda<i32>(void const* elem): return std.print(fmt, *(type*)elem);
+
+	define __PRINT_BUF_SIZE 1024
 
 	enum __PrintFmtMod_Type:
 		Default
@@ -24,11 +27,21 @@ space std:
 	\\ Pack used to store a format modifier for printing
 	pack __PrintFmtMod...
 
+	\\ Print the first num chars of a string to stdout (unbuffered)
+	\\ @param str The string to print
+	\\ @param len The length of the string to print
+	\\ @return The number of characters printed. Negative on error.
+	fn<i32> __printn_unbuf(u8 const* str, u64 num)...	\\ Platform dependent implementation
+
 	\\ Print the first num chars of a string to stdout
 	\\ @param str The string to print
 	\\ @param len The length of the string to print
 	\\ @return The number of characters printed. Negative on error.
-	fn<i32> printn(u8 const* str, u64 num)...		\\ Platform dependent implementation
+	fn<i32> printn(u8 const* str, u64 num)...
+
+	\\ Flushes the stdout buffer
+	\\ @return The number of characters flushed. Negative on error.
+	fn<i32> flush()...
 
 	\\ Print a null-terminated string to stdout
 	\\ @param str The null-terminated string to print
@@ -182,6 +195,40 @@ space std:
 		var<__PrintFmtMod_Alignment> alignment
 		var<i64> fieldWidth
 		var<u8> fillChar
+
+	fn<i32> printn(u8 const* str, u64 num)!:
+		static<u8[__PRINT_BUF_SIZE]> buf
+		static<u64> bufFillSize = 0
+
+		if !str || num == 0:
+			if num != 0:
+				error.set(error.ID.InvalidArgument)
+				return -1
+			if bufFillSize == 0:
+				return 0
+			var<i32> n
+			if (n = __printn_unbuf(buf, bufFillSize)) < 0:
+				return -1
+			bufFillSize = 0
+			return n
+
+		if str[num - 1] == '\n' || bufFillSize + num >= __PRINT_BUF_SIZE:
+			var<i32> n
+			if bufFillSize != 0:
+				if __printn_unbuf(buf, bufFillSize) < 0:
+					return -1
+				bufFillSize = 0
+			if (n = __printn_unbuf(str, num)) < 0:
+				return -1
+			return n
+
+		memcpy(buf + bufFillSize, str, num)
+		bufFillSize += num
+
+		return num
+
+	fn<i32> flush()!:
+		return printn(null, 0)
 
 	fn<i32> print(u8 const* str)!:
 		if !str:

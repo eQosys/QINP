@@ -1,6 +1,3 @@
 import "stdio.qnp"
 
-std.println("--- %-20 ---", "Hello World!")
-std.println("--- %-20 ---", "He")
-std.println("--- %+20 ---", 12345678)
-std.println("--- %+20 ---", "He")
+std.println("--- %-20 ---")

@@ -13,7 +13,7 @@ space std:
 
 defer
 space std:
-	fn<i32> printn(u8 const* str, u64 num)!:
+	fn<i32> __printn_unbuf(u8 const* str, u64 num)!:
 		if !str:
 			error.set(error.ID.InvalidArgument)
 			return -1
