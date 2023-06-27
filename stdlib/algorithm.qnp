@@ -2,6 +2,7 @@
 \\ Algorithms
 
 import "error.qnp"
+import "memory.qnp"
 
 space std:
 	\\ Function signature for a comparison function.
@@ -37,6 +38,25 @@ space std:
 	\\ @param swap A function that swaps two elements.
 	\\ @return The sorted array.
 	fn<void*> sort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, FN_SWAP swap)...
+
+	\\ Sorts an array of elements using the merge sort algorithm. (Copies elements per byte)
+	\\ @param array The array to sort.
+	\\ @param count The number of elements in the array.
+	\\ @param elemSize The size of each element.
+	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
+	\\ @param swap A function that swaps two elements.
+	\\ @return The sorted array.
+	fn<void*> mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare)...
+
+	\\ Merges two sorted arrays into a single sorted array. (Copies elements per byte)
+	\\ @param array The array to merge into.
+	\\ @param left The left array.
+	\\ @param right The right array.
+	\\ @param leftCount The number of elements in the left array.
+	\\ @param rightCount The number of elements in the right array.
+	\\ @param elemSize The size of each element.
+	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
+	fn<> __merge(void* array, void* left, void* right, u64 leftCount, u64 rightCount, u64 elemSize, FN_COMPARE compare)...
 
 	\\ Shuffles an array of elements.
 	\\ @param array The array to shuffle.
@@ -81,6 +101,55 @@ space std:
 			--end
 
 		return array
+
+	fn<void*> mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare)!:
+		if !array || !compare:
+			error.set(error.ID.InvalidArgument)
+			return null
+
+		if count < 2:
+			return array
+		
+		var<u64> mid = count / 2
+
+		mergeSort(array, mid, elemSize, compare)
+		mergeSort(array + mid * elemSize, count - mid, elemSize, compare)
+
+		var<u8*> temp = (u8*)malloc(count * elemSize)
+		__merge(temp, array, array + mid * elemSize, mid, count - mid, elemSize, compare)
+
+		memcpy(array, temp, count * elemSize)
+		free(temp)
+
+		return array
+	
+	fn<> __merge(void* array, void* left, void* right, u64 leftCount, u64 rightCount, u64 elemSize, FN_COMPARE compare)!:
+		if !array || !left || !right || !compare:
+			error.set(error.ID.OutOfMemory)
+			return
+
+		var<u64> i = 0
+		var<u64> j = 0
+		var<u64> k = 0
+
+		while i < leftCount && j < rightCount:
+			if compare(left + i * elemSize, right + j * elemSize):
+				memcpy(array + k * elemSize, left + i * elemSize, elemSize)
+				++i
+			else:
+				memcpy(array + k * elemSize, right + j * elemSize, elemSize)
+				++j
+			++k
+
+		while i < leftCount:
+			memcpy(array + k * elemSize, left + i * elemSize, elemSize)
+			++i
+			++k
+
+		while j < rightCount:
+			memcpy(array + k * elemSize, right + j * elemSize, elemSize)
+			++j
+			++k
 
 	fn<> shuffle(void* array, u64 count, u64 elemSize, FN_SWAP swap, FN_RANDOM random)!:
 		if !array || !swap || !random:

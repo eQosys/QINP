@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/Debug/QINP",
-            "args": [ "-v", "-k", "-r", "-e=examples/_symbols.json", "-c=examples/_comments.json", "-o=/tmp/qinp-out.out", "examples/print_test.qnp", "-a=asdf", "-a=foo", "-a=bar" ],
+            "args": [ "-v", "-k", "-r", "-e=examples/_symbols.json", "-c=examples/_comments.json", "-o=/tmp/qinp-out.out", "examples/test.qnp", "-a=asdf", "-a=foo", "-a=bar" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
         },

@@ -303,6 +303,7 @@ arrToSort[8] = 174
 arrToSort[9] = 34
 
 std.sort(arrToSort, 10, sizeof(i64), std.LMBD_COMPARE_DT(i64), std.LMBD_SWAP_DT(i64))
+std.mergeSort(arrToSort, 10, sizeof(i64), std.LMBD_COMPARE_DT(i64))
 
 const<i64> key = 6846
 std.println("Index of %: %", key, std.bsearch(&key, arrToSort, 10, sizeof(i64), std.LMBD_COMPARE(*(i64 const*)a < *(i64 const*)b)))
