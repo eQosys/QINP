@@ -48,6 +48,16 @@ space std:
 	\\ @return The sorted array.
 	fn<void*> mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare)...
 
+	\\ Internal function to sort an array of elements using the merge sort algorithm. (Copies elements per byte)
+	\\ @param array The array to sort.
+	\\ @param count The number of elements in the array.
+	\\ @param elemSize The size of each element.
+	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
+	\\ @param swap A function that swaps two elements.
+	\\ @param temp A temporary buffer to use for sorting. (Must be at least `count * elemSize` bytes large)
+	\\ @return The sorted array.
+	fn<void*> __mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, void* temp)...
+
 	\\ Merges two sorted arrays into a single sorted array. (Copies elements per byte)
 	\\ @param array The array to merge into.
 	\\ @param left The left array.
@@ -103,23 +113,27 @@ space std:
 		return array
 
 	fn<void*> mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare)!:
-		if !array || !compare:
+		var temp = malloc(count * elemSize)
+		var result = __mergeSort(array, count, elemSize, compare, temp)
+		free(temp)
+		return result
+
+	fn<void*> __mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, void* temp)!:
+		if !array || !compare || !temp:
 			error.set(error.ID.InvalidArgument)
 			return null
 
 		if count < 2:
 			return array
-		
+
 		var<u64> mid = count / 2
 
-		mergeSort(array, mid, elemSize, compare)
-		mergeSort(array + mid * elemSize, count - mid, elemSize, compare)
+		__mergeSort(array, mid, elemSize, compare, temp)
+		__mergeSort(array + mid * elemSize, count - mid, elemSize, compare, temp)
 
-		var<u8*> temp = (u8*)malloc(count * elemSize)
 		__merge(temp, array, array + mid * elemSize, mid, count - mid, elemSize, compare)
 
 		memcpy(array, temp, count * elemSize)
-		free(temp)
 
 		return array
 	
