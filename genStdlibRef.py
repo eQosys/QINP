@@ -87,13 +87,13 @@ def codeLink(file, line):
 	return "/" + file + "?plain=1#L" + str(line)
 
 def autoAddDetail(file, lineStr, comments, symbol):
-	declFile = symbol["pos"]["decl"]["file"]
-	defFile = symbol["pos"]["def"]["file"]
+	declFile = symbol["pos"]["decl"]["file"].replace("bin/Release/", "")
+	defFile = symbol["pos"]["def"]["file"].replace("bin/Release/", "")
 	if commentExists(comments, symbol):
 		FILES[file].details[lineStr] = Detail(
 			getPreExtendedComment(comments, symbol),
-			codeLink(symbol["pos"]["decl"]["file"], symbol["pos"]["decl"]["line"]) if declFile != "" else "",
-			codeLink(symbol["pos"]["def"]["file"], symbol["pos"]["def"]["line"]) if defFile != "" else ""
+			codeLink(declFile, symbol["pos"]["decl"]["line"]) if declFile != "" else "",
+			codeLink(defFile, symbol["pos"]["def"]["line"]) if defFile != "" else ""
 			)
 
 def lineLink(line):
@@ -242,8 +242,8 @@ def generateDetails(details):
 
 def generateLines(base, comments, files, funcName = None):
 	for name, symbol in base.items():
-		declFile = symbol["pos"]["decl"]["file"]
-		defFile = symbol["pos"]["def"]["file"]
+		declFile = symbol["pos"]["decl"]["file"].replace("bin/Release/", "")
+		defFile = symbol["pos"]["def"]["file"].replace("bin/Release/", "")
 
 		if declFile not in files:
 			files[declFile] = PageContent([], [], [], [], [], {})
@@ -307,7 +307,7 @@ if __name__ == "__main__":
 	sortedFileList.sort()
 
 	print("Exporting symbols...")
-	if os.system("./bin/Release/QINP -e=/tmp/stdlib-symbols.json -c=/tmp/stdlib-comments.json -i=stdlib/ /tmp/stdlib-import-all.qnp"):
+	if os.system("./bin/Release/QINP -e=/tmp/stdlib-symbols.json -c=/tmp/stdlib-comments.json /tmp/stdlib-import-all.qnp"):
 		print("Failed to export symbols")
 		exit(1)
 
