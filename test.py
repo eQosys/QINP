@@ -28,7 +28,7 @@ def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
 	else:
 		print(f"ERROR: UNKNOWN PLATFORM {platform.system()}!")
 		exit(1)
-	cmd = [ exePath, "-r", "-i=stdlib/", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o={outPath}" ]
+	cmd = [ exePath, "-r", f"{TEST_DIR}{testName}{QINP_EXT}", f"-o={outPath}" ]
 	cmd.extend(map(lambda str: "-a=" + str, argv))
 	return cmd
 

@@ -46,3 +46,8 @@ fi
 
 echo "Building project..."
 cmake --build . -j ${NUM_PROCESSORS}
+
+echo "Copying stdlib..."
+cp -r ../../stdlib .
+
+echo "DONE!"

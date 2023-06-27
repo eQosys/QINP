@@ -2503,8 +2503,10 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 
 		parseExpected(info, Token::Type::Separator, ";");
 
+		enterSymbol(info, info.program->symbols);
 		parseInlineTokens(info, tokens, "lambda@" + getPosStr(opToken.pos));
-		
+		exitSymbol(info);
+
 		auto lambda = getSymbol(currSym(info), lambdaName);
 		if (!lambda)
 			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Could not find lambda function!");

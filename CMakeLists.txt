@@ -27,6 +27,7 @@ add_executable(
     "src/ExportSymbolInfo.cpp"
     "src/ProgramGenerator.cpp"
     "src/OperatorPrecedence.cpp"
+    "src/pathToExecutableDir.cpp"
 )
 
 include_directories(

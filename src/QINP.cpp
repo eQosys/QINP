@@ -14,6 +14,7 @@
 #include "ExecCmd.h"
 #include "ExportSymbolInfo.h"
 #include "ExportComments.h"
+#include "pathToExecutableDir.h"
 
 #include "NasmGenerator.h"
 
@@ -152,6 +153,7 @@ int main(int argc, char** argv, char** _env)
 		if (args.hasOption("import"))
 			for (auto& dir : args.getOption("import"))
 				importDirs.insert(dir);
+		importDirs.insert(pathToExecutableDir() + "stdlib/");
 
 		ProgramRef program;
 		auto comments = std::make_shared<CommentTokenMap>();
