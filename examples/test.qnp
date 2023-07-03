@@ -289,33 +289,27 @@ fn<u64> call(fn<u64>(u64, u64) f, u64 a, u64 b):
 
 std.println("Result: %", call(fLambda, 1, 5))
 
+define N_ELEMENTS 1000000
 
-var<i64[10]> arrToSort
-arrToSort[0] = 324
-arrToSort[1] = 534
-arrToSort[2] = 83
-arrToSort[3] = 374
-arrToSort[4] = 192
-arrToSort[5] = 6846
-arrToSort[6] = 172
-arrToSort[7] = 859
-arrToSort[8] = 174
-arrToSort[9] = 34
+var<u8[N_ELEMENTS]> arrToSort
+i = 0
+while i < N_ELEMENTS:
+	arrToSort[i++] = std.random.randU64() % 256
 
 \\std.sort(arrToSort, 10, sizeof(i64), std.LMBD_COMPARE_DT(i64), std.LMBD_SWAP_DT(i64))
-std.mergeSort(arrToSort, 10, sizeof(i64), std.LMBD_COMPARE_DT(i64))
+std.mergeSort(arrToSort, N_ELEMENTS, sizeof(u8), std.LMBD_COMPARE_DT(u8))
 
-const<i64> key = 6846
-std.println("Index of %: %", key, std.bsearch(&key, arrToSort, 10, sizeof(i64), std.LMBD_COMPARE(*(i64 const*)a < *(i64 const*)b)))
+\\const<i64> key = 6846
+\\std.println("Index of %: %", key, std.bsearch(&key, arrToSort, N_ELEMENTS, sizeof(i64), std.LMBD_COMPARE(*(i64 const*)a < *(i64 const*)b)))
 
-std.printArray(arrToSort, 10, sizeof(i64), std.LMBD_PRINT_ELEM(i64, "%+4"), "Sorted:     ", " ", "\n")
-std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
+\\std.printArray(arrToSort, N_ELEMENTS, sizeof(i64), std.LMBD_PRINT_ELEM(i64, "%+4"), "Sorted:     ", " ", "\n")
+\\std.shuffle(arrToSort, N_ELEMENTS, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
 
-std.printArray(arrToSort, 10, sizeof(i64), std.LMBD_PRINT_ELEM(i64 const, "%+4"), "Shuffled:   ", " ", "\n")
+\\std.printArray(arrToSort, N_ELEMENTS, sizeof(i64), std.LMBD_PRINT_ELEM(i64 const, "%+4"), "Shuffled:   ", " ", "\n")
 
-std.shuffle(arrToSort, 10, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
+\\std.shuffle(arrToSort, N_ELEMENTS, sizeof(i64), std.LMBD_SWAP(sizeof(i64)), std.random.randU64)
 
-std.printArray(arrToSort, 10, sizeof(i64), std.LMBD_PRINT_ELEM(i64 const, "%+4"), "Reshuffled: ", " ", "\n")
+\\std.printArray(arrToSort, N_ELEMENTS, sizeof(i64), std.LMBD_PRINT_ELEM(i64 const, "%+4"), "Reshuffled: ", " ", "\n")
 
 var asdf = std.strlen(null)
 std.println("Error: %", std.error.toString(std.error.get()))

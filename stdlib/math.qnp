@@ -46,13 +46,13 @@ space std:
 	\\ @param val The value to round down
 	\\ @param multiple The multiple to round down to
 	\\ @return The value rounded down to the nearest multiple of another value, or the value itself if it is already a multiple of the other value
-	fn<?T> roundDownTo(?T val, ?T multiple) nodiscard...
+	fn<?T> floor(?T val, ?T multiple) nodiscard...
 
 	\\ Rounds a value up to the nearest multiple of another value
 	\\ @param val The value to round up
 	\\ @param multiple The multiple to round up to
 	\\ @return The value rounded up to the nearest multiple of another value, or the value itself if it is already a multiple of the other value
-	fn<?T> roundUpTo(?T val, ?T multiple) nodiscard...
+	fn<?T> ceil(?T val, ?T multiple) nodiscard...
 
 defer
 space std:
@@ -80,8 +80,8 @@ space std:
 		if exponent % 2 == 0: return temp * temp
 		return base * temp * temp
 
-	fn<?T> roundDownTo(?T val, ?T multiple) nodiscard!:
+	fn<?T> floor(?T val, ?T multiple) nodiscard!:
 		return (val / multiple) * multiple
 
-	fn<?T> roundUpTo(?T val, ?T multiple) nodiscard!:
+	fn<?T> ceil(?T val, ?T multiple) nodiscard!:
 		return ((val + multiple - 1) / multiple) * multiple

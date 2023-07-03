@@ -5,6 +5,8 @@ import "__syscall.qnp"
 import "../../math.qnp"
 import "../../error.qnp"
 
+import "../../stdio.qnp"
+
 space std:
 	define __PAGE_SIZE 4096
 	define __FREE_PAGES_COUNT_MAX 256
@@ -14,7 +16,7 @@ space std:
 	pack __MemBlockHeader:
 		var<__MemBlockHeader*> prev
 		var<__MemBlockHeader*> next
-		var<u64> sizeAvail
+		var<u64> bodySize
 
 	\\ Changes the data segment size to the given size and returns the new size.
 	\\ @param size The new size
@@ -26,63 +28,34 @@ space std:
 	\\ @return A pointer pointing to the previous data segment end (null on failure)
 	fn<void*> __sbrk(i64 increment)...
 
-	\\ Returns the smallest block of memory that is large enough to hold the given size.
-	\\ If no block is large enough, returns the last block in the list.
-	\\ @param minSizeAvail The available size of the block to find
-	\\ @return The smallest block of memory that is large enough to hold the given size or the last block in the list
-	fn<__MemBlockHeader*> __getAvailBlock(u64 minSizeAvail)...
+	\\ Retrieves a free block of memory of at least the given size.
+	\\ If no such block exists, a new block is allocated.
+	\\ @param minSize The minimum size of the block to retrieve
+	\\ @return A pointer to the block (null on failure)
+	fn<__MemBlockHeader*> __getFreeBlock(u64 minSize) nodiscard...
 
-	\\ Returns the next adjacent block if there is one available
-	\\ @param block The block to search for the adjacent next
-	\\ @return The next available adjacent block, null if it doesn't exist
-	fn<__MemBlockHeader*> __getNextAdjacentAvailBlock(__MemBlockHeader* block)...
+	\\ Allocates a new block of memory of at least the given size.
+	\\ @param minSize The minimum size of the block to allocate
+	\\ @return A pointer to the block (null on failure)
+	fn<__MemBlockHeader*> __allocateBlock(u64 minSize) nodiscard...
 
-	\\ Inserts a new block of memory into the list (sorted by address)
-	\\ @param block The block of memory to insert
-	\\ @return The block before the inserted block (null if the block was inserted at the beginning of the list)
-	fn<__MemBlockHeader*> __insertAvailBlock(__MemBlockHeader* block)...
+	\\ Truncates the given block of memory to the given size and adds the remaining memory to the list of free blocks.
+	\\ @param block The block to split
+	\\ @param newBodySize The size the first block should have
+	\\ @return A pointer to the second block (null on failure)
+	fn<> __truncateBlock(__MemBlockHeader* block, u64 newBodySize)...
 
-	\\ Removes a block of memory from the list of free blocks.
-	\\ @param block The block of memory to remove
-	fn<> __removeAvailBlock(__MemBlockHeader* block)...
+	\\ Frees the given block of memory.
+	\\ If the block is adjacent to other free blocks, they are merged.
+	\\ If the block is at the end of the data segment and above a certain size, the data segment is shrunk.
+	\\ @param block The block to free
+	fn<> __freeBlock(__MemBlockHeader* block)...
 
-	\\ Splits the given block of memory into two. The first block gets the given size (and a possible padding for alignment) and the second block gets the remaining size.
-	\\ If the new block would have an available size of 0 or less, the block is not split and null is returned.
-	\\ The new block is always aligned to __MEM_ALIGNMENT_SIZE.
-	\\ @param block The block of memory to shrink
-	\\ @param newSizeAvail The new available size of the block
-	\\ @return The new block of memory (null if the block was not split)
-	fn<__MemBlockHeader*> __splitBlock(__MemBlockHeader* block, u64 newSizeAvail)...
-
-	\\ Merges the given blocks of memory into a single block.
-	\\ Both blocks must be adjacent.
-	\\ @param block The block to merge with its next block
-	\\ @return The merged block of memory
-	fn<__MemBlockHeader*> __mergeBlockWithNext(__MemBlockHeader* block)...
-
-	\\ Checks whether the given block of memory is adjacent to the next one.
-	\\ @param block The block of memory to check
-	\\ @return True if the block is adjacent to the next one, otherwise false
-	fn<bool> __isAdjacentToNext(__MemBlockHeader const* block)...
-
-
-	\\ Checks whether the given blocks of memory are adjacent.
-	\\ @param block The block of memory to check
-	\\ @param next The block of memory that may be adjacent to block
-	\\ @return True if block is adjacent to next, otherwise false
-	fn<bool> __isAdjacentToNext(__MemBlockHeader const* block, __MemBlockHeader const* next)...
-
-	\\ Merges the given block with the previous and next blocks if they are adjacent.
-	\\ @param block The block of memory to merge
-	\\ @return Pointer to the merged block
-	fn<__MemBlockHeader*> __mergeBlockWithNeighbors(__MemBlockHeader* block)...
-
-	\\ Allocates a block of memory padded to a page size while being big enough to hold the given available size and the block header.
-	\\ @param minSizeAvail The size of the block to allocate
-	\\ @return A pointer to the header of the allocated block (null on failure)
-	fn<__MemBlockHeader*> __allocBlock(u64 minSizeAvail)...
-
-
+	\\ Merges the given block with adjacent blocks if possible.
+	\\ The block must be in the list of free blocks.
+	\\ @param block The block to merge
+	\\ @return A pointer to the merged block
+	fn<__MemBlockHeader*> __mergeBlocks(__MemBlockHeader* block)...
 
 	\\ First node in the list of allocated data blocks sorted by address
 	var<__MemBlockHeader*> __memBlocks = null
@@ -91,6 +64,7 @@ space std:
 
 defer
 space std:
+	
 	fn<u64> __brk(u64 size)!:
 		return __syscall(__SYS_BRK, size)
 
@@ -102,216 +76,168 @@ space std:
 			return null
 		return (void*)oldSize
 
-	fn<__MemBlockHeader*> __getAvailBlock(u64 minSizeAvail)!:
-		\\ No check for minSizeAvail == 0 because a block may have 0 bytes of available space
-		var<__MemBlockHeader*> smallest = null
-		var<__MemBlockHeader*> last = null
-		var curr = __memBlocks
+	fn<__MemBlockHeader*> __getFreeBlock(u64 minSize) nodiscard!:
 
-		while curr:
-			if curr->sizeAvail >= minSizeAvail:
-				if !smallest || curr->sizeAvail < smallest->sizeAvail:
-					smallest = curr
-			last = curr
-			curr = curr->next
-		return smallest ? smallest : last
+		\\ Check if there is a free block of the right size
+		var prev = (__MemBlockHeader*)null
+		var block = __memBlocks
+		while block != null:
+			if block->bodySize >= minSize: \\ Found a block of the right size
 
-	fn<__MemBlockHeader*> __getNextAdjacentAvailBlock(__MemBlockHeader* block)!:
-		if !block:
-			error.set(error.ID.InvalidArgument)
+				\\ Remove the block from the list and return it
+				if block->prev != null:
+					block->prev->next = block->next
+				if block->next != null:
+					block->next->prev = block->prev
+				if block == __memBlocks:
+					__memBlocks = block->next
+				block->prev = null
+				block->next = null
+				return block
+
+			\\ Go to the next block
+			prev = block
+			block = block->next
+
+		\\ Check if the last block is at the end of the data segment and can be extended
+		if prev != null && (u64)prev + sizeof(__MemBlockHeader) + prev->bodySize == __brk(0):
+			
+			\\ Extend the block by page size increments
+			var sizeDiff = ceil(minSize - prev->bodySize, __PAGE_SIZE)
+			if __sbrk(sizeDiff) == null:
+				return null
+			prev->bodySize += sizeDiff
+
+			\\ Remove the block from the list and return it
+			if prev->prev != null:
+				prev->prev->next = null
+			prev->prev = null
+			if prev == __memBlocks:
+				__memBlocks = null
+			return prev
+
+		return __allocateBlock(minSize) 
+
+	fn<__MemBlockHeader*> __allocateBlock(u64 minSize) nodiscard!:
+
+		\\ Allocate a new block (page size increments)
+		var allocSize = ceil(sizeof(__MemBlockHeader) + minSize, __PAGE_SIZE)
+		var<__MemBlockHeader*> block = (__MemBlockHeader*)__sbrk(allocSize)
+		if block == null:
 			return null
 
+		\\ Initialize the block
+		block->prev = null
+		block->next = null
+		block->bodySize = allocSize - sizeof(__MemBlockHeader)
+
+		return block
+
+	fn<> __truncateBlock(__MemBlockHeader* block, u64 newBodySize)!:
+		if block == null:
+			return
+
+		\\ Align the new size
+		newBodySize = ceil(newBodySize, __MEM_ALIGNMENT_SIZE)
+
+		\\ Check if the block is large enough to be split
+		if block->bodySize < sizeof(__MemBlockHeader) + newBodySize:
+			return
+
+		\\ Create a new block
+		var<__MemBlockHeader*> newBlock = (__MemBlockHeader*)((void*)block + sizeof(__MemBlockHeader) + newBodySize)
+
+		\\ Initialize the new block
+		newBlock->prev = null
+		newBlock->next = null
+		newBlock->bodySize = block->bodySize - sizeof(__MemBlockHeader) - newBodySize
+
+		block->bodySize = newBodySize
+
+		\\ Add the new block to the list of free blocks
+		__freeBlock(newBlock)
+
+	fn<> __freeBlock(__MemBlockHeader* block)!:
+		if block == null:
+			return
+
+		var prev = (__MemBlockHeader*)null
 		var curr = __memBlocks
-		
-		while curr && curr < block:
-			curr = curr->next
 
-		if !__isAdjacentToNext(block, curr):
-			curr = null
-		return curr
-
-	fn<__MemBlockHeader*> __insertAvailBlock(__MemBlockHeader* block)!:
-		if !block:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		var<__MemBlockHeader*> prev = null
-		var curr = __memBlocks
-
-		while curr && block >= curr:
+		\\ Find the position to insert the block
+		while curr != null && block > curr:
 			prev = curr
 			curr = curr->next
+
+		\\ Insert the block
+		if prev == null:
+			__memBlocks = block
+		else:
+			prev->next = block
 
 		block->prev = prev
 		block->next = curr
 
-		if prev: prev->next = block
-		if curr: curr->prev = block
-		
-		if curr == __memBlocks: __memBlocks = block
+		if curr != null:
+			curr->prev = block
 
-		return prev
+		\\ Merge the block with adjacent blocks if possible
+		block = __mergeBlocks(block)
 
-	fn<> __removeAvailBlock(__MemBlockHeader* block)!:
-		if !block:
-			error.set(error.ID.InvalidArgument)
-			return
+		\\ Shrink the data segment if possible
+		if block->next == null && block->bodySize >= __PAGE_SIZE && (u64)block + sizeof(__MemBlockHeader) + block->bodySize == __brk(0):
+			var sizeDiff = floor(block->bodySize, __PAGE_SIZE)
+			block->bodySize -= sizeDiff
+			__sbrk(-sizeDiff)
 
-		if block == __memBlocks: __memBlocks = block->next
-		
-		if block->prev: block->prev->next = block->next
-		if block->next: block->next->prev = block->prev
-
-		block->prev = null
-		block->next = null
-
-	fn<__MemBlockHeader*> __splitBlock(__MemBlockHeader* block, u64 newSizeAvail)!:
-		if !block || !newSizeAvail:
-			error.set(error.ID.InvalidArgument)
+	fn<__MemBlockHeader*> __mergeBlocks(__MemBlockHeader* block)!:
+		if block == null:
 			return null
 
-		newSizeAvail = roundUpTo(newSizeAvail, __MEM_ALIGNMENT_SIZE)
-		if block->sizeAvail + sizeof(__MemBlockHeader) < newSizeAvail:
-			error.set(error.ID.InvalidArgument)
-			return null
+		var prev = block->prev
+		var next = block->next
 
-		const newBlock = (__MemBlockHeader*)((u64)block + sizeof(__MemBlockHeader) + newSizeAvail)
-		newBlock->sizeAvail = block->sizeAvail - newSizeAvail - sizeof(__MemBlockHeader)
-		block->sizeAvail = newSizeAvail
+		\\ Merge the block with the previous block if they are adjacent
+		if prev != null && (void*)prev + sizeof(__MemBlockHeader) + prev->bodySize == (void*)block:
+			prev->bodySize += sizeof(__MemBlockHeader) + block->bodySize
+			prev->next = next
+			if next != null:
+				next->prev = prev
+			block = prev
 
-		return newBlock
+		\\ Merge the block with the next block if they are adjacent
+		if next != null && (void*)block + sizeof(__MemBlockHeader) + block->bodySize == (void*)next:
+			block->bodySize += sizeof(__MemBlockHeader) + next->bodySize
+			block->next = next->next
+			if next->next != null:
+				next->next->prev = block
 
-	fn<__MemBlockHeader*> __mergeBlockWithNext(__MemBlockHeader* block)!:
-		if !block || !block->next:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		block->sizeAvail += sizeof(__MemBlockHeader) + block->next->sizeAvail
-		block->next = block->next->next
-		if block->next: block->next->prev = block
-
-		return block
-
-	fn<bool> __isAdjacentToNext(__MemBlockHeader const* block)!:
-		if !block:
-			error.set(error.ID.InvalidArgument)
-			return false
-
-		return __isAdjacentToNext(block, block->next)
-
-	fn<bool> __isAdjacentToNext(__MemBlockHeader const* block, __MemBlockHeader const* next)!:
-		if !block || !next:
-			return false
-		
-		return ((u64)block + sizeof(__MemBlockHeader) + block->sizeAvail) == (u64)next
-
-	fn<__MemBlockHeader*> __mergeBlockWithNeighbors(__MemBlockHeader* block)!:
-		if !block:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		if __isAdjacentToNext(block->prev):
-			block = __mergeBlockWithNext(block->prev)
-		if __isAdjacentToNext(block):
-			block = __mergeBlockWithNext(block)
-
-		return block
-
-	fn<__MemBlockHeader*> __allocBlock(u64 minSizeAvail)!:
-		if !minSizeAvail:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const<u64> size = roundUpTo(minSizeAvail + sizeof(__MemBlockHeader), __PAGE_SIZE)
-		const block = (__MemBlockHeader*)__sbrk(size)
-		if !block: return null
-
-		block->sizeAvail = size - sizeof(__MemBlockHeader)
-		
 		return block
 
 	fn<void*> malloc(u64 size) nodiscard!:
-		if !size:
-			error.set(error.ID.InvalidArgument)
+		if size == 0:
 			return null
 
-		var block = __getAvailBlock(size)
-		if block:
-			if block->sizeAvail < size: \\ Expand the last block if it is not big enough
-				var<u64> newAllocatedSize = roundUpTo(size - block->sizeAvail, __PAGE_SIZE)
-				if !__sbrk(newAllocatedSize): return null
-				block->sizeAvail += newAllocatedSize
-			__removeAvailBlock(block)
-		else:
-			block = __allocBlock(size)
-
-		if !block: return null
-
-		const newBlock = __splitBlock(block, size)
-		if newBlock: __insertAvailBlock(newBlock)
-
-		return block + 1
-
-	fn<void*> realloc(void* pBuff, u64 size) nodiscard!:
-		if !pBuff:
-			return malloc(size)
-
-		var block = (__MemBlockHeader*)pBuff - 1
-
-		if size > block->sizeAvail:
-			var next = __getNextAdjacentAvailBlock(block)
-			if next && ( \
-				block->sizeAvail + next->sizeAvail >= size || \
-				block->sizeAvail + next->sizeAvail + sizeof(__MemBlockHeader) == size):
-				__removeAvailBlock(next)
-				block->next = next
-				__mergeBlockWithNext(block)
-				next = __splitBlock(block, size)
-				__insertAvailBlock(next)
-			else:
-				next = (__MemBlockHeader*)malloc(size)
-				if !next--: return null
-				memcpy(next + 1, block + 1, block->sizeAvail)
-				free(pBuff)
-				block = next
-			return (void*)(block + 1)
-		elif size < block->sizeAvail:
-			var<__MemBlockHeader*> next = null
-			if block->sizeAvail - size < sizeof(__MemBlockHeader):
-				next = __getNextAdjacentAvailBlock(block)
-				if next:
-					__removeAvailBlock(next)
-					block->next = next
-					__mergeBlockWithNext(block)
-					next = __splitBlock(block, size)
-					__insertAvailBlock(next)
-				else:
-					next = (__MemBlockHeader*)malloc(size)
-					if !next--: return null
-					memcpy(next + 1, block + 1, size)
-					free(pBuff)
-					block = next
-			else:
-				next = __splitBlock(block, size)
-				__insertAvailBlock(next)
-				next = __mergeBlockWithNeighbors(next)
-				\\ TODO: System free if next is the last block in the list
-			return (void*)(block + 1)
+		\\ Allocate a block of the right size
+		var block = __getFreeBlock(size)
 		
-		return pBuff
+		\\ Truncate the block if it is too large to avoid wasting memory
+		__truncateBlock(block, size)
 
-	fn<> free(void* pBuff)!:
-		if !pBuff:
-			error.set(error.ID.InvalidArgument)
+		\\ Return a pointer to the block's body
+		return (void*)(block + 1)
+
+	fn<void*> realloc(void* ptr, u64 newSize) nodiscard!:
+		\\ TODO: Proper implementation
+		free(ptr)
+		return malloc(newSize)
+
+	fn<void> free(void* ptr)!:
+		if ptr == null:
 			return
+		
+		\\ Get the block header
+		var block = (__MemBlockHeader*)ptr - 1
 
-		var block = (__MemBlockHeader*)pBuff - 1
-		__insertAvailBlock(block)
-		block = __mergeBlockWithNeighbors(block)
-
-		if !block->next: \\ Block is the last one in the list
-			var<u64> size = block->sizeAvail
-			if size > __PAGE_SIZE * __FREE_PAGES_COUNT_MAX: \\ Block is big enough to be freed
-				size = roundDownTo(size, __PAGE_SIZE)
-				__sbrk(-size)
-				block->sizeAvail -= size
+		\\ Free the block
+		__freeBlock(block)

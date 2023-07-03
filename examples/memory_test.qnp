@@ -1,0 +1,16 @@
+import "memory.qnp"
+import "stdio.qnp"
+
+var<void*[10]> ptrs
+
+ptrs[0] = std.malloc(1000)
+ptrs[1] = std.malloc(2000)
+ptrs[2] = std.malloc(3000)
+ptrs[3] = std.malloc(4000)
+
+std.free(ptrs[0])
+std.free(ptrs[1])
+std.free(ptrs[2])
+std.free(ptrs[3])
+
+std.println("Done")

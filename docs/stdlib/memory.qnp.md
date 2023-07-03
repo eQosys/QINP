@@ -8,7 +8,7 @@
 
 
 ## Functions
- - [fn\<\> std.free(void* pBuff) ...](#ref_953a0a3a352127b01d83889b86ce45f7)
+ - [fn\<\> std.free(void* ptr) ...](#ref_180a442d5d592aa64e4af0d74fd702f4)
  - [fn\<void*\> std.malloc(u64 size) nodiscard ...](#ref_10f8f64c1590f95440f24093373de61c)
  - [fn\<i64\> std.memcmp(void const* a, void const* b, u64 len) nodiscard](#ref_f92803298a2f8a1c3ab0e70d68068d28)
  - [fn\<void*\> std.memcpy(void* dest, void const* src, u64 len)](#ref_1d215a9dab34b1a5e7ae3498a51292e5)
@@ -19,14 +19,14 @@
  - std.__MIN_MEM_LEN_USE_ALIGN
 
 ## Details
-#### <a id="ref_953a0a3a352127b01d83889b86ce45f7"/>fn\<\> std.free(void* pBuff) ...
-> [Declaration](/stdlib/memory.qnp?plain=1#L44) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L303)
+#### <a id="ref_180a442d5d592aa64e4af0d74fd702f4"/>fn\<\> std.free(void* ptr) ...
+> [Declaration](/stdlib/memory.qnp?plain=1#L44) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L230)
 ```qinp
 Free a buffer
 @param pBuff The buffer to free
 ```
 #### <a id="ref_10f8f64c1590f95440f24093373de61c"/>fn\<void*\> std.malloc(u64 size) nodiscard ...
-> [Declaration](/stdlib/memory.qnp?plain=1#L34) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L233)
+> [Declaration](/stdlib/memory.qnp?plain=1#L34) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L217)
 ```qinp
 Allocate a buffer of a given size
 @param size The size of the buffer to allocate
@@ -60,8 +60,24 @@ Set every byte in a buffer to a value
 @param num The number of bytes to set
 @return The destination buffer
 ```
+#### <a id="ref_0dea008aec5a8edcf31187c476cb6318"/>void* pBuff
+> [Declaration](/stdlib/memory.qnp?plain=1#L40)
+```qinp
+Reallocate a buffer to a given size
+@param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
+@param size The new size of the buffer
+@return The pointer to the newly allocated memory.
+```
+#### <a id="ref_07e47bd1ae9af68d962c39335ad39631"/>u64 size
+> [Declaration](/stdlib/memory.qnp?plain=1#L40)
+```qinp
+Reallocate a buffer to a given size
+@param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
+@param size The new size of the buffer
+@return The pointer to the newly allocated memory.
+```
 #### <a id="ref_28da28462f0cfd1db599ca703c7a652b"/>fn\<void*\> std.realloc(void* pBuff, u64 size) nodiscard ...
-> [Declaration](/stdlib/memory.qnp?plain=1#L40) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L255)
+> [Declaration](/stdlib/memory.qnp?plain=1#L40)
 ```qinp
 Reallocate a buffer to a given size
 @param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)

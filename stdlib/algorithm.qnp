@@ -4,6 +4,8 @@
 import "error.qnp"
 import "memory.qnp"
 
+import "stdio.qnp"
+
 space std:
 	\\ Function signature for a comparison function.
 	define FN_COMPARE fn<bool>(void const*, void const*)
@@ -53,7 +55,6 @@ space std:
 	\\ @param count The number of elements in the array.
 	\\ @param elemSize The size of each element.
 	\\ @param compare A function that compares two elements. (Ascending: true if a < b)
-	\\ @param swap A function that swaps two elements.
 	\\ @param temp A temporary buffer to use for sorting. (Must be at least `count * elemSize` bytes large)
 	\\ @return The sorted array.
 	fn<void*> __mergeSort(void* array, u64 count, u64 elemSize, FN_COMPARE compare, void* temp)...
@@ -127,6 +128,8 @@ space std:
 			return array
 
 		var<u64> mid = count / 2
+
+		\\println("mergeSort: % % %", mid, count - mid, count)
 
 		__mergeSort(array, mid, elemSize, compare, temp)
 		__mergeSort(array + mid * elemSize, count - mid, elemSize, compare, temp)
