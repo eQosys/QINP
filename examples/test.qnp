@@ -316,6 +316,11 @@ std.println("Error: %", std.error.toString(std.error.get()))
 std.error.clear()
 std.println("Error: %", std.error.toString(std.error.get()))
 
+var dataToFreec = std.malloc(100)
+std.println("dataToFreec before free: %", (u64)dataToFreec)
+std.freec(&dataToFreec)
+std.println("dataToFreec after free:  %", (u64)dataToFreec)
+
 std.assert(1 == 2, "1 != 2")
 
 var list = std.List.create((void*)100)

@@ -22,6 +22,7 @@
  - [fn\<\> std.__truncateBlock(std.__MemBlockHeader* block, u64 newBodySize)](#ref_0e7debc4ba8de34a39ded8b6dd23549b)
  - [fn\<\> std.free(void* ptr)](#ref_ff55c5d36de2ef6e1236d38f68acf334)
  - [fn\<void*\> std.malloc(u64 size) nodiscard](#ref_ed884f46d3fc4317f94703c1c65177b4)
+ - [fn\<void*\> std.realloc(void* ptr, u64 newSize) nodiscard](#ref_d356f92991930cf687ff1bc9d3a236b1)
 
 ## Packs/Unions
  - [pack std.__MemBlockHeader](#ref_fea58120e31b62b4fa2945aed315480d)
@@ -96,7 +97,7 @@ Truncates the given block of memory to the given size and adds the remaining mem
 @return A pointer to the second block (null on failure)
 ```
 #### <a id="ref_ff55c5d36de2ef6e1236d38f68acf334"/>fn\<\> std.free(void* ptr)
-> [Declaration](/stdlib/memory.qnp?plain=1#L44) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L230)
+> [Declaration](/stdlib/memory.qnp?plain=1#L44) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L235)
 ```qinp
 Free a buffer
 @param pBuff The buffer to free
@@ -107,5 +108,13 @@ Free a buffer
 Allocate a buffer of a given size
 @param size The size of the buffer to allocate
 @return The allocated buffer (null if failed)
+```
+#### <a id="ref_d356f92991930cf687ff1bc9d3a236b1"/>fn\<void*\> std.realloc(void* ptr, u64 newSize) nodiscard
+> [Declaration](/stdlib/memory.qnp?plain=1#L40) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L230)
+```qinp
+Reallocate a buffer to a given size
+@param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)
+@param size The new size of the buffer
+@return The pointer to the newly allocated memory.
 ```
 

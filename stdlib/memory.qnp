@@ -43,6 +43,10 @@ space std:
 	\\ @param pBuff The buffer to free
 	fn<> free(void* pBuff)...		\\ Platform dependent implementation
 
+	\\ Free a buffer and set the pointer to null
+	\\ @param ppBuff Pointer to the buffer to free
+	fn<> freec(void** ppBuff)...
+
 
 
 defer
@@ -137,5 +141,12 @@ space std:
 				return *(a8 - 1) - *(b8 - 1)
 
 		return 0
+
+	fn<> freec(void** ppBuff)!:
+		if !ppBuff:
+			return
+		
+		free(*ppBuff)
+		*ppBuff = null
 
 import "platform/{platform}/memory.qnp"
