@@ -1,0 +1,23 @@
+import "memory.qnp"
+import "stdio.qnp"
+
+pack String:
+    var<u8*> m_data
+    var<u64> m_length
+
+    fn<bool> __construct(String* self, u8 const* str):
+        std.println("String.__construct")
+        self->m_length = std.strlen(str)
+        self->m_data = (u8*)std.malloc(self->m_length + 1)
+        std.memcpy(self->m_data, str, self->m_length + 1)
+        return true
+
+    fn<> __destruct(String* self):
+        std.println("String.__destruct")
+        std.free(self->m_data)
+
+var str = std.new((String*)null, "Hello world!")
+
+std.println("str = %", str->m_data)
+
+std.delete(str)

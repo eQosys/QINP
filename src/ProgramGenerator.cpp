@@ -440,6 +440,22 @@ ExpressionRef makeLiteralExpression(Token::Position pos, const Datatype &datatyp
 	return exp;
 }
 
+ExpressionRef makeAddressOfExpression(ExpressionRef subExpr)
+{
+	auto exp = std::make_shared<Expression>(subExpr->pos);
+	exp->eType = Expression::ExprType::AddressOf;
+
+	exp->left = subExpr;
+	ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
+	if (!exp->left->isLValue)
+		THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot take address of non-lvalue!");
+	exp->datatype = Datatype(DTType::Pointer, exp->left->datatype);
+	exp->isLValue = false;
+	exp->isObject = true;
+
+	return exp;
+}
+
 void pushStaticLocalInit(ProgGenInfo &info, ExpressionRef initExpr)
 {
 	// Create the internal if statement
@@ -2206,6 +2222,16 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 		{
 			exp->isExtCall = isExtFunc(exp->left->symbol);
 			bool isFPtr = isFuncPtr(exp->left->datatype);
+			
+			// Check if function is a method (member function)
+			if (exp->left->eType == Expression::ExprType::MemberAccess &&
+				exp->left->left->isObject &&
+				exp->left->right->eType == Expression::ExprType::Symbol
+			)
+			{
+				exp->paramExpr.push_back(makeAddressOfExpression(exp->left->left));
+				exp->left = exp->left->right;
+			}
 
 			if (!isFuncName(exp->left->symbol) && !exp->isExtCall && !isFPtr)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot call non-function!");
@@ -2305,6 +2331,10 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 		case Expression::ExprType::MemberAccessDereference:
 		{
 			exp->eType = Expression::ExprType::MemberAccess;
+			if (exp->left->datatype.subType && exp->left->datatype.subType->name == "String")
+			{
+				printf("STRING\n");
+			}
 			if (!exp->left->isObject)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected object!");
 			if (isArray(exp->left->datatype))
@@ -2389,14 +2419,8 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 	switch (exp->eType)
 	{
 	case Expression::ExprType::AddressOf:
-		exp->left = getParseExpression(info, precLvl);
-		ENABLE_EXPR_ONLY_FOR_OBJ(exp->left);
-		if (!exp->left->isLValue)
-			THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot take address of non-lvalue!");
-		exp->datatype = exp->left->datatype;
-		exp->datatype = Datatype(DTType::Pointer, exp->datatype);
-		exp->isLValue = false;
-		exp->isObject = true;
+		exp = makeAddressOfExpression(getParseExpression(info, precLvl));
+		exp->pos = opToken.pos;
 		break;
 	case Expression::ExprType::Dereference:
 		exp->left = getParseExpression(info, precLvl);
@@ -2934,8 +2958,8 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (!isSeparator(peekToken(info), "("))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing parameter list for function declaration!");
 
-	if (!isInGlobal(currSym(info)))
-		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
+	//if (!isInGlobal(currSym(info)))
+	//	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
 	
 	auto& declDefPos = peekToken(info).pos;
 	funcSym->pos.decl = declDefPos;
@@ -3409,15 +3433,29 @@ void parseBody(ProgGenInfo &info, bool doParseIndent)
 			continue;
 		if (parseStatementAlias(info))
 			continue;
+		//if (parseStatementDefer(info))
+		//	continue;
 		if (parseStatementPass(info))
 			continue;
+		//if (parseStatementImport(info))
+		//	continue;
+		if (parseStatementDefine(info))
+			continue;
+		// if (parseStatementSpace(info))
+		// continue;
 		if (parseControlFlow(info))
 			continue;
 		if (parseStatementContinue(info))
 			continue;
 		if (parseStatementBreak(info))
 			continue;
+		if (parsePackUnion(info))
+			continue;
+		if (parseEnum(info))
+			continue;
 		if (parseDeclDef(info))
+			continue;
+		if (parseDeclExtFunc(info))
 			continue;
 		if (parseStatementReturn(info))
 			continue;
@@ -4036,8 +4074,8 @@ bool parseSingleGlobalCode(ProgGenInfo &info)
 		return true;
 	if (parseDeclExtFunc(info))
 		return true;
-	if (parseInlineAssembly(info))
-		return true;
+	// if (parseStatementReturn(info))
+	//	return true;
 	if (parseInlineAssembly(info))
 		return true;
 	if (parseExpression(info))
