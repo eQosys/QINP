@@ -2534,6 +2534,7 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 	}
 	break;
 	case Expression::ExprType::MemberAccess:
+		// TODO: getParseExpression should not be surrounded by enterSymbol/exitSymbol
 		enterSymbol(info, info.program->symbols);
 		exp = getParseExpression(info, precLvl + 1);
 		exitSymbol(info);

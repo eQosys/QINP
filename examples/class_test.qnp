@@ -5,15 +5,19 @@ pack String:
     var<u8*> m_data
     var<u64> m_length
 
-    fn<bool> __construct(String* self, u8 const* str):
-        self->m_length = std.strlen(str)
+    fn<bool> __construct(String* self, u8 const* str, u64 length):
+        self->m_length = length
         self->m_data = (u8*)std.malloc(self->m_length + 1)
+        if !self->m_data:
+            return false
         std.memcpy(self->m_data, str, self->m_length + 1)
         return true
 
+    fn<bool> __construct(String* self, u8 const* str):
+        return self->__construct(str, std.strlen(str))
+
     fn<bool> __construct(String* self):
-        self->__construct("")
-        return true
+        return self->__construct("")
 
     fn<> __destruct(String* self):
         std.free(self->m_data)
@@ -37,6 +41,16 @@ pack String:
 
         return true
 
+    fn<bool> push_back(String* self, u8 ch):
+        var tmp = std.new(String, &ch, 1)
+        var res = self->append(tmp)
+        std.delete(tmp)
+        return res
+
+    fn<bool> assign(String* self, String* other):
+        self->__destruct()
+        return self->__construct(other->m_data, other->m_length)
+
 var str = std.new(String, "Hello ")
 var str2 = std.new(String, "World!")
 std.println("str->raw() = '%'", str->raw())
@@ -47,6 +61,14 @@ std.println("str2->length() = %", str2->length())
 str->append(str2)
 
 std.println("str->append(str2) = '%'", str->raw())
+
+str->assign(str2)
+
+std.println("str->assign(str2) = '%'", str->raw())
+
+str->push_back('!')
+
+std.println("str->push_back('!') = '%'", str->raw())
 
 std.delete(str)
 std.delete(str2)
