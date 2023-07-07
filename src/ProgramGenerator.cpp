@@ -2425,6 +2425,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			{
 				exp->isObject = exp->left->isObject;
 				exp->isLValue = true;
+				if (exp->left->datatype.isConst)
+					exp->datatype.isConst = true;
 			}
 
 			if (!exp->left->isObject)
