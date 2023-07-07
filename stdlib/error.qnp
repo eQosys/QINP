@@ -3,6 +3,8 @@
 
 space std:
 	space error:
+
+		\\ Error IDs
 		enum ID:
 			Success
 			InvalidArgument

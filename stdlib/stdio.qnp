@@ -14,13 +14,17 @@ space std:
 	\\ Macro to define a lambda function that prints a single element of an array
 	define LMBD_PRINT_ELEM(type, fmt) lambda<i32>(void const* elem): return std.print(fmt, *(type*)elem);
 
+	\\ Internal constant
+	\\ Specifies the size of the stdout buffer
 	define __PRINT_BUF_SIZE 1024
 
+	\\ Internal enum used to specify the type of a format modifier
 	enum __PrintFmtMod_Type:
 		Default
 		Int_Bin, Int_Oct, Int_Dec, Int_Hex, Int_Chr,
 		Str
 	
+	\\ Internal enum used to specify the alignment of a format modifier
 	enum __PrintFmtMod_Alignment:
 		None, Left, Right
 	

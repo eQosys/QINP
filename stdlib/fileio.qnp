@@ -6,6 +6,7 @@ space std:
 	\\ It should not be used directly/dereferenced outside of the implementation.
 	pack File...
 
+	\\ Used to specify the origin to seek from.
 	enum Seek:
 		Begin, Current, End
 

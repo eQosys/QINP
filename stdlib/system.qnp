@@ -2,7 +2,11 @@
 \\ System
 
 space std:
+
+	\\ Value to be returned by the program to indicate success.
 	define EXIT_SUCCESS 0
+
+	\\ Value to be returned by the program to indicate failure.
 	define EXIT_FAILURE 1
 
 	\\ Terminate the calling process and return the specified exit status.

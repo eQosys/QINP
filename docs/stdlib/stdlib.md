@@ -12,6 +12,7 @@ All files building the Standard Library can be found in the [stdlib](../../stdli
  - [./list.qnp](list.qnp.md)
  - [./math.qnp](math.qnp.md)
  - [./memory.qnp](memory.qnp.md)
+ - [./order.qnp](order.qnp.md)
  - [./platform/linux/__ioctl.qnp](platform/linux/__ioctl.qnp.md)
  - [./platform/linux/__syscall.qnp](platform/linux/__syscall.qnp.md)
  - [./platform/linux/fileio.qnp](platform/linux/fileio.qnp.md)

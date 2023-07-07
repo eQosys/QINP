@@ -1,11 +1,12 @@
 import "memory.qnp"
 import "stdio.qnp"
+import "order.qnp"
 
 pack String:
     var<u8*> m_data
     var<u64> m_length
 
-    fn<bool> __construct(String* self, u8 const* str, u64 length):
+    fn<bool> __new__(String* self, u8 const* str, u64 length):
         self->m_length = length
         self->m_data = (u8*)std.malloc(self->m_length + 1)
         if !self->m_data:
@@ -13,13 +14,16 @@ pack String:
         std.memcpy(self->m_data, str, self->m_length + 1)
         return true
 
-    fn<bool> __construct(String* self, u8 const* str):
-        return self->__construct(str, std.strlen(str))
+    fn<bool> __new__(String* self, String* other):
+        return self->__new__(other->m_data, other->m_length)
 
-    fn<bool> __construct(String* self):
-        return self->__construct("")
+    fn<bool> __new__(String* self, u8 const* str):
+        return self->__new__(str, std.strlen(str))
 
-    fn<> __destruct(String* self):
+    fn<bool> __new__(String* self):
+        return self->__new__("")
+
+    fn<> __delete__(String* self):
         std.free(self->m_data)
 
     fn<u8 const*> raw(String* self):
@@ -48,8 +52,19 @@ pack String:
         return res
 
     fn<bool> assign(String* self, String* other):
-        self->__destruct()
-        return self->__construct(other->m_data, other->m_length)
+        self->__delete__()
+        return self->__new__(other->m_data, other->m_length)
+
+    fn<std.Order> compare(String* self, String* other):
+        var i = 0
+        while self->m_data[i] == other->m_data[i] && i < self->m_length:
+            ++i
+
+        if self->m_data[i] < other->m_data[i]:
+            return std.Order.Less
+        elif self->m_data[i] > other->m_data[i]:
+            return std.Order.Greater
+        return std.Order.Equal
 
 var str = std.new(String, "Hello ")
 var str2 = std.new(String, "World!")
@@ -69,6 +84,13 @@ std.println("str->assign(str2) = '%'", str->raw())
 str->push_back('!')
 
 std.println("str->push_back('!') = '%'", str->raw())
+var order = str->compare(str2)
+if order == std.Order.Less:
+    std.println("str < str2")
+elif order == std.Order.Greater:
+    std.println("str > str2")
+else:
+    std.println("str == str2")
 
-std.delete(str)
 std.delete(str2)
+std.delete(str)

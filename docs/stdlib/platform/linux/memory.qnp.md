@@ -97,20 +97,20 @@ Truncates the given block of memory to the given size and adds the remaining mem
 @return A pointer to the second block (null on failure)
 ```
 #### <a id="ref_ff55c5d36de2ef6e1236d38f68acf334"/>fn\<\> std.free(void* ptr)
-> [Declaration](/stdlib/memory.qnp?plain=1#L44) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L235)
+> [Declaration](/stdlib/memory.qnp?plain=1#L47) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L235)
 ```qinp
 Free a buffer
 @param pBuff The buffer to free
 ```
 #### <a id="ref_ed884f46d3fc4317f94703c1c65177b4"/>fn\<void*\> std.malloc(u64 size) nodiscard
-> [Declaration](/stdlib/memory.qnp?plain=1#L34) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L217)
+> [Declaration](/stdlib/memory.qnp?plain=1#L37) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L217)
 ```qinp
 Allocate a buffer of a given size
 @param size The size of the buffer to allocate
 @return The allocated buffer (null if failed)
 ```
 #### <a id="ref_d356f92991930cf687ff1bc9d3a236b1"/>fn\<void*\> std.realloc(void* ptr, u64 newSize) nodiscard
-> [Declaration](/stdlib/memory.qnp?plain=1#L40) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L230)
+> [Declaration](/stdlib/memory.qnp?plain=1#L43) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L230)
 ```qinp
 Reallocate a buffer to a given size
 @param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)

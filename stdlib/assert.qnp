@@ -6,6 +6,8 @@ import "system.qnp"
 import "error.qnp"
 
 space std:
+	\\ Assert macro. Replaced with call to __assert and expanded with file, line and space name.
+	\\ See __assert for more information.
 	define assert(check, msg) .std.__assert(check, msg, __file__, __line__, __pretty__)
 
 	\\ Internal assert function. Prints error message and exits if check is false.

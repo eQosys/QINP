@@ -1865,9 +1865,9 @@ ExpressionRef getParseSymbol(ProgGenInfo &info, bool localOnly)
 	case SymType::ExtFunc:
 	case SymType::Pack:
 	case SymType::Macro:
-	case SymType::EnumMember:
 		exp->isObject = false;
 		break;
+	case SymType::EnumMember:
 	case SymType::FunctionName:
 	case SymType::FunctionSpec:
 		exp->isObject = true;

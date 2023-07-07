@@ -4,7 +4,10 @@
 import "error.qnp"
 
 space std:
-	define __MIN_MEM_LEN_USE_ALIGN 32 \\ minimum length of memory to use aligned algorithms on
+
+	\\ Internal constant
+	\\ Specifies minimum length of memory to use aligned algorithms on
+	define __MIN_MEM_LEN_USE_ALIGN 32
 
 	\\ Copy data from one buffer to another
 	\\ Undefined behavior if the buffers overlap
@@ -47,7 +50,7 @@ space std:
 	\\ @param ppBuff Pointer to the buffer to free
 	fn<> freec(void** ppBuff)...
 
-	define new(T, ...) .std.__new((T*)null, ...)
+	define new(T, ...) std.__new((T*)null, ...)
 
 	\\ TODO: Future implementation
 	\\ Allocate memory for a class and call its constructor
@@ -182,7 +185,7 @@ space std:
 		if !obj:
 			return null
 
-		if !obj->__construct():
+		if !obj->__new__():
 			free(obj)
 			return null
 
@@ -197,7 +200,7 @@ space std:
 		if !obj:
 			return null
 
-		if !obj->__construct(...):
+		if !obj->__new__(...):
 			free(obj)
 			return null
 
@@ -207,7 +210,7 @@ space std:
 	\\fn<> delete(?T* obj)!:
 	\\	return
 	fn<> delete(?T obj)!:
-		obj->__destruct()
+		obj->__delete__()
 		free(obj)
 
 import "platform/{platform}/memory.qnp"
