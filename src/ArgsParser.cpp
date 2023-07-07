@@ -2,7 +2,6 @@
 
 #include "Errors/QinpError.h"
 
-
 bool Args::hasOption(const std::string option)
 {
 	return options.find(option) != options.end();

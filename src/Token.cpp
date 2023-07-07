@@ -197,7 +197,6 @@ bool isKeyword(const std::string& name)
 		// "default",
 		// "offsetof",
 		// "for",
-		// "new", "delete",
 		// "goto", "operator",
 		// "switch", "case"
 	};

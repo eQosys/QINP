@@ -180,7 +180,7 @@ space std:
 	\\fn<?T*> new() nodiscard!:
 	\\	return null
 	fn<?T> __new(?T nullptr) nodiscard!:
-		var obj = (T)malloc(sizeof(*(T)null))
+		var obj = (T)malloc(sizeof(*nullptr))
 
 		if !obj:
 			return null
@@ -195,7 +195,7 @@ space std:
 	\\fn<?T*> new(...) nodiscard!:
 	\\	return null
 	fn<?T> __new(?T nullptr, ...) nodiscard!:
-		var obj = (T)malloc(sizeof(*(T)null))
+		var obj = (T)malloc(sizeof(*nullptr))
 
 		if !obj:
 			return null
