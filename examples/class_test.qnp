@@ -14,7 +14,7 @@ pack String:
         std.memcpy(self->m_data, str, self->m_length + 1)
         return true
 
-    fn<bool> __new__(String* self, String* other):
+    fn<bool> __new__(String* self, String const* other):
         return self->__new__(other->m_data, other->m_length)
 
     fn<bool> __new__(String* self, u8 const* str):
@@ -26,13 +26,13 @@ pack String:
     fn<> __delete__(String* self):
         std.free(self->m_data)
 
-    fn<u8 const*> raw(String* self):
+    fn<u8 const*> raw(String const* self):
         return self->m_data
 
-    fn<u64> length(String* self):
+    fn<u64> length(String const* self):
         return self->m_length
 
-    fn<bool> append(String* self, String* other):
+    fn<bool> append(String* self, String const* other):
         var<u64> newLength = self->m_length + other->m_length
         var newData = (u8*)std.malloc(newLength + 1)
         if !newData:
@@ -51,11 +51,11 @@ pack String:
         std.delete(tmp)
         return res
 
-    fn<bool> assign(String* self, String* other):
+    fn<bool> assign(String* self, String const* other):
         self->__delete__()
         return self->__new__(other->m_data, other->m_length)
 
-    fn<std.Order> compare(String* self, String* other):
+    fn<std.Order> compare(String const* self, String const* other):
         var i = 0
         while self->m_data[i] == other->m_data[i] && i < self->m_length:
             ++i
