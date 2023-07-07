@@ -24,7 +24,7 @@ void exportComments(CommentTokenMapRef comments, std::ostream& out)
 		for (const auto& [line, text] : tokens)
 		{
 		
-			out << "\"" <<  line << "\": \"" << replace(replace(text, "\\", "\\\\"), "\"", "\\\"") << "\"";
+			out << "\"" <<  line << "\": \"" << replace(replace(replace(text, "\\", "\\\\"), "\"", "\\\""), "\t", "\\t") << "\"";
 			
 			if (++j < tokens.size())
 				out << ",";
