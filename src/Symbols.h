@@ -105,6 +105,7 @@ struct Symbol
 
 	TokenListRef macroTokens;
 	bool macroIsFunctionLike = false;
+	bool macroHasVarArgs = false;
 	std::vector<std::string> macroParamNames;
 
 	SymbolRef aliasedSymbol;
@@ -123,11 +124,11 @@ void addSymbol(SymbolRef root, SymbolRef symbol);
 Token::Position& getBestPos(SymbolRef symbol);
 
 // isIn* functions return true if the symbol itself or any of its parent is of the given type
-bool isInType(const SymbolRef symbol, Symbol::Type type);
-bool isInGlobal(const SymbolRef symbol);
-bool isInFunction(const SymbolRef symbol);
-bool isInPack(const SymbolRef symbol);
-bool isInEnum(const SymbolRef symbol);
+bool isInType(const SymbolRef symbol, Symbol::Type type, bool directOnly);
+bool isInGlobal(const SymbolRef symbol, bool directOnly = false);
+bool isInFunction(const SymbolRef symbol, bool directOnly = false);
+bool isInPack(const SymbolRef symbol, bool directOnly = false);
+bool isInEnum(const SymbolRef symbol, bool directOnly = false);
 
 bool isSymType(SymType type, const SymbolRef symbol);
 bool isVariable(const SymbolRef symbol);
@@ -167,7 +168,7 @@ SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly = fa
 SymbolRef replaceSymbol(SymbolRef curr, SymbolRef newSym);
 SymbolRef getParent(SymbolRef symbol);
 SymbolRef getParent(SymbolRef symbol, uint64_t num);
-SymbolRef getParent(SymbolRef curr, Symbol::Type type);
+SymbolRef getParent(SymbolRef curr, Symbol::Type type, bool directOnly = false);
 
 
 std::string SymStateToString(SymState state);

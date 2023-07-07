@@ -23,6 +23,22 @@
             "windows": {
                 "command": "${cwd}\\build.bat",
             }
+        },
+        {
+            "label": "asm64",
+            "type": "shell",
+            "command": "rawfilename=${fileDirname}/${fileBasenameNoExtension}; nasm -F dwarf -g -f elf64 -i ${fileDirname} -o $rawfilename.o ${file}; ld -m elf_x86_64 -o $rawfilename $rawfilename.o;",
+            "problemMatcher": {
+            "pattern": {
+                "regexp": "error"
+                }
+            },
+            "presentation": {
+                "focus": true,
+                "panel": "dedicated",
+                "reveal": "silent",
+                "clear": true
+            }
         }
     ]
 }

@@ -28,32 +28,32 @@ Token::Position& getBestPos(SymbolRef symbol)
 	return isDefined(symbol) ? symbol->pos.def : symbol->pos.decl;
 }
 
-bool isInType(const SymbolRef symbol, Symbol::Type type)
+bool isInType(const SymbolRef symbol, Symbol::Type type, bool directOnly)
 {
-	return getParent(symbol, type) != nullptr;
+	return getParent(symbol, type, directOnly) != nullptr;
 }
 
-bool isInGlobal(const SymbolRef symbol)
+bool isInGlobal(const SymbolRef symbol, bool directOnly)
 {
 	return
 		!isInPack(symbol) &&
 		!isInFunction(symbol) &&
-		isInType(symbol, Symbol::Type::Global);
+		isInType(symbol, Symbol::Type::Global, directOnly);
 }
 
-bool isInFunction(const SymbolRef symbol)
+bool isInFunction(const SymbolRef symbol, bool directOnly)
 {
-	return isInType(symbol, Symbol::Type::FunctionSpec);
+	return isInType(symbol, Symbol::Type::FunctionSpec, directOnly);
 }
 
-bool isInPack(const SymbolRef symbol)
+bool isInPack(const SymbolRef symbol, bool directOnly)
 {
-	return isInType(symbol, Symbol::Type::Pack);
+	return isInType(symbol, Symbol::Type::Pack, directOnly);
 }
 
-bool isInEnum(const SymbolRef symbol)
+bool isInEnum(const SymbolRef symbol, bool directOnly)
 {
-	return isInType(symbol, Symbol::Type::Enum);
+	return isInType(symbol, Symbol::Type::Enum, directOnly);
 }
 
 bool isSymType(SymType type, const SymbolRef symbol)
@@ -263,12 +263,14 @@ SymbolRef getParent(SymbolRef symbol, uint64_t num)
 	return symbol;
 }
 
-SymbolRef getParent(SymbolRef curr, Symbol::Type type)
+SymbolRef getParent(SymbolRef curr, Symbol::Type type, bool directOnly)
 {
 	while (curr)
 	{
 		if (curr->type == type)
 			return curr;
+		if (directOnly)
+			return nullptr;
 		curr = getParent(curr);
 	}
 	return curr;

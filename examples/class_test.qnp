@@ -6,18 +6,47 @@ pack String:
     var<u64> m_length
 
     fn<bool> __construct(String* self, u8 const* str):
-        std.println("String.__construct")
         self->m_length = std.strlen(str)
         self->m_data = (u8*)std.malloc(self->m_length + 1)
         std.memcpy(self->m_data, str, self->m_length + 1)
         return true
 
+    fn<bool> __construct(String* self):
+        self->__construct("")
+        return true
+
     fn<> __destruct(String* self):
-        std.println("String.__destruct")
         std.free(self->m_data)
 
-var str = std.new((String*)null, "Hello world!")
+    fn<u8 const*> raw(String* self):
+        return self->m_data
 
-std.println("str = %", str->m_data)
+    fn<u64> length(String* self):
+        return self->m_length
+
+    fn<bool> append(String* self, String* other):
+        var<u64> newLength = self->m_length + other->m_length
+        var newData = (u8*)std.malloc(newLength + 1)
+        if !newData:
+            return false
+        std.memcpy(newData, self->m_data, self->m_length)
+        std.memcpy(newData + self->m_length, other->m_data, other->m_length + 1)
+        std.free(self->m_data)
+        self->m_data = newData
+        self->m_length = newLength
+
+        return true
+
+var str = std.new(String, "Hello ")
+var str2 = std.new(String, "World!")
+std.println("str->raw() = '%'", str->raw())
+std.println("str->length() = %", str->length())
+std.println("str2->raw() = '%'", str2->raw())
+std.println("str2->length() = %", str2->length())
+
+str->append(str2)
+
+std.println("str->append(str2) = '%'", str->raw())
 
 std.delete(str)
+std.delete(str2)

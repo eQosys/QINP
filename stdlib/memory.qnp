@@ -47,13 +47,15 @@ space std:
 	\\ @param ppBuff Pointer to the buffer to free
 	fn<> freec(void** ppBuff)...
 
+	define new(T, ...) .std.__new((T*)null, ...)
+
 	\\ TODO: Future implementation
 	\\ Allocate memory for a class and call its constructor
 	\\ @param nullptr A null pointer specifying the type of the object to allocate
 	\\ @return The allocated object (null if failed)
 	\\ @note The object must be freed with delete
 	\\fn<?T*> new() nodiscard...
-	fn<?T> new(?T nullptr) nodiscard...
+	fn<?T> __new(?T nullptr) nodiscard...
 
 	\\ TODO: Future implementation
 	\\ Allocate memory for a class and call its constructor with the given args
@@ -62,7 +64,7 @@ space std:
 	\\ @return The allocated object (null if failed)
 	\\ @note The object must be freed with delete
 	\\fn<?T*> new(...) nodiscard...
-	fn<?T> new(?T nullptr, ...) nodiscard...
+	fn<?T> __new(?T nullptr, ...) nodiscard...
 
 	\\ TODO: Future implementation
 	\\ Call an objects constructor and free its memory
@@ -174,13 +176,13 @@ space std:
 	\\ TODO: Future implementation
 	\\fn<?T*> new() nodiscard!:
 	\\	return null
-	fn<?T> new(?T nullptr) nodiscard!:
+	fn<?T> __new(?T nullptr) nodiscard!:
 		var obj = (T)malloc(sizeof(*(T)null))
 
 		if !obj:
 			return null
 
-		if !obj->__construct(obj):
+		if !obj->__construct():
 			free(obj)
 			return null
 
@@ -189,7 +191,7 @@ space std:
 	\\ TODO: Future implementation
 	\\fn<?T*> new(...) nodiscard!:
 	\\	return null
-	fn<?T> new(?T nullptr, ...) nodiscard!:
+	fn<?T> __new(?T nullptr, ...) nodiscard!:
 		var obj = (T)malloc(sizeof(*(T)null))
 
 		if !obj:

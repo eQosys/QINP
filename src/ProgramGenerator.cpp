@@ -235,9 +235,9 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 		if (!isSeparator(*++tokIt, "("))
 			THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected '(' after function-like macro!");
 
-		for (uint64_t i = 0; i < sym->macroParamNames.size(); ++i)
+		int argIndex = 0;
+		while (!isSeparator(*tokIt++, ")"))
 		{
-			++tokIt;
 			macroArgs.push_back({});
 
 			int parenCount = 0;
@@ -247,45 +247,85 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 					++parenCount;
 				else if (isSeparator(*tokIt, ")"))
 					--parenCount;
-				macroArgs[i].push_back(*tokIt);
+				macroArgs[argIndex].push_back(*tokIt);
 				++tokIt;
 			}
+			++argIndex;
 		}
-
-		if (!isSeparator(*tokIt, ")"))
-			THROW_PROG_GEN_ERROR_TOKEN(*tokIt, "Expected ')'!");
+		--tokIt;
 	}
 
 	// Replace the macro with its content
-	begin = info.tokens->erase(begin, ++tokIt);
+	begin = info.tokens->erase(begin, ++tokIt); 
 	begin = info.tokens->insert(begin, sym->macroTokens->begin(), sym->macroTokens->end());
+	auto end = begin;
+	std::advance(end, sym->macroTokens->size());
 
 	if (sym->macroIsFunctionLike) // Replace all occurences of the parameters with their provided values
 	{
 		auto it = begin;
-		for (uint64_t i = 0; i < sym->macroTokens->size(); ++i, ++it)
+		while (it != end)
 		{
-			if (!isIdentifier(*it))
-				continue;
+			auto t = *it;
+			printf("'%s'\n", t.value.c_str());
 
-			for (uint64_t paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
+			if (isSeparator(*it, "...") && sym->macroHasVarArgs)
 			{
-				if (sym->macroParamNames[paramIndex] != it->value)
-					continue;
-
 				bool updateBegin = (it == begin);
 
 				it = info.tokens->erase(it);
-				it = info.tokens->insert(it, macroArgs[paramIndex].begin(), macroArgs[paramIndex].end());
+
+				if (sym->macroParamNames.size() == macroArgs.size())
+				{
+					if (isSeparator(*--it, ","))
+						it = info.tokens->erase(it);
+					else
+						++it;
+				}
+
+				for (uint64_t paramIndex = sym->macroParamNames.size(); paramIndex < macroArgs.size(); ++paramIndex)
+				{
+					it = info.tokens->insert(it, macroArgs[paramIndex].begin(), macroArgs[paramIndex].end());
+
+					for (uint64_t j = 0; j < macroArgs[paramIndex].size(); ++j)
+						++it;
+
+					if (paramIndex + 1 < macroArgs.size())
+					{
+						it = info.tokens->insert(it, makeToken(Token::Type::Separator, ","));
+						++it;
+					}
+				}
 
 				if (updateBegin)
 					begin = it;
 
-				for (uint64_t i = 0; i < macroArgs[paramIndex].size(); ++i)
-					++it;
-
-				break;
+				continue;
 			}
+
+			else if (isIdentifier(*it))
+			{
+				for (uint64_t paramIndex = 0; paramIndex < sym->macroParamNames.size(); ++paramIndex)
+				{
+					if (sym->macroParamNames[paramIndex] != it->value)
+						continue;
+
+					bool updateBegin = (it == begin);
+
+					it = info.tokens->erase(it);
+					it = info.tokens->insert(it, macroArgs[paramIndex].begin(), macroArgs[paramIndex].end());
+
+					if (updateBegin)
+						begin = it;
+
+					for (uint64_t i = 0; i < macroArgs[paramIndex].size(); ++i)
+						++it;
+
+					break;
+				}
+			}
+
+			++it;
 		}
 	}
 
@@ -1194,7 +1234,7 @@ void addVariable(ProgGenInfo &info, SymbolRef sym)
 	auto &var = sym->var;
 	var.id = ++varID;
 
-	if (isInPack(currSym(info)))
+	if (isInPack(currSym(info), true))
 	{
 		if (getParent(currSym(info), SymType::Pack)->pack.isUnion)
 		{
@@ -2331,10 +2371,6 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 		case Expression::ExprType::MemberAccessDereference:
 		{
 			exp->eType = Expression::ExprType::MemberAccess;
-			if (exp->left->datatype.subType && exp->left->datatype.subType->name == "String")
-			{
-				printf("STRING\n");
-			}
 			if (!exp->left->isObject)
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected object!");
 			if (isArray(exp->left->datatype))
@@ -2835,20 +2871,21 @@ std::pair<SymbolRef, ExpressionRef> getParseDeclDefVariable(ProgGenInfo &info)
 		sym->var.context = SymVarContext::Static;
 	else if (isInFunction(currSym(info)))
 		sym->var.context = SymVarContext::Local;
-	else if (isInPack(currSym(info)))
+	else if (isInPack(currSym(info), true))
 		sym->var.context = SymVarContext::PackMember;
 	else
 		sym->var.context = SymVarContext::Global;
 
 	// Parse the init expression if present
 	ExpressionRef initExpr = nullptr;
-	if (!isInPack(currSym(info)))
+	if (isOperator(peekToken(info), "="))
 	{
-		if (isOperator(peekToken(info), "="))
-		{
-			nextToken(info);
-			initExpr = getParseExpression(info);
-		}
+		auto outer = currSym(info);
+		if (outer && outer->type == SymType::Pack)
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Cannot initialize a pack member!");
+
+		nextToken(info);
+		initExpr = getParseExpression(info);
 	}
 
 	// Deduce the datatype from the init expression if needed
@@ -3641,10 +3678,22 @@ bool parseStatementDefine(ProgGenInfo &info)
 
 		while (!isSeparator(peekToken(info, 0, true), ")"))
 		{
+			if (sym->macroHasVarArgs)
+				THROW_PROG_GEN_ERROR_TOKEN(peekToken(info, 0, true), "Expected ')'!");
+
 			auto &argToken = nextToken(info, 1, true);
-			if (!isIdentifier(argToken))
+			if (isSeparator(argToken, "..."))
+			{
+				sym->macroHasVarArgs = true;
+			}
+			else if (!isIdentifier(argToken))
+			{
 				THROW_PROG_GEN_ERROR_TOKEN(argToken, "Expected identifier!");
-			sym->macroParamNames.push_back(argToken.value);
+			}
+			else
+			{
+				sym->macroParamNames.push_back(argToken.value);
+			}
 			if (isSeparator(peekToken(info, 0, true), ","))
 				nextToken(info);
 		}

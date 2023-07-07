@@ -22,6 +22,14 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
+        },
+        {
+            "name": "(Unix) GDB64",
+            "type": "gdb",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "stopOnEntry": false,
+            "preLaunchTask": "asm64"
         }
     ]
 }
