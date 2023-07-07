@@ -12,7 +12,7 @@ space std:
 	define FN_PRINT_ELEM fn<i32>(void const*)
 
 	\\ Macro to define a lambda function that prints a single element of an array
-	define LMBD_PRINT_ELEM(type, fmt) lambda<i32>(void const* elem): return std.print(fmt, *(type*)elem);
+	define LMBD_PRINT_ELEM(type, fmt) lambda<i32>(void const* elem): return .std.print(fmt, *(type*)elem);
 
 	\\ Internal constant
 	\\ Specifies the size of the stdout buffer

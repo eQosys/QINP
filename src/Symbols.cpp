@@ -230,6 +230,15 @@ SymPath SymPathFromString(const std::string& pathStr)
 
 SymbolRef getSymbol(SymbolRef root, const std::string& name, bool localOnly)
 {
+	if (name == "<global>")
+	{
+		SymbolRef parent;
+		while ((parent = getParent(root)))
+			root = parent;
+		if (root != nullptr && root->name == name)
+			return root;
+	}
+	
 	while (root)
 	{
 		auto it = root->subSymbols.find(name);

@@ -2,128 +2,112 @@
 \\ Strings
 
 import "error.qnp"
+import "order.qnp"
+import "algorithm.qnp"
 
 space std:
 	\\ Used to convert between string and integer
 	define __BASE_CHARS_LOWER "0123456789abcdefghijklmnopqrstuvwxyz"
+
+	\\ String class
+	pack String:
+		var<u8*> m_data
+		var<u64> m_length
+
+		\\ Construct an empty string
+		\\ @param self Self pointer
+		\\ @return True if successful, otherwise false
+		fn<bool> __new__(String* self) nodiscard...
+
+		\\ Construct a string from a null-terminated string
+		\\ @param self Self pointer
+		\\ @param str The null-terminated string to copy
+		\\ @return True if successful, otherwise false
+		fn<bool> __new__(String* self, u8 const* str) nodiscard...
+
+		\\ Construct a string from the first num characters of a string
+		\\ @param self Self pointer
+		\\ @param str The string to copy
+		\\ @param num The number of characters to copy
+		\\ @return True if successful, otherwise false
+		fn<bool> __new__(String* self, u8 const* str, u64 num) nodiscard...
+
+		\\ Construct a string from another string
+		\\ @param self Self pointer
+		\\ @param other The string to copy
+		\\ @return True if successful, otherwise false
+		fn<bool> __new__(String* self, String const* other) nodiscard...
+
+		\\ Destruct a string
+		\\ @param self Self pointer
+		fn<> __delete__(String* self)...
+
+		\\ Get the raw string data
+		\\ @param self Self pointer
+		\\ @return The raw string data
+		fn<u8 const*> raw(String const* self) nodiscard...
+
+		\\ Get the length of the string (without the null terminator)
+		\\ @param self Self pointer
+		\\ @return The length of the string
+		fn<u64> length(String const* self) nodiscard...
+
+		\\ Clear the string
+		\\ @param self Self pointer
+		\\ @return True if successful, otherwise false
+		fn<bool> clear(String* self)...
+
+		\\ Append a string to the end of the string
+		\\ If the operation fails, the string is left unchanged
+		\\ @param self Self pointer
+		\\ @param other The string to append
+		\\ @return True if successful, otherwise false
+		fn<bool> append(String* self, String const* other)...
+
+		\\ Push a character to the end of the string
+		\\ If the operation fails, the string is left unchanged
+		\\ @param self Self pointer
+		\\ @param ch The character to push
+		\\ @return True if successful, otherwise false
+		fn<bool> push_back(String* self, u8 ch)...
+
+		\\ Assign a string to the string
+		\\ If the operation fails, the string is left unchanged
+		\\ @param self Self pointer
+		\\ @param other The string to assign
+		\\ @return True if successful, otherwise false
+		fn<bool> assign(String* self, String const* other)...
+
+		\\ Swap two strings
+		\\ @param self Self pointer
+		\\ @param other The string to swap with
+		fn<> swap(String* self, String* other)...
+
+		\\ Compare this string with another string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return Less/Equal/Greater (Lexicographical)
+		fn<Order> compare(String const* self, String const* other) nodiscard...
+
+		\\ lower
+		\\ upper
 
 	\\ Determine the length of a string (without the null terminator)
 	\\ @param str The null-terminated string to measure
 	\\ @return The length of the string
 	fn<u64> strlen(u8 const* str) nodiscard...
 
-	\\ Convert a string to lowercase (in place)
-	\\ @param str The string to convert
-	\\ @return The pointer to the passed string
-	fn<u8*> strlwr(u8* str)...
-
-	\\ Convert the first num characters of a string to lowercase (in place)
-	\\ Does not check for null terminator
-	\\ @param str The string to convert
-	\\ @param num The number of characters to convert
-	\\ @return The pointer to the passed string
-	fn<u8*> strlwr(u8* str, u64 num)...
-
-	\\ Convert a string to uppercase (in place)
-	\\ @param str The string to convert
-	\\ @return The pointer to the passed string
-	fn<u8*> strupr(u8* str)...
-
-	\\ Convert the first num characters of a string to uppercase (in place)
-	\\ Does not check for null terminator
-	\\ @param str The string to convert
-	\\ @param num The number of characters to convert
-	\\ @return The pointer to the passed string
-	fn<u8*> strupr(u8* str, u64 num)...
-
-	\\ Concatenates two strings
-	\\ @param dest The destination string to concatenate to
-	\\ @param src The source string to concatenate
-	\\ @return The pointer to the destination string
-	fn<u8*> strcat(u8* dest, u8 const* src)...
-	
-	\\ Concatenates two strings
-	\\ @param dest The destination string to concatenate to
-	\\ @param src The source string to concatenate
-	\\ @param len The number of characters to concatenate (excluding the null terminator)
-	\\ @return The pointer to the destination string
-	fn<u8*> strcat(u8* dest, u8 const* src, u64 num)...
-	
-	\\ Copy a null-terminated string
-	\\ @param dest The destination buffer
-	\\ @param src The source string
-	\\ @return The destination buffer
-	fn<u8*> strcpy(u8* dest, u8 const* src)...
-
-	\\ Copy the first num characters of a string
-	\\ @param dest The destination buffer
-	\\ @param src The source string
-	\\ @param len The number of characters to copy (excluding the null terminator)
-	\\ @return The destination buffer
-	fn<u8*> strcpy(u8* dest, u8 const* src, u64 num)...
-	
 	\\ Compare two null-terminated strings
 	\\ @param str1 The first string
 	\\ @param str2 The second string
 	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
 	fn<i64> strcmp(u8 const* str1, u8 const* str2) nodiscard...
 
-	\\ Compare the first num characters of two strings
-	\\ @param str1 The first string
-	\\ @param str2 The second string
-	\\ @param num The number of characters to compare
-	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num) nodiscard...
-
-	\\ Compare two null-terimated strings without case sensitivity
-	\\ @param str1 The first string
-	\\ @param str2 The second string
-	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2) nodiscard...
-
-	\\ Compare the first num characters of two strings without case sensitivity
-	\\ @param str1 The first string
-	\\ @param str2 The second string
-	\\ @param num The number of characters to compare
-	\\ @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num) nodiscard...
-
 	\\ Locate the first occurencce of a character in a string
 	\\ @param str The string to search
 	\\ @param ch The character to search for
 	\\ @return The address of the first occurence of ch in str, or NULL if not found
 	fn<u8 const*> strchr(u8 const* str, u8 ch) nodiscard...
-	
-	\\ Locate the last occurence of a character in a string
-	\\ @param str The string to search
-	\\ @param ch The character to search for
-	\\ @return The address of the last occurence of ch in str, or NULL if not found
-	fn<u8 const*> strrchr(u8 const* str, u8 ch) nodiscard...
-
-	\\ Locate the first occurence of a substring in a string
-	\\ @param str The string to search
-	\\ @param substr The substring to search for
-	\\ @return The address of the first occurence of substr in str, or NULL if not found
-	fn<u8 const*> strstr(u8 const* str, u8 const* substr) nodiscard...
-
-	\\ Locate the last occurence of a substring in a string
-	\\ @param str The string to search
-	\\ @param substr The substring to search for
-	\\ @return The address of the last occurence of substr in str, or NULL if not found
-	fn<u8 const*> strrstr(u8 const* str, u8 const* substr) nodiscard...
-	
-	\\ Set all characters in a string to a specified character
-	\\ @param str The string to modify
-	\\ @param ch The character to set
-	\\ @return The pointer to the passed string
-	fn<u8*> strset(u8* str, u8 ch)...
-
-	\\ Set the first num characters of a string to a specified character
-	\\ @param str The string to modify
-	\\ @param ch The character to set
-	\\ @param num The number of characters to set
-	\\ @return The pointer to the passed string
-	fn<u8*> strset(u8* str, u8 ch, u64 num)...
 
 	\\ Reverse a null-terminated string (in-place)
 	\\ @param str The null-terminated string to reverse
@@ -135,15 +119,6 @@ space std:
 	\\ @param end Pointer to the character after the last character of the string to reverse (usually the null-terminator)
 	\\ @return The reversed string
 	fn<u8*> strrev(u8* begin, u8* end)...
-
-	\\ Split a string into tokens
-	\\ On the first call pass the string to split, on subsequent calls pass null.
-	\\ The returned string is the next token in the string, or null if there are no more tokens.
-	\\ All found delimiters are replaced with null terminators.
-	\\ @param str The string to split
-	\\ @param delimiters The delimiters to split on
-	\\ @return A pointer to the next token
-	fn<u8*> strtok(u8* str, u8 const* delimiters) nodiscard...
 
 	\\ Convert an integer to a string
 	\\ @param num The integer to convert
@@ -197,6 +172,84 @@ space std:
 
 defer
 space std:
+	fn<bool> String.__new__(String* self) nodiscard!:
+		return self->__new__("")
+
+	fn<bool> String.__new__(String* self, u8 const* str) nodiscard!:
+		return self->__new__(str, strlen(str))
+
+	fn<bool> String.__new__(String* self, u8 const* str, u64 num) nodiscard!:
+		self->m_length = num
+		self->m_data = (u8*)malloc(self->m_length + 1)
+		if !self->m_data:
+			return false
+		std.memcpy(self->m_data, str, self->m_length + 1)
+		return true
+
+	fn<bool> String.__new__(String* self, String const* other) nodiscard!:
+		return self->__new__(other->m_data, other->m_length)
+
+	fn<> String.__delete__(String* self)!:
+		free(self->m_data)
+		self->m_data = null
+		self->m_length = 0
+
+	fn<u8 const*> String.raw(String const* self) nodiscard!:
+		return self->m_data
+
+	fn<u64> String.length(String const* self) nodiscard!:
+		return self->m_length
+
+	fn<bool> String.clear(String* self)!:
+		self->__delete__()
+		return self->__new__()
+
+	fn<bool> String.append(String* self, String const* other)!:
+		var newLength = self->m_length + other->m_length
+		var newData = (u8*)malloc(newLength + 1)
+		if !newData:
+			return false
+		std.memcpy(newData, self->m_data, self->m_length)
+		std.memcpy(newData + self->m_length, other->m_data, other->m_length + 1)
+		self->__delete__()
+		self->m_data = newData
+		self->m_length = newLength
+		return true
+
+	fn<bool> String.push_back(String* self, u8 ch)!:
+		var tmp = new(String, &ch, 1)
+		var ret = self->append(tmp)
+		delete(tmp)
+		return ret
+
+	fn<bool> String.assign(String* self, String const* other)!:
+		var tmp = new(String, other)
+		if !tmp:
+			return false
+		self->__delete__()
+		self->swap(tmp)
+		delete(tmp)
+		return true
+
+	fn<> String.swap(String* self, String* other)!:
+		std.swap(&self->m_data, &other->m_data, sizeof(self->m_data))
+		std.swap(&self->m_length, &other->m_length, sizeof(self->m_length))
+
+	fn<Order> String.compare(String const* self, String const* other) nodiscard!:
+		var<u64> i = 0
+		while self->m_data[i] == other->m_data[i] && i < self->m_length:
+			++i
+
+		if self->m_data[i] < other->m_data[i]:
+			return Order.Less
+		elif self->m_data[i] > other->m_data[i]:
+			return Order.Greater
+		return Order.Equal
+
+
+
+
+
 	fn<u64> strlen(u8 const* str) nodiscard!:
 		if !str:
 			error.set(error.ID.InvalidArgument)
@@ -205,82 +258,6 @@ space std:
 		const begin = str
 		while *str: ++str
 		return (u64)(str - begin)
-
-	fn<u8*> strlwr(u8* str)!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = str
-		while *str: *str++ = tolower(*str)
-		return begin
-
-	fn<u8*> strlwr(u8* str, u64 num)!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = str
-		while num--: *str++ = tolower(*str)
-		return begin
-
-	fn<u8*> strupr(u8* str)!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = str
-		while *str: *str++ = toupper(*str)
-		return begin
-
-	fn<u8*> strupr(u8* str, u64 num)!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = str
-		while num--: *str++ = toupper(*str)
-		return begin
-	
-	fn<u8*> strcat(u8* dest, u8 const* src)!:
-		if !dest || !src:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = dest
-		dest += strlen(dest)
-		strcpy(dest, src)
-		return begin
-
-	fn<u8*> strcat(u8* dest, u8 const* src, u64 num)!:
-		if !dest || !src:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = dest
-		dest += strlen(dest)
-		strcpy(dest, src, num)
-		return begin
-
-	fn<u8*> strcpy(u8* dest, u8 const* src)!:
-		if !dest || !src:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = dest
-		while *src: *dest++ = *src++
-		*dest = null
-		return begin
-
-	fn<u8*> strcpy(u8* dest, u8 const* src, u64 num)!:
-		if !dest || !src:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = dest
-		while num--: *dest++ = *src++
-		*dest = null
-		return begin
 	
 	fn<i64> strcmp(u8 const* str1, u8 const* str2) nodiscard!:
 		if !str1 || !str2:
@@ -292,36 +269,6 @@ space std:
 			++str2
 		return (i64)*str1 - (i64)*str2
 
-	fn<i64> strcmp(u8 const* str1, u8 const* str2, u64 num) nodiscard!:
-		if !str1 || !str2:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		while num-- && *str1 == *str2 && *str1:
-			++str1
-			++str2
-		return num == -1 ? (i64)0 : (i64)*str1 - (i64)*str2
-
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2) nodiscard!:
-		if !str1 || !str2:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		while tolower(*str1) == tolower(*str2) && *str1: \\ Checking if *str2 is null not needed (redundancy)
-			++str1
-			++str2
-		return (i64)tolower(*str1) - (i64)tolower(*str2)
-
-	fn<i64> strcmpi(u8 const* str1, u8 const* str2, u64 num) nodiscard!:
-		if !str1 || !str2:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		while num-- && tolower(*str1) == tolower(*str2) && *str1:
-			++str1
-			++str2
-		return num == -1 ? (i64)0 : (i64)tolower(*str1) - (i64)tolower(*str2)
-
 	fn<u8 const*> strchr(u8 const* str, u8 ch) nodiscard!:
 		if !str:
 			error.set(error.ID.InvalidArgument)
@@ -329,63 +276,6 @@ space std:
 
 		while *str != ch && *str: ++str
 		return *str == ch ? str : (u8 const*)null
-
-	fn<u8 const*> strrchr(u8 const* str, u8 ch) nodiscard!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		var<u8 const*> last = null
-		while *str:
-			if *str == ch:
-				last = str
-			++str
-		return last
-
-	fn<u8 const*> strstr(u8 const* str, u8 const* substr) nodiscard!:
-		if !str || !substr:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const sublen = strlen(substr)
-		const lastToCheck = str + strlen(str) - sublen
-		while str <= lastToCheck:
-			if !strcmp(str, substr, sublen):
-				return str
-			++str
-		return null
-
-	fn<u8 const*> strrstr(u8 const* str, u8 const* substr) nodiscard!:
-		if !str || !substr:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const sublen = strlen(substr)
-		const lastToCheck = str + strlen(str) - sublen
-		var<u8 const*> last = null
-		while str <= lastToCheck:
-			if !strcmp(str, substr, sublen):
-				last = str
-			++str
-		return last
-
-	fn<u8*> strset(u8* str, u8 ch)!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = str
-		while *str: *str++ = ch
-		return begin
-
-	fn<u8*> strset(u8* str, u8 ch, u64 num)!:
-		if !str:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		const begin = str
-		while num--: *str++ = ch
-		return begin
 
 	fn<u8*> strrev(u8* str)!:
 		if !str:
@@ -407,29 +297,6 @@ space std:
 			*end = temp
 
 		return str
-	
-	fn<u8*> strtok(u8* str, u8 const* delimiters) nodiscard!:
-		if !delimiters:
-			error.set(error.ID.InvalidArgument)
-			return null
-
-		static var<u8*> next = null
-		
-		if str:
-			next = str
-			return null
-
-		if !next: return null
-
-		const begin = next
-		while *next:
-			if strchr(delimiters, *next):
-				*next++ = null
-				return begin
-			++next
-		
-		next = null
-		return begin
 
 	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard!:
 		if !str || base < 2 || base > 36:

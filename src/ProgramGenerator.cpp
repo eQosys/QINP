@@ -18,13 +18,13 @@
 
 #define ENABLE_EXPR_ONLY_FOR_OBJ(expr) \
 	if (!expr->isObject)               \
-		THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
+	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_OBJ(expr) \
 	if (expr->isObject)                    \
-		THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
+	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-object!")
 #define ENABLE_EXPR_ONLY_FOR_NON_CONST(expr) \
 	if (expr->datatype.isConst)              \
-		THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
+	THROW_PROG_GEN_ERROR_POS(expr->pos, "Expected non-constant!")
 
 ProgGenInfoBackup makeProgGenInfoBackup(const ProgGenInfo &info)
 {
@@ -126,7 +126,7 @@ TokenListRef DatatypeToTokenList(const Datatype &datatype)
 		}
 	};
 
-	auto insertFuncPtrFront = [&tokens, &insertTokenFront](const Datatype& dt)
+	auto insertFuncPtrFront = [&tokens, &insertTokenFront](const Datatype &dt)
 	{
 		insertTokenFront(Token::Type::Separator, ")");
 		for (int i = dt.funcPtrParams.size() - 1; i >= 0; --i)
@@ -169,7 +169,7 @@ TokenListRef DatatypeToTokenList(const Datatype &datatype)
 	return tokens;
 }
 
-Datatype DatatypeFromTokenList(ProgGenInfo& info, TokenListRef tokens)
+Datatype DatatypeFromTokenList(ProgGenInfo &info, TokenListRef tokens)
 {
 	bool appendedEndOfCode = false;
 	if (tokens->back().type != Token::Type::EndOfCode)
@@ -184,7 +184,7 @@ Datatype DatatypeFromTokenList(ProgGenInfo& info, TokenListRef tokens)
 	info.progPath = "INTERNAL-PROG-PATH";
 	info.indentLvl = 0;
 	info.currToken = info.tokens->begin();
-	
+
 	auto dt = getParseDatatype(info);
 
 	loadProgGenInfoBackup(info, backup);
@@ -202,14 +202,14 @@ Token &kwFileToTokString(Token &tok)
 	return tok;
 }
 
-Token& kwMangledToTokString(ProgGenInfo& info, Token& tok)
+Token &kwMangledToTokString(ProgGenInfo &info, Token &tok)
 {
 	tok.type = Token::Type::String;
 	tok.value = getMangledName(currSym(info));
 	return tok;
 }
 
-Token& kwPrettyToTokString(ProgGenInfo& info, Token& tok)
+Token &kwPrettyToTokString(ProgGenInfo &info, Token &tok)
 {
 	tok.type = Token::Type::String;
 	tok.value = getReadableName(currSym(info));
@@ -256,7 +256,7 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 	}
 
 	// Replace the macro with its content
-	begin = info.tokens->erase(begin, ++tokIt); 
+	begin = info.tokens->erase(begin, ++tokIt);
 	begin = info.tokens->insert(begin, sym->macroTokens->begin(), sym->macroTokens->end());
 	auto end = begin;
 	std::advance(end, sym->macroTokens->size());
@@ -266,9 +266,6 @@ void expandMacro(ProgGenInfo &info, TokenList::iterator &tokIt, TokenList::itera
 		auto it = begin;
 		while (it != end)
 		{
-			auto t = *it;
-			printf("'%s'\n", t.value.c_str());
-
 			if (isSeparator(*it, "...") && sym->macroHasVarArgs)
 			{
 				bool updateBegin = (it == begin);
@@ -651,7 +648,7 @@ void genBlueprintSpecPreSpace(const SymPath &path, TokenListRef tokens)
 	}
 }
 
-SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef>& explicitMacros, const Token::Position &generatedFrom)
+SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef> &explicitMacros, const Token::Position &generatedFrom)
 {
 	BlueprintMacroMap resolvedMacros;
 	info.bpVariadicParamIDStack.push({});
@@ -712,8 +709,8 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	{
 		for (uint64_t i = 0; i < bpSym->func.bpMacroTokens.size(); ++i)
 		{
-			auto& tok = bpSym->func.bpMacroTokens[i];
-			auto& tl = explicitMacros[i];
+			auto &tok = bpSym->func.bpMacroTokens[i];
+			auto &tl = explicitMacros[i];
 
 			auto sym = makeMacroSymbol(tok.pos, blueprintMacroNameFromName(tok.value));
 			sym->macroTokens = tl;
@@ -721,17 +718,17 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 		}
 	}
 
-	for (auto& tok : bpSym->func.bpMacroTokens)
+	for (auto &tok : bpSym->func.bpMacroTokens)
 	{
 		if (resolvedMacros.find(tok.value) == resolvedMacros.end())
-			THROW_PROG_GEN_ERROR_TOKEN(tok, "Blueprint macro '" + tok.value + "' has not been resolved!");	
+			THROW_PROG_GEN_ERROR_TOKEN(tok, "Blueprint macro '" + tok.value + "' has not been resolved!");
 	}
 
 	// Enter the space the blueprint was defined in
 	enterSymbol(info, info.program->symbols);
 
 	// Add macros
-	for (auto& [name, sym] : resolvedMacros)
+	for (auto &[name, sym] : resolvedMacros)
 		addSymbol(currSym(info), sym);
 
 	// Copy the blueprint tokens
@@ -801,13 +798,13 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 
 	for (uint64_t i = 0; i < bpSym->func.params.size(); ++i)
 	{
-		auto& param = bpSym->func.params[i];
+		auto &param = bpSym->func.params[i];
 
 		if (param->var.datatype.type != DTType::Macro)
 			continue;
 
-		auto& macroName = param->var.datatype.name;
-		auto& macro = resolvedMacros[macroName];
+		auto &macroName = param->var.datatype.name;
+		auto &macro = resolvedMacros[macroName];
 		auto datatype = DatatypeFromTokenList(info, macro->macroTokens);
 
 		if (!dtEqual(paramExpr[i]->datatype, datatype))
@@ -823,13 +820,13 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 	return specialization;
 }
 
-SymbolRef getFuncSpecFromSignature(ProgGenInfo& info, SymbolRef symFuncName, const std::string& sig)
+SymbolRef getFuncSpecFromSignature(ProgGenInfo &info, SymbolRef symFuncName, const std::string &sig)
 {
 	if (!isFuncName(symFuncName))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected function name!");
 
 	// TODO: Support blueprints
-	for (auto& [name, spec] : symFuncName->subSymbols)
+	for (auto &[name, spec] : symFuncName->subSymbols)
 	{
 		if (spec->type != SymType::FunctionSpec)
 			continue;
@@ -1007,13 +1004,13 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 	{
 		if (i < func->func.params.size()) // If the parameter is not variadic
 		{
-			auto& expectedParam = func->func.params[i];
-			auto& providedParam = paramExpr[i];
+			auto &expectedParam = func->func.params[i];
+			auto &providedParam = paramExpr[i];
 
 			if (isFuncPtr(expectedParam->var.datatype))
 			{
-				if (!isFuncPtr(providedParam->datatype))		
-				{	
+				if (!isFuncPtr(providedParam->datatype))
+				{
 					if (providedParam->eType != Expression::ExprType::Symbol || !isFuncName(providedParam->symbol))
 						return CONV_SCORE_NOT_POSSIBLE;
 
@@ -1050,12 +1047,12 @@ int calcFuncScore(ProgGenInfo &info, SymbolRef func, const std::vector<Expressio
 	return score;
 }
 
-void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidates, SymbolRef overloads, const std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef>& explicitMacros)
+void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidates, SymbolRef overloads, const std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef> &explicitMacros)
 {
 	if (!overloads)
 		return;
 
-	for (auto& [fName, fSym] : overloads->subSymbols)
+	for (auto &[fName, fSym] : overloads->subSymbols)
 	{
 		if (fName == BLUEPRINT_SYMBOL_NAME)
 		{
@@ -1077,7 +1074,7 @@ void addPossibleCandidates(ProgGenInfo &info, std::map<SymbolRef, int> &candidat
 	}
 }
 
-SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef>& explicitMacros, const Token::Position &searchedFrom)
+SymbolRef getMatchingOverload(ProgGenInfo &info, SymbolRef overloads, std::vector<ExpressionRef> &paramExpr, const std::vector<TokenListRef> &explicitMacros, const Token::Position &searchedFrom)
 {
 	std::map<SymbolRef, int> candidates;
 
@@ -1215,7 +1212,7 @@ void parseExpectedNewline(ProgGenInfo &info)
 bool parseOptionalNewline(ProgGenInfo &info)
 {
 	bool newlineFound = false;
-	auto& token = peekToken(info);
+	auto &token = peekToken(info);
 	if ((newlineFound = (isNewline(token) || isEndOfCode(token))))
 		nextToken(info);
 	else
@@ -1332,7 +1329,7 @@ SymbolRef addFunction(ProgGenInfo &info, SymbolRef func)
 	}
 	if (!bpEqual)
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching blueprint macro list!: " + getPosStr(getBestPos(existingOverload)));
-	
+
 	if (func->func.isNoDiscard != existingOverload->func.isNoDiscard)
 		THROW_PROG_GEN_ERROR_POS(getBestPos(func), "Function '" + getReadableName(existingOverload) + "' was already declared with a non-matching no-discard attribute!: " + getPosStr(getBestPos(existingOverload)));
 
@@ -1441,21 +1438,21 @@ std::string preprocessAsmCode(ProgGenInfo &info, const Token &asmToken)
 	return result;
 }
 
-void increaseIndent(ProgGenInfo& info)
+void increaseIndent(ProgGenInfo &info)
 {
 	++info.indentLvl;
 }
 
-bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
+bool parseIndent(ProgGenInfo &info, bool ignoreLeadingWhitespaces)
 {
 	if (info.indentLvl == 0)
 		return true;
 
-	auto& indentToken = peekToken(info);
+	auto &indentToken = peekToken(info);
 
 	if (!isIndentation(indentToken))
 		return false;
-	
+
 	int currIndent = std::stoi(indentToken.value);
 
 	if (info.indentLvl > currIndent)
@@ -1465,7 +1462,7 @@ bool parseIndent(ProgGenInfo& info, bool ignoreLeadingWhitespaces)
 	{
 		if (ignoreLeadingWhitespaces)
 			return true;
-		
+
 		THROW_PROG_GEN_ERROR_TOKEN(indentToken, "Unexpected indentation!");
 	}
 
@@ -1478,10 +1475,9 @@ void unparseIndent(ProgGenInfo &info)
 {
 	nextToken(info, -1);
 	assert(isIndentation(peekToken(info)) && "Previous token is not an indentation!");
-		
 }
 
-void decreaseIndent(ProgGenInfo& info)
+void decreaseIndent(ProgGenInfo &info)
 {
 	assert(info.indentLvl > 0 && "Indent level cannot be negative!");
 	--info.indentLvl;
@@ -1502,7 +1498,7 @@ void popTempBody(ProgGenInfo &info)
 	info.mainBodyBackups.pop();
 }
 
-void checkDiscardResult(ProgGenInfo& info, ExpressionRef expr)
+void checkDiscardResult(ProgGenInfo &info, ExpressionRef expr)
 {
 	if (expr->eType != Expression::ExprType::FunctionCall)
 		return;
@@ -1672,7 +1668,7 @@ ExpressionRef genConvertExpression(ProgGenInfo &info, ExpressionRef expToConvert
 		expToConvert->isLValue = false;
 		expToConvert->isObject = true;
 		expToConvert->datatype = newDatatype;
-		
+
 		info.program->body->usedFunctions.insert(getSymbolPath(nullptr, spec));
 		return makeConvertExpression(expToConvert, newDatatype);
 	}
@@ -2262,12 +2258,12 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 		{
 			exp->isExtCall = isExtFunc(exp->left->symbol);
 			bool isFPtr = isFuncPtr(exp->left->datatype);
-			
+
 			// Check if function is a method (member function)
 			if (exp->left->eType == Expression::ExprType::MemberAccess &&
 				exp->left->left->isObject &&
 				exp->left->right->eType == Expression::ExprType::Symbol
-			)
+				)
 			{
 				exp->paramExpr.push_back(makeAddressOfExpression(exp->left->left));
 				exp->left = exp->left->right;
@@ -2536,11 +2532,15 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 	}
 	break;
 	case Expression::ExprType::MemberAccess:
+	{
 		// TODO: getParseExpression should not be surrounded by enterSymbol/exitSymbol
-		enterSymbol(info, info.program->symbols);
+		--info.currToken;
+		auto& tok = *info.currToken;
+		info.currToken = info.tokens->insert(info.currToken, makeToken(Token::Type::Identifier, "<global>"));
+
 		exp = getParseExpression(info, precLvl + 1);
-		exitSymbol(info);
 		break;
+	}
 	case Expression::ExprType::Lambda:
 	{
 		static int lambdaID = 0;
@@ -2575,13 +2575,13 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Could not find lambda function!");
 		if (lambda->subSymbols.size() != 1)
 			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
-		//lambda = lambda->subSymbols.begin()->second;
-		//if (!isFuncSpec(lambda))
+		// lambda = lambda->subSymbols.begin()->second;
+		// if (!isFuncSpec(lambda))
 		//	THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
 
 		exp = makeSymbolExpression(opToken.pos, lambda);
 	}
-		break;
+	break;
 	default:
 		THROW_PROG_GEN_ERROR_TOKEN(opToken, "Unknown unary prefix expression!");
 	}
@@ -2990,6 +2990,27 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	}
 
 	// Parse the function name
+	SymbolRef symToEnter = nullptr;
+	if (isOperator(peekToken(info), "."))
+	{
+		nextToken(info);
+		symToEnter = info.program->symbols;
+	}
+	while (isOperator(peekToken(info, 1, true), "."))
+	{
+		if (!isIdentifier(peekToken(info)))
+			THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected symbol name!");
+		auto &nameToken = nextToken(info);
+		nextToken(info);
+
+		symToEnter = getSymbol(symToEnter ? symToEnter : currSym(info), nameToken.value);
+		if (!symToEnter)
+			THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Symbol not found!");
+	}
+
+	if (symToEnter)
+		enterSymbol(info, symToEnter);
+
 	auto &nameToken = nextToken(info);
 	if (!isIdentifier(nameToken))
 		THROW_PROG_GEN_ERROR_TOKEN(nameToken, "Expected identifier!");
@@ -2998,10 +3019,10 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	if (!isSeparator(peekToken(info), "("))
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Missing parameter list for function declaration!");
 
-	//if (!isInGlobal(currSym(info)))
+	// if (!isInGlobal(currSym(info)))
 	//	THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Functions may only appear in global scope!");
-	
-	auto& declDefPos = peekToken(info).pos;
+
+	auto &declDefPos = peekToken(info).pos;
 	funcSym->pos.decl = declDefPos;
 
 	// Parse the parameter list
@@ -3073,13 +3094,13 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 
 		itExplicitListEnd = info.currToken;
 
-		for (auto& tok : newBlueprintMacroTokens)
+		for (auto &tok : newBlueprintMacroTokens)
 		{
 			if (std::count(newBlueprintMacroTokens.begin(), newBlueprintMacroTokens.end(), tok) > 1)
 				THROW_PROG_GEN_ERROR_TOKEN(tok, "Multiple definitions of '" + tok.value + "' in explicit blueprint macro list!");
 		}
 
-		for (auto& tok : funcSym->func.bpMacroTokens)
+		for (auto &tok : funcSym->func.bpMacroTokens)
 		{
 			if (std::find(newBlueprintMacroTokens.begin(), newBlueprintMacroTokens.end(), tok) == newBlueprintMacroTokens.end())
 				THROW_PROG_GEN_ERROR_TOKEN(tok, "Explicit blueprint macro list must contain all implicitly introduced macro names!");
@@ -3095,7 +3116,6 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 	{
 		funcSym->func.isBlueprint = true;
 	}
-
 
 	// Check if the nodiscard attribute is present
 	if (isKeyword(peekToken(info), "nodiscard"))
@@ -3196,6 +3216,9 @@ bool parseDeclDefFunction(ProgGenInfo &info)
 		popTempBody(info);
 		decreaseIndent(info);
 	}
+
+	if (symToEnter)
+		exitSymbol(info);
 
 	return true;
 }
@@ -3473,11 +3496,11 @@ void parseBody(ProgGenInfo &info, bool doParseIndent)
 			continue;
 		if (parseStatementAlias(info))
 			continue;
-		//if (parseStatementDefer(info))
+		// if (parseStatementDefer(info))
 		//	continue;
 		if (parseStatementPass(info))
 			continue;
-		//if (parseStatementImport(info))
+		// if (parseStatementImport(info))
 		//	continue;
 		if (parseStatementDefine(info))
 			continue;
@@ -3810,7 +3833,6 @@ bool parsePackUnion(ProgGenInfo &info)
 
 	packSym->pack.isBlueprint = !packSym->pack.bpMacroTokens.empty();
 
-
 	bool reqPreDecl = isOperator(peekToken(info), "!");
 	if (reqPreDecl)
 		nextToken(info);
@@ -4034,9 +4056,13 @@ void importFile(ProgGenInfo &info, const Token &fileToken)
 
 	std::string code = readTextFile(path);
 
+	std::string origPath = (path.find(info.stdlibPath) == 0)
+		? info.stdlibOrigin + path.substr(info.stdlibPath.size())
+		: path;
+
 	parseInlineTokens(
 		info,
-		tokenize(code, std::filesystem::relative(path, std::filesystem::current_path()).string(), info.comments),
+		tokenize(code, std::filesystem::relative(origPath, std::filesystem::current_path()).string(), info.comments),
 		path);
 }
 
@@ -4187,18 +4213,27 @@ void genDeclaredOnlyBpSpecs(ProgGenInfo &info)
 	}
 }
 
-ProgramRef generateProgram(const TokenListRef tokens, CommentTokenMapRef comments, const std::set<std::string> &importDirs, const std::string &platform, const std::string &progPath)
+ProgramRef generateProgram(
+	const TokenListRef tokens,
+	CommentTokenMapRef comments,
+	const std::set<std::string> &importDirs,
+	const std::string &platform,
+	const std::string &progPath,
+	const std::string &stdlibPath,
+	const std::string &stdlibOrigin
+	)
 {
-	ProgGenInfo info = { tokens, comments, ProgramRef(new Program()), importDirs, progPath, tokens->begin() };
+	ProgGenInfo info = { tokens, comments, ProgramRef(new Program()), importDirs, progPath, tokens->begin(), stdlibPath, stdlibOrigin };
 	info.program->platform = platform;
 	info.program->body = std::make_shared<Body>();
 	info.program->symbols = std::make_shared<Symbol>();
-	enterSymbol(info, info.program->symbols);
 
 	auto sym = info.program->symbols;
 	sym->pos = {};
 	sym->name = "<global>";
 	sym->type = Symbol::Type::Global;
+
+	enterSymbol(info, info.program->symbols);
 
 	parseGlobalCode(info);
 

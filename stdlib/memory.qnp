@@ -50,7 +50,7 @@ space std:
 	\\ @param ppBuff Pointer to the buffer to free
 	fn<> freec(void** ppBuff)...
 
-	define new(T, ...) std.__new((T*)null, ...)
+	define new(T, ...) .std.__new((T*)null, ...)
 
 	\\ TODO: Future implementation
 	\\ Allocate memory for a class and call its constructor

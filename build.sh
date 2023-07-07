@@ -50,4 +50,7 @@ cmake --build . -j ${NUM_PROCESSORS}
 echo "Copying stdlib..."
 cp -r ../../stdlib .
 
+stdlib_origin=$(realpath ../../stdlib)
+echo "${stdlib_origin}" > stdlib-origin.txt
+
 echo "DONE!"

@@ -2,72 +2,10 @@ import "memory.qnp"
 import "stdio.qnp"
 import "order.qnp"
 
-pack String:
-    var<u8*> m_data
-    var<u64> m_length
+import "string.qnp"
 
-    fn<bool> __new__(String* self, u8 const* str, u64 length):
-        self->m_length = length
-        self->m_data = (u8*)std.malloc(self->m_length + 1)
-        if !self->m_data:
-            return false
-        std.memcpy(self->m_data, str, self->m_length + 1)
-        return true
-
-    fn<bool> __new__(String* self, String const* other):
-        return self->__new__(other->m_data, other->m_length)
-
-    fn<bool> __new__(String* self, u8 const* str):
-        return self->__new__(str, std.strlen(str))
-
-    fn<bool> __new__(String* self):
-        return self->__new__("")
-
-    fn<> __delete__(String* self):
-        std.free(self->m_data)
-
-    fn<u8 const*> raw(String const* self):
-        return self->m_data
-
-    fn<u64> length(String const* self):
-        return self->m_length
-
-    fn<bool> append(String* self, String const* other):
-        var<u64> newLength = self->m_length + other->m_length
-        var newData = (u8*)std.malloc(newLength + 1)
-        if !newData:
-            return false
-        std.memcpy(newData, self->m_data, self->m_length)
-        std.memcpy(newData + self->m_length, other->m_data, other->m_length + 1)
-        std.free(self->m_data)
-        self->m_data = newData
-        self->m_length = newLength
-
-        return true
-
-    fn<bool> push_back(String* self, u8 ch):
-        var tmp = std.new(String, &ch, 1)
-        var res = self->append(tmp)
-        std.delete(tmp)
-        return res
-
-    fn<bool> assign(String* self, String const* other):
-        self->__delete__()
-        return self->__new__(other->m_data, other->m_length)
-
-    fn<std.Order> compare(String const* self, String const* other):
-        var i = 0
-        while self->m_data[i] == other->m_data[i] && i < self->m_length:
-            ++i
-
-        if self->m_data[i] < other->m_data[i]:
-            return std.Order.Less
-        elif self->m_data[i] > other->m_data[i]:
-            return std.Order.Greater
-        return std.Order.Equal
-
-var str = std.new(String, "Hello ")
-var str2 = std.new(String, "World!")
+var str = std.new(std.String, "Hello ")
+var str2 = std.new(std.String, "World!")
 std.println("str->raw() = '%'", str->raw())
 std.println("str->length() = %", str->length())
 std.println("str2->raw() = '%'", str2->raw())

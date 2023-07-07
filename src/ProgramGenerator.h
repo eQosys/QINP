@@ -5,7 +5,15 @@
 
 #include "Program.h"
 
-ProgramRef generateProgram(const TokenListRef tokens, CommentTokenMapRef comments, const std::set<std::string>& importDirs, const std::string& platform, const std::string& progPath);
+ProgramRef generateProgram(
+	const TokenListRef tokens,
+	CommentTokenMapRef comments,
+	const std::set<std::string>& importDirs,
+	const std::string& platform,
+	const std::string& progPath,
+	const std::string& stdlibPath,
+	const std::string& stdlibOrigin
+	);
 
 struct LocalStackFrame
 {
@@ -43,6 +51,8 @@ struct ProgGenInfo
 	std::set<std::string> importDirs;
 	std::string progPath;
 	TokenList::iterator currToken;
+	std::string stdlibPath;
+	std::string stdlibOrigin;
 
 	int indentLvl = 0;
 

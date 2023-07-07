@@ -155,13 +155,17 @@ int main(int argc, char** argv, char** _env)
 				importDirs.insert(dir);
 		importDirs.insert(pathToExecutableDir() + "stdlib/");
 
+		std::string stdlibPath = pathToExecutableDir() + "stdlib";
+		std::string stdlibOrigin = readTextFile(pathToExecutableDir() + "stdlib-origin.txt");
+		stdlibOrigin.pop_back();
+
 		ProgramRef program;
 		auto comments = std::make_shared<CommentTokenMap>();
 		{
 			Timer timer("Parsing", verbose);
 			auto code = readTextFile(inFilename);
 			auto tokens = tokenize(code, std::filesystem::relative(inFilename, std::filesystem::current_path()).string(), comments);
-			program = generateProgram(tokens, comments, importDirs, platform, inFilename);
+			program = generateProgram(tokens, comments, importDirs, platform, inFilename, stdlibPath, stdlibOrigin);
 		}
 
 		if (args.hasOption("export-symbol-info"))
