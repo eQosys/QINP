@@ -13,6 +13,7 @@ space std:
 	pack String:
 		var<u8*> m_data
 		var<u64> m_length
+		var<u64> m_reserved
 
 		\\ Construct an empty string
 		\\ @param self Self pointer
@@ -88,6 +89,25 @@ space std:
 		\\ @param other The string to compare
 		\\ @return Less/Equal/Greater (Lexicographical)
 		fn<Order> compare(String const* self, String const* other) nodiscard...
+
+		\\ Get the character at the specified index
+		\\ @param self Self pointer
+		\\ @param index The index of the character to get
+		\\ @return The character at the specified index (or 0 if out of bounds)
+		fn<u8> at(String const* self, u64 index) nodiscard...
+
+		\\ Set the character at the specified index
+		\\ If ch is 0, the string is truncated at the specified index
+		\\ @param self Self pointer
+		\\ @param index The index of the character to set
+		\\ @param ch The character to set
+		\\ @return True if successful, otherwise false
+		fn<bool> set(String* self, u64 index, u8 ch)...
+
+		\\ Returns if the string is empty
+		\\ @param self Self pointer
+		\\ @return True if the string is empty, otherwise false
+		fn<bool> empty(String const* self) nodiscard...
 
 		\\ lower
 		\\ upper
@@ -180,6 +200,7 @@ space std:
 
 	fn<bool> String.__new__(String* self, u8 const* str, u64 num) nodiscard!:
 		self->m_length = num
+		self->m_reserved = num
 		self->m_data = (u8*)malloc(self->m_length + 1)
 		if !self->m_data:
 			return false
@@ -193,6 +214,7 @@ space std:
 		free(self->m_data)
 		self->m_data = null
 		self->m_length = 0
+		self->m_reserved = 0
 
 	fn<u8 const*> String.raw(String const* self) nodiscard!:
 		return self->m_data
@@ -201,11 +223,18 @@ space std:
 		return self->m_length
 
 	fn<bool> String.clear(String* self)!:
-		self->__delete__()
-		return self->__new__()
+		if self->empty():
+			return true
+		return self->set(0, '\0')
 
 	fn<bool> String.append(String* self, String const* other)!:
 		var newLength = self->m_length + other->m_length
+
+		if newLength <= self->m_reserved:
+			std.memcpy(self->m_data + self->m_length, other->m_data, other->m_length + 1)
+			self->m_length = newLength
+			return true
+
 		var newData = (u8*)malloc(newLength + 1)
 		if !newData:
 			return false
@@ -223,6 +252,11 @@ space std:
 		return ret
 
 	fn<bool> String.assign(String* self, String const* other)!:
+		if self->m_reserved >= other->m_length:
+			std.memcpy(self->m_data, other->m_data, other->m_length + 1)
+			self->m_length = other->m_length
+			return true
+
 		var tmp = new(String, other)
 		if !tmp:
 			return false
@@ -234,6 +268,7 @@ space std:
 	fn<> String.swap(String* self, String* other)!:
 		std.swap(&self->m_data, &other->m_data, sizeof(self->m_data))
 		std.swap(&self->m_length, &other->m_length, sizeof(self->m_length))
+		std.swap(&self->m_reserved, &other->m_reserved, sizeof(self->m_reserved))
 
 	fn<Order> String.compare(String const* self, String const* other) nodiscard!:
 		var<u64> i = 0
@@ -246,7 +281,21 @@ space std:
 			return Order.Greater
 		return Order.Equal
 
+	fn<u8> String.at(String const* self, u64 index) nodiscard!:
+		if index >= self->m_length:
+			return null
+		return self->m_data[index]
 
+	fn<bool> String.set(String* self, u64 index, u8 ch)!:
+		if index >= self->m_length:
+			return false
+		self->m_data[index] = ch
+		if ch == '\0':
+			self->m_length = index
+		return true
+
+	fn<bool> String.empty(String const* self) nodiscard!:
+		return self->m_length == 0
 
 
 
