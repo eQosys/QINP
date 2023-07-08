@@ -69,8 +69,8 @@ Next steps (Not in order):
  - [x] Dynamic memory management
  - [ ] Optimizations
  - [ ] Inline functions
- - [ ] Object oriented
- - [ ] Function pointers
+ - [x] Object oriented
+ - [x] Function pointers
  - [ ] Operator overloading
  - [x] Blueprints
  - [x] Variadic functions
