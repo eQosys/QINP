@@ -204,7 +204,8 @@ space std:
 		self->m_data = (u8*)malloc(self->m_length + 1)
 		if !self->m_data:
 			return false
-		std.memcpy(self->m_data, str, self->m_length + 1)
+		std.memcpy(self->m_data, str, self->m_length)
+		self->m_data[self->m_length] = '\0'
 		return true
 
 	fn<bool> String.__new__(String* self, String const* other) nodiscard!:
