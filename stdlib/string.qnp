@@ -204,7 +204,7 @@ space std:
 		self->m_data = (u8*)malloc(self->m_length + 1)
 		if !self->m_data:
 			return false
-		std.memcpy(self->m_data, str, self->m_length)
+		memcpy(self->m_data, str, self->m_length)
 		self->m_data[self->m_length] = '\0'
 		return true
 
@@ -232,15 +232,15 @@ space std:
 		var newLength = self->m_length + other->m_length
 
 		if newLength <= self->m_reserved:
-			std.memcpy(self->m_data + self->m_length, other->m_data, other->m_length + 1)
+			memcpy(self->m_data + self->m_length, other->m_data, other->m_length + 1)
 			self->m_length = newLength
 			return true
 
 		var newData = (u8*)malloc(newLength + 1)
 		if !newData:
 			return false
-		std.memcpy(newData, self->m_data, self->m_length)
-		std.memcpy(newData + self->m_length, other->m_data, other->m_length + 1)
+		memcpy(newData, self->m_data, self->m_length)
+		memcpy(newData + self->m_length, other->m_data, other->m_length + 1)
 		self->__delete__()
 		self->m_data = newData
 		self->m_length = newLength
@@ -254,7 +254,7 @@ space std:
 
 	fn<bool> String.assign(String* self, String const* other)!:
 		if self->m_reserved >= other->m_length:
-			std.memcpy(self->m_data, other->m_data, other->m_length + 1)
+			memcpy(self->m_data, other->m_data, other->m_length + 1)
 			self->m_length = other->m_length
 			return true
 
@@ -267,9 +267,9 @@ space std:
 		return true
 
 	fn<> String.swap(String* self, String* other)!:
-		std.swap_obj(self->m_data, other->m_data)
-		std.swap_obj(self->m_length, other->m_length)
-		std.swap_obj(self->m_reserved, other->m_reserved)
+		swap_obj(self->m_data, other->m_data)
+		swap_obj(self->m_length, other->m_length)
+		swap_obj(self->m_reserved, other->m_reserved)
 
 	fn<Order> String.compare(String const* self, String const* other) nodiscard!:
 		var<u64> i = 0
