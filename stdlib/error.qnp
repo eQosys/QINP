@@ -11,6 +11,7 @@ space std:
 			AssertionFailed
 			OutOfMemory
 			FileIO
+			IndexOutOfBounds
 			__ERR_ID_COUNT
 
 		\\ Internal variable to hold the set error.
@@ -70,6 +71,7 @@ space std:
 			strings[(u64)ID.InvalidArgument] = "Invalid Argument"
 			strings[(u64)ID.AssertionFailed] = "Assertion Failed"
 			strings[(u64)ID.OutOfMemory] = "Out of Memory"
+			strings[(u64)ID.IndexOutOfBounds] = "Index out of Bounds"
 			strings[(u64)ID.FileIO] = "File IO Error"
 			
 			initialized = true

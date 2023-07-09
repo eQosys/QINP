@@ -192,6 +192,7 @@ space std:
 
 	fn<__MemBlockHeader*> __mergeBlocks(__MemBlockHeader* block)!:
 		if block == null:
+			error.set(error.ID.InvalidArgument)
 			return null
 
 		var prev = block->prev
@@ -216,6 +217,7 @@ space std:
 
 	fn<void*> malloc(u64 size) nodiscard!:
 		if size == 0:
+			error.set(error.ID.InvalidArgument)
 			return null
 
 		\\ Allocate a block of the right size

@@ -75,7 +75,7 @@ Call an objects constructor and free its memory
 \\fn<> delete(?T* obj)...
 ```
 #### <a id="ref_180a442d5d592aa64e4af0d74fd702f4"/>fn\<\> std.free(void* ptr) ...
-> [Declaration](/stdlib/memory.qnp?plain=1#L47) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L235)
+> [Declaration](/stdlib/memory.qnp?plain=1#L47) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L237)
 ```qinp
 Free a buffer
 @param pBuff The buffer to free
@@ -87,7 +87,7 @@ Free a buffer and set the pointer to null
 @param ppBuff Pointer to the buffer to free
 ```
 #### <a id="ref_10f8f64c1590f95440f24093373de61c"/>fn\<void*\> std.malloc(u64 size) nodiscard ...
-> [Declaration](/stdlib/memory.qnp?plain=1#L37) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L217)
+> [Declaration](/stdlib/memory.qnp?plain=1#L37) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L218)
 ```qinp
 Allocate a buffer of a given size
 @param size The size of the buffer to allocate
@@ -122,7 +122,7 @@ Set every byte in a buffer to a value
 @return The destination buffer
 ```
 #### <a id="ref_bed44dc95cf9c18a87c9d24751c94420"/>fn\<void*\> std.realloc(void* ptr, u64 newSize) nodiscard ...
-> [Declaration](/stdlib/memory.qnp?plain=1#L43) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L230)
+> [Declaration](/stdlib/memory.qnp?plain=1#L43) | [Definition](/stdlib/platform/linux/memory.qnp?plain=1#L232)
 ```qinp
 Reallocate a buffer to a given size
 @param pBuff The pointer to the block of memory to reallocate (Must be previously allocated by malloc)

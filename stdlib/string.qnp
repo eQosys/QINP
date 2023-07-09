@@ -284,6 +284,7 @@ space std:
 
 	fn<u8> String.at(String const* self, u64 index) nodiscard!:
 		if index >= self->m_length:
+			error.set(error.ID.IndexOutOfBounds)
 			return null
 		return self->m_data[index]
 
