@@ -3903,10 +3903,41 @@ bool parsePackUnion(ProgGenInfo &info)
 	while (!doParseIndent || parseIndent(info))
 	{
 		doParseIndent = true;
+
+		if (parseEmptyLine(info))
+			continue;
+		if (parseStatementAlias(info))
+			continue;
+		// if (parseStatementDefer(info))
+		//	continue;
 		if (parseStatementPass(info))
+			continue;
+		// if (parseStatementImport(info))
+		//	continue;
+		if (parseStatementDefine(info))
+			continue;
+		// if (parseStatementSpace(info))
+		// continue;
+		// if (parseControlFlow(info))
+		// 	continue;
+		// if (parseStatementContinue(info))
+		// 	continue;
+		// if (parseStatementBreak(info))
+		// 	continue;
+		if (parsePackUnion(info))
+			continue;
+		if (parseEnum(info))
 			continue;
 		if (parseDeclDef(info))
 			continue;
+		if (parseDeclExtFunc(info))
+			continue;
+		// if (parseStatementReturn(info))
+		// 	continue;
+		// if (parseInlineAssembly(info))
+		// 	continue;
+		// if (parseExpression(info))
+		// 	continue;
 		THROW_PROG_GEN_ERROR_TOKEN(peekToken(info), "Expected member definition!");
 	}
 

@@ -5,7 +5,51 @@ import "memory.qnp"
 import "error.qnp"
 
 space std:
-	space List:
+	\\ pack List:
+	\\ 	pack Node:
+	\\ 		var<Node*> prev
+	\\ 		var<Node*> next
+	\\ 		var<void*> data
+
+	\\ 	var<Node*> m_first
+	\\ 	var<Node*> m_last
+
+	\\ 	define FN_DATA_AFTER_REMOVE fn<void> (void*)
+
+	\\ 	fn<bool> __new__(List* self)...
+
+	\\ 	fn<> __delete__(List* self)...
+
+	\\ 	fn<> clear(List* self)...
+
+	\\ 	fn<Node*> push_back(List* self, ?T data)...
+
+	\\ 	fn<Node*> push_front(List* self, ?T data)...
+
+	\\ 	fn<?T> pop_back(List* self)...
+
+	\\ 	fn<?T> pop_front(List* self) [T]...
+
+	\\ 	fn<Node*> insert_before(List* self, Node* node, ?T data)...
+
+	\\ 	fn<Node*> insert_after(List* self, Node* node, ?T data)...
+
+	\\ 	fn<?T> remove(List* self, Node* node)...
+
+	\\ 	fn<?T> remove_before(List* self, Node* node)...
+
+	\\ 	fn<?T> remove_after(List* self, Node* node)...
+
+	\\ 	fn<u64> length(List const* self)...
+
+	\\ 	fn<bool> empty(List const* self)...
+
+	\\ 	fn<Node*> __alloc_node(Node* prev, Node* next, void* data)...
+
+	\\ 	fn<> __free_node(Node* node)...
+
+
+	space List_old:
 		\\ A single node in a list.
 		pack Node:
 			var<Node*> next
@@ -64,7 +108,171 @@ space std:
 
 defer
 space std:
-	space List:
+	\\ fn<bool> List.__new__(List* self)!:
+	\\ 	self->m_first = null
+	\\ 	self->m_last = null
+	\\ 	return true
+
+	\\ fn<> List.__delete__(List* self)!:
+	\\ 	clear(self)
+	
+	\\ fn<> List.clear(List* self)!:
+	\\ 	while !self->empty():
+	\\ 		self->pop_front({void*})
+
+	\\ fn<List.Node*> List.push_back(List* self, ?T data)!:
+	\\ 	var<Node*> node = __alloc_node(self->m_last, null, data)
+
+	\\ 	if self->m_last:
+	\\ 		self->m_last->next = node
+
+	\\ 	self->m_last = node
+
+	\\ 	if !self->m_first:
+	\\ 		self->m_first = node
+
+	\\ 	return node
+
+	\\ fn<List.Node*> List.push_front(List* self, ?T data)!:
+	\\ 	var<Node*> node = __alloc_node(null, self->m_first, data)
+
+	\\ 	if self->m_first:
+	\\ 		self->m_first->prev = node
+
+	\\ 	self->m_first = node
+
+	\\ 	if !self->m_last:
+	\\ 		self->m_last = node
+
+	\\ 	return node
+
+	\\ fn<?T> List.pop_back(List* self)!:
+	\\ 	if !self->empty():
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+
+	\\ 	var<Node*> node = self->m_last
+	\\ 	var<?T> data = node->data
+	\\ 	self->m_last = node->prev
+
+	\\ 	if self->m_last:
+	\\ 		self->m_last->next = null
+	\\ 	else:
+	\\ 		self->m_first = null
+
+	\\ 	__free_node(node)
+
+	\\ 	return data
+
+	\\ fn<?T> List.pop_front(List* self)!:
+	\\ 	if !self->empty():
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+
+	\\ 	var<Node*> node = self->m_first
+	\\ 	var<?T> data = node->data
+	\\ 	self->m_first = node->next
+
+	\\ 	if self->m_first:
+	\\ 		self->m_first->prev = null
+	\\ 	else:
+	\\ 		self->m_last = null
+
+	\\ 	__free_node(node)
+
+	\\ 	return data
+
+	\\ fn<List.Node*> List.insert_before(List* self, Node* node, ?T data)!:
+	\\ 	if !node:
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+
+	\\ 	var<Node*> newNode = __alloc_node(node->prev, node, data)
+
+	\\ 	if node->prev:
+	\\ 		node->prev->next = newNode
+	\\ 	else:
+	\\ 		self->m_first = newNode
+
+	\\ 	node->prev = newNode
+
+	\\ 	return newNode
+
+	\\ fn<List.Node*> List.insert_after(List* self, Node* node, ?T data)!:
+	\\ 	if !node:
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+
+	\\ 	var<Node*> newNode = __alloc_node(node, node->next, data)
+
+	\\ 	if node->next:
+	\\ 		node->next->prev = newNode
+	\\ 	else:
+	\\ 		self->m_last = newNode
+
+	\\ 	node->next = newNode
+
+	\\ 	return newNode
+
+	\\ fn<?T> List.remove(List* self, Node* node)!:
+	\\ 	if !node:
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+		
+	\\ 	var<?T> data = node->data
+
+	\\ 	if node->prev:
+	\\ 		node->prev->next = node->next
+	\\ 	else:
+	\\ 		self->m_first = node->next
+
+	\\ 	if node->next:
+	\\ 		node->next->prev = node->prev
+	\\ 	else:
+	\\ 		self->m_last = node->prev
+
+	\\ 	__free_node(node)
+
+	\\ 	return data
+
+	\\ fn<?T> List.remove_before(List* self, Node* node)!:
+	\\ 	if !node:
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+
+	\\ 	return remove(self, node->prev)
+
+	\\ fn<?T> List.remove_after(List* self, Node* node)!:
+	\\ 	if !node:
+	\\ 		error.set(error.ID.InvalidArgument)
+	\\ 		return null
+
+	\\ 	return remove(self, node->next)
+
+	\\ fn<u64> List.length(List const* self)!:
+	\\ 	var<u64> length = 0
+	\\ 	var<Node*> node = self->m_first
+
+	\\ 	while node:
+	\\ 		++length
+	\\ 		node = node->next
+
+	\\ 	return length
+
+	\\ fn<bool> List.empty(List const* self)!:
+	\\ 	return self->m_first == null
+
+	\\ fn<List.Node*> List.__alloc_node(Node* prev, Node* next, void* data)!:
+	\\ 	var<Node*> node = (Node*)std.malloc(sizeof(Node))
+	\\ 	node->prev = prev
+	\\ 	node->next = next
+	\\ 	node->data = data
+	\\ 	return node
+
+	\\ fn<> List.__free_node(Node* node)!:
+	\\ 	std.free(node)
+
+	space List_old:
 		fn<Node*> create(void* data)!:
 			var<Node*> node = (Node*)std.malloc(sizeof(Node))
 			node->next = null

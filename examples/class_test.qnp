@@ -3,6 +3,7 @@ import "stdio.qnp"
 import "order.qnp"
 
 import "string.qnp"
+import "list.qnp"
 
 var str = std.new(std.String, "Hello ")
 var str2 = std.new(std.String, "World!")
