@@ -763,7 +763,53 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 		}
 	}
 	// Generate 'space [name]:' tokens
-	genBlueprintSpecPreSpace(getSymbolPath(nullptr, getParent(bpSym, 3)), tokens);
+	{
+		int preIndentDepth = 0;
+		auto it = tokens->begin();
+		if (isIndentation(*it))
+			preIndentDepth = std::stoi(it->value);
+
+		while (!isEndOfCode(*it))
+		{
+			while (!isEndOfCode(*it) && !isIndentation(*it))
+				++it;
+
+			if (isEndOfCode(*it))
+				break;
+
+			int newIndent = std::stoi(it->value) - preIndentDepth;
+			if (newIndent < 0)
+			{
+				THROW_PROG_GEN_ERROR_TOKEN(*it, "Indentation error!");
+			}
+			else if (newIndent == 0)
+			{
+				it = tokens->erase(it);
+			}
+			else
+			{
+				it->value = std::to_string(newIndent);
+				++it;
+			}
+		}
+	}
+	{
+		auto& funcName = getParent(bpSym, 2)->name;
+		auto it = tokens->begin();
+		while (!isIdentifier(*it) || it->value != funcName)
+			++it;
+
+		SymbolRef currSym = getParent(bpSym, 3);
+		while (currSym && currSym->name != "<global>")
+		{
+			it = tokens->insert(it, makeToken(Token::Type::Operator, "."));
+			it = tokens->insert(it, makeToken(Token::Type::Identifier, currSym->name));
+			currSym = getParent(currSym, 1);
+		}
+		if (!isOperator(*it, "."))
+			tokens->insert(it, makeToken(Token::Type::Operator, "."));
+		
+	}
 	auto bpFilepath = bpSym->func.blueprintTokens->front().pos.file;
 	if (!info.bpVariadicParamIDStack.top().empty())
 	{
