@@ -799,6 +799,19 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 		while (!isIdentifier(*it) || it->value != funcName)
 			++it;
 
+		--it;
+		while (isOperator(*it, "."))
+		{
+			it = tokens->erase(it);
+			--it;
+			if (isIdentifier(*it))
+			{
+				it = tokens->erase(it);
+				--it;
+			}
+		}
+		++it;
+
 		SymbolRef currSym = getParent(bpSym, 3);
 		while (currSym && currSym->name != "<global>")
 		{

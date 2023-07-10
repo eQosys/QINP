@@ -33,3 +33,19 @@ else:
 
 std.delete(str2)
 std.delete(str)
+
+
+var list = std.new(std.List)
+list->push_back(std.new(std.String, "Hello"))
+list->push_back(std.new(std.String, "World"))
+list->push_back(std.new(std.String, "!"))
+
+std.println("list->length() = %", list->length())
+
+std.delete(list->pop_back({std.String*}))
+std.println("list->length() = %", list->length())
+std.delete(list->pop_back({std.String*}))
+std.println("list->length() = %", list->length())
+std.delete(list->pop_back({std.String*}))
+std.println("list->length() = %", list->length())
+std.delete(list)

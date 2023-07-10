@@ -19,6 +19,7 @@
  - [fn\<std.List_old.Node*\> std.List_old.remove(std.List_old.Node* list, std.List_old.Node* node)](#ref_e94bc2d7ca52e877b5a9aa44ef6ccd09)
 
 ## Packs/Unions
+ - pack std.List
  - [pack std.List_old.Node](#ref_b11e02dbd5165480da6f4a8f45c0d3c3)
 
 ## Details

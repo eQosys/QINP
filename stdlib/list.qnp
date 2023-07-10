@@ -22,17 +22,17 @@ space std:
 
 		fn<> clear(List* self)...
 
-		fn<Node*> push_back(List* self, ?T data)...
+		fn<.std.List.Node*> push_back(List* self, ?T data)...
 
-		fn<Node*> push_front(List* self, ?T data)...
+		fn<.std.List.Node*> push_front(List* self, ?T data)...
 
 		fn<?T> pop_back(List* self)...
 
 		fn<?T> pop_front(List* self)...
 
-		fn<Node*> insert_before(List* self, Node* node, ?T data)...
+		fn<.std.List.Node*> insert_before(List* self, Node* node, ?T data)...
 
-		fn<Node*> insert_after(List* self, Node* node, ?T data)...
+		fn<.std.List.Node*> insert_after(List* self, Node* node, ?T data)...
 
 		fn<?T> remove(List* self, Node* node)...
 
@@ -44,7 +44,7 @@ space std:
 
 		fn<bool> empty(List const* self)...
 
-		fn<Node*> __alloc_node(Node* prev, Node* next, void* data)...
+		fn<.std.List.Node*> __alloc_node(Node* prev, Node* next, void* data)...
 
 		fn<> __free_node(Node* node)...
 
@@ -120,7 +120,7 @@ space std:
 		while !self->empty():
 			self->pop_front({void*})
 
-	fn<List.Node*> List.push_back(List* self, ?T data)!:
+	fn<.std.List.Node*> List.push_back(List* self, ?T data)!:
 		var<Node*> node = __alloc_node(self->m_last, null, data)
 
 		if self->m_last:
@@ -133,7 +133,7 @@ space std:
 
 		return node
 
-	fn<List.Node*> List.push_front(List* self, ?T data)!:
+	fn<.std.List.Node*> List.push_front(List* self, ?T data)!:
 		var<Node*> node = __alloc_node(null, self->m_first, data)
 
 		if self->m_first:
@@ -147,12 +147,12 @@ space std:
 		return node
 
 	fn<?T> List.pop_back(List* self)!:
-		if !self->empty():
+		if self->empty():
 			error.set(error.ID.InvalidArgument)
 			return null
 
 		var<Node*> node = self->m_last
-		var<?T> data = node->data
+		var data = (T)node->data
 		self->m_last = node->prev
 
 		if self->m_last:
@@ -165,12 +165,12 @@ space std:
 		return data
 
 	fn<?T> List.pop_front(List* self)!:
-		if !self->empty():
+		if self->empty():
 			error.set(error.ID.InvalidArgument)
 			return null
 
 		var<Node*> node = self->m_first
-		var<?T> data = node->data
+		var data = (T)node->data
 		self->m_first = node->next
 
 		if self->m_first:
@@ -182,7 +182,7 @@ space std:
 
 		return data
 
-	fn<List.Node*> List.insert_before(List* self, Node* node, ?T data)!:
+	fn<.std.List.Node*> List.insert_before(List* self, Node* node, ?T data)!:
 		if !node:
 			error.set(error.ID.InvalidArgument)
 			return null
@@ -198,7 +198,7 @@ space std:
 
 		return newNode
 
-	fn<List.Node*> List.insert_after(List* self, Node* node, ?T data)!:
+	fn<.std.List.Node*> List.insert_after(List* self, Node* node, ?T data)!:
 		if !node:
 			error.set(error.ID.InvalidArgument)
 			return null
@@ -219,7 +219,7 @@ space std:
 			error.set(error.ID.InvalidArgument)
 			return null
 		
-		var<?T> data = node->data
+		var data = (T)node->data
 
 		if node->prev:
 			node->prev->next = node->next
@@ -262,7 +262,7 @@ space std:
 	fn<bool> List.empty(List const* self)!:
 		return self->m_first == null
 
-	fn<List.Node*> List.__alloc_node(Node* prev, Node* next, void* data)!:
+	fn<.std.List.Node*> List.__alloc_node(Node* prev, Node* next, void* data)!:
 		var<Node*> node = (Node*)std.malloc(sizeof(Node))
 		node->prev = prev
 		node->next = next
