@@ -171,7 +171,7 @@ TokenListRef tokenize(const std::string& code, std::string name, CommentTokenMap
 				token.type = Token::Type::LiteralInteger;
 				token.value.push_back(c);
 				state = State::TokenizeLiteral;
-				litIntBase = 10;
+				litIntBase = (c == '0') ? 8 : 10;
 			}
 			else if (isWhitespace(c))
 			{

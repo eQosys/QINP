@@ -8,6 +8,7 @@ All files building the Standard Library can be found in the [stdlib](../../stdli
  - [./assert.qnp](assert.qnp.md)
  - [./error.qnp](error.qnp.md)
  - [./fileio.qnp](fileio.qnp.md)
+ - [./iterator.qnp](iterator.qnp.md)
  - [./limits.qnp](limits.qnp.md)
  - [./list.qnp](list.qnp.md)
  - [./math.qnp](math.qnp.md)

@@ -11,6 +11,8 @@ space std:
 	define __OPEN_READONLY 00
 	define __OPEN_WRITEONLY 01
 	define __OPEN_READWRITE 02
+	define __OPEN_CREATE 0100
+	define __OPEN_TRUNCATE 01000
 
 
 
@@ -19,23 +21,26 @@ space std:
 	pack File!:
 		pass
 
-	fn<File*> fopen(u8 const* filename, u8 const* mode) nodiscard!:
-		if !filename || !mode:
+	fn<File*> fopen(u8 const* filename, u8 const* modeStr) nodiscard!:
+		if !filename || !modeStr:
 			error.set(error.ID.InvalidArgument)
 			return null
 
 		var<i32> flags
-		if strcmp(mode, "r") == 0:
+		var<i32> mode = 0
+		if strcmp(modeStr, "r") == 0:
 			flags = __OPEN_READONLY
-		elif strcmp(mode, "w") == 0:
-			flags = __OPEN_WRITEONLY
-		elif strcmp(mode, "rw") == 0:
-			flags = __OPEN_READWRITE
+		elif strcmp(modeStr, "w") == 0:
+			flags = __OPEN_WRITEONLY | __OPEN_CREATE | __OPEN_TRUNCATE
+			mode = 0644
+		elif strcmp(modeStr, "rw") == 0:
+			flags = __OPEN_READWRITE | __OPEN_CREATE | __OPEN_TRUNCATE
+			mode = 0644
 		else:
 			error.set(error.ID.InvalidArgument)
 			return null
 
-		const fd = __syscall(__SYS_OPEN, filename, flags)
+		const fd = __syscall(__SYS_OPEN, filename, flags, mode)
 
 		if fd < 0:
 			error.set(error.ID.FileIO)

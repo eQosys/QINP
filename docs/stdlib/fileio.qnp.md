@@ -10,7 +10,7 @@
 
 ## Functions
  - [fn\<\> std.fclose(std.File* pFile) ...](#ref_b22f7c263f044a29e642117d2d39847a)
- - [fn\<std.File*\> std.fopen(u8 const* filename, u8 const* mode) nodiscard ...](#ref_f36125ef61bb3364f20adcb47d26ef06)
+ - [fn\<std.File*\> std.fopen(u8 const* filename, u8 const* modeStr) nodiscard ...](#ref_bf57bd08992bebb966d1c0d88ae50de1)
  - [fn\<u64\> std.fread(std.File* pFile, void* dest, u64 num) ...](#ref_10d0c6e373d8500ceb1d9794628e823a)
  - [fn\<u64\> std.fseek(std.File* pFile, u64 offset, std.Seek origin) ...](#ref_d1e2470da214740e3fc0a13f7eed784c)
  - [fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num) ...](#ref_a43f0347f6eb625132afa900f842f059)
@@ -23,7 +23,7 @@
 
 ## Details
 #### <a id="ref_5a673db54053d0f4c25fcdd59770fdb8"/>pack std.File ...
-> [Declaration](/stdlib/fileio.qnp?plain=1#L7) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L19)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L7) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L21)
 ```qinp
 The implementation dependent file pack.
 It should not be used directly/dereferenced outside of the implementation.
@@ -34,13 +34,13 @@ It should not be used directly/dereferenced outside of the implementation.
 Used to specify the origin to seek from.
 ```
 #### <a id="ref_b22f7c263f044a29e642117d2d39847a"/>fn\<\> std.fclose(std.File* pFile) ...
-> [Declaration](/stdlib/fileio.qnp?plain=1#L50) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L76)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L50) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L81)
 ```qinp
 Closes the file.
 @param pFile The file object.
 ```
-#### <a id="ref_f36125ef61bb3364f20adcb47d26ef06"/>fn\<std.File*\> std.fopen(u8 const* filename, u8 const* mode) nodiscard ...
-> [Declaration](/stdlib/fileio.qnp?plain=1#L21) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L22)
+#### <a id="ref_bf57bd08992bebb966d1c0d88ae50de1"/>fn\<std.File*\> std.fopen(u8 const* filename, u8 const* modeStr) nodiscard ...
+> [Declaration](/stdlib/fileio.qnp?plain=1#L21) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L24)
 ```qinp
 Opens a file for reading and/or writing.
 If the file could not be opened, null is returned.
@@ -52,7 +52,7 @@ If the file could not be opened, null is returned.
 @return The file object.
 ```
 #### <a id="ref_10d0c6e373d8500ceb1d9794628e823a"/>fn\<u64\> std.fread(std.File* pFile, void* dest, u64 num) ...
-> [Declaration](/stdlib/fileio.qnp?plain=1#L29) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L46)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L29) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L51)
 ```qinp
 Reads num bytes from the file into the destination buffer.
 May return less than num bytes if the end of the file is reached.
@@ -62,7 +62,7 @@ May return less than num bytes if the end of the file is reached.
 @return The number of bytes read.
 ```
 #### <a id="ref_d1e2470da214740e3fc0a13f7eed784c"/>fn\<u64\> std.fseek(std.File* pFile, u64 offset, std.Seek origin) ...
-> [Declaration](/stdlib/fileio.qnp?plain=1#L46) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L60)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L46) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L65)
 ```qinp
 Seeks to the specified offset in the file.
 @param pFile The file object.
@@ -74,7 +74,7 @@ Seeks to the specified offset in the file.
 @return The new position in the file, negative on error
 ```
 #### <a id="ref_a43f0347f6eb625132afa900f842f059"/>fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num) ...
-> [Declaration](/stdlib/fileio.qnp?plain=1#L36) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L53)
+> [Declaration](/stdlib/fileio.qnp?plain=1#L36) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L58)
 ```qinp
 Writes num bytes from the source buffer to the file.
 @param pFile The file object.
