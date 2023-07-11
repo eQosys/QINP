@@ -15,12 +15,9 @@ space std:
         var<FN_GET_DATA> m_getData
         var<FN_GET_NEXT> m_getNext
 
-        fn<bool> __new__(Iterator* self, void* curr, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext):
-            self->m_curr = curr
-            self->m_hasNext = fnHasNext
-            self->m_getData = fnGetData
-            self->m_getNext = fnGetNext
-            return true
+        fn<bool> __new__(Iterator* self, void* curr, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext) nodiscard...
+
+        fn<> __delete__(Iterator* self)...
 
         fn<bool> hasNext(Iterator const* self) nodiscard...
         
@@ -30,6 +27,16 @@ space std:
 
 defer
 space std:
+    fn<bool> Iterator.__new__(Iterator* self, void* curr, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext) nodiscard!:
+        self->m_curr = curr
+        self->m_hasNext = fnHasNext
+        self->m_getData = fnGetData
+        self->m_getNext = fnGetNext
+        return true
+
+    fn<> Iterator.__delete__(Iterator* self)!:
+        pass
+
     fn<bool> Iterator.hasNext(Iterator const* self) nodiscard!:
         return self->m_hasNext(self->m_curr)
 

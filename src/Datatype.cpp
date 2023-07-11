@@ -256,6 +256,9 @@ Datatype dtArraysToPointer(const Datatype& datatype)
 			dest->subType = std::make_shared<Datatype>();
 	}
 
+	base.funcPtrRetType = datatype.funcPtrRetType;
+	base.funcPtrParams = datatype.funcPtrParams;
+
 	return base;
 }
 
