@@ -40,6 +40,11 @@ list->push_back(std.new(std.String, "Hello"))
 list->push_back(std.new(std.String, "World"))
 list->push_back(std.new(std.String, "!"))
 
+var it = list->iterator()
+while it->hasNext():
+    var str = it->next({std.String*})
+    std.println("str->raw() = '%'", str->raw())
+
 std.println("list->length() = %", list->length())
 
 std.delete(list->pop_back({std.String*}))

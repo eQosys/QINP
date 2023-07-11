@@ -460,7 +460,20 @@ ExpressionRef makeSymbolExpression(Token::Position pos, SymbolRef symbol)
 	exp->symbol = symbol;
 	exp->isLValue = true;
 	exp->isObject = true;
-	exp->datatype = symbol->var.datatype;
+	if (symbol->type == SymType::FunctionSpec)
+	{
+		exp->datatype = Datatype();
+		exp->datatype.type = DTType::FuncPtr;
+		exp->datatype.isConst = false;
+		exp->datatype.funcPtrRetType = std::make_shared<Datatype>(symbol->func.retType);
+		for (auto& param : symbol->func.params)
+			exp->datatype.funcPtrParams.push_back(param->var.datatype);
+		exp->datatype.name = getSignature(*exp->datatype.funcPtrRetType, exp->datatype.funcPtrParams);
+	}
+	else
+	{
+		exp->datatype = symbol->var.datatype;
+	}
 
 	return exp;
 }
@@ -2321,7 +2334,8 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 			// Check if function is a method (member function)
 			if (exp->left->eType == Expression::ExprType::MemberAccess &&
 				exp->left->left->isObject &&
-				exp->left->right->eType == Expression::ExprType::Symbol
+				exp->left->right->eType == Expression::ExprType::Symbol &&
+				exp->left->right->symbol->type == SymType::FunctionName
 				)
 			{
 				exp->paramExpr.push_back(makeAddressOfExpression(exp->left->left));
@@ -2634,9 +2648,9 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Could not find lambda function!");
 		if (lambda->subSymbols.size() != 1)
 			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
-		// lambda = lambda->subSymbols.begin()->second;
-		// if (!isFuncSpec(lambda))
-		//	THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
+		lambda = lambda->subSymbols.begin()->second;
+		if (!isFuncSpec(lambda))
+			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
 
 		exp = makeSymbolExpression(opToken.pos, lambda);
 	}

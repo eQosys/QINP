@@ -1,0 +1,39 @@
+\\ QINP Standard Library
+\\ Iterator
+
+space std:
+    pack Iterator:
+        define FN_HAS_NEXT fn<bool>(void const*)
+
+        define FN_GET_DATA fn<void*>(void*)
+
+        define FN_GET_NEXT fn<void*>(void*)
+
+        var<void*> m_curr
+
+        var<FN_HAS_NEXT> m_hasNext
+        var<FN_GET_DATA> m_getData
+        var<FN_GET_NEXT> m_getNext
+
+        fn<bool> __new__(Iterator* self, void* curr, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext):
+            self->m_curr = curr
+            self->m_hasNext = fnHasNext
+            self->m_getData = fnGetData
+            self->m_getNext = fnGetNext
+            return true
+
+        fn<bool> hasNext(Iterator const* self) nodiscard...
+        
+        fn<?T> next(Iterator* self)...
+
+
+
+defer
+space std:
+    fn<bool> Iterator.hasNext(Iterator const* self) nodiscard!:
+        return self->m_hasNext(self->m_curr)
+
+    fn<?T> Iterator.next(Iterator* self)!:
+        var res = self->m_getData(self->m_curr)
+        self->m_curr = self->m_getNext(self->m_curr)
+        return (T)res

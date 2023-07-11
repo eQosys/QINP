@@ -405,7 +405,7 @@ void genFuncCall(NasmGenInfo& ngi, const Expression* expr)
 
 	genExpr(ngi, expr->left.get());
 	auto exprType = Datatype(DTType::FuncPtr, getSignature(expr));
-	bool typesMatch = dtEqual(ngi.primReg.datatype, exprType);
+	bool typesMatch = dtEqual(ngi.primReg.datatype, exprType, true);
 	assert(typesMatch && "Cannot call non-function!");
 	ngi.ss << "  call " << primRegUsage(ngi) << "\n";
 	ngi.ss << "  add rsp, " << hexString(expr->paramSizeSum) << "\n";

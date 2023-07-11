@@ -3,6 +3,7 @@
 
 import "memory.qnp"
 import "error.qnp"
+import "iterator.qnp"
 
 space std:
 	pack List:
@@ -47,6 +48,10 @@ space std:
 		fn<.std.List.Node*> __alloc_node(Node* prev, Node* next, void* data)...
 
 		fn<> __free_node(Node* node)...
+
+		fn<.std.Iterator*> iterator(List* self)...
+
+		fn<void> delete_iterator(List const* self, Iterator* it)...
 
 
 	space List_old:
@@ -271,6 +276,20 @@ space std:
 
 	fn<> List.__free_node(Node* node)!:
 		std.free(node)
+
+	fn<.std.Iterator*> List.iterator(List* self)!:
+		return new( \
+			Iterator, \
+			self->m_first, \
+			lambda<bool>(void const* node): return node != null;, \
+			lambda<void*>(void* node): return ((.std.List.Node*)node)->data;, \
+			lambda<void*>(void* node): return ((.std.List.Node*)node)->next; \
+		)
+
+	fn<> List.delete_iterator(List const* self, Iterator* iterator)!:
+		delete(iterator)
+
+
 
 	space List_old:
 		fn<Node*> create(void* data)!:
