@@ -22,8 +22,6 @@ space std:
 		\\ The last node in the list.
 		var<Node*> m_last
 
-		define FN_DATA_AFTER_REMOVE fn<void> (void*)
-
 		\\ Constructs a new list.
 		\\ @param self Self pointer
 		\\ @return True on success, otherwise false.
