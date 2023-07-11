@@ -2652,6 +2652,8 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 		if (!isFuncSpec(lambda))
 			THROW_PROG_GEN_ERROR_POS(opToken.pos, "Cannot resolve lambda function!");
 
+		lambda->func.isReachable = true;
+
 		exp = makeSymbolExpression(opToken.pos, lambda);
 	}
 	break;
