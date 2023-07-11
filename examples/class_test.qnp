@@ -47,10 +47,8 @@ while it->hasNext():
 
 std.println("list->length() = %", list->length())
 
-std.delete(list->pop_back({std.String*}))
-std.println("list->length() = %", list->length())
-std.delete(list->pop_back({std.String*}))
-std.println("list->length() = %", list->length())
-std.delete(list->pop_back({std.String*}))
-std.println("list->length() = %", list->length())
+while !list->empty():
+    std.delete(list->pop_back({std.String*}))
+    std.println("list->length() = %", list->length())
+
 std.delete(list)
