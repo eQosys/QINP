@@ -110,7 +110,8 @@ space std:
 
 		\\ Internal function to free a node.
 		\\ @param node The node to free.
-		fn<> __free_node(Node* node)...
+		\\ @return The data stored in the node.
+		fn<void*> __free_node(Node* node) nodiscard...
 
 		\\ Get an iterator to the first node of the list.
 		\\ Iterates from the first node to the last node.
@@ -122,7 +123,7 @@ space std:
 		\\ Deletes the given iterator.
 		\\ @param self Self pointer
 		\\ @param it The iterator to delete.
-		fn<void> delete_iterator(List const* self, Iterator* it)...
+		fn<> delete_iterator(List const* self, Iterator* it)...
 
 defer
 space std:
@@ -170,7 +171,6 @@ space std:
 			return null
 
 		var<Node*> node = self->m_last
-		var data = (T)node->data
 		self->m_last = node->prev
 
 		if self->m_last:
@@ -178,9 +178,7 @@ space std:
 		else:
 			self->m_first = null
 
-		__free_node(node)
-
-		return data
+		return (T)__free_node(node)
 
 	fn<?T> List.pop_front(List* self)!:
 		if self->empty():
@@ -188,7 +186,6 @@ space std:
 			return null
 
 		var<Node*> node = self->m_first
-		var data = (T)node->data
 		self->m_first = node->next
 
 		if self->m_first:
@@ -196,9 +193,8 @@ space std:
 		else:
 			self->m_last = null
 
-		__free_node(node)
+		return (T)__free_node(node)
 
-		return data
 
 	fn<.std.List.Node*> List.insert_before(List* self, Node* node, ?T data)!:
 		if !node:
@@ -236,8 +232,6 @@ space std:
 		if !node:
 			error.set(error.ID.InvalidArgument)
 			return null
-		
-		var data = (T)node->data
 
 		if node->prev:
 			node->prev->next = node->next
@@ -249,9 +243,7 @@ space std:
 		else:
 			self->m_last = node->prev
 
-		__free_node(node)
-
-		return data
+		return (T)__free_node(node)
 
 	fn<?T> List.remove_before(List* self, Node* node)!:
 		if !node:
@@ -287,8 +279,10 @@ space std:
 		node->data = data
 		return node
 
-	fn<> List.__free_node(Node* node)!:
+	fn<void*> List.__free_node(Node* node) nodiscard!:
+		var data = node->data
 		std.free(node)
+		return data
 
 	fn<.std.Iterator*> List.iterator(List* self)!:
 		return new( \

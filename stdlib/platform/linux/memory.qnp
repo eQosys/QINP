@@ -234,7 +234,7 @@ space std:
 		free(ptr)
 		return malloc(newSize)
 
-	fn<void> free(void* ptr)!:
+	fn<> free(void* ptr)!:
 		if ptr == null:
 			return
 		

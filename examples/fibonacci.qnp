@@ -5,4 +5,4 @@ fn<u64> fib(u64 n):
 
 var i = 0
 while i++ < 10:
-	std.print("% -> %\n", i, fib(i))
+	std.println("% -> %", i, fib(i))

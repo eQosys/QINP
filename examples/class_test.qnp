@@ -49,7 +49,8 @@ list->delete_iterator(it)
 std.println("list->length() = %", list->length())
 
 while !list->empty():
-    std.delete(list->pop_back({std.String*}))
-    std.println("list->length() = %", list->length())
+    var str = list->pop_back({std.String*})
+    std.println("length : str = % : '%'", list->length(), str->raw())
+    std.delete(str)
 
 std.delete(list)
