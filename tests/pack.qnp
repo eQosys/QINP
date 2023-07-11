@@ -10,7 +10,7 @@ std.print("\n")
 
 var<User> user
 user.age = 17
-std.strcpy(user.name, "TecStylos")
+std.memcpy(user.name, "TecStylos", 10)
 
 std.print("user.age = ")
 std.print(user.age)

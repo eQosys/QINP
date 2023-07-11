@@ -4,31 +4,44 @@
 space std:
     pack Iterator:
         define FN_HAS_NEXT fn<bool>(void const*)
-
         define FN_GET_DATA fn<void*>(void*)
-
         define FN_GET_NEXT fn<void*>(void*)
-
-        var<void*> m_curr
 
         var<FN_HAS_NEXT> m_hasNext
         var<FN_GET_DATA> m_getData
         var<FN_GET_NEXT> m_getNext
+        
+        var<void*> m_curr
 
-        fn<bool> __new__(Iterator* self, void* curr, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext) nodiscard...
+        \\ Constructs an iterator
+        \\ @param self Self pointer
+        \\ @param first First element
+        \\ @param fnHasNext Function to check if there is a next element
+        \\ @param fnGetData Function to get the data of the current element
+        \\ @param fnGetNext Function to get the next element
+        \\ @return True if successful
+        fn<bool> __new__(Iterator* self, void* first, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext) nodiscard...
 
+        \\ Destructs an iterator
+        \\ @param self Self pointer
         fn<> __delete__(Iterator* self)...
 
+        \\ Checks if there is a next element
+        \\ @param self Self pointer
+        \\ @return True if there is a next element
         fn<bool> hasNext(Iterator const* self) nodiscard...
         
+        \\ Gets the next element
+        \\ @param self Self pointer
+        \\ @return The next element
         fn<?T> next(Iterator* self)...
 
 
 
 defer
 space std:
-    fn<bool> Iterator.__new__(Iterator* self, void* curr, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext) nodiscard!:
-        self->m_curr = curr
+    fn<bool> Iterator.__new__(Iterator* self, void* first, FN_HAS_NEXT fnHasNext, FN_GET_DATA fnGetData, FN_GET_NEXT fnGetNext) nodiscard!:
+        self->m_curr = first
         self->m_hasNext = fnHasNext
         self->m_getData = fnGetData
         self->m_getNext = fnGetNext

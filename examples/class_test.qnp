@@ -44,6 +44,7 @@ var it = list->iterator()
 while it->hasNext():
     var str = it->next({std.String*})
     std.println("str->raw() = '%'", str->raw())
+list->delete_iterator(it)
 
 std.println("list->length() = %", list->length())
 
