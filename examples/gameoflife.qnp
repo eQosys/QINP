@@ -19,7 +19,11 @@ fn<> flip():
 	pBack = pTemp
 
 fn<> printBorder():
-	std.println("+%-*f-\\+", "", WIDTH)
+	std.print("+")
+	var i = -1
+	while ++i < WIDTH:
+		std.print("-")
+	std.println("+")
 
 fn<> show():
 	var i = -1
