@@ -11,6 +11,7 @@
  - fn\<u64\> std.__syscall(u64 num, T1 rdi)
  - fn\<u64\> std.__syscall(u64 num, T1 rdi, T2 rsi)
  - fn\<u64\> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx)
+ - fn\<u64\> std.__syscall(u64 num, T1 rdi, T2 rsi, T3 rdx, T4 r10)
  - [fn\<u64\> std.__syscall(u64 num)](#ref_915956373e7747c9bbfa457b4b9931a5)
 
 ## Macros
@@ -331,7 +332,7 @@
 
 ## Details
 #### <a id="ref_915956373e7747c9bbfa457b4b9931a5"/>fn\<u64\> std.__syscall(u64 num)
-> [Declaration](/stdlib/platform/linux/__syscall.qnp?plain=1#L13) | [Definition](/stdlib/platform/linux/__syscall.qnp?plain=1#L341)
+> [Declaration](/stdlib/platform/linux/__syscall.qnp?plain=1#L13) | [Definition](/stdlib/platform/linux/__syscall.qnp?plain=1#L342)
 ```qinp
 The following __syscall functions are used to invoke system calls.
 There are multiple overloads, each for a different number of arguments.

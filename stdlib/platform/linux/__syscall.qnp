@@ -14,6 +14,7 @@ space std:
 	fn<u64> __syscall(u64 num, ?T1 rdi)...
 	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi)...
 	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx)...
+	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx, ?T4 r10)...
 
 	\\ Syscalls (Taken from https://filippo.io/linux-syscall-table/)
 	
@@ -381,6 +382,23 @@ space std:
 			"mov rdi, [rbp $(nrdi)]"
 			"mov rsi, [rbp $(nrsi)]"
 			"mov rdx, [rbp $(nrdx)]"
+			"syscall"
+			"mov [rbp $(result)], rax"
+		return result
+
+	fn<u64> __syscall(u64 num, ?T1 rdi, ?T2 rsi, ?T3 rdx, ?T4 r10)!:
+		var<u64> nrdi = (u64)rdi
+		var<u64> nrsi = (u64)rsi
+		var<u64> nrdx = (u64)rdx
+		var<u64> nr10 = (u64)r10
+
+		var<u64> result
+		assembly:
+			"mov rax, [rbp $(num)]"
+			"mov rdi, [rbp $(nrdi)]"
+			"mov rsi, [rbp $(nrsi)]"
+			"mov rdx, [rbp $(nrdx)]"
+			"mov r10, [rbp $(nr10)]"
 			"syscall"
 			"mov [rbp $(result)], rax"
 		return result

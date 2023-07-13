@@ -12,3 +12,16 @@ defer
 space std:
 	fn<> exit(i32 status)!:
 		__syscall(__SYS_EXIT, status)
+
+	fn<i32> __system(u8 const* progPath, u8* const* argv, u8* const* envp)!:
+		var pid = __syscall(__SYS_FORK)
+		var status = 0
+		if pid < 0:
+			return -1
+
+		if pid == 0:
+			__syscall(__SYS_EXECVE, progPath, (void const*)argv, (void const*)envp)
+			exit(127)
+		else:
+			__syscall(__SYS_WAIT4, pid, &status, 0, 0)
+		return status

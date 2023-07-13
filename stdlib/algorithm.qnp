@@ -97,6 +97,17 @@ space std:
 	\\ @return The index of the element that matches the key, or -1 if no element matches the key.
 	fn<u64> bsearch(void const* key, void const* array, u64 count, u64 elemSize, FN_COMPARE compare)...
 
+	\\ Counts the number of elements in a variadic argument list.
+	\\ @param first The first argument.
+	\\ @return The number of arguments. (Always 1)
+	fn<u64> countVarArgs(?T first)...
+
+	\\ Counts the number of elements in a variadic argument list.
+	\\ @param first The first argument.
+	\\ @param ... The remaining arguments.
+	\\ @return The number of arguments.
+	fn<u64> countVarArgs(?T first, ...)...
+
 
 
 defer
@@ -213,3 +224,9 @@ space std:
 				return mid
 		
 		return -1
+
+	fn<u64> countVarArgs(?T first)!:
+		return 1
+
+	fn<u64> countVarArgs(?T first, ...)!:
+		return 1 + countVarArgs(...)

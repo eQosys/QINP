@@ -1,6 +1,10 @@
 \\ QINP Standard Library
 \\ System
 
+import "memory.qnp"
+import "string.qnp"
+import "algorithm.qnp"
+
 space std:
 
 	\\ Value to be returned by the program to indicate success.
@@ -20,8 +24,38 @@ space std:
 
 	\\ Get the environment variables passed to the program
 	\\ @return The pointer to an array of environment variables
-	fn<u8 const*const*> getenv() nodiscard...
+	fn<u8 *const*> getenv() nodiscard...
 
+	\\ Launch a program without arguments
+	\\ @param progPath The path to the program to launch
+	\\ @return The exit status of the launched program
+	fn<i32> system(u8 const* progPath)...
+
+	\\ Launch a program with arguments
+	\\ @param progPath The path to the program to launch
+	\\ @param ... The arguments to pass to the program
+	\\ @return The exit status of the launched program
+	fn<i32> system(u8 const* progPath, ...)...
+
+	\\ Internal function to fill the argv array
+	\\ @param index The index of the first element to put in the argv array
+	\\ @param argv The argv array to fill
+	\\ @param arg The first argument to put in the argv array
+	fn<bool> __systemFillArgv(u64 index, u8** argv, u8 const* arg)...
+
+	\\ Internal function to fill the argv array
+	\\ @param index The index of the first element to put in the argv array
+	\\ @param argv The argv array to fill
+	\\ @param arg The first argument to put in the argv array
+	\\ @param ... The remaining arguments to put in the argv array
+	fn<bool> __systemFillArgv(u64 index, u8** argv, u8 const* arg, ...)...
+
+	\\ Internal function to launch a program
+	\\ @param progPath The path to the program to launch
+	\\ @param argv The arguments to pass to the program
+	\\ @param envp The environment variables to pass to the program
+	\\ @return The exit status of the launched program
+	fn<i32> __system(u8 const* progPath, u8* const* argv, u8* const* envp)...		\\ Platform dependent implementation
 
 
 defer
@@ -43,12 +77,68 @@ space std:
 
 		return argc
 
-	fn<u8 const*const*> getenv() nodiscard!:
-		var<u8 const*const*> env
+	fn<u8 *const*> getenv() nodiscard!:
+		var<u8 *const*> env
 		assembly:
 			"mov rcx, [__#envp]"
 			"mov [rbp $(env)], rcx"
 
 		return env
+
+	fn<i32> system(u8 const* progPath)!:
+		const<u8*[2]> argv
+		if !__systemFillArgv(0, argv, progPath):
+			return EXIT_FAILURE
+		argv[1] = null
+
+		const result = __system(progPath, argv, getenv())
+
+		free(argv[0])
+
+		return result
+
+	fn<i32> system(u8 const* progPath, ...)!:
+		var<u64> argc = 1 + countVarArgs(...)
+		var<u8**> argv = (u8**)malloc((argc + 1) * sizeof(u8*))
+
+		if !__systemFillArgv(0, argv, progPath, ...):
+			free(argv)
+			return EXIT_FAILURE
+
+		argv[argc] = null
+
+		const result = __system(progPath, argv, getenv())
+
+		var i = 0
+		while i < argc:
+			free(argv[i])
+			++i
+
+		free(argv)
+
+		return result
+
+	fn<bool> __systemFillArgv(u64 index, u8** argv, u8 const* arg)!:
+		var argLen = strlen(arg) + 1
+
+		argv[index] = (u8*)malloc(argLen)
+		if !argv[index]: return false
+
+		memcpy(argv[index], arg, argLen)
+
+		return true
+
+	fn<bool> __systemFillArgv(u64 index, u8** argv, u8 const* arg, ...)!:
+		var argLen = strlen(arg) + 1
+
+		argv[index] = (u8*)malloc(argLen)
+		if !argv[index]: return false
+
+		memcpy(argv[index], arg, argLen)
+
+		if !__systemFillArgv(index + 1, argv, ...):
+			free(argv[index])
+			return false
+		return true
 
 import "platform/{platform}/system.qnp"

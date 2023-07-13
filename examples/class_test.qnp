@@ -1,6 +1,7 @@
 import "memory.qnp"
 import "stdio.qnp"
 import "order.qnp"
+import "system.qnp"
 
 import "string.qnp"
 import "list.qnp"
@@ -54,3 +55,5 @@ while !list->empty():
     std.delete(str)
 
 std.delete(list)
+
+std.println("%", std.system("google-chrome-stable", "-incognito"))
