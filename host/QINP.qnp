@@ -1,7 +1,5 @@
 import "stdio.qnp"
-import "fileio.qnp"
 import "system.qnp"
-import "memory.qnp"
 
 import "FileReader.qnp"
 
