@@ -12,6 +12,10 @@ if argc != 2:
 
 var content = readFile(argv[1])
 
+if content == null:
+    std.println("Failed to read file")
+    std.exit(1)
+
 std.println("Content:\n%", content->raw())
 
 std.println("Content size: % bytes", content->length())
