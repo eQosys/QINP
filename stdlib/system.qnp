@@ -20,22 +20,16 @@ space std:
 	\\ Get the arguments passed to the program
 	\\ @param pargv Address of the pointer where the pointer of the first argument will be stored
 	\\ @return The number of arguments passed to the program
-	fn<u64> getargs(u8 const*const** pargv) nodiscard...
+	fn<u64> getargs(u8* const** pargv) nodiscard...
 
 	\\ Get the environment variables passed to the program
 	\\ @return The pointer to an array of environment variables
-	fn<u8 *const*> getenv() nodiscard...
+	fn<u8* const*> getenv() nodiscard...
 
-	\\ Launch a program without arguments
-	\\ @param progPath The path to the program to launch
-	\\ @return The exit status of the launched program
-	fn<i32> system(u8 const* progPath)...
-
-	\\ Launch a program with arguments
-	\\ @param progPath The path to the program to launch
-	\\ @param ... The arguments to pass to the program
-	\\ @return The exit status of the launched program
-	fn<i32> system(u8 const* progPath, ...)...
+	\\ Launch a shell command
+	\\ @param command The command to launch
+	\\ @return The exit status of the launched command
+	fn<i32> system(u8 const* command)...
 
 	\\ Internal function to fill the argv array
 	\\ @param index The index of the first element to put in the argv array
@@ -60,7 +54,7 @@ space std:
 
 defer
 space std:
-	fn<u64> getargs(u8 const*const** pargv) nodiscard!:
+	fn<u64> getargs(u8* const** pargv) nodiscard!:
 		var<u64> argc
 		assembly:
 			"mov rcx, [__#argc]"
@@ -68,7 +62,7 @@ space std:
 		
 		if !pargv: return argc
 
-		var<u8 const*const*> argv
+		var<u8* const*> argv
 		assembly:
 			"mov rcx, [__#argv]"
 			"mov [rbp $(argv)], rcx"
@@ -77,37 +71,25 @@ space std:
 
 		return argc
 
-	fn<u8 *const*> getenv() nodiscard!:
-		var<u8 *const*> env
+	fn<u8* const*> getenv() nodiscard!:
+		var<u8* const*> env
 		assembly:
 			"mov rcx, [__#envp]"
 			"mov [rbp $(env)], rcx"
 
 		return env
 
-	fn<i32> system(u8 const* progPath)!:
-		const<u8*[2]> argv
-		if !__systemFillArgv(0, argv, progPath):
-			return EXIT_FAILURE
-		argv[1] = null
-
-		const result = __system(progPath, argv, getenv())
-
-		free(argv[0])
-
-		return result
-
-	fn<i32> system(u8 const* progPath, ...)!:
-		var<u64> argc = 1 + countVarArgs(...)
+	fn<i32> system(u8 const* command)!:
+		var<u64> argc = 3 \\ "sh", "-c", command
 		var<u8**> argv = (u8**)malloc((argc + 1) * sizeof(u8*))
 
-		if !__systemFillArgv(0, argv, progPath, ...):
+		if !__systemFillArgv(0, argv, "sh", "-c", command):
 			free(argv)
 			return EXIT_FAILURE
 
 		argv[argc] = null
 
-		const result = __system(progPath, argv, getenv())
+		const result = __system("/bin/sh", argv, getenv())
 
 		var i = 0
 		while i < argc:

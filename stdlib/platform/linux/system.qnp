@@ -15,7 +15,6 @@ space std:
 
 	fn<i32> __system(u8 const* progPath, u8* const* argv, u8* const* envp)!:
 		var pid = __syscall(__SYS_FORK)
-		var status = 0
 		if pid < 0:
 			return -1
 
@@ -23,5 +22,9 @@ space std:
 			__syscall(__SYS_EXECVE, progPath, (void const*)argv, (void const*)envp)
 			exit(127)
 		else:
+			var<i32> status
 			__syscall(__SYS_WAIT4, pid, &status, 0, 0)
-		return status
+			if (status & 0x7F) == 0:
+				return (status & 0xff00) >> 8
+
+		return -1

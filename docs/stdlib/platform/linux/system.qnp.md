@@ -12,7 +12,7 @@
 
 ## Details
 #### <a id="ref_3572f4eeaec019299c9b7e2698f6d37f"/>fn\<i32\> std.__system(u8 const* progPath, u8* const* argv, u8* const* envp)
-> [Declaration](/stdlib/system.qnp?plain=1#L58) | [Definition](/stdlib/platform/linux/system.qnp?plain=1#L16)
+> [Declaration](/stdlib/system.qnp?plain=1#L52) | [Definition](/stdlib/platform/linux/system.qnp?plain=1#L16)
 ```qinp
 Internal function to launch a program
 @param progPath The path to the program to launch

@@ -1,0 +1,11 @@
+import "system.qnp"
+import "string.qnp"
+
+var<u8* const*> argv
+var argc = std.getargs(&argv)
+
+if argc < 2:
+    std.println("Usage: exit_code <code>")
+    std.exit(std.EXIT_FAILURE)
+
+std.exit(std.stoi(argv[1], 10))
