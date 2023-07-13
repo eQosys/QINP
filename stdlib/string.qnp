@@ -21,6 +21,14 @@ space std:
 		fn<bool> __new__(String* self) nodiscard...
 
 		\\ Construct a string from a null-terminated string
+		\\ After calling this constructor the string is owned by the String object and will be freed when the String object is destructed.
+		\\ @param self Self pointer
+		\\ @param str The null-terminated string. The string should be allocated with malloc.
+		\\ @return True if successful, otherwise false
+		fn<bool> __new__(String* self, u8* str) nodiscard...
+
+		\\ Construct a string from a null-terminated string.
+		\\ Copies the string up to the first null terminator.
 		\\ @param self Self pointer
 		\\ @param str The null-terminated string to copy
 		\\ @return True if successful, otherwise false
@@ -194,6 +202,12 @@ defer
 space std:
 	fn<bool> String.__new__(String* self) nodiscard!:
 		return self->__new__("")
+
+	fn<bool> String.__new__(String* self, u8* str) nodiscard!:
+		self->m_data = str
+		self->m_length = strlen(str)
+		self->m_reserved = self->m_length
+		return true
 
 	fn<bool> String.__new__(String* self, u8 const* str) nodiscard!:
 		return self->__new__(str, strlen(str))

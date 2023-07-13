@@ -2608,7 +2608,6 @@ ExpressionRef getParseUnaryPrefixExpression(ProgGenInfo &info, int precLvl)
 	break;
 	case Expression::ExprType::MemberAccess:
 	{
-		// TODO: getParseExpression should not be surrounded by enterSymbol/exitSymbol
 		--info.currToken;
 		auto& tok = *info.currToken;
 		info.currToken = info.tokens->insert(info.currToken, makeToken(Token::Type::Identifier, "<global>"));

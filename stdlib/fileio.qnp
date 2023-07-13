@@ -1,6 +1,8 @@
 \\ QINP Standard Library
 \\ File input/output
 
+import "limits.qnp"
+
 space std:
 	\\ The implementation dependent file pack.
 	\\ It should not be used directly/dereferenced outside of the implementation.
@@ -42,8 +44,13 @@ space std:
 	\\  - Seek.Begin for the beginning of the file.
 	\\  - Seek.Current for the current position in the file.
 	\\  - Seek.End for the end of the file.
-	\\ @return The new position in the file, negative on error
+	\\ @return The new position in the file, U64_MAX on error.
 	fn<u64> fseek(File* pFile, u64 offset, Seek origin)...		\\ Platform dependent implementation
+
+	\\ Returns the size of the file in bytes.
+	\\ @param pFile The file object.
+	\\ @return The size of the file in bytes, U64_MAX on error.
+	fn<u64> fsize(File* pFile)...
 
 	\\ Closes the file.
 	\\ @param pFile The file object.
@@ -53,6 +60,22 @@ space std:
 
 defer
 space std:
-	pass
+	fn<u64> fsize(File* pFile)!:
+		var currPos = fseek(pFile, 0, Seek.Current)
+		if currPos == limits.U64_MAX:
+			return limits.U64_MAX
+
+		var end = fseek(pFile, 0, Seek.End)
+		if end == limits.U64_MAX:
+			return limits.U64_MAX
+		var begin = fseek(pFile, 0, Seek.Begin)
+		if begin == limits.U64_MAX:
+			return limits.U64_MAX
+		
+		if fseek(pFile, currPos, Seek.Begin) == limits.U64_MAX:
+			return limits.U64_MAX
+
+		return end - begin
+
 
 import "platform/{platform}/fileio.qnp"

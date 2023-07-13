@@ -1,7 +1,21 @@
 import "stdio.qnp"
+import "fileio.qnp"
 import "system.qnp"
+import "memory.qnp"
+
+import "FileReader.qnp"
 
 var<u8**> argv
 var<u64> argc = std.getargs(&argv)
 
-std.println("Argc: %", argc)
+if argc != 2:
+    std.println("Usage: % <filename>", argv[0])
+    std.exit(1)
+
+var content = readFile(argv[1])
+
+std.println("Content:\n%", content->raw())
+
+std.println("Content size: % bytes", content->length())
+
+std.free(content)

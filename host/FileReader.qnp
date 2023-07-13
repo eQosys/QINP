@@ -1,0 +1,29 @@
+import "fileio.qnp"
+import "string.qnp"
+import "memory.qnp"
+
+fn<std.String*> readFile(u8 const* filename):
+    var pFile = std.fopen(filename, "r")
+    if pFile == null:
+        return null
+
+    var size = std.fsize(pFile)
+
+    if size == std.limits.U64_MAX:
+        std.fclose(pFile)
+        return null
+
+    var buffer = (u8*)std.malloc(size + 1)
+    if buffer == null:
+        std.fclose(pFile)
+        return null
+
+    var nRead = std.fread(pFile, buffer, size)
+    if nRead != size:
+        std.free(buffer)
+        std.fclose(pFile)
+        return null
+    
+    buffer[size] = 0
+
+    return std.new(std.String, buffer)
