@@ -58,4 +58,6 @@ while !list->empty():
 
 std.delete(list)
 
-std.println("Exit code: %", std.system("./examples/exit_code.out"))
+std.println("Compiler exit code: %", std.system("./bin/Debug/QINP ./examples/exit_code.qnp"))
+
+std.println("exit_code.qnp exit code: %", std.system("./examples/exit_code.out 123"))

@@ -1545,6 +1545,8 @@ bool parseIndent(ProgGenInfo &info, bool ignoreLeadingWhitespaces)
 
 void unparseIndent(ProgGenInfo &info)
 {
+	if (info.indentLvl == 0)
+		return;
 	nextToken(info, -1);
 	assert(isIndentation(peekToken(info)) && "Previous token is not an indentation!");
 }
@@ -3645,9 +3647,6 @@ bool parseStatementIf(ProgGenInfo &info)
 		parseExpectedColon(info);
 
 		bool parsedNewline = parseOptionalNewline(info);
-
-		if (parsedNewline)
-			parsedNewline = true;
 
 		parseBodyEx(info, condBody.body, parsedNewline);
 
