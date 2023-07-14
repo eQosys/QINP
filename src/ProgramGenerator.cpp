@@ -2485,7 +2485,7 @@ ExpressionRef getParseUnarySuffixExpression(ProgGenInfo &info, int precLvl)
 
 			if (isPack(baseSymbol) && !isDefined(baseSymbol))
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Cannot access member of undefined pack type!");
-			if (isPack(baseSymbol) && !exp->left->isObject)
+			if (isPack(baseSymbol) && !exp->left->isObject && !isEnum(exp->right->symbol))
 				THROW_PROG_GEN_ERROR_POS(exp->pos, "Expected object!");
 
 			exp->datatype = exp->right->symbol->var.datatype;

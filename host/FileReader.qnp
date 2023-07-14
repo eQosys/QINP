@@ -3,27 +3,32 @@ import "string.qnp"
 import "memory.qnp"
 
 fn<std.String*> readFile(u8 const* filename):
-    var pFile = std.fopen(filename, "r")
-    if pFile == null:
+    var file = std.new(std.File, filename, "r")
+    if file == null:
         return null
 
-    var size = std.fsize(pFile)
+    var size = file->size()
 
     if size == std.limits.U64_MAX:
-        std.fclose(pFile)
+        std.delete(file)
         return null
 
     var buffer = (u8*)std.malloc(size + 1)
     if buffer == null:
-        std.fclose(pFile)
+        std.delete(file)
         return null
 
-    var nRead = std.fread(pFile, buffer, size)
+    var nRead = file->read(buffer, size)
+    std.delete(file)
     if nRead != size:
         std.free(buffer)
-        std.fclose(pFile)
         return null
     
     buffer[size] = 0
 
-    return std.new(std.String, buffer)
+    var str = std.new(std.String, buffer)
+    if str == null:
+        std.free(buffer)
+        return null
+
+    return str

@@ -14,14 +14,77 @@ space std:
 	define __OPEN_CREATE 0100
 	define __OPEN_TRUNCATE 01000
 
+	define __FILE_DESC i64
+
+	\\ Opens a file for reading and/or writing.
+	\\ If the file could not be opened, null is returned.
+	\\ @param filename The name of the file to open.
+	\\ @param mode The mode to open the file in. The mode can be one of the following:
+	\\  - "r" for reading.
+	\\  - "w" for writing.
+	\\  - "rw" for reading and writing.
+	\\ @return The file object.
+	fn<__FILE_DESC> __fopen(u8 const* filename, u8 const* mode) nodiscard...
+
+	\\ Reads num bytes from the file into the destination buffer.
+	\\ May return less than num bytes if the end of the file is reached.
+	\\ @param pFile The file object.
+	\\ @param dest The destination buffer.
+	\\ @param num The number of bytes to read.
+	\\ @return The number of bytes read.
+	fn<u64> __fread(__FILE_DESC fd, void* dest, u64 num)...
+
+	\\ Writes num bytes from the source buffer to the file.
+	\\ @param pFile The file object.
+	\\ @param src The source buffer.
+	\\ @param num The number of bytes to write.
+	\\ @return The number of bytes written.
+	fn<u64> __fwrite(__FILE_DESC fd, void const* src, u64 num)...
+
+	\\ Seeks to the specified offset in the file.
+	\\ @param pFile The file object.
+	\\ @param offset The offset to seek to.
+	\\ @param origin The origin to seek from. The origin can be one of the following:
+	\\  - Seek.Begin for the beginning of the file.
+	\\  - Seek.Current for the current position in the file.
+	\\  - Seek.End for the end of the file.
+	\\ @return The new position in the file, U64_MAX on error.
+	fn<u64> __fseek(__FILE_DESC fd, u64 offset, File.Seek origin)...
+
+	\\ Returns the size of the file in bytes.
+	\\ @param pFile The file object.
+	\\ @return The size of the file in bytes, U64_MAX on error.
+	fn<u64> __fsize(__FILE_DESC fd) nodiscard...
+
+	\\ Closes the file.
+	\\ @param pFile The file object.
+	fn<> __fclose(__FILE_DESC fd)...
+
 
 
 defer
 space std:
-	pack File!:
-		pass
+	fn<bool> File.__new__(File* self, u8 const* filename, u8 const* mode) nodiscard!:
+		self->m_data = __fopen(filename, mode)
+		if self->m_data < 0:
+			return false
+		return true
 
-	fn<File*> fopen(u8 const* filename, u8 const* modeStr) nodiscard!:
+	fn<> File.__delete__(File* self)!:
+		__fclose(self->m_data)
+
+	fn<u64> File.read(File* self, void* dest, u64 num)!:
+		return __fread(self->m_data, dest, num)
+
+	fn<u64> File.write(File* self, void const* src, u64 num)!:
+		return __fwrite(self->m_data, src, num)
+
+	fn<u64> File.seek(File* self, u64 offset, Seek origin)!:
+		return __fseek(self->m_data, offset, origin)
+
+
+	
+	fn<__FILE_DESC> __fopen(u8 const* filename, u8 const* modeStr) nodiscard!:
 		if !filename || !modeStr:
 			error.set(error.ID.InvalidArgument)
 			return null
@@ -40,47 +103,43 @@ space std:
 			error.set(error.ID.InvalidArgument)
 			return null
 
-		const fd = __syscall(__SYS_OPEN, filename, flags, mode)
+		const<__FILE_DESC> fd = __syscall(__SYS_OPEN, filename, flags, mode)
 
+		return fd
+
+	fn<u64> __fread(__FILE_DESC fd, void* dest, u64 num)!:
+		if fd < 0 || !dest:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
+		return __syscall(__SYS_READ, fd, dest, num)
+
+	fn<u64> __fwrite(__FILE_DESC fd, void const* src, u64 num)!:
+		if fd < 0 || !src:
+			error.set(error.ID.InvalidArgument)
+			return -1
+
+		return __syscall(__SYS_WRITE, fd, src, num)
+
+	fn<u64> __fseek(__FILE_DESC fd, u64 offset, File.Seek origin)!:
 		if fd < 0:
-			error.set(error.ID.FileIO)
-			return null
-		
-		return (File*)fd
-
-	fn<u64> fread(File* pFile, void* dest, u64 num)!:
-		if !pFile || !dest:
-			error.set(error.ID.InvalidArgument)
-			return -1
-
-		return __syscall(__SYS_READ, pFile, dest, num)
-
-	fn<u64> fwrite(File* pFile, void const* src, u64 num)!:
-		if !pFile || !src:
-			error.set(error.ID.InvalidArgument)
-			return -1
-
-		return __syscall(__SYS_WRITE, pFile, src, num)
-
-	fn<u64> fseek(File* pFile, u64 offset, Seek origin)!:
-		if !pFile:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
 		var<u64> uOrigin
 
-		if origin == Seek.Begin: uOrigin = 0
-		elif origin == Seek.Current: uOrigin = 1
-		elif origin == Seek.End: uOrigin = 2
+		if origin == File.Seek.Begin: uOrigin = 0
+		elif origin == File.Seek.Current: uOrigin = 1
+		elif origin == File.Seek.End: uOrigin = 2
 		else:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		return __syscall(__SYS_LSEEK, pFile, offset, uOrigin)
+		return __syscall(__SYS_LSEEK, fd, offset, uOrigin)
 
-	fn<> fclose(File* pFile)!:
-		if !pFile:
+	fn<> __fclose(__FILE_DESC fd)!:
+		if fd < 0:
 			error.set(error.ID.InvalidArgument)
 			return
 
-		__syscall(__SYS_CLOSE, pFile)
+		__syscall(__SYS_CLOSE, fd)

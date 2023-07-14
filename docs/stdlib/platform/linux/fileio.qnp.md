@@ -3,22 +3,20 @@
 
 ## Overview
  - [Functions](#functions)
- - [Packs/Unions](#packs-unions)
  - [Macros](#macros)
  - [Details](#details)
 
 
 ## Functions
- - [fn\<\> std.fclose(std.File* pFile)](#ref_5d668723bcfba6ce11011f7b6ae97bf6)
- - [fn\<std.File*\> std.fopen(u8 const* filename, u8 const* modeStr) nodiscard](#ref_f9331ab8684ba190709da22b2d519fa0)
- - [fn\<u64\> std.fread(std.File* pFile, void* dest, u64 num)](#ref_2fef09ea4725ef1fccbc8a59e2265bd5)
- - [fn\<u64\> std.fseek(std.File* pFile, u64 offset, std.Seek origin)](#ref_e88978765371b1f5ab1497fa5b56b8b5)
- - [fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num)](#ref_a90a02b94bce7e88b866031f0500b730)
-
-## Packs/Unions
- - [pack std.File](#ref_b25eae4d8f926169fb555cf1169a353f)
+ - [fn\<\> std.__fclose(i64 fd)](#ref_e867971f564d362b0879dd5b5c2f0016)
+ - [fn\<i64\> std.__fopen(u8 const* filename, u8 const* modeStr) nodiscard](#ref_9adc735223aa4f9dcf7fe6a91728ebb8)
+ - [fn\<u64\> std.__fread(i64 fd, void* dest, u64 num)](#ref_537bdcb1682ebb5533faf7cdda5bd5f1)
+ - [fn\<u64\> std.__fseek(i64 fd, u64 offset, std.File.Seek origin)](#ref_9a3244ca8e00b3a063a92ad446a951b1)
+ - [fn\<u64\> std.__fsize(i64 fd) nodiscard ...](#ref_9369a68611b8f987e5f3704cfec2401f)
+ - [fn\<u64\> std.__fwrite(i64 fd, void const* src, u64 num)](#ref_7ebf11b3da02555be58f4e4e5321cc10)
 
 ## Macros
+ - std.__FILE_DESC
  - std.__OPEN_CREATE
  - std.__OPEN_READONLY
  - std.__OPEN_READWRITE
@@ -26,20 +24,14 @@
  - std.__OPEN_WRITEONLY
 
 ## Details
-#### <a id="ref_b25eae4d8f926169fb555cf1169a353f"/>pack std.File
-> [Declaration](/stdlib/fileio.qnp?plain=1#L9) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L21)
-```qinp
-The implementation dependent file pack.
-It should not be used directly/dereferenced outside of the implementation.
-```
-#### <a id="ref_5d668723bcfba6ce11011f7b6ae97bf6"/>fn\<\> std.fclose(std.File* pFile)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L57) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L81)
+#### <a id="ref_e867971f564d362b0879dd5b5c2f0016"/>fn\<\> std.__fclose(i64 fd)
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L61) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L140)
 ```qinp
 Closes the file.
 @param pFile The file object.
 ```
-#### <a id="ref_f9331ab8684ba190709da22b2d519fa0"/>fn\<std.File*\> std.fopen(u8 const* filename, u8 const* modeStr) nodiscard
-> [Declaration](/stdlib/fileio.qnp?plain=1#L23) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L24)
+#### <a id="ref_9adc735223aa4f9dcf7fe6a91728ebb8"/>fn\<i64\> std.__fopen(u8 const* filename, u8 const* modeStr) nodiscard
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L27) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L87)
 ```qinp
 Opens a file for reading and/or writing.
 If the file could not be opened, null is returned.
@@ -50,8 +42,8 @@ If the file could not be opened, null is returned.
  - "rw" for reading and writing.
 @return The file object.
 ```
-#### <a id="ref_2fef09ea4725ef1fccbc8a59e2265bd5"/>fn\<u64\> std.fread(std.File* pFile, void* dest, u64 num)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L31) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L51)
+#### <a id="ref_537bdcb1682ebb5533faf7cdda5bd5f1"/>fn\<u64\> std.__fread(i64 fd, void* dest, u64 num)
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L35) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L110)
 ```qinp
 Reads num bytes from the file into the destination buffer.
 May return less than num bytes if the end of the file is reached.
@@ -60,8 +52,8 @@ May return less than num bytes if the end of the file is reached.
 @param num The number of bytes to read.
 @return The number of bytes read.
 ```
-#### <a id="ref_e88978765371b1f5ab1497fa5b56b8b5"/>fn\<u64\> std.fseek(std.File* pFile, u64 offset, std.Seek origin)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L48) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L65)
+#### <a id="ref_9a3244ca8e00b3a063a92ad446a951b1"/>fn\<u64\> std.__fseek(i64 fd, u64 offset, std.File.Seek origin)
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L52) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L124)
 ```qinp
 Seeks to the specified offset in the file.
 @param pFile The file object.
@@ -72,8 +64,22 @@ Seeks to the specified offset in the file.
  - Seek.End for the end of the file.
 @return The new position in the file, U64_MAX on error.
 ```
-#### <a id="ref_a90a02b94bce7e88b866031f0500b730"/>fn\<u64\> std.fwrite(std.File* pFile, void const* src, u64 num)
-> [Declaration](/stdlib/fileio.qnp?plain=1#L38) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L58)
+#### <a id="ref_c81cfecb66a99d799b853ee646eed0a7"/>i64 fd
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L57)
+```qinp
+Returns the size of the file in bytes.
+@param pFile The file object.
+@return The size of the file in bytes, U64_MAX on error.
+```
+#### <a id="ref_9369a68611b8f987e5f3704cfec2401f"/>fn\<u64\> std.__fsize(i64 fd) nodiscard ...
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L57)
+```qinp
+Returns the size of the file in bytes.
+@param pFile The file object.
+@return The size of the file in bytes, U64_MAX on error.
+```
+#### <a id="ref_7ebf11b3da02555be58f4e4e5321cc10"/>fn\<u64\> std.__fwrite(i64 fd, void const* src, u64 num)
+> [Declaration](/stdlib/platform/linux/fileio.qnp?plain=1#L42) | [Definition](/stdlib/platform/linux/fileio.qnp?plain=1#L117)
 ```qinp
 Writes num bytes from the source buffer to the file.
 @param pFile The file object.

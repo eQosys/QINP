@@ -1,13 +1,16 @@
 \\ QINP Standard Library
 \\ Standard Input/Output - Linux Specific
 
+\\ Both fileio libs are required
 import "../../fileio.qnp"
+import "fileio.qnp"
+
 import "../../error.qnp"
 
 space std:
-	define __STDIN (.std.File*)0
-	define __STDOUT (.std.File*)1
-	define __STDERR (.std.File*)2
+	define __STDIN (.std.__FILE_DESC)0
+	define __STDOUT (.std.__FILE_DESC)1
+	define __STDERR (.std.__FILE_DESC)2
 
 
 
@@ -18,14 +21,14 @@ space std:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		return fwrite(__STDOUT, str, num)
+		return __fwrite(__STDOUT, str, num)
 
 	fn<i32> scann(u8* dest, u64 num)!:
 		if !dest:
 			error.set(error.ID.InvalidArgument)
 			return -1
 
-		const result = fread(__STDIN, dest, num)
+		const result = __fread(__STDIN, dest, num)
 		if result >= 0:
 			dest[result] = 0
 		return result

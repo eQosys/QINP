@@ -4,75 +4,75 @@
 import "limits.qnp"
 
 space std:
-	\\ The implementation dependent file pack.
-	\\ It should not be used directly/dereferenced outside of the implementation.
-	pack File...
+	\\ The file class
+	pack File:
+		\\ Used to specify the origin to seek from.
+		enum Seek:
+			Begin, Current, End
 
-	\\ Used to specify the origin to seek from.
-	enum Seek:
-		Begin, Current, End
+		var<i64> m_data		\\ Platform dependent data
 
-	\\ Opens a file for reading and/or writing.
-	\\ If the file could not be opened, null is returned.
-	\\ @param filename The name of the file to open.
-	\\ @param mode The mode to open the file in. The mode can be one of the following:
-	\\  - "r" for reading.
-	\\  - "w" for writing.
-	\\  - "rw" for reading and writing.
-	\\ @return The file object.
-	fn<File*> fopen(u8 const* filename, u8 const* mode) nodiscard...		\\ Platform dependent implementation
+		\\ Constructor that opens a file for reading and/or writing.
+		\\ If the file could not be opened, false is returned.
+		\\ @param filename The name of the file to open.
+		\\ @param mode The mode to open the file in. The mode can be one of the following:
+		\\  - "r" for reading.
+		\\  - "w" for writing.
+		\\  - "rw" for reading and writing.
+		\\ @return True if the file was opened successfully, false otherwise.
+		fn<bool> __new__(File* self, u8 const* filename, u8 const* mode) nodiscard...		\\ Platform dependent implementation
 
-	\\ Reads num bytes from the file into the destination buffer.
-	\\ May return less than num bytes if the end of the file is reached.
-	\\ @param pFile The file object.
-	\\ @param dest The destination buffer.
-	\\ @param num The number of bytes to read.
-	\\ @return The number of bytes read.
-	fn<u64> fread(File* pFile, void* dest, u64 num)...		\\ Platform dependent implementation
+		\\ Destructor that closes the file.
+		\\ @param pFile The file object.
+		fn<> __delete__(File* self)...		\\ Platform dependent implementation
 
-	\\ Writes num bytes from the source buffer to the file.
-	\\ @param pFile The file object.
-	\\ @param src The source buffer.
-	\\ @param num The number of bytes to write.
-	\\ @return The number of bytes written.
-	fn<u64> fwrite(File* pFile, void const* src, u64 num)...		\\ Platform dependent implementation
+		\\ Reads num bytes from the file into the destination buffer.
+		\\ May return less than num bytes if the end of the file is reached.
+		\\ @param pFile The file object.
+		\\ @param dest The destination buffer.
+		\\ @param num The number of bytes to read.
+		\\ @return The number of bytes read.
+		fn<u64> read(File* self, void* dest, u64 num)...		\\ Platform dependent implementation
 
-	\\ Seeks to the specified offset in the file.
-	\\ @param pFile The file object.
-	\\ @param offset The offset to seek to.
-	\\ @param origin The origin to seek from. The origin can be one of the following:
-	\\  - Seek.Begin for the beginning of the file.
-	\\  - Seek.Current for the current position in the file.
-	\\  - Seek.End for the end of the file.
-	\\ @return The new position in the file, U64_MAX on error.
-	fn<u64> fseek(File* pFile, u64 offset, Seek origin)...		\\ Platform dependent implementation
+		\\ Writes num bytes from the source buffer to the file.
+		\\ @param pFile The file object.
+		\\ @param src The source buffer.
+		\\ @param num The number of bytes to write.
+		\\ @return The number of bytes written.
+		fn<u64> write(File* self, void const* src, u64 num)...		\\ Platform dependent implementation
 
-	\\ Returns the size of the file in bytes.
-	\\ @param pFile The file object.
-	\\ @return The size of the file in bytes, U64_MAX on error.
-	fn<u64> fsize(File* pFile)...
+		\\ Seeks to the specified offset in the file.
+		\\ @param pFile The file object.
+		\\ @param offset The offset to seek to.
+		\\ @param origin The origin to seek from. The origin can be one of the following:
+		\\  - Seek.Begin for the beginning of the file.
+		\\  - Seek.Current for the current position in the file.
+		\\  - Seek.End for the end of the file.
+		\\ @return The new position in the file, U64_MAX on error.
+		fn<u64> seek(File* self, u64 offset, Seek origin)...		\\ Platform dependent implementation
 
-	\\ Closes the file.
-	\\ @param pFile The file object.
-	fn<> fclose(File* pFile)...		\\ Platform dependent implementation
+		\\ Returns the size of the file in bytes.
+		\\ @param pFile The file object.
+		\\ @return The size of the file in bytes, U64_MAX on error.
+		fn<u64> size(File* self) nodiscard...
 
 
 
 defer
 space std:
-	fn<u64> fsize(File* pFile)!:
-		var currPos = fseek(pFile, 0, Seek.Current)
+	fn<u64> File.size(File* self) nodiscard!:
+		var currPos = self->seek(0, Seek.Current)
 		if currPos == limits.U64_MAX:
 			return limits.U64_MAX
 
-		var end = fseek(pFile, 0, Seek.End)
+		var end = self->seek(0, Seek.End)
 		if end == limits.U64_MAX:
 			return limits.U64_MAX
-		var begin = fseek(pFile, 0, Seek.Begin)
+		var begin = self->seek(0, Seek.Begin)
 		if begin == limits.U64_MAX:
 			return limits.U64_MAX
 		
-		if fseek(pFile, currPos, Seek.Begin) == limits.U64_MAX:
+		if self->seek(currPos, Seek.Begin) == limits.U64_MAX:
 			return limits.U64_MAX
 
 		return end - begin
