@@ -2,6 +2,11 @@ import "fileio.qnp"
 import "string.qnp"
 import "memory.qnp"
 
+\\ Reads a file into a string.
+\\ Returns null if the file could not be read.
+\\ The returned string must be deleted with std.delete.
+\\ @parm filename The name of the file to read.
+\\ @return The contents of the file as a string.
 fn<std.String*> readFile(u8 const* filename):
     var file = std.new(std.File, filename, "r")
     if file == null:
