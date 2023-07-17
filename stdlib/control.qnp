@@ -1,0 +1,128 @@
+\\ QINP Standard Library
+\\ Color
+
+import "string.qnp"
+
+space std:
+    space Control:
+
+        \\ Control IDs
+        enum ID:
+            Reset = 0,
+            Bold = 1, Faint = 2,
+            Italic = 3, Underline = 4,
+            BlinkSlow = 5, BlinkRapid = 6,
+            Invert = 7, Hide = 8,
+            Strike = 9,
+            FontDefault = 10, Font1 = 11, Font2 = 12, Font3 = 13, Font4 = 14, Font5 = 15, Font6 = 16, Font7 = 17, Font8 = 18, Font9 = 19,
+            Fraktur = 20,
+            DoubleUnderline = 21,
+            NormalIntensity = 22,
+            NoItalic = 23, NoUnderline = 24,
+            NoBlink = 25, ProportionalSpace = 26,
+            NoInvert = 27, Reveal = 28,
+            NoStrike = 29,
+            FGBlack = 30, FGRed = 31, FGGreen = 32, FGYellow = 33, FGBlue = 34, FGMagenta = 35, FGCyan = 36, FGWhite = 37,
+            FGColor = 38, FGDefault = 39,
+            BGBlack = 40, BGRed = 41, BGGreen = 42, BGYellow = 43, BGBlue = 44, BGMagenta = 45, BGCyan = 46, BGWhite = 47,
+            BGColor = 48, BGDefault = 49,
+            NoProportionalSpace = 50,
+            Frame = 51, Encircle = 52,
+            Overline = 53,
+            NoFrameOrEncircle = 54,
+            NoOverline = 55,
+            UnderlineColor = 58,
+            UnderlineColorDefault = 59,
+            FGBBlack = 90, FGBRed = 91, FGBGreen = 92, FGBYellow = 93, FGBBlue = 94, FGBMagenta = 95, FGBCyan = 96, FGBWhite = 97,
+            BGBBlack = 100, BGBRed = 101, BGBGreen = 102, BGBYellow = 103, BGBBlue = 104, BGBMagenta = 105, BGBCyan = 106, BGBWhite = 107
+
+        \\ Generates a string representing a control sequence
+        \\ The returned string is valid until the next call to this function
+        \\ @param id The ID of the control sequence
+        \\ @return The control sequence string
+        fn<u8 const*> make(ID id) nodiscard...
+
+        \\ Generates a string representing a control sequence
+        \\ The returned string is valid until the next call to this function
+        \\ @param id The ID of the control sequence
+        \\ @param ... The parameters of the control sequence
+        \\ @return The control sequence string
+        fn<u8 const*> make(ID id, ...) nodiscard...
+
+        \\ Handles the control ID and appends required data when needed
+        \\ @param buffer The buffer to append to
+        \\ @param id The ID of the control sequence
+        \\ @param append Whether to append to the buffer or clear it
+        fn<> __handleControl(String* buffer, ID id, bool append)...
+
+        \\ Appends a parameter to the buffer
+        \\ @param buffer The buffer to append to
+        \\ @param param The parameter to append
+        fn<> __make(String* buffer, i64 param)...
+
+        \\ Appends multiple parameters to the buffer
+        \\ @param buffer The buffer to append to
+        \\ @param param The first parameter to append
+        \\ @param ... The rest of the parameters to append
+        fn<> __make(String* buffer, i64 param, ...)...
+
+        \\ Appends a control ID to the buffer
+        \\ @param buffer The buffer to append to
+        \\ @param id The ID of the control sequence
+        fn<> __make(String* buffer, ID id)...
+        
+        \\ Appends a control ID and multiple parameters to the buffer
+        \\ @param buffer The buffer to append to
+        \\ @param id The ID of the control sequence
+        \\ @param ... The parameters of the control sequence
+        fn<> __make(String* buffer, ID id, ...)...
+
+
+
+defer
+space std:
+    space Control:
+        fn<u8 const*> make(ID id) nodiscard!:
+            static buffer = new(String)
+            __handleControl(buffer, id, false)
+            buffer->append("m")
+            return buffer->raw()
+
+        fn<u8 const*> make(ID id, ...) nodiscard!:
+            static buffer = new(String)
+            __handleControl(buffer, id, false)
+            __make(buffer, ...)
+            buffer->append("m")
+            return buffer->raw()
+
+        fn<> __handleControl(String* buffer, ID id, bool append)!:
+            if append:
+                buffer->append(";")
+            else:
+                buffer->clear()
+                buffer->append("\e[")
+
+            buffer->append(itos((i64)id))
+
+            if id == ID.FGColor:
+                buffer->append(";2")
+            elif id == ID.BGColor:
+                buffer->append(";2")
+            elif id == ID.UnderlineColor:
+                buffer->append(";2")
+
+        fn<> __make(String* buffer, i64 param)!:
+            buffer->append(";")
+            buffer->append(itos(param))
+
+        fn<> __make(String* buffer, i64 param, ...)!:
+            buffer->append(";")
+            buffer->append(itos(param))
+            __make(buffer, ...)
+
+        fn<> __make(String* buffer, ID id)!:
+            __handleControl(buffer, id, true)
+
+        fn<> __make(String* buffer, ID id, ...)!:
+            __handleControl(buffer, id, true)
+            __make(buffer, ...)

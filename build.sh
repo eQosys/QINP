@@ -48,6 +48,7 @@ echo "Building project..."
 cmake --build . -j ${NUM_PROCESSORS}
 
 echo "Copying stdlib..."
+rm -r stdlib
 cp -r ../../stdlib .
 
 stdlib_origin=$(realpath ../../stdlib)
