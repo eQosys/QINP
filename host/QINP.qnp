@@ -1,6 +1,6 @@
 import "stdio.qnp"
 import "system.qnp"
-import "Color.qnp"
+import "color.qnp"
 
 import "FileReader.qnp"
 
