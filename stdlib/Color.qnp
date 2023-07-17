@@ -1,0 +1,39 @@
+\\ QINP Standard Library
+\\ Color
+
+import "string.qnp"
+
+space std:
+    space Color:
+        \\ Returns a string that sets the foreground color to the specified RGB value.
+        \\ The string is valid until the next call to this function.
+        \\ @param r The red component of the color.
+        \\ @param g The green component of the color.
+        \\ @param b The blue component of the color.
+        \\ @return A string that sets the foreground color to the specified RGB value.
+        fn<u8 const*> rgb(u8 r, u8 g, u8 b) nodiscard...
+
+        \\ Returns a string that resets the foreground color to the default value.
+        \\ The string is valid until the next call to this function.
+        \\ @return A string that resets the foreground color to the default value.
+        fn<u8 const*> reset() nodiscard...
+
+
+
+defer
+space std:
+    space Color:
+        fn<u8 const*> rgb(u8 r, u8 g, u8 b) nodiscard!:
+            static buffer = new(String)
+            buffer->clear()
+            buffer->append("\e[38;2;")
+            buffer->append(itos(r))
+            buffer->append(";")
+            buffer->append(itos(g))
+            buffer->append(";")
+            buffer->append(itos(b))
+            buffer->append("m")
+            return buffer->raw()
+
+        fn<u8 const*> reset() nodiscard!:
+            return "\e[39m"

@@ -4,6 +4,7 @@
 The Standard Library is a collection of functions, packs and definitions that are available to all QINP programs and are essential to the language.
 
 All files building the Standard Library can be found in the [stdlib](../../stdlib/) directory:
+ - [./Color.qnp](Color.qnp.md)
  - [./algorithm.qnp](algorithm.qnp.md)
  - [./assert.qnp](assert.qnp.md)
  - [./error.qnp](error.qnp.md)

@@ -83,7 +83,7 @@ Internal enum used to specify the alignment of a format modifier
 Internal enum used to specify the type of a format modifier
 ```
 #### <a id="ref_8d858898d0b08f9b97737f3c3eff04cd"/>fn\<i32\> std.__extractFmtMod(u8 const* format, std.__PrintFmtMod* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L119) | [Definition](/stdlib/stdio.qnp?plain=1#L350)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L119) | [Definition](/stdlib/stdio.qnp?plain=1#L349)
 ```qinp
 Internal function to extract the format modifier from the format string
 @param format Format string
@@ -91,7 +91,7 @@ Internal function to extract the format modifier from the format string
 @return Number of characters read (Length of the format modifier)
 ```
 #### <a id="ref_15c4a375e7cefb736fe9aef870e0264f"/>fn\<i32\> std.__getPrintLen(T val, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L153) | [Definition](/stdlib/stdio.qnp?plain=1#L456)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L153) | [Definition](/stdlib/stdio.qnp?plain=1#L454)
 ```qinp
 Internal function to retrieve the length of a value to print
 @param val The value to get the length of
@@ -99,7 +99,7 @@ Internal function to retrieve the length of a value to print
 @return The length of the value
 ```
 #### <a id="ref_bb1126fb57306b42b2b3387b2bbdfb5c"/>fn\<i32\> std.__getPrintLen(bool val, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L165) | [Definition](/stdlib/stdio.qnp?plain=1#L473)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L165) | [Definition](/stdlib/stdio.qnp?plain=1#L470)
 ```qinp
 Internal function to retrieve the length of a boolean value to print
 @param val The value to get the length of
@@ -107,7 +107,7 @@ Internal function to retrieve the length of a boolean value to print
 @return The length of the value
 ```
 #### <a id="ref_1cc38996e99d43f41cbe8f42e18ef134"/>fn\<i32\> std.__getPrintLen(u8 const* str, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L159) | [Definition](/stdlib/stdio.qnp?plain=1#L470)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L159) | [Definition](/stdlib/stdio.qnp?plain=1#L467)
 ```qinp
 Internal function to retrieve the length of a string to print
 @param val The value to get the length of
@@ -115,13 +115,13 @@ Internal function to retrieve the length of a string to print
 @return The length of the value
 ```
 #### <a id="ref_37bcdadf02c99d8ea10acde888a42b6b"/>fn\<\> std.__initFmtMod(std.__PrintFmtMod* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L147) | [Definition](/stdlib/stdio.qnp?plain=1#L449)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L147) | [Definition](/stdlib/stdio.qnp?plain=1#L447)
 ```qinp
 Internal function to initialize a format modifier
 @param pMod Pointer to the format modifier to initialize
 ```
 #### <a id="ref_a87f9feb670f6c64c4bb885fdfcdd9bf"/>fn\<i32\> std.__printMaxLen(u8 const* str, u64 len)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L143) | [Definition](/stdlib/stdio.qnp?plain=1#L442)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L143) | [Definition](/stdlib/stdio.qnp?plain=1#L440)
 ```qinp
 Internal function to print len characters of a string or less.
 @param str The string to print
@@ -129,7 +129,7 @@ Internal function to print len characters of a string or less.
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_6b9a103f73ae694630941f8282cd151e"/>fn\<i32\> std.__printMod(T val, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L125) | [Definition](/stdlib/stdio.qnp?plain=1#L419)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L125) | [Definition](/stdlib/stdio.qnp?plain=1#L418)
 ```qinp
 Internal function to print a value using a specified format modifier
 @param val The value to print
@@ -137,7 +137,7 @@ Internal function to print a value using a specified format modifier
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_0bd4ef163eb56c2d0b45ad437af1146b"/>fn\<i32\> std.__printMod(bool val, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L137) | [Definition](/stdlib/stdio.qnp?plain=1#L438)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L137) | [Definition](/stdlib/stdio.qnp?plain=1#L436)
 ```qinp
 Internal function to print a value using a specified format modifier
 @param val The value to print
@@ -145,7 +145,7 @@ Internal function to print a value using a specified format modifier
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_abb0f5ceef094fb8614a253482e3ada6"/>fn\<i32\> std.__printMod(u8 const* str, std.__PrintFmtMod const* pMod)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L131) | [Definition](/stdlib/stdio.qnp?plain=1#L433)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L131) | [Definition](/stdlib/stdio.qnp?plain=1#L431)
 ```qinp
 Internal function to print a value using a specified format modifier
 @param str The string to print
@@ -153,7 +153,7 @@ Internal function to print a value using a specified format modifier
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_a6781587f4aa25c30fa24af9483e6dc1"/>fn\<i32\> std.__printf(u8 const** pFormat, T val)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L113) | [Definition](/stdlib/stdio.qnp?plain=1#L310)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L113) | [Definition](/stdlib/stdio.qnp?plain=1#L309)
 ```qinp
 Internal function to print a formatted string to stdout
 @param pFormat A pointer to the format string
@@ -175,7 +175,7 @@ Flushes the stdout buffer
 @return The number of characters flushed. Negative on error.
 ```
 #### <a id="ref_2429c551516f61cdca2e363ab9b74350"/>fn\<u8\> std.getchar() nodiscard
-> [Declaration](/stdlib/stdio.qnp?plain=1#L184) | [Definition](/stdlib/stdio.qnp?plain=1#L493)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L184) | [Definition](/stdlib/stdio.qnp?plain=1#L490)
 ```qinp
 Reads a character from stdin
 @return The character read
@@ -188,7 +188,7 @@ Print a base-10 value with any other integral type to stdout
 @return The number of characters printed. Negative on error.
 ```
 #### <a id="ref_5e066c72a6c50411410df4851174b4e0"/>fn\<i32\> std.print(u8 const* format, T val)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L74) | [Definition](/stdlib/stdio.qnp?plain=1#L254)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L74) | [Definition](/stdlib/stdio.qnp?plain=1#L253)
 ```qinp
 Format a string and print it to stdout
 @param format Format string
@@ -196,7 +196,7 @@ Format a string and print it to stdout
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_586b298024c5f840d713391c45c1f481"/>fn\<i32\> std.print(u8 const* format, T val, ...)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L81) | [Definition](/stdlib/stdio.qnp?plain=1#L266)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L81) | [Definition](/stdlib/stdio.qnp?plain=1#L265)
 ```qinp
 Format a string and print it to stdout
 @param format Format string
@@ -226,7 +226,7 @@ Print a null-terminated string to stdout
 @return The number of characters printed. Negative on error.
 ```
 #### <a id="ref_52b5afd4a2680699eba5ede30e4842e7"/>fn\<i32\> std.printArray(void const* arr, u64 count, u64 elemSize, fn\<i32\>(void const*) printElem, u8 const* sep)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L96) | [Definition](/stdlib/stdio.qnp?plain=1#L286)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L96) | [Definition](/stdlib/stdio.qnp?plain=1#L285)
 ```qinp
 Print an array of values to stdout
 @param arr The array to print
@@ -237,7 +237,7 @@ Print an array of values to stdout
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_c2952d644882bd28f8816b5386710435"/>fn\<i32\> std.printArray(void const* arr, u64 count, u64 elemSize, fn\<i32\>(void const*) printElem, u8 const* pre, u8 const* sep, u8 const* post)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L107) | [Definition](/stdlib/stdio.qnp?plain=1#L301)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L107) | [Definition](/stdlib/stdio.qnp?plain=1#L300)
 ```qinp
 Print an array of values to stdout, surrounded by pre/post strings
 @param arr The array to print
@@ -250,7 +250,7 @@ Print an array of values to stdout, surrounded by pre/post strings
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_b8d3dfd7974fda8c277d368fa0d89280"/>fn\<i32\> std.printRep(T val, u64 n)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L87) | [Definition](/stdlib/stdio.qnp?plain=1#L278)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L87) | [Definition](/stdlib/stdio.qnp?plain=1#L277)
 ```qinp
 Print a value n timess to stdout
 @param val The value to print
@@ -258,20 +258,20 @@ Print a value n timess to stdout
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_37010d86dac151fe6c59b96e986d8278"/>fn\<i32\> std.println()
-> [Declaration](/stdlib/stdio.qnp?plain=1#L169) | [Definition](/stdlib/stdio.qnp?plain=1#L476)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L169) | [Definition](/stdlib/stdio.qnp?plain=1#L473)
 ```qinp
 Prints a newline to stdout
 @return Positive on success, negative on error.
 ```
 #### <a id="ref_9e2171085cb5b7b5490df6abe30bfbe1"/>fn\<i32\> std.println(T val)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L174) | [Definition](/stdlib/stdio.qnp?plain=1#L479)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L174) | [Definition](/stdlib/stdio.qnp?plain=1#L476)
 ```qinp
 Same as print but appends a newline
 @param val The value to print (passed to appropriate print function)
 @return The number of characters printed, negative on error.
 ```
 #### <a id="ref_6bf6d9c9c0fb93b9a3744f05bb3e75c9"/>fn\<i32\> std.println(u8 const* format, ...)
-> [Declaration](/stdlib/stdio.qnp?plain=1#L180) | [Definition](/stdlib/stdio.qnp?plain=1#L486)
+> [Declaration](/stdlib/stdio.qnp?plain=1#L180) | [Definition](/stdlib/stdio.qnp?plain=1#L483)
 ```qinp
 Same as print but appends a newline
 @param format Format string

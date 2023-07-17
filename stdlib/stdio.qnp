@@ -248,8 +248,7 @@ space std:
 		return print(val ? "true" : "false")
 
 	fn<i32> print(?T val)!:
-		const<u8[32]> buf
-		return print(itos(val, buf, 10))
+		return print(itos(val))
 
 	fn<i32> print(u8 const* format, ?T val)!:
 		if !format:
@@ -417,15 +416,14 @@ space std:
 		return nChars
 
 	fn<i32> __printMod(?T val, __PrintFmtMod const* pMod)!:
-		var<u8[32]> buf
 		if pMod->type == __PrintFmtMod_Type.Int_Bin:
-			return print(itos(val, buf, 2))
+			return print(itos(val, 2))
 		if pMod->type == __PrintFmtMod_Type.Int_Oct:
-			return print(itos(val, buf, 8))
+			return print(itos(val, 8))
 		if pMod->type == __PrintFmtMod_Type.Int_Dec:
-			return print(itos(val, buf, 10))
+			return print(itos(val, 10))
 		if pMod->type == __PrintFmtMod_Type.Int_Hex:
-			return print(itos(val, buf, 16))
+			return print(itos(val, 16))
 		if pMod->type == __PrintFmtMod_Type.Int_Chr:
 			return print((u8)val)
 		return print(val)
@@ -454,18 +452,17 @@ space std:
 		pMod->fillChar = ' '
 
 	fn<i32> __getPrintLen(?T val, __PrintFmtMod const* pMod)!:
-		var<u8[32]> buf
 		if pMod->type == __PrintFmtMod_Type.Int_Bin:
-			return strlen(itos(val, buf, 2))
+			return strlen(itos(val, 2))
 		if pMod->type == __PrintFmtMod_Type.Int_Oct:
-			return strlen(itos(val, buf, 8))
+			return strlen(itos(val, 8))
 		if pMod->type == __PrintFmtMod_Type.Int_Dec:
-			return strlen(itos(val, buf, 10))
+			return strlen(itos(val, 10))
 		if pMod->type == __PrintFmtMod_Type.Int_Hex:
-			return strlen(itos(val, buf, 16))
+			return strlen(itos(val, 16))
 		if pMod->type == __PrintFmtMod_Type.Int_Chr:
 			return 1
-		return strlen(itos(val, buf, 10))
+		return strlen(itos(val, 10))
 
 	fn<i32> __getPrintLen(u8 const* str, __PrintFmtMod const* pMod)!:
 		return min(strlen(str), pMod->strLen)

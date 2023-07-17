@@ -13,7 +13,9 @@
  - [fn\<bool\> std.isalpha(u8 c) nodiscard](#ref_1810b29239e4f51451bfa0cdf36bc00b)
  - [fn\<bool\> std.isnum(u8 c) nodiscard](#ref_5cce27e95be0c2bbcf08898292a3d97a)
  - [fn\<bool\> std.isspace(u8 c) nodiscard](#ref_e2ca17504d3e1a69b4336ffa868d87c8)
- - [fn\<u8*\> std.itos(i64 num, u8* str, i64 base) nodiscard](#ref_34463c6fab2d4a04f6e2668d0d9c6042)
+ - [fn\<u8 const*\> std.itos(i64 num) nodiscard](#ref_be7070c07b16cd403ccb979886acbe40)
+ - [fn\<u8 const*\> std.itos(i64 num, i64 base) nodiscard](#ref_ebe2c47186f09e7f07b6dc144479373b)
+ - [fn\<u8 const*\> std.itos(i64 num, u8* str, i64 base) nodiscard](#ref_feeb2eba0e13d3e31e246bcf5b742cf4)
  - [fn\<i64\> std.stoi(u8 const* str, i64 base) nodiscard](#ref_3bf5a26a032bb58ff2d53e04c1c0d822)
  - [fn\<i64\> std.stoi(u8 const* str, u8 const** pNextOut, i64 base) nodiscard](#ref_4a7d161f40478de04a97c48a225a00b1)
  - [fn\<u8 const*\> std.strchr(u8 const* str, u8 ch) nodiscard](#ref_1b8eac4fa8f7258b56cd6c32f45cc214)
@@ -42,35 +44,51 @@ String class
 Used to convert between string and integer
 ```
 #### <a id="ref_8f439e4c57f68e41f372499cbbc726f3"/>fn\<bool\> std.isalnum(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L194) | [Definition](/stdlib/string.qnp?plain=1#L430)
+> [Declaration](/stdlib/string.qnp?plain=1#L220) | [Definition](/stdlib/string.qnp?plain=1#L471)
 ```qinp
 Returns wether a character is a letter or a digit
 @param c The character to check
 @return True if the character is a letter or a digit, false otherwise
 ```
 #### <a id="ref_1810b29239e4f51451bfa0cdf36bc00b"/>fn\<bool\> std.isalpha(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L189) | [Definition](/stdlib/string.qnp?plain=1#L427)
+> [Declaration](/stdlib/string.qnp?plain=1#L215) | [Definition](/stdlib/string.qnp?plain=1#L468)
 ```qinp
 Returns wether a character is a letter
 @param c The character to check
 @return True if the character is a letter, false otherwise
 ```
 #### <a id="ref_5cce27e95be0c2bbcf08898292a3d97a"/>fn\<bool\> std.isnum(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L184) | [Definition](/stdlib/string.qnp?plain=1#L424)
+> [Declaration](/stdlib/string.qnp?plain=1#L210) | [Definition](/stdlib/string.qnp?plain=1#L465)
 ```qinp
 Returns wether a character is a number
 @param c The character to check
 @return True if the character is a number, false otherwise
 ```
 #### <a id="ref_e2ca17504d3e1a69b4336ffa868d87c8"/>fn\<bool\> std.isspace(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L199) | [Definition](/stdlib/string.qnp?plain=1#L433)
+> [Declaration](/stdlib/string.qnp?plain=1#L225) | [Definition](/stdlib/string.qnp?plain=1#L474)
 ```qinp
 Returns wether a character is a whitespace character
 @param c The character to check
 @return True if the character is a whitespace character, false otherwise
 ```
-#### <a id="ref_34463c6fab2d4a04f6e2668d0d9c6042"/>fn\<u8*\> std.itos(i64 num, u8* str, i64 base) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L156) | [Definition](/stdlib/string.qnp?plain=1#L366)
+#### <a id="ref_be7070c07b16cd403ccb979886acbe40"/>fn\<u8 const*\> std.itos(i64 num) nodiscard
+> [Declaration](/stdlib/string.qnp?plain=1#L169) | [Definition](/stdlib/string.qnp?plain=1#L400)
+```qinp
+Convert an integer to a string
+Using base 10 and an internal buffer
+@param num The integer to convert
+@return The null-terminated string representation of the integer
+```
+#### <a id="ref_ebe2c47186f09e7f07b6dc144479373b"/>fn\<u8 const*\> std.itos(i64 num, i64 base) nodiscard
+> [Declaration](/stdlib/string.qnp?plain=1#L175) | [Definition](/stdlib/string.qnp?plain=1#L403)
+```qinp
+Convert an integer to a string
+Using an internal buffer
+@param num The integer to convert
+@param str The string to store the converted integer in
+```
+#### <a id="ref_feeb2eba0e13d3e31e246bcf5b742cf4"/>fn\<u8 const*\> std.itos(i64 num, u8* str, i64 base) nodiscard
+> [Declaration](/stdlib/string.qnp?plain=1#L182) | [Definition](/stdlib/string.qnp?plain=1#L407)
 ```qinp
 Convert an integer to a string
 @param num The integer to convert
@@ -79,7 +97,7 @@ Convert an integer to a string
 @return The null-terminated string representation of the integer
 ```
 #### <a id="ref_3bf5a26a032bb58ff2d53e04c1c0d822"/>fn\<i64\> std.stoi(u8 const* str, i64 base) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L162) | [Definition](/stdlib/string.qnp?plain=1#L388)
+> [Declaration](/stdlib/string.qnp?plain=1#L188) | [Definition](/stdlib/string.qnp?plain=1#L429)
 ```qinp
 Convert a string to a base-10 integer
 @param str The string to convert
@@ -87,7 +105,7 @@ Convert a string to a base-10 integer
 @return The integer represented by the string
 ```
 #### <a id="ref_4a7d161f40478de04a97c48a225a00b1"/>fn\<i64\> std.stoi(u8 const* str, u8 const** pNextOut, i64 base) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L169) | [Definition](/stdlib/string.qnp?plain=1#L391)
+> [Declaration](/stdlib/string.qnp?plain=1#L195) | [Definition](/stdlib/string.qnp?plain=1#L432)
 ```qinp
 Convert a string to a base-10 integer
 @param str The string to convert
@@ -96,7 +114,7 @@ Convert a string to a base-10 integer
 @return The integer represented by the string
 ```
 #### <a id="ref_1b8eac4fa8f7258b56cd6c32f45cc214"/>fn\<u8 const*\> std.strchr(u8 const* str, u8 ch) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L138) | [Definition](/stdlib/string.qnp?plain=1#L337)
+> [Declaration](/stdlib/string.qnp?plain=1#L152) | [Definition](/stdlib/string.qnp?plain=1#L371)
 ```qinp
 Locate the first occurencce of a character in a string
 @param str The string to search
@@ -104,7 +122,7 @@ Locate the first occurencce of a character in a string
 @return The address of the first occurence of ch in str, or NULL if not found
 ```
 #### <a id="ref_1ddb3c2646043df42d044dfd1e31b53b"/>fn\<i64\> std.strcmp(u8 const* str1, u8 const* str2) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L132) | [Definition](/stdlib/string.qnp?plain=1#L327)
+> [Declaration](/stdlib/string.qnp?plain=1#L146) | [Definition](/stdlib/string.qnp?plain=1#L361)
 ```qinp
 Compare two null-terminated strings
 @param str1 The first string
@@ -112,21 +130,21 @@ Compare two null-terminated strings
 @return 0 if the strings are equal, < 0 if str1 is less than str2, > 0 if str1 is greater than str2
 ```
 #### <a id="ref_c4bde52892a632c8cd48352ae7235680"/>fn\<u64\> std.strlen(u8 const* str) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L126) | [Definition](/stdlib/string.qnp?plain=1#L318)
+> [Declaration](/stdlib/string.qnp?plain=1#L140) | [Definition](/stdlib/string.qnp?plain=1#L352)
 ```qinp
 Determine the length of a string (without the null terminator)
 @param str The null-terminated string to measure
 @return The length of the string
 ```
 #### <a id="ref_ee07764fe157d5dabaa4c07f6acd4200"/>fn\<u8*\> std.strrev(u8* str)
-> [Declaration](/stdlib/string.qnp?plain=1#L143) | [Definition](/stdlib/string.qnp?plain=1#L345)
+> [Declaration](/stdlib/string.qnp?plain=1#L157) | [Definition](/stdlib/string.qnp?plain=1#L379)
 ```qinp
 Reverse a null-terminated string (in-place)
 @param str The null-terminated string to reverse
 @return The reversed string
 ```
 #### <a id="ref_c64e1e2f0896b5ad920d1b505678868c"/>fn\<u8*\> std.strrev(u8* begin, u8* end)
-> [Declaration](/stdlib/string.qnp?plain=1#L149) | [Definition](/stdlib/string.qnp?plain=1#L352)
+> [Declaration](/stdlib/string.qnp?plain=1#L163) | [Definition](/stdlib/string.qnp?plain=1#L386)
 ```qinp
 Reverse a string of specified length (in-place)
 @param begin Pointer to the first character of the string to reverse
@@ -134,14 +152,14 @@ Reverse a string of specified length (in-place)
 @return The reversed string
 ```
 #### <a id="ref_39608303a9ea8c9a53b85e065cd581ca"/>fn\<u8\> std.tolower(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L179) | [Definition](/stdlib/string.qnp?plain=1#L421)
+> [Declaration](/stdlib/string.qnp?plain=1#L205) | [Definition](/stdlib/string.qnp?plain=1#L462)
 ```qinp
 Converts a character to lowercase. Values not in the range 'A' to 'Z' are unchanged.
 @param c The character to convert
 @return The lowercase character
 ```
 #### <a id="ref_d5143f66f35780c2301272595fa2e37e"/>fn\<u8\> std.toupper(u8 c) nodiscard
-> [Declaration](/stdlib/string.qnp?plain=1#L174) | [Definition](/stdlib/string.qnp?plain=1#L418)
+> [Declaration](/stdlib/string.qnp?plain=1#L200) | [Definition](/stdlib/string.qnp?plain=1#L459)
 ```qinp
 Converts a character to uppercase. Values not in the range 'a' to 'z' are unchanged.
 @param c The character to convert

@@ -1,5 +1,6 @@
 import "stdio.qnp"
 import "system.qnp"
+import "Color.qnp"
 
 import "FileReader.qnp"
 
@@ -7,7 +8,7 @@ var<u8**> argv
 var<u64> argc = std.getargs(&argv)
 
 if argc != 2:
-    std.println("Usage: % <filename>", argv[0])
+    std.println("Usage: % %<filename>%", argv[0], std.Color.rgb(255, 0, 0), std.Color.reset())
     std.exit(1)
 
 var content = readFile(argv[1])

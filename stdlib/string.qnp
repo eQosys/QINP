@@ -73,6 +73,20 @@ space std:
 		\\ @return True if successful, otherwise false
 		fn<bool> append(String* self, String const* other)...
 
+		\\ Append a null-terminated string to the end of the string
+		\\ If the operation fails, the string is left unchanged
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to append
+		\\ @return True if successful, otherwise false
+		fn<bool> append(String* self, u8 const* other)...
+
+		\\ Append the first num characters of a string to the end of the string
+		\\ @param self Self pointer
+		\\ @param other The string to append
+		\\ @param num The number of characters to append
+		\\ @return True if successful, otherwise false
+		fn<bool> append(String* self, u8 const* other, u64 num)...
+
 		\\ Push a character to the end of the string
 		\\ If the operation fails, the string is left unchanged
 		\\ @param self Self pointer
@@ -149,11 +163,23 @@ space std:
 	fn<u8*> strrev(u8* begin, u8* end)...
 
 	\\ Convert an integer to a string
+	\\ Using base 10 and an internal buffer
+	\\ @param num The integer to convert
+	\\ @return The null-terminated string representation of the integer
+	fn<u8 const*> itos(i64 num) nodiscard...
+
+	\\ Convert an integer to a string
+	\\ Using an internal buffer
+	\\ @param num The integer to convert
+	\\ @param str The string to store the converted integer in
+	fn<u8 const*> itos(i64 num, i64 base) nodiscard...
+
+	\\ Convert an integer to a string
 	\\ @param num The integer to convert
 	\\ @param str The string to store the converted integer in
 	\\ @param base The base to use for the conversion (Valid values are 2 to 36 (inclusive))
 	\\ @return The null-terminated string representation of the integer
-	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard...
+	fn<u8 const*> itos(i64 num, u8* str, i64 base) nodiscard...
 
 	\\ Convert a string to a base-10 integer
 	\\ @param str The string to convert
@@ -243,10 +269,17 @@ space std:
 		return self->set(0, '\0')
 
 	fn<bool> String.append(String* self, String const* other)!:
-		var newLength = self->m_length + other->m_length
+		return self->append(other->m_data, other->m_length)
+
+	fn<bool> String.append(String* self, u8 const* other)!:
+		return self->append(other, strlen(other))
+
+	fn<bool> String.append(String* self, u8 const* other, u64 num)!:
+		var newLength = self->m_length + num
 
 		if newLength <= self->m_reserved:
-			memcpy(self->m_data + self->m_length, other->m_data, other->m_length + 1)
+			memcpy(self->m_data + self->m_length, other, num)
+			self->m_data[newLength] = '\0'
 			self->m_length = newLength
 			return true
 
@@ -254,7 +287,8 @@ space std:
 		if !newData:
 			return false
 		memcpy(newData, self->m_data, self->m_length)
-		memcpy(newData + self->m_length, other->m_data, other->m_length + 1)
+		memcpy(newData + self->m_length, other, num)
+		newData[newLength] = '\0'
 		self->__delete__()
 		self->m_data = newData
 		self->m_length = newLength
@@ -363,7 +397,14 @@ space std:
 
 		return str
 
-	fn<u8*> itos(i64 num, u8* str, i64 base) nodiscard!:
+	fn<u8 const*> itos(i64 num) nodiscard!:
+		return itos(num, 10)
+
+	fn<u8 const*> itos(i64 num, i64 base) nodiscard!:
+		static<u8[32]> buffer
+		return itos(num, buffer, base)
+
+	fn<u8 const*> itos(i64 num, u8* str, i64 base) nodiscard!:
 		if !str || base < 2 || base > 36:
 			error.set(error.ID.InvalidArgument)
 			return null
