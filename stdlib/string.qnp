@@ -156,6 +156,63 @@ space std:
 		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
 		fn<u64> find(String const* self, u8 const* other, u64 num) nodiscard...
 
+		\\ Returns whether both strings are equal or not
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return True if both strings are equal, otherwise false
+		fn<bool> equals(String const* self, String const* other) nodiscard...
+
+		\\ Returns whether both strings are equal or not
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return True if both strings are equal, otherwise false
+		fn<bool> equals(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns whether both strings are equal or not
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @param num The number of characters to compare
+		\\ @return True if both strings are equal, otherwise false
+		fn<bool> equals(String const* self, u8 const* other, u64 num) nodiscard...
+
+		\\ Returns whether this string begins with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return True if this string begins with the other string, otherwise false
+		fn<bool> beginswith(String const* self, String const* other) nodiscard...
+
+		\\ Returns whether this string begins with the other string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return True if this string begins with the other string, otherwise false
+		fn<bool> beginswith(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns whether this string begins with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @param num The number of characters to compare
+		\\ @return True if this string begins with the other string, otherwise false
+		fn<bool> beginswith(String const* self, u8 const* other, u64 num) nodiscard...
+
+		\\ Returns whether this string ends with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return True if this string ends with the other string, otherwise false
+		fn<bool> endswith(String const* self, String const* other) nodiscard...
+
+		\\ Returns whether this string ends with the other string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return True if this string ends with the other string, otherwise false
+		fn<bool> endswith(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns whether this string ends with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @param num The number of characters to compare
+		\\ @return True if this string ends with the other string, otherwise false
+		fn<bool> endswith(String const* self, u8 const* other, u64 num) nodiscard...
+
 		\\ lower
 		\\ upper
 
@@ -398,6 +455,33 @@ space std:
 			++i
 		
 		return -1
+
+	fn<bool> String.equals(String const* self, String const* other) nodiscard!:
+		return self->compare(other) == Order.Equal
+
+	fn<bool> String.equals(String const* self, u8 const* other) nodiscard!:
+		return self->compare(other) == Order.Equal
+
+	fn<bool> String.equals(String const* self, u8 const* other, u64 num) nodiscard!:
+		return self->compare(other, num) == Order.Equal
+
+	fn<bool> String.beginswith(String const* self, String const* other) nodiscard!:
+		return self->beginswith(other->m_data, other->m_length)
+
+	fn<bool> String.beginswith(String const* self, u8 const* other) nodiscard!:
+		return self->beginswith(other, strlen(other))
+
+	fn<bool> String.beginswith(String const* self, u8 const* other, u64 num) nodiscard!:
+		return self->find(other, num) == 0
+
+	fn<bool> String.endswith(String const* self, String const* other) nodiscard!:
+		return self->endswith(other->m_data, other->m_length)
+
+	fn<bool> String.endswith(String const* self, u8 const* other) nodiscard!:
+		return self->endswith(other, strlen(other))
+
+	fn<bool> String.endswith(String const* self, u8 const* other, u64 num) nodiscard!:
+		return self->find(other, num) == self->m_length - num
 
 
 
