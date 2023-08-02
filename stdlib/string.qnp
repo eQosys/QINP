@@ -131,6 +131,25 @@ space std:
 		\\ @return True if the string is empty, otherwise false
 		fn<bool> empty(String const* self) nodiscard...
 
+		\\ Returns the first appearance of the other string in this string
+		\\ @param self Self pointer
+		\\ @param other The string to search for
+		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
+		fn<u64> find(String const* self, String const* other) nodiscard...
+
+		\\ Returns the first appearance of the other string in this string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to search for
+		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
+		fn<u64> find(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns the first appearance of the other string in this string
+		\\ @param self Self pointer
+		\\ @param other The string to search for
+		\\ @param num The number of characters to search for
+		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
+		fn<u64> find(String const* self, u8 const* other, u64 num) nodiscard...
+
 		\\ lower
 		\\ upper
 
@@ -346,6 +365,30 @@ space std:
 
 	fn<bool> String.empty(String const* self) nodiscard!:
 		return self->m_length == 0
+
+	fn<u64> String.find(String const* self, String const* other) nodiscard!:
+		return self->find(other->m_data, other->m_length)
+
+	fn<u64> String.find(String const* self, u8 const* other) nodiscard!:
+		return self->find(other, strlen(other))
+
+	fn<u64> String.find(String const* self, u8 const* other, u64 num) nodiscard!:
+		if num > self->m_length:
+			return -1
+			
+		var<u64> i = 0
+
+		while i < self->m_length - num + 1:
+			var<u64> j = 0
+			while j < num:
+				if self->m_data[i + j] != other[j]:
+					break
+				++j
+			if j == num:
+				return i
+			++i
+		
+		return -1
 
 
 
