@@ -51,11 +51,6 @@ space std:
 	\\ @return The new position in the file, U64_MAX on error.
 	fn<u64> __fseek(__FILE_DESC fd, u64 offset, File.Seek origin)...
 
-	\\ Returns the size of the file in bytes.
-	\\ @param pFile The file object.
-	\\ @return The size of the file in bytes, U64_MAX on error.
-	fn<u64> __fsize(__FILE_DESC fd) nodiscard...
-
 	\\ Closes the file.
 	\\ @param pFile The file object.
 	fn<> __fclose(__FILE_DESC fd)...
