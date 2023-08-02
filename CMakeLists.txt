@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project("QINP")
+project("qinp")
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -12,7 +12,7 @@ endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
 add_executable(
-    QINP
+    qinp
     "src/QINP.cpp"
     "src/Token.cpp"
     "src/ExecCmd.cpp"
@@ -31,11 +31,11 @@ add_executable(
 )
 
 include_directories(
-	QINP
+	qinp
 	"src/"
 )
 
-set_property(TARGET QINP PROPERTY CXX_STANDARD 17)
+set_property(TARGET qinp PROPERTY CXX_STANDARD 17)
 
 if (WIN32)
     add_compile_definitions(QINP_PLATFORM_WINDOWS)
