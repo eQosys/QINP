@@ -112,6 +112,12 @@ space std:
 		\\ @return Less/Equal/Greater (Lexicographical)
 		fn<Order> compare(String const* self, String const* other) nodiscard...
 
+		\\ Compare this string with a null-terminated string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return Less/Equal/Greater (Lexicographical)
+		fn<Order> compare(String const* self, u8 const* other) nodiscard...
+
 		\\ Get the character at the specified index
 		\\ @param self Self pointer
 		\\ @param index The index of the character to get
@@ -339,13 +345,16 @@ space std:
 		swap_obj(self->m_reserved, other->m_reserved)
 
 	fn<Order> String.compare(String const* self, String const* other) nodiscard!:
+		return self->compare(other->m_data)
+
+	fn<Order> String.compare(String const* self, u8 const* other) nodiscard!:
 		var<u64> i = 0
-		while self->m_data[i] == other->m_data[i] && i < self->m_length:
+		while self->m_data[i] == other[i] && i < self->m_length:
 			++i
 
-		if self->m_data[i] < other->m_data[i]:
+		if self->m_data[i] < other[i]:
 			return Order.Less
-		elif self->m_data[i] > other->m_data[i]:
+		elif self->m_data[i] > other[i]:
 			return Order.Greater
 		return Order.Equal
 
