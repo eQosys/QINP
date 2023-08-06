@@ -323,7 +323,7 @@ void primRegRToLVal(NasmGenInfo& ngi, bool wasPushed)
 
 bool secRegLToRVal(NasmGenInfo& ngi, bool pushAddr = false)
 {
-	if (isRValue(ngi.secReg) || isXValue(ngi.primReg))
+	if (isRValue(ngi.secReg) || isXValue(ngi.secReg))
 		return false;
 	if (pushAddr)
 		pushSecReg(ngi);
@@ -644,6 +644,9 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
+
+		printf("secRegState: %d\n", (int)ngi.secReg.state);
+
 		secRegLToRVal(ngi);
 
 		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
@@ -661,7 +664,6 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
-		secRegLToRVal(ngi);
 
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 
