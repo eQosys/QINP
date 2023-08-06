@@ -8,12 +8,7 @@ At the moment only Linux (full) and Windows (partial) are supported (both x86_64
 
 ## Getting Started
 
-Instructions on how to build QINP can be found [here](./docs/home.md#getting-started).
+Instructions on how to build QINP can be found in the  [Documentation](./docs/home.md#getting-started).
+The Documentation outlines the basic working concepts of the QINP language, how to use the Compiler and includes the [Standard Library Reference](./docs/stdlib/stdlib.md)
 
 A good starting point to get to know the QINP language are the [examples](./examples/) and the [tests](./tests/).
-
-## Documentation
-
-An overview of the documentation can be found [here](./docs/home.md).
-
-All documentation related files are located in the [./docs/](./docs/) directory.

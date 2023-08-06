@@ -3,6 +3,7 @@ import "system.qnp"
 import "control.qnp"
 
 import "FileReader.qnp"
+import "Tokenizer.qnp"
 
 var<u8**> argv
 var<u64> argc = std.getargs(&argv)
@@ -11,14 +12,22 @@ if argc != 2:
     std.println("Usage: % %<filename>%", argv[0], std.Control.make(std.Control.ID.FGColor, 255, 0, 0, std.Control.ID.Underline), std.Control.make(std.Control.ID.FGDefault, std.Control.ID.NoUnderline))
     std.exit(1)
 
-var content = readFile(argv[1])
+var filename = std.new(std.String, (u8 const*)argv[1])
+
+var content = readFile(filename->raw())
 
 if content == null:
-    std.println("Failed to read file '%'!", argv[1])
+    std.println("Failed to read file '%'!", filename->raw())
     std.exit(1)
 
-std.println("Content:\n%", content->raw())
-
-std.println("Content size: % bytes", content->length())
-
+var tokenList = tokenize(content, filename)
 std.free(content)
+
+if tokenList == null:
+    std.println("Failed to tokenize file '%'!", filename->raw())
+    std.free(filename)
+    std.exit(1)
+
+std.free(filename)
+
+std.free(tokenList)

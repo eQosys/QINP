@@ -1,0 +1,29 @@
+import "string.qnp"
+
+pack TokenPosition:
+    var<std.String const*> file
+    var<i64> line
+    var<i64> col
+
+enum TokenType:
+    None,
+    Keyword,
+    BuiltinType,
+    Identifier,
+    String,
+    Newline,
+    NewlineIgnore,
+    Comment,
+    Operator,
+    Separator,
+    LiteralInteger,
+    LiteralCharacter,
+    LiteralBool,
+    LiteralNull,
+    Indentation,
+    EndOfCode
+
+pack Token:
+    var<TokenPosition> pos
+    var<TokenType> type
+    var<std.String*> value
