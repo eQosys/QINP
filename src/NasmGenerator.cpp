@@ -644,6 +644,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
+		secRegLToRVal(ngi);
 
 		ss << "  shl " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 
@@ -660,6 +661,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 		popSecReg(ngi);
 
 		bool pushed = primRegLToRVal(ngi, true);
+		secRegLToRVal(ngi);
 
 		ss << "  shr " << primRegUsage(ngi) << ", " << secRegName(1) << "\n";
 
