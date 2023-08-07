@@ -64,9 +64,8 @@ space std:
         fn<bool> remove(Map* self, void* key)...
 
         \\ Gets the value of the given key
-        \\ Key will be deleted by the map. Even if the key does not exist.
         \\ @param self Self pointer
-        \\ @param key Key to get
+        \\ @param key Key to get, the key will not be deleted
         \\ @return Value of the given key, null if the key does not exist
         fn<void*> get(Map* self, void* key) nodiscard...
 
@@ -113,7 +112,7 @@ space std:
                 node = node->right
             else:
                 return true
-            
+        
         return false
 
     fn<bool> Map.insert(Map* self, void* key, void* value)!:
@@ -153,10 +152,10 @@ space std:
             self->m_deleteValue(value)
             return false
 
-        self->m_deleteValue(node->value)
-        node->value = value
         self->m_deleteKey(node->key)
         node->key = key
+        self->m_deleteValue(node->value)
+        node->value = value
 
         return true
 
@@ -230,8 +229,6 @@ space std:
 
     fn<void*> Map.get(Map* self, void* key) nodiscard!:
         var node = self->__getNode(key, null)
-        
-        self->m_deleteKey(key)
 
         if node == null:
             return null

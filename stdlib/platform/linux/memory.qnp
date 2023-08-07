@@ -49,7 +49,11 @@ space std:
 	\\ If the block is adjacent to other free blocks, they are merged.
 	\\ If the block is at the end of the data segment and above a certain size, the data segment is shrunk.
 	\\ @param block The block to free
-	fn<> __freeBlock(__MemBlockHeader* block)...
+	fn<> __addBlockToList(__MemBlockHeader* block)...
+
+	\\ Removes the given block from the list of free blocks.
+	\\ @param block The block to remove
+	fn<> __removeBlockFromList(__MemBlockHeader* block)...
 
 	\\ Merges the given block with adjacent blocks if possible.
 	\\ The block must be in the list of free blocks.
@@ -83,16 +87,8 @@ space std:
 		var block = __memBlocks
 		while block != null:
 			if block->bodySize >= minSize: \\ Found a block of the right size
-
 				\\ Remove the block from the list and return it
-				if block->prev != null:
-					block->prev->next = block->next
-				if block->next != null:
-					block->next->prev = block->prev
-				if block == __memBlocks:
-					__memBlocks = block->next
-				block->prev = null
-				block->next = null
+				__removeBlockFromList(block)
 				return block
 
 			\\ Go to the next block
@@ -103,17 +99,13 @@ space std:
 		if prev != null && (u64)prev + sizeof(__MemBlockHeader) + prev->bodySize == __brk(0):
 			
 			\\ Extend the block by page size increments
-			var sizeDiff = ceil(minSize - prev->bodySize, __PAGE_SIZE)
-			if __sbrk(sizeDiff) == null:
+			var sizeToExtend = ceil(minSize - prev->bodySize, __PAGE_SIZE)
+			if __sbrk(sizeToExtend) == null:
 				return null
-			prev->bodySize += sizeDiff
+			prev->bodySize += sizeToExtend
 
 			\\ Remove the block from the list and return it
-			if prev->prev != null:
-				prev->prev->next = null
-			prev->prev = null
-			if prev == __memBlocks:
-				__memBlocks = null
+			__removeBlockFromList(prev)
 			return prev
 
 		return __allocateBlock(minSize) 
@@ -155,9 +147,9 @@ space std:
 		block->bodySize = newBodySize
 
 		\\ Add the new block to the list of free blocks
-		__freeBlock(newBlock)
+		__addBlockToList(newBlock)
 
-	fn<> __freeBlock(__MemBlockHeader* block)!:
+	fn<> __addBlockToList(__MemBlockHeader* block)!:
 		if block == null:
 			return
 
@@ -189,6 +181,16 @@ space std:
 			var sizeDiff = floor(block->bodySize, __PAGE_SIZE)
 			block->bodySize -= sizeDiff
 			__sbrk(-sizeDiff)
+
+	fn<> __removeBlockFromList(__MemBlockHeader* block)!:
+		if block->prev != null:
+			block->prev->next = block->next
+		if block->next != null:
+			block->next->prev = block->prev
+		if block == __memBlocks:
+			__memBlocks = block->next
+		block->prev = null
+		block->next = null
 
 	fn<__MemBlockHeader*> __mergeBlocks(__MemBlockHeader* block)!:
 		if block == null:
@@ -242,4 +244,4 @@ space std:
 		var block = (__MemBlockHeader*)ptr - 1
 
 		\\ Free the block
-		__freeBlock(block)
+		__addBlockToList(block)

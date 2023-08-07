@@ -361,21 +361,18 @@ space std:
 		var newData = (u8*)malloc(newLength + 1)
 		if !newData:
 			return false
+
 		memcpy(newData, self->m_data, self->m_length)
 		memcpy(newData + self->m_length, other, num)
 		newData[newLength] = '\0'
-		self->__delete__()
+		std.free(self->m_data)
 		self->m_data = newData
 		self->m_length = newLength
+		self->m_reserved = newLength
 		return true
 
 	fn<bool> String.push_back(String* self, u8 ch)!:
-		var tmp = new(String, &ch, 1)
-		if tmp == null:
-			return false
-		var ret = self->append(tmp)
-		delete(tmp)
-		return ret
+		return self->append(&ch, 1)
 
 	fn<bool> String.assign(String* self, String const* other)!:
 		if self->m_reserved >= other->m_length:
