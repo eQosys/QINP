@@ -307,7 +307,7 @@ if __name__ == "__main__":
 	sortedFileList.sort()
 
 	print("Exporting symbols...")
-	if os.system("./bin/Release/QINP -e=/tmp/stdlib-symbols.json -c=/tmp/stdlib-comments.json /tmp/stdlib-import-all.qnp"):
+	if os.system("./bin/Release/qinp -e=/tmp/stdlib-symbols.json -c=/tmp/stdlib-comments.json /tmp/stdlib-import-all.qnp"):
 		print("Failed to export symbols")
 		exit(1)
 
