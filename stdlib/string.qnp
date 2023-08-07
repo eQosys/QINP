@@ -573,6 +573,7 @@ space std:
 		while (c = tolower(*str)):
 			var i = strchr(__baseCharsLower, c)
 			if i == null || (i64)(i -= __baseCharsLower) >= base:
+				error.set(error.ID.InvalidArgument)
 				break
 			num *= base
 			num += (i64)(i)
