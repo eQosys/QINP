@@ -1,0 +1,10 @@
+import "list.qnp"
+
+import "Token.qnp"
+
+fn<std.List*> tokenize(std.String const* code, std.String const* filename) nodiscard:
+    var token = std.new(Token)
+
+    std.delete(token)
+
+    return std.new(std.List)

@@ -1,0 +1,4 @@
+var<u32> x = 0b001100
+var<u32> mask = 0b000111
+var<u32> shift = 4
+var<u32> y = (x & mask) << shift

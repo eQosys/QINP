@@ -112,6 +112,12 @@ space std:
 		\\ @return Less/Equal/Greater (Lexicographical)
 		fn<Order> compare(String const* self, String const* other) nodiscard...
 
+		\\ Compare this string with a null-terminated string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return Less/Equal/Greater (Lexicographical)
+		fn<Order> compare(String const* self, u8 const* other) nodiscard...
+
 		\\ Get the character at the specified index
 		\\ @param self Self pointer
 		\\ @param index The index of the character to get
@@ -130,6 +136,75 @@ space std:
 		\\ @param self Self pointer
 		\\ @return True if the string is empty, otherwise false
 		fn<bool> empty(String const* self) nodiscard...
+
+		\\ Returns the first appearance of the other string in this string
+		\\ @param self Self pointer
+		\\ @param other The string to search for
+		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
+		fn<u64> find(String const* self, String const* other) nodiscard...
+
+		\\ Returns the first appearance of the other string in this string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to search for
+		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
+		fn<u64> find(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns the first appearance of the other string in this string
+		\\ @param self Self pointer
+		\\ @param other The string to search for
+		\\ @param num The number of characters to search for
+		\\ @return The index of the first appearance of the other string in this string (or -1 if not found)
+		fn<u64> find(String const* self, u8 const* other, u64 num) nodiscard...
+
+		\\ Returns whether both strings are equal or not
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return True if both strings are equal, otherwise false
+		fn<bool> equals(String const* self, String const* other) nodiscard...
+
+		\\ Returns whether both strings are equal or not
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return True if both strings are equal, otherwise false
+		fn<bool> equals(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns whether this string begins with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return True if this string begins with the other string, otherwise false
+		fn<bool> beginswith(String const* self, String const* other) nodiscard...
+
+		\\ Returns whether this string begins with the other string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return True if this string begins with the other string, otherwise false
+		fn<bool> beginswith(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns whether this string begins with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @param num The number of characters to compare
+		\\ @return True if this string begins with the other string, otherwise false
+		fn<bool> beginswith(String const* self, u8 const* other, u64 num) nodiscard...
+
+		\\ Returns whether this string ends with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @return True if this string ends with the other string, otherwise false
+		fn<bool> endswith(String const* self, String const* other) nodiscard...
+
+		\\ Returns whether this string ends with the other string
+		\\ @param self Self pointer
+		\\ @param other The null-terminated string to compare
+		\\ @return True if this string ends with the other string, otherwise false
+		fn<bool> endswith(String const* self, u8 const* other) nodiscard...
+
+		\\ Returns whether this string ends with the other string
+		\\ @param self Self pointer
+		\\ @param other The string to compare
+		\\ @param num The number of characters to compare
+		\\ @return True if this string ends with the other string, otherwise false
+		fn<bool> endswith(String const* self, u8 const* other, u64 num) nodiscard...
 
 		\\ lower
 		\\ upper
@@ -320,13 +395,16 @@ space std:
 		swap_obj(self->m_reserved, other->m_reserved)
 
 	fn<Order> String.compare(String const* self, String const* other) nodiscard!:
+		return self->compare(other->m_data)
+
+	fn<Order> String.compare(String const* self, u8 const* other) nodiscard!:
 		var<u64> i = 0
-		while self->m_data[i] == other->m_data[i] && i < self->m_length:
+		while self->m_data[i] == other[i] && i < self->m_length:
 			++i
 
-		if self->m_data[i] < other->m_data[i]:
+		if self->m_data[i] < other[i]:
 			return Order.Less
-		elif self->m_data[i] > other->m_data[i]:
+		elif self->m_data[i] > other[i]:
 			return Order.Greater
 		return Order.Equal
 
@@ -346,6 +424,54 @@ space std:
 
 	fn<bool> String.empty(String const* self) nodiscard!:
 		return self->m_length == 0
+
+	fn<u64> String.find(String const* self, String const* other) nodiscard!:
+		return self->find(other->m_data, other->m_length)
+
+	fn<u64> String.find(String const* self, u8 const* other) nodiscard!:
+		return self->find(other, strlen(other))
+
+	fn<u64> String.find(String const* self, u8 const* other, u64 num) nodiscard!:
+		if num > self->m_length:
+			return -1
+			
+		var<u64> i = 0
+
+		while i < self->m_length - num + 1:
+			var<u64> j = 0
+			while j < num:
+				if self->m_data[i + j] != other[j]:
+					break
+				++j
+			if j == num:
+				return i
+			++i
+		
+		return -1
+
+	fn<bool> String.equals(String const* self, String const* other) nodiscard!:
+		return self->compare(other) == Order.Equal
+
+	fn<bool> String.equals(String const* self, u8 const* other) nodiscard!:
+		return self->compare(other) == Order.Equal
+
+	fn<bool> String.beginswith(String const* self, String const* other) nodiscard!:
+		return self->beginswith(other->m_data, other->m_length)
+
+	fn<bool> String.beginswith(String const* self, u8 const* other) nodiscard!:
+		return self->beginswith(other, strlen(other))
+
+	fn<bool> String.beginswith(String const* self, u8 const* other, u64 num) nodiscard!:
+		return self->find(other, num) == 0
+
+	fn<bool> String.endswith(String const* self, String const* other) nodiscard!:
+		return self->endswith(other->m_data, other->m_length)
+
+	fn<bool> String.endswith(String const* self, u8 const* other) nodiscard!:
+		return self->endswith(other, strlen(other))
+
+	fn<bool> String.endswith(String const* self, u8 const* other, u64 num) nodiscard!:
+		return self->find(other, num) == self->m_length - num
 
 
 
