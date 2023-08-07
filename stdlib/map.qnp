@@ -1,0 +1,107 @@
+\\ QINP Standard Library
+\\ Map
+
+import "memory.qnp"
+import "algorithm.qnp"
+
+space std:
+    \\ Map Class
+    \\ Uses a balanced binary tree to store key-value pairs
+    \\ The tree is balanced using the AVL algorithm
+    pack Map:
+        pack Node:
+            var<Node*> left
+            var<Node*> right
+            var<void*> key
+            var<void*> value
+
+        var<Node*> m_root
+        var<u64> m_size
+
+        var<FN_COMPARE> m_compare
+        var<FN_DELETE> m_deleteKey
+        var<FN_DELETE> m_deleteValue
+
+        fn<bool> __new__(Map* self, FN_COMPARE compare, FN_DELETE deleteKey, FN_DELETE deleteValue) nodiscard...
+
+        fn<> __delete__(Map* self)...
+
+        fn<bool> contains(Map* self, void* key) nodiscard...
+
+        fn<bool> insert(Map* self, void* key, void* value)...
+
+        fn<bool> replace(Map* self, void* key, void* value)...
+
+        fn<bool> remove(Map* self, void* key)...
+
+        fn<void*> get(Map* self, void* key) nodiscard...
+
+        fn<void> clear(Map* self)...
+
+        fn<u64> size(Map const* self) nodiscard...
+
+
+
+defer
+space std:
+    fn<bool> Map.__new__(Map* self, FN_COMPARE compare, FN_DELETE deleteKey, FN_DELETE deleteValue) nodiscard!:
+        self->m_root = null
+        self->m_compare = compare
+        self->m_deleteKey = deleteKey
+        self->m_deleteValue = deleteValue
+        return true
+
+    fn<> Map.__delete__(Map* self)!:
+        self->clear()
+
+    fn<bool> Map.contains(Map const* self, void* key) nodiscard!:
+        Node* node = self->m_root
+        while node != null:
+            if self->m_compare(key, node->key):
+                node = node->left
+            elif self->m_compare(node->key, key):
+                node = node->right
+            else:
+                return true
+            
+        return false
+
+    fn<bool> Map.insert(Map*, void* key, void* value)!:
+        var node = (Node*)std.malloc(sizeof(Node))
+        node->left = null
+        node->right = null
+        node->key = key
+        node->value = value
+
+        if self->m_root == null:
+            self->m_root = node
+            ++self->m_size
+            return true
+
+        var<Node*> parent = null
+        var current = self->m_root
+        var left = false
+
+        while current != null:
+            parent = current
+            if self->m_compare(key, current->key):
+                current = current->left
+                left = true
+            elif self->m_compare(current->key, key):
+                current = current->right
+                left = false
+            else:
+                self->m_deleteKey(key)
+                self->m_deleteValue(value)
+                std.free(node)
+                return false
+
+        if left:
+            parent->left = node
+        else:
+            parent->right = node
+
+        ++self->m_size
+
+        return true
+        

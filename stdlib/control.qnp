@@ -77,23 +77,33 @@ space std:
         \\ @param ... The parameters of the control sequence
         fn<> __make(String* buffer, ID id, ...)...
 
+        define __N_BUFFERS 8
+        var<i64> __currBuffer = 0
+        var<String*[__N_BUFFERS]> buffers
 
+        fn<String*> __getNextBuffer() nodiscard...
 
 defer
 space std:
     space Control:
         fn<u8 const*> make(ID id) nodiscard!:
-            static buffer = new(String)
-            __handleControl(buffer, id, false)
-            buffer->append("m")
-            return buffer->raw()
+            var buff = __getNextBuffer()
+            if buff == null:
+                return null
+
+            __handleControl(buff, id, false)
+            buff->append("m")
+            return buff->raw()
 
         fn<u8 const*> make(ID id, ...) nodiscard!:
-            static buffer = new(String)
-            __handleControl(buffer, id, false)
-            __make(buffer, ...)
-            buffer->append("m")
-            return buffer->raw()
+            var buff = __getNextBuffer()
+            if buff == null:
+                return null
+
+            __handleControl(buff, id, false)
+            __make(buff, ...)
+            buff->append("m")
+            return buff->raw()
 
         fn<> __handleControl(String* buffer, ID id, bool append)!:
             if append:
@@ -126,3 +136,11 @@ space std:
         fn<> __make(String* buffer, ID id, ...)!:
             __handleControl(buffer, id, true)
             __make(buffer, ...)
+        
+        fn<String*> __getNextBuffer() nodiscard!:
+            var buff = buffers[__currBuffer]
+            if buff == null:
+                buff = new(String)
+                buffers[__currBuffer] = buff
+            __currBuffer = (__currBuffer + 1) % __N_BUFFERS
+            return buff

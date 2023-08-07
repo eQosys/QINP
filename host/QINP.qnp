@@ -7,7 +7,7 @@ import "FileReader.qnp"
 var<u8**> argv
 var<u64> argc = std.getargs(&argv)
 
-if argc != 2:
+if argc == 2:
     std.println("Usage: % %<filename>%", argv[0], std.Control.make(std.Control.ID.FGColor, 255, 0, 0, std.Control.ID.Underline), std.Control.make(std.Control.ID.FGDefault, std.Control.ID.NoUnderline))
     std.exit(1)
 
