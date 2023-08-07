@@ -6,8 +6,8 @@ import "algorithm.qnp"
 
 space std:
     \\ Map Class
-    \\ Uses a balanced binary tree to store key-value pairs
-    \\ The tree is balanced using the AVL algorithm
+    \\ Uses a binary tree to store key-value pairs
+    \\ The tree is balanced using the AVL algorithm (not yet)
     pack Map:
         pack Node:
             var<Node*> left
@@ -22,24 +22,74 @@ space std:
         var<FN_DELETE> m_deleteKey
         var<FN_DELETE> m_deleteValue
 
+        \\ Constructs a new map
+        \\ @param self Self pointer
+        \\ @param compare Function used to compare keys
+        \\ @param deleteKey Function used to delete keys
+        \\ @param deleteValue Function used to delete values
+        \\ @return True if the map was created successfully, false otherwise
         fn<bool> __new__(Map* self, FN_COMPARE compare, FN_DELETE deleteKey, FN_DELETE deleteValue) nodiscard...
 
+        \\ Destructs the given map
+        \\ @param self Self pointer
         fn<> __delete__(Map* self)...
 
+        \\ Checks if the map contains the given key
+        \\ @param self Self pointer
+        \\ @param key Key to check, the key will not be deleted
+        \\ @return True if the map contains the key, false otherwise
         fn<bool> contains(Map* self, void* key) nodiscard...
 
+        \\ Inserts a new key-value pair into the map
+        \\ Key and value will be managed by the map. Even if the insertion fails.
+        \\ @param self Self pointer
+        \\ @param key Key to insert
+        \\ @param value Value to insert
+        \\ @return True if the key-value pair was inserted successfully, false otherwise
         fn<bool> insert(Map* self, void* key, void* value)...
 
+        \\ Replaces the value of the given key
+        \\ Key and value will be managed by the map. Even if the replacement fails.
+        \\ @param self Self pointer
+        \\ @param key Key to replace
+        \\ @param value Value to replace
+        \\ @return True if the value was replaced successfully, false otherwise
         fn<bool> replace(Map* self, void* key, void* value)...
 
+        \\ Removes the given key from the map
+        \\ Key will be deleted by the map. Even if the removal fails.
+        \\ @param self Self pointer
+        \\ @param key Key to remove
+        \\ @return True if the key was removed successfully, false otherwise
         fn<bool> remove(Map* self, void* key)...
 
+        \\ Gets the value of the given key
+        \\ Key will be deleted by the map. Even if the key does not exist.
+        \\ @param self Self pointer
+        \\ @param key Key to get
+        \\ @return Value of the given key, null if the key does not exist
         fn<void*> get(Map* self, void* key) nodiscard...
 
-        fn<void> clear(Map* self)...
+        \\ Clears the map
+        \\ @param self Self pointer
+        fn<> clear(Map* self)...
 
+        \\ Gets the size of the map
+        \\ @param self Self pointer
+        \\ @return Size of the map
         fn<u64> size(Map const* self) nodiscard...
 
+        \\ Gets the node matching the given key
+        \\ @param self Self pointer
+        \\ @param key Key to search for
+        \\ @param pParent Pointer to the parent node
+        \\ @return Node matching the given key, null if the key does not exist
+        fn<Node*> __getNode(Map* self, void* key, Node** pParent) nodiscard...
+
+        \\ Deletes the given node
+        \\ @param self Self pointer
+        \\ @param node Node to delete
+        fn<> __deleteNode(Map const* self, Node* node)...
 
 
 defer
@@ -54,8 +104,8 @@ space std:
     fn<> Map.__delete__(Map* self)!:
         self->clear()
 
-    fn<bool> Map.contains(Map const* self, void* key) nodiscard!:
-        Node* node = self->m_root
+    fn<bool> Map.contains(Map* self, void* key) nodiscard!:
+        var node = self->m_root
         while node != null:
             if self->m_compare(key, node->key):
                 node = node->left
@@ -66,7 +116,7 @@ space std:
             
         return false
 
-    fn<bool> Map.insert(Map*, void* key, void* value)!:
+    fn<bool> Map.insert(Map* self, void* key, void* value)!:
         var node = (Node*)std.malloc(sizeof(Node))
         node->left = null
         node->right = null
@@ -78,30 +128,152 @@ space std:
             ++self->m_size
             return true
 
-        var<Node*> parent = null
-        var current = self->m_root
-        var left = false
+        var<Node*> parent
+        var current = self->__getNode(key, &parent)
 
-        while current != null:
-            parent = current
-            if self->m_compare(key, current->key):
-                current = current->left
-                left = true
-            elif self->m_compare(current->key, key):
-                current = current->right
-                left = false
-            else:
-                self->m_deleteKey(key)
-                self->m_deleteValue(value)
-                std.free(node)
-                return false
-
-        if left:
+        if current != null:
+            self->m_deleteKey(key)
+            self->m_deleteValue(value)
+            std.free(node)
+            return false
+        
+        if self->m_compare(key, parent->key):
             parent->left = node
         else:
             parent->right = node
 
         ++self->m_size
+        return true
+
+    fn<bool> Map.replace(Map* self, void* key, void* value)!:
+        var node = self->__getNode(key, null)
+
+        if node == null:
+            self->m_deleteKey(key)
+            self->m_deleteValue(value)
+            return false
+
+        self->m_deleteValue(node->value)
+        node->value = value
+        self->m_deleteKey(node->key)
+        node->key = key
 
         return true
+
+    fn<bool> Map.remove(Map* self, void* key)!:
+        var<Node*> parent
+        var<Node*> node = self->__getNode(key, &parent)
+
+        self->m_deleteKey(key)
         
+        if node == null:
+            return false
+
+        if node->left == null && node->right == null:
+            if parent == null:
+                self->m_root = null
+            elif parent->left == node:
+                parent->left = null
+            else:
+                parent->right = null
+            
+            self->__deleteNode(node)
+        elif node->left == null:
+            if parent == null:
+                self->m_root = node->right
+            elif parent->left == node:
+                parent->left = node->right
+            else:
+                parent->right = node->right
+            
+            node->right = null
+            self->__deleteNode(node)
+        elif node->right == null:
+            if parent == null:
+                self->m_root = node->left
+            elif parent->left == node:
+                parent->left = node->left
+            else:
+                parent->right = node->left
+
+            node->left = null
+            self->__deleteNode(node)
+        else:
+            var<Node*> successorParent = node
+            var<Node*> successor = node->right
+
+            while successor->left != null:
+                successorParent = successor
+                successor = successor->left
+
+            if successorParent == node:
+                successorParent->right = successor->right
+            else:
+                successorParent->left = successor->right
+
+            successor->left = node->left
+            successor->right = node->right
+
+            if parent == null:
+                self->m_root = successor
+            elif parent->left == node:
+                parent->left = successor
+            else:
+                parent->right = successor
+
+            node->left = null
+            node->right = null
+            self->__deleteNode(node)
+
+        --self->m_size
+        return true
+
+    fn<void*> Map.get(Map* self, void* key) nodiscard!:
+        var node = self->__getNode(key, null)
+        
+        self->m_deleteKey(key)
+
+        if node == null:
+            return null
+
+        return node->value
+
+    fn<> Map.clear(Map* self)!:
+        self->__deleteNode(self->m_root)
+        self->m_root = null
+
+    fn<u64> Map.size(Map const* self) nodiscard!:
+        return self->m_size
+
+    fn<Map.Node*> Map.__getNode(Map* self, void* key, Node** pParent) nodiscard!:
+        var current = self->m_root
+
+        var<Node*> parent = null
+
+        while current != null:
+            if self->m_compare(key, current->key):
+                parent = current
+                current = current->left
+            elif self->m_compare(current->key, key):
+                parent = current
+                current = current->right
+            else:
+                if pParent != null:
+                    *pParent = parent
+                return current
+
+        if pParent != null:
+            *pParent = parent
+        return null
+
+    fn<> Map.__deleteNode(Map const* self, Node* node)!:
+        if node == null:
+            return
+
+        self->__deleteNode(node->left)
+        self->__deleteNode(node->right)
+
+        self->m_deleteKey(node->key)
+        self->m_deleteValue(node->value)
+
+        std.free(node)

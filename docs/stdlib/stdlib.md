@@ -12,6 +12,7 @@ All files building the Standard Library can be found in the [stdlib](../../stdli
  - [./iterator.qnp](iterator.qnp.md)
  - [./limits.qnp](limits.qnp.md)
  - [./list.qnp](list.qnp.md)
+ - [./map.qnp](map.qnp.md)
  - [./math.qnp](math.qnp.md)
  - [./memory.qnp](memory.qnp.md)
  - [./order.qnp](order.qnp.md)

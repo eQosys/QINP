@@ -1,4 +1,45 @@
-var<u32> x = 0b001100
-var<u32> mask = 0b000111
-var<u32> shift = 4
-var<u32> y = (x & mask) << shift
+import "map.qnp"
+
+std.println("Allocating map...")
+
+var map = std.new(std.Map, \
+    lambda<bool>(void const* a, void const* b): \
+        return ((std.String const*)a)->compare((std.String const*)b) == std.Order.Less;, \
+    lambda<void>(void* key): \
+        std.delete((std.String*)key);, \
+    lambda<void>(void* value): \
+        pass; \
+    )
+
+std.println("Inserting 'key'...")
+std.println("Success? %", map->insert(std.new(std.String, "key"), (void*)123))
+std.println("Inserting 'asdf'...")
+std.println("Success? %", map->insert(std.new(std.String, "asdf"), (void*)456))
+std.println("Inserting 'zxcv'...")
+std.println("Success? %", map->insert(std.new(std.String, "zxcv"), (void*)789))
+
+std.println("map size: ", map->size())
+std.println("get('key'): %", (i64)map->get(std.new(std.String, "key")))
+std.println("get('asdf'): %", (i64)map->get(std.new(std.String, "asdf")))
+std.println("get('zxcv'): %", (i64)map->get(std.new(std.String, "zxcv")))
+
+std.println("Removing 'key'...")
+std.println("Success? %", map->remove(std.new(std.String, "key")))
+std.println("map size: ", map->size())
+std.println("get('key'): %", (i64)map->get(std.new(std.String, "key")))
+std.println("get('asdf'): %", (i64)map->get(std.new(std.String, "asdf")))
+std.println("get('zxcv'): %", (i64)map->get(std.new(std.String, "zxcv")))
+std.println("Removing 'asdf'...")
+std.println("Success? %", map->remove(std.new(std.String, "asdf")))
+std.println("map size: ", map->size())
+std.println("get('key'): %", (i64)map->get(std.new(std.String, "key")))
+std.println("get('asdf'): %", (i64)map->get(std.new(std.String, "asdf")))
+std.println("get('zxcv'): %", (i64)map->get(std.new(std.String, "zxcv")))
+std.println("Removing 'zxcv'...")
+std.println("Success? %", map->remove(std.new(std.String, "zxcv")))
+std.println("map size: ", map->size())
+std.println("get('key'): %", (i64)map->get(std.new(std.String, "key")))
+std.println("get('asdf'): %", (i64)map->get(std.new(std.String, "asdf")))
+std.println("get('zxcv'): %", (i64)map->get(std.new(std.String, "zxcv")))
+
+std.delete(map)
