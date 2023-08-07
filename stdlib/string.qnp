@@ -371,6 +371,8 @@ space std:
 
 	fn<bool> String.push_back(String* self, u8 ch)!:
 		var tmp = new(String, &ch, 1)
+		if tmp == null:
+			return false
 		var ret = self->append(tmp)
 		delete(tmp)
 		return ret
