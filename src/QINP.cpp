@@ -195,9 +195,22 @@ int main(int argc, char** argv, char** _env)
 		}
 
 		if (verbose)
+		{
 			for (auto sym : *program->symbols)
-				if (isFuncSpec(sym) && !isDefined(sym))
-					PRINT_WARNING(MAKE_QINP_ERROR("Undefined function '" + getReadableName(sym) + "' declared at " + getPosStr(sym->pos.decl) + "!"));
+			{
+				if (isFuncSpec(sym))
+				{
+					if (!isDefined(sym))
+					{
+						PRINT_WARNING(MAKE_QINP_ERROR(getPosStr(getBestPos(sym)) + ": Function '" + getReadableName(sym) + "' declared but never defined!"));
+					}
+					if (!isReachable(sym))
+					{
+						PRINT_WARNING(MAKE_QINP_ERROR(getPosStr(getBestPos(sym)) + ": Stripping unused function '" + getReadableName(sym) + "' from binary!"));
+					}
+				}
+			}
+		}
 
 		std::string output = genAsm(program, args.hasOption("verbose") && args.hasOption("keep"));
 	

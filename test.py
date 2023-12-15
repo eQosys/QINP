@@ -20,10 +20,10 @@ def runCmd(cmd: List[str], **kwargs):
 
 def makeTestCmd(testName: str, argv: List[str]) -> List[str]:
 	if platform.system() == "Linux":
-		exePath = "./bin/Debug/QINP"
+		exePath = "./bin/Debug/qinp"
 		outPath = f"/tmp/{testName}.out"
 	elif platform.system() == "Windows":
-		exePath = ".\\bin\\Debug\\QINP.exe"
+		exePath = ".\\bin\\Debug\\qinp.exe"
 		outPath = f"%Temp%\\{testName}.exe"
 	else:
 		print(f"ERROR: UNKNOWN PLATFORM {platform.system()}!")
