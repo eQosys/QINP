@@ -204,7 +204,7 @@ int main(int argc, char** argv, char** _env)
 					{
 						PRINT_WARNING(MAKE_QINP_ERROR(getPosStr(getBestPos(sym)) + ": Function '" + getReadableName(sym) + "' declared but never defined!"));
 					}
-					if (!isReachable(sym))
+					if (!isReachable(sym) && (!isFuncBlueprint(sym) || !hasBlueprintSpecsGenerated(sym)) && SymPathToString(getSymbolPath(nullptr, sym)).find("std.") != 0)
 					{
 						PRINT_WARNING(MAKE_QINP_ERROR(getPosStr(getBestPos(sym)) + ": Stripping unused function '" + getReadableName(sym) + "' from binary!"));
 					}

@@ -1,0 +1,6 @@
+import "string.qnp"
+
+var x = std.toupper('a')
+
+fn<i32> test_func():
+    return 1 + 324

@@ -74,6 +74,7 @@ struct Symbol
 		bool isReachable = false;
 		std::string externAsmName;
 		bool isBlueprint = false;
+		int nBlueprintSpecializationsGenerated = 0;
 		bool isVariadic = false;
 		std::vector<Token> bpMacroTokens;
 		std::vector<TokenListRef> bpMacroTokenEmplacements;
@@ -134,6 +135,8 @@ bool isSymType(SymType type, const SymbolRef symbol);
 bool isVariable(const SymbolRef symbol);
 bool isFuncName(const SymbolRef symbol);
 bool isFuncSpec(const SymbolRef symbol);
+bool isFuncBlueprint(const SymbolRef symbol);
+bool hasBlueprintSpecsGenerated(const SymbolRef symbol);
 bool isExtFunc(const SymbolRef symbol);
 bool isFunction(const SymbolRef symbol);
 bool isPack(const SymbolRef symbol);

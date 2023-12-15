@@ -866,6 +866,7 @@ SymbolRef generateBlueprintSpecialization(ProgGenInfo &info, SymbolRef &bpSym, s
 
 	exitSymbol(info);
 
+	++bpSym->func.nBlueprintSpecializationsGenerated;
 	info.bpVariadicParamIDStack.pop();
 
 	for (uint64_t i = 0; i < bpSym->func.params.size(); ++i)

@@ -78,6 +78,16 @@ bool isFuncSpec(const SymbolRef symbol)
 	return isSymType(SymType::FunctionSpec, symbol);
 }
 
+bool isFuncBlueprint(const SymbolRef symbol)
+{
+	return isFuncSpec(symbol) && symbol->func.isBlueprint;
+}
+
+bool hasBlueprintSpecsGenerated(const SymbolRef symbol)
+{
+	return isFuncBlueprint(symbol) && symbol->func.nBlueprintSpecializationsGenerated > 0;
+}
+
 bool isExtFunc(const SymbolRef symbol)
 {
 	return isSymType(SymType::ExtFunc, symbol);
