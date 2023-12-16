@@ -4,6 +4,7 @@
 import "memory.qnp"
 import "error.qnp"
 import "iterator.qnp"
+import "algorithm.qnp"
 
 space std:
 	\\ A doubly-linked list.
@@ -22,10 +23,13 @@ space std:
 		\\ The last node in the list.
 		var<Node*> m_last
 
+		var<FN_DELETE> m_delete_node_data
+
 		\\ Constructs a new list.
 		\\ @param self Self pointer
+		\\ @param delete_node_data The function to call to delete data stored in a node. If null, the data must be deleted manually.
 		\\ @return True on success, otherwise false.
-		fn<bool> __new__(List* self)...
+		fn<bool> __new__(List* self, FN_DELETE delete_node_data)...
 
 		\\ Destructs the given list.
 		\\ @param self Self pointer
@@ -107,9 +111,10 @@ space std:
 		fn<.std.List.Node*> __alloc_node(Node* prev, Node* next, void* data)...
 
 		\\ Internal function to free a node.
+		\\ @param self Self pointer
 		\\ @param node The node to free.
 		\\ @return The data stored in the node.
-		fn<void*> __free_node(Node* node) nodiscard...
+		fn<void*> __free_node(List const* self, Node* node) nodiscard...
 
 		\\ Get an iterator to the first node of the list.
 		\\ Iterates from the first node to the last node.
@@ -125,9 +130,10 @@ space std:
 
 defer
 space std:
-	fn<bool> List.__new__(List* self)!:
+	fn<bool> List.__new__(List* self, FN_DELETE delete_node_data)!:
 		self->m_first = null
 		self->m_last = null
+		self->m_delete_node_data = delete_node_data
 		return true
 
 	fn<> List.__delete__(List* self)!:
@@ -176,7 +182,7 @@ space std:
 		else:
 			self->m_first = null
 
-		return (T)__free_node(node)
+		return (T)__free_node(self, node)
 
 	fn<?T> List.pop_front(List* self)!:
 		if self->empty():
@@ -191,7 +197,7 @@ space std:
 		else:
 			self->m_last = null
 
-		return (T)__free_node(node)
+		return (T)__free_node(self, node)
 
 
 	fn<.std.List.Node*> List.insert_before(List* self, Node* node, ?T data)!:
@@ -241,7 +247,7 @@ space std:
 		else:
 			self->m_last = node->prev
 
-		return (T)__free_node(node)
+		return (T)__free_node(self, node)
 
 	fn<?T> List.remove_before(List* self, Node* node)!:
 		if !node:
@@ -277,9 +283,12 @@ space std:
 		node->data = data
 		return node
 
-	fn<void*> List.__free_node(Node* node) nodiscard!:
+	fn<void*> List.__free_node(List const* self, Node* node) nodiscard!:
 		var data = node->data
 		std.free(node)
+		if self->m_delete_node_data:
+			self->m_delete_node_data(data)
+			return null
 		return data
 
 	fn<.std.Iterator*> List.iterator(List* self)!:
