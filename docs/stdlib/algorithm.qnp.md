@@ -25,7 +25,7 @@
  - [std.FN_SWAP](#ref_c21fea908082a6590afa66534aac291d)
  - [std.LMBD_COMPARE(check)](#ref_ddc596d61f92363c82dbffbe1da9f53d)
  - [std.LMBD_COMPARE_DT(type)](#ref_5b91eafb258b9be7e596d2d9179b6b43)
- - [std.LMBD_DELETE(type)](#ref_d104f5f260cc5abf4b7c3cfdcc576d81)
+ - [std.LMBD_DELETE_DT(type)](#ref_81e926c19b4035c433be5236c2fa1bf0)
  - [std.LMBD_SWAP(size)](#ref_90e85b2068dfe6c3582b342c4b67c5b4)
  - [std.LMBD_SWAP_DT(type)](#ref_37571d12e94a9eb9c066cc52c7b39c74)
  - [std.swap_obj(a, b)](#ref_829ac646b96c2fe9aeed71e858c87d5f)
@@ -63,7 +63,7 @@ Macro to define a lambda function that compares two elements according to the gi
 Macro to define a lambda function that compares two elements of the given type using the `<` operator.
 @param type The type of the elements.
 ```
-#### <a id="ref_d104f5f260cc5abf4b7c3cfdcc576d81"/>std.LMBD_DELETE(type)
+#### <a id="ref_81e926c19b4035c433be5236c2fa1bf0"/>std.LMBD_DELETE_DT(type)
 > [Declaration](/stdlib/algorithm.qnp?plain=1#L40)
 ```qinp
 Macro to define a lambda function that deletes an object.

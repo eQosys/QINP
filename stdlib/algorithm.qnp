@@ -37,7 +37,7 @@ space std:
 
 	\\ Macro to define a lambda function that deletes an object.
 	\\ @param type The type of the object.
-	define LMBD_DELETE(type) lambda<>(void* ptr): .std.delete((type*)ptr);
+	define LMBD_DELETE_DT(type) lambda<>(void* ptr): .std.delete((type*)ptr);
 
 	\\ Sorts an array of elements.
 	\\ @param array The array to sort.
