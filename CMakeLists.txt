@@ -35,6 +35,13 @@ include_directories(
 	"src/"
 )
 
+add_subdirectory("vendor/Qrawlr/libQrawlr")
+
+target_link_libraries(
+    qinp
+    libqrawlr
+)
+
 set_property(TARGET qinp PROPERTY CXX_STANDARD 17)
 
 if (WIN32)

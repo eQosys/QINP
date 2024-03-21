@@ -1,0 +1,3 @@
+[submodule "vendor/Qrawlr"]
+	path = vendor/Qrawlr
+	url = https://github.com/eQosys/Qrawlr.git
