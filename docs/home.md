@@ -13,6 +13,8 @@
 
 ### Getting Started
 
+Clone the repository with `git clone --recursive https://github.com/eQosys/QINP.git`.
+
 #### Linux
 
 Prerequisites:
