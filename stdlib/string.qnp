@@ -575,7 +575,7 @@ space std:
 				error.set(error.ID.InvalidArgument)
 				break
 			num *= base
-			num += (i64)(i)
+			num += (i64)i
 			++str
 
 		if pNextOut: *pNextOut = str
