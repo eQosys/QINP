@@ -1,22 +1,21 @@
-#include <iostream>
-
 #include <map>
 #include <vector>
-#include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <filesystem>
 
-#include "Errors/QinpError.h"
 #include "Warning.h"
+#include "ExecCmd.h"
 #include "Tokenizer.h"
 #include "ArgsParser.h"
-#include "ProgramGenerator.h"
 #include "PlatformName.h"
-#include "ExecCmd.h"
-#include "ExportSymbolInfo.h"
+#include "NasmGenerator.h"
 #include "ExportComments.h"
+#include "Errors/QinpError.h"
+#include "ProgramGenerator.h"
+#include "ExportSymbolInfo.h"
 #include "pathToExecutableDir.h"
 
-#include "NasmGenerator.h"
 
 void writeTextFileOverwrite(const std::string& filename, const std::string& text)
 {
