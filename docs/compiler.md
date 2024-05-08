@@ -1,7 +1,16 @@
 # Compiler
 
 ## Overview
+ - [Usage](#usage)
  - [Commandline Arguments](#commandline-arguments)
+
+---
+
+### Usage
+
+```bash
+qinp [options] <input_file>
+```
 
 ---
 
@@ -15,11 +24,11 @@
 
    Prints verbose output.
 
- - -i, --import=\[path\]
+ - -i, --import \[path\]
 
    Specifies an import directory.
   
- - -o, --output=\[path\]
+ - -o, --output \[path\]
 
    Specifies the output path of the generated program.
 
@@ -31,17 +40,17 @@
 
    Runs the generated program.
 
- - -p, --platform
+ - -p, --platform \[platform\]
  
-   Specifies the target platform. (linux, windows, macos)
+   Specifies the target platform. (linux, windows, macos)  
    Only linux and windows are supported for now.
 
- - -a, --runarg
+ - -a, --runarg \[arg\]
   
-    Specifies a single argument to pass to the generated program.
+    Specifies a single argument to pass to the generated program.  
     Only used when --run is specified.
 
- - -x, --extern
+ - -x, --extern \[name\]
   
     Specifies a library/object file to link against.
 

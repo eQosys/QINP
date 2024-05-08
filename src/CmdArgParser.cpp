@@ -11,11 +11,25 @@ void register_argument(int& argc, const char**& argv, CmdArgMap& args, const Cmd
     // add arg to map if not already existent
     args[arg_name];
 
-    if (!desc.has_param)
+    if (desc.param == CmdArgParam::Unused)
     {
         if (!param.empty())
             throw 1; // TODO: throw proper exception when a parameter was provided despite the argument not taking any parameters
         return;
+    }
+
+    switch (desc.param)
+    {
+    case CmdArgParam::Unused:
+        if (!param.empty())
+            throw 1; // TODO: throw proper exception when a parameter was provided despite the argument not taking any parameters
+        return;
+    case CmdArgParam::Single:
+        if (!args[arg_name].empty())
+            throw 1; // TODO: throw proper exception when 'arg_name' was already specified with a parameter
+        break;
+    case CmdArgParam::Multi:
+        break;
     }
 
     if (param.empty()) // no parameter attached to argument
