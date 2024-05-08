@@ -80,7 +80,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
 
         if (startswith(arg, "-")) // short argument
         {
-            bool has_param_attached = arg.size() > 1;
+            bool has_param_attached = arg.size() > 2;
             std::string param = has_param_attached ? arg.substr(2) : "";
             arg = arg.substr(1, 1);
 
