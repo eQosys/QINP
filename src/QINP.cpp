@@ -35,8 +35,6 @@ const std::vector<CmdArgDesc> CMD_ARG_DESCRIPTORS = {
 
 int main(int argc, const char** argv, const char** env)
 {
-    (void)env; // currently unused
-
     try {
         // parse arguments and environment variables
         CmdArgMap args = parse_cmd_args(argc - 1, argv + 1, CMD_ARG_DESCRIPTORS);
