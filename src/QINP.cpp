@@ -77,7 +77,7 @@ int main(int argc, const char** argv, const char** env)
     if (args[CMD_ARG__POSITIONAL].empty())
         throw 1; // TODO: throw proper exception when no source files were provided
     for (const auto& path_str : args[CMD_ARG__POSITIONAL])
-        program.add_source_file(path_str);
+        program.import_source_file(path_str, true);
 
     // generate assembly
 

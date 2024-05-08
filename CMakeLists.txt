@@ -16,6 +16,7 @@ add_executable(
     "src/QINP.cpp"
     "src/Program.cpp"
     "src/Platform.cpp"
+    "src/FileReader.cpp"
     "src/HelpPrinter.cpp"
     "src/Architecture.cpp"
     "src/CmdArgParser.cpp"
