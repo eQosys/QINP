@@ -14,17 +14,43 @@ void Program::add_import_directory(const std::string& path_str)
     auto path = std::filesystem::path(path_str);
     if (!std::filesystem::is_directory(path))
         throw QinpError("Import directory '" + path_str + "' does not exist");
-    m_import_dirs.insert(path);
+    m_import_dirs.push_back(path);
 }
 
-void Program::import_source_file(std::string path_str, bool skip_duplicate)
+void Program::import_source_file(std::string path_str, bool skip_duplicate, bool ignore_import_dirs)
 {
-    try {
-        path_str = std::filesystem::canonical(path_str).generic_string();
-    }
-    catch (const std::filesystem::filesystem_error& e)
+    std::filesystem::path path(path_str);
+    if (!path.is_absolute())
     {
-        throw 1; // throw proper exception when file could not be found
+        bool found_base = false;
+
+        try {
+            path_str = std::filesystem::canonical(path).generic_string();
+            found_base = true;
+        }
+        catch (const std::filesystem::filesystem_error& e)
+        {
+            ;
+        }
+
+        if (!ignore_import_dirs)
+        {
+            for (auto it = m_import_dirs.rbegin(); !found_base && it != m_import_dirs.rend(); ++it)
+            {
+                auto base = *it;
+                try {
+                    path_str = std::filesystem::canonical(base / path).generic_string();
+                    found_base = true;
+                }
+                catch (const std::filesystem::filesystem_error& e)
+                {
+                    continue;
+                }
+            }
+        }
+
+        if (!found_base)
+            throw QinpError("Could not locate source file '" + path_str + "'");
     }
 
     if (skip_duplicate && m_imported_files.find(path_str) != m_imported_files.end())
