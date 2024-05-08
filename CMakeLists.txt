@@ -22,7 +22,8 @@ add_executable(
     "src/utility/CmdArgParser.cpp"
     "src/utility/StringHelpers.cpp"
     "src/utility/EnvironmentParser.cpp"
-)
+    "src/errors/ErrorPrinter.cpp"
+    )
 
 include_directories(
 	qinp

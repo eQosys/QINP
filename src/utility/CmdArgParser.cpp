@@ -1,6 +1,7 @@
 #include "CmdArgParser.h"
 
 #include "StringHelpers.h"
+#include "errors/QinpError.h"
 
 const char* CMD_ARG__POSITIONAL = "pos-args";
 
@@ -9,22 +10,15 @@ void register_argument(int& argc, const char**& argv, CmdArgMap& args, const Cmd
     // add arg to map if not already existent
     args[desc.short_name];
 
-    if (desc.param == CmdArgParam::Unused)
-    {
-        if (!param.empty())
-            throw 1; // TODO: throw proper exception when a parameter was provided despite the argument not taking any parameters
-        return;
-    }
-
     switch (desc.param)
     {
     case CmdArgParam::Unused:
         if (!param.empty())
-            throw 1; // TODO: throw proper exception when a parameter was provided despite the argument not taking any parameters
+            throw QinpError("Argument -" + desc.short_name + "/--" + desc.long_name + " does not take any parameters");
         return;
     case CmdArgParam::Single:
         if (!args[desc.short_name].empty())
-            throw 1; // TODO: throw proper exception when 'arg_name' was already specified with a parameter
+            throw QinpError("Argument -" + desc.short_name + "/--" + desc.long_name + " has already been specified");
         break;
     case CmdArgParam::Multi:
         break;
@@ -33,7 +27,7 @@ void register_argument(int& argc, const char**& argv, CmdArgMap& args, const Cmd
     if (param.empty()) // no parameter attached to argument
     {
         if (argc-- == 0)
-            throw 1; // TODO: throw proper exception on missing parameter
+            throw QinpError("Argument -" + desc.short_name + "/--" + desc.long_name + " requires a parameter");
         param = argv++[0];
     }
 
@@ -65,7 +59,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
             arg = arg.substr(2, eq_pos - 2);
 
             if (has_param_attached && param.empty())
-                throw 1; // TODO: throw proper exception if parameter is missing after '='
+                throw QinpError("Argument --" + arg + " requires a parameter");
 
             bool found_arg = false;
             for (const auto& desc : argDescs)
@@ -79,7 +73,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
             }
 
             if (!found_arg)
-                throw 1; // TODO: throw proper exception when arg does not match any of the descriptors
+                throw QinpError("Unknown argument --" + arg);
 
             continue;
         }
@@ -102,7 +96,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
             }
 
             if (!found_arg)
-                throw 1; // TODO: throw proper exception when arg does not match any of the descriptors
+                throw QinpError("Unknown argument -" + arg);
 
             continue;
         }
