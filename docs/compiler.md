@@ -9,7 +9,7 @@
 ### Usage
 
 ```bash
-qinp [options] <input_file>
+qinp [options] [input_files]
 ```
 
 ---
@@ -24,15 +24,15 @@ qinp [options] <input_file>
 
    Prints verbose output.
 
- - -i, --import \[path\]
+ - -i, --import-dir \[path\]
 
    Specifies an import directory.
   
- - -o, --output \[path\]
+ - -o, --output-file \[path\]
 
    Specifies the output path of the generated program.
 
- - -k, --keep
+ - -k, --keep-intermediate
 
    Keeps the generated assembly file.
 
@@ -40,7 +40,12 @@ qinp [options] <input_file>
 
    Runs the generated program.
 
- - -p, --platform \[platform\]
+ - -A, --architecture \[arch\]
+
+   Specifies the target architecture. (x86, qipu)  
+   Only x86 is supported for now.
+
+ - -P, --platform \[platform\]
  
    Specifies the target platform. (linux, windows, macos)  
    Only linux and windows are supported for now.
@@ -50,7 +55,7 @@ qinp [options] <input_file>
     Specifies a single argument to pass to the generated program.  
     Only used when --run is specified.
 
- - -x, --extern \[name\]
+ - -x, --extern-library \[name\]
   
     Specifies a library/object file to link against.
 

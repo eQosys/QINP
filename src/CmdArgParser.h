@@ -6,6 +6,8 @@
 
 typedef std::map<std::string, std::vector<std::string>> CmdArgMap;
 
+extern const char* CMD_ARG__POSITIONAL;
+
 enum class CmdArgParam
 {
     Unused,
@@ -15,7 +17,7 @@ enum class CmdArgParam
 
 struct CmdArgDesc
 {
-    char short_name;
+    std::string short_name;
     std::string long_name;
     CmdArgParam param;
 };

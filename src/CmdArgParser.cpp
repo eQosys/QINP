@@ -2,14 +2,12 @@
 
 #include "StringHelpers.h"
 
-const char* CMD_ARGS_POS_ARGS = "pos-args";
+const char* CMD_ARG__POSITIONAL = "pos-args";
 
 void register_argument(int& argc, const char**& argv, CmdArgMap& args, const CmdArgDesc& desc, std::string param)
 {
-    std::string arg_name = std::string(&desc.short_name, 1);
-
     // add arg to map if not already existent
-    args[arg_name];
+    args[desc.short_name];
 
     if (desc.param == CmdArgParam::Unused)
     {
@@ -25,7 +23,7 @@ void register_argument(int& argc, const char**& argv, CmdArgMap& args, const Cmd
             throw 1; // TODO: throw proper exception when a parameter was provided despite the argument not taking any parameters
         return;
     case CmdArgParam::Single:
-        if (!args[arg_name].empty())
+        if (!args[desc.short_name].empty())
             throw 1; // TODO: throw proper exception when 'arg_name' was already specified with a parameter
         break;
     case CmdArgParam::Multi:
@@ -39,7 +37,7 @@ void register_argument(int& argc, const char**& argv, CmdArgMap& args, const Cmd
         param = argv++[0];
     }
 
-    args[arg_name].push_back(param);
+    args[desc.short_name].push_back(param);
 }
 
 CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDesc>& argDescs)
@@ -54,7 +52,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
         if (arg == "--") // remaining args are positional
         {
             while (argc-- > 0)
-                args[CMD_ARGS_POS_ARGS].push_back(argv++[0]);
+                args[CMD_ARG__POSITIONAL].push_back(argv++[0]);
 
             break;
         }
@@ -70,7 +68,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
                 throw 1; // TODO: throw proper exception if parameter is missing after '='
 
             bool found_arg = false;
-            for (auto& desc : argDescs)
+            for (const auto& desc : argDescs)
             {
                 if (desc.long_name != arg)
                     continue;
@@ -93,9 +91,9 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
             arg = arg.substr(1, 1);
 
             bool found_arg = false;
-            for (auto& desc : argDescs)
+            for (const auto& desc : argDescs)
             {
-                if (std::string(&desc.short_name, 1) != arg)
+                if (desc.short_name != arg)
                     continue;
 
                 found_arg = true;
@@ -110,7 +108,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
         }
 
         // positional argument
-        args[CMD_ARGS_POS_ARGS].push_back(arg);
+        args[CMD_ARG__POSITIONAL].push_back(arg);
     }
 
     return args;

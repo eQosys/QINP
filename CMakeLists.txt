@@ -14,6 +14,10 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 add_executable(
     qinp
     "src/QINP.cpp"
+    "src/Program.cpp"
+    "src/Platform.cpp"
+    "src/HelpPrinter.cpp"
+    "src/Architecture.cpp"
     "src/CmdArgParser.cpp"
     "src/StringHelpers.cpp"
 )
@@ -39,3 +43,5 @@ elseif (UNIX)
 elseif (APPLE)
     add_compile_definitions(QINP_PLATFORM_APPLE)
 endif()
+
+add_compile_definitions(QINP_ARCHITECTURE_X86)
