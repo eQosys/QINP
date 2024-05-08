@@ -95,6 +95,11 @@ int main(int argc, const char** argv, const char** env)
         print_error(err);
         return EXIT_FAILURE;
     }
+    catch (const qrawlr::GrammarException& err)
+    {
+        print_error(err);
+        return EXIT_FAILURE;
+    }
     catch (const std::runtime_error& err)
     {
         print_error(err);

@@ -74,15 +74,8 @@ void Program::import_source_file(std::string path_str, const std::string& import
 void Program::import_source_code(const std::string& code_str, const std::string& path_str)
 {
     // Parse source code with Qrawlr
-    qrawlr::MatchResult result;
-    try {
-        result = m_grammar.apply_to(code_str, "GlobalCode", path_str);
-    }
-    catch (const qrawlr::GrammarException& e)
-    {
-        throw QinpError(std::string("Qrawlr: ") + e.what());
-    }
-
-    auto res_str = result.tree->to_string();
-    printf("%s\n", res_str.c_str());
+    // qrawlr::GrammarException handled by main function
+    qrawlr::MatchResult result = m_grammar.apply_to(code_str, "GlobalCode", path_str);
+    if ((size_t)result.pos_end.index < code_str.size())
+        throw qrawlr::GrammarException("Could not parse complete source", result.pos_end.to_string(path_str));
 }
