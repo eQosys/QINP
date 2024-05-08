@@ -14,20 +14,8 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 add_executable(
     qinp
     "src/QINP.cpp"
-    "src/Token.cpp"
-    "src/ExecCmd.cpp"
-    "src/Symbols.cpp"
-    "src/Program.cpp"
-    "src/Datatype.cpp"
-    "src/Tokenizer.cpp"
-    "src/Statement.cpp"
-    "src/ArgsParser.cpp"
-    "src/NasmGenerator.cpp"
-    "src/ExportComments.cpp"
-    "src/ExportSymbolInfo.cpp"
-    "src/ProgramGenerator.cpp"
-    "src/OperatorPrecedence.cpp"
-    "src/pathToExecutableDir.cpp"
+    "src/CmdArgParser.cpp"
+    "src/StringHelpers.cpp"
 )
 
 include_directories(
