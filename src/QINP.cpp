@@ -86,9 +86,9 @@ int main(int argc, const char** argv, const char** env)
         for (const auto& path_str : args[CMD_ARG__POSITIONAL])
             program.import_source_file(path_str, "", true);
 
-        // generate assembly
+        // TODO: generate assembly
 
-        // compile to binary
+        // TODO: compile to binary
     }
     catch (const QinpError& err)
     {

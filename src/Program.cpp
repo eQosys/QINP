@@ -78,4 +78,6 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     qrawlr::MatchResult result = m_grammar.apply_to(code_str, "GlobalCode", path_str);
     if ((size_t)result.pos_end.index < code_str.size())
         throw qrawlr::GrammarException("Could not parse complete source", result.pos_end.to_string(path_str));
+
+    // TODO: read result tree
 }
