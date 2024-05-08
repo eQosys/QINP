@@ -66,7 +66,7 @@ int main(int argc, const char** argv, const char** env)
         // Retrieve wether to show verbose info or not
         bool verbose = false;
         if (args.find(CMD_ARG__VERBOSE) != args.end())
-            verbose = true;    
+            verbose = true;
 
         Program program(verbose);
 
