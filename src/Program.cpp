@@ -42,9 +42,9 @@ void Program::import_source_file(std::string path_str, const std::string& import
         }
 
         // when not found, import from specified import directories (stdlib first element, check last)
-        if (!ignore_import_dirs)
+        if (!found_base && !ignore_import_dirs)
         {
-            for (auto it = m_import_dirs.rbegin(); !found_base && it != m_import_dirs.rend(); ++it)
+            for (auto it = m_import_dirs.rbegin(); it != m_import_dirs.rend(); ++it)
             {
                 auto base = *it;
                 try {
@@ -77,7 +77,7 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     // qrawlr::GrammarException handled by main function
     qrawlr::MatchResult result = m_grammar.apply_to(code_str, "GlobalCode", path_str);
     if ((size_t)result.pos_end.index < code_str.size())
-        throw qrawlr::GrammarException("Could not parse complete source", result.pos_end.to_string(path_str));
+        throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(path_str));
 
     // TODO: read result tree
 }
