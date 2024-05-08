@@ -1,7 +1,8 @@
 #include "Program.h"
-#include "HelpPrinter.h"
-#include "CmdArgParser.h"
-#include "AutoDefinitions.h"
+#include "utility/HelpPrinter.h"
+#include "utility/CmdArgParser.h"
+#include "utility/AutoDefinitions.h"
+#include "utility/EnvironmentParser.h"
 
 const char* CMD_ARG__HELP               = "h";
 const char* CMD_ARG__VERBOSE            = "v";
@@ -42,8 +43,9 @@ int main(int argc, const char** argv, const char** env)
     }
     catch (int e)
     {
-        printf("[ERROR]: Invalid arguments provided\n"); // TODO: Proper error handling
+        printf("[ ERR ]: Invalid commandline arguments provided\n"); // TODO: Proper error handling
     }
+    EnvironmentMap environ = parse_environment(env);
 
     if (args.find(CMD_ARG__HELP) != args.end())
     {
@@ -69,7 +71,13 @@ int main(int argc, const char** argv, const char** env)
 
     Program program(verbose);
 
-    // add import directories
+    // add stdlib import directory if specified in the environment
+    if (environ.find("QINP_STDLIB") != environ.end())
+        program.add_import_directory(environ["QINP_STDLIB"]);
+    else
+        printf("[ WARN ]: Could not locate stdlib directory\n");
+
+    // add specified import directories
     for (const auto& path_str : args[CMD_ARG__IMPORT_DIR])
         program.add_import_directory(path_str);
 

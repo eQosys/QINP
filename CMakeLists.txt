@@ -15,12 +15,13 @@ add_executable(
     qinp
     "src/QINP.cpp"
     "src/Program.cpp"
-    "src/Platform.cpp"
-    "src/FileReader.cpp"
-    "src/HelpPrinter.cpp"
-    "src/Architecture.cpp"
-    "src/CmdArgParser.cpp"
-    "src/StringHelpers.cpp"
+    "src/utility/Platform.cpp"
+    "src/utility/FileReader.cpp"
+    "src/utility/HelpPrinter.cpp"
+    "src/utility/Architecture.cpp"
+    "src/utility/CmdArgParser.cpp"
+    "src/utility/StringHelpers.cpp"
+    "src/utility/EnvironmentParser.cpp"
 )
 
 include_directories(

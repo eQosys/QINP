@@ -1,6 +1,6 @@
 #include "Program.h"
 
-#include "FileReader.h"
+#include "utility/FileReader.h"
 
 Program::Program(bool verbose)
     : m_verbose(verbose)
@@ -18,7 +18,14 @@ void Program::add_import_directory(const std::string& path_str)
 
 void Program::import_source_file(std::string path_str, bool skip_duplicate)
 {
-    path_str = std::filesystem::canonical(path_str).generic_string();
+    try {
+        path_str = std::filesystem::canonical(path_str).generic_string();
+    }
+    catch (const std::filesystem::filesystem_error& e)
+    {
+        throw 1; // throw proper exception when file could not be found
+    }
+
     if (skip_duplicate && m_imported_files.find(path_str) != m_imported_files.end())
         return; // skip duplicate import
     
