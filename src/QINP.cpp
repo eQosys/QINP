@@ -84,7 +84,7 @@ int main(int argc, const char** argv, const char** env)
         if (args[CMD_ARG__POSITIONAL].empty())
             throw QinpError("No source files specified");
         for (const auto& path_str : args[CMD_ARG__POSITIONAL])
-            program.import_source_file(path_str, true, true);
+            program.import_source_file(path_str, "", true);
 
         // generate assembly
 

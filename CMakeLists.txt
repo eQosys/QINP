@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.8)
 
 project("qinp")
 
+# Borrowed from https://stackoverflow.com/questions/410980/include-a-text-file-in-a-c-program-as-a-char
+function(make_includable input_file output_file)
+    file(READ ${input_file} content)
+    set(delim "for_c++_include")
+    set(content "R\"${delim}(\n${content}\n)${delim}\"")
+    file(WRITE ${output_file} "${content}")
+endfunction(make_includable)
+
+make_includable("src/grammar/qinp_grammar.qgr" "src/grammar/gen/qinp_grammar.qgr.inc")
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
     set(CMAKE_BUILD_TYPE_RELEASE)
@@ -23,6 +33,7 @@ add_executable(
     "src/utility/StringHelpers.cpp"
     "src/utility/EnvironmentParser.cpp"
     "src/errors/ErrorPrinter.cpp"
+    "src/grammar/QinpGrammarCStr.cpp"
     )
 
 include_directories(
