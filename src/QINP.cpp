@@ -29,8 +29,8 @@ const std::vector<CmdArgDesc> CMD_ARG_DESCRIPTORS = {
     { CMD_ARG__PLATFORM,           "platform",           CmdArgParam::Single },
     { CMD_ARG__RUNARG,             "runarg",             CmdArgParam::Multi  },
     { CMD_ARG__EXTERN_LIBRARY,     "extern-library",     CmdArgParam::Multi  },
-    { CMD_ARG__EXPORT_SYMBOL_INFO, "export-symbol-info", CmdArgParam::Unused },
-    { CMD_ARG__EXPORT_COMMENTS,    "export-comments",    CmdArgParam::Unused }
+    { CMD_ARG__EXPORT_SYMBOL_INFO, "export-symbol-info", CmdArgParam::Single },
+    { CMD_ARG__EXPORT_COMMENTS,    "export-comments",    CmdArgParam::Single }
 };
 
 int main(int argc, const char** argv, const char** env)

@@ -9,6 +9,9 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/Debug/qinp",
+            "env": {
+                "QINP_STDLIB": "./stdlib/"
+            },
             "args": [ "-v", "-k", "-r", "-e=examples/_symbols.json", "-c=examples/_comments.json", "-o=/tmp/qinp-out.out", "examples/shift_test.qnp", "-a=host/QINP.qnp" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",

@@ -55,15 +55,15 @@ qinp [options] [input_files]
     Specifies a single argument to pass to the generated program.  
     Only used when --run is specified.
 
- - -x, --extern-library \[name\]
+ - -x, --extern-library \[path\]
   
     Specifies a library/object file to link against.
 
- - -e, --export-symbol-info
+ - -e, --export-symbol-info \[path\]
 
     Writes the symbols (including unused ones) of the parsed program code
     and additional info to the specified file.
 
- - -c, --export-comments
+ - -c, --export-comments \[path\]
       
     Writes the comments of the parsed program code to the specified file.

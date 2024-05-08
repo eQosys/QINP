@@ -27,12 +27,12 @@
 	"  -a, --runarg [arg]\n" \
 	"    Specifies a single argument to pass to the generated program.\n" \
 	"    Only used when --run is specified.\n" \
-	"  -x, --extern-library [filepath]\n" \
+	"  -x, --extern-library [path]\n" \
 	"    Specifies a library/object file to link against.\n" \
-	"  -e, --export-symbol-info\n" \
+	"  -e, --export-symbol-info [path]\n" \
 	"    Writes the symbols (including unused ones) of the parsed program code\n" \
 	"    and additional info to the specified file.\n" \
-	"  -c, --export-comments\n" \
+	"  -c, --export-comments [path]\n" \
 	"    Writes the comments of the parsed program code to the specified file.\n"
 
 void print_help(const char* prog_name)
