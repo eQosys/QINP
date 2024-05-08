@@ -1,11 +1,10 @@
 bin/
+out/
 .kdev4/
 .cache/
 
 .vs/*
 !.vs/launch.vs.json
-
-out/
 
 *.o
 *.out
@@ -13,10 +12,12 @@ out/
 *.exe
 
 examples/_symbols.json
+examples/_comments.json
+
+src/grammar/gen/
 
 tests/__failed.txt
 
 .vscode/settings.json
 
 CMakeSettings.json
-examples/_comments.json
