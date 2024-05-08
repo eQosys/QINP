@@ -74,7 +74,7 @@ int main(int argc, const char** argv, const char** env)
         if (environ.find("QINP_STDLIB") != environ.end())
             program.add_import_directory(environ["QINP_STDLIB"]);
         else if (verbose)
-            printf("[ WARN ]: Could not locate stdlib directory\n");
+            print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library"));
 
         // add specified import directories
         for (const auto& path_str : args[CMD_ARG__IMPORT_DIR])
