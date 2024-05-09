@@ -2,11 +2,11 @@
 
 GlobalCode:
     (
-        ( NonCodeBlock "\n" )?
+        ( NonCodeBlock Newline_ )?
         CodeItem
         (
             NonCodeBlock?
-            "\n"_
+            Newline_
             CodeItem
         )*
         NonCodeBlock?
@@ -34,11 +34,11 @@ CodeBlock:
     Whitespace?_ CodeItem
     (
         NonCodeBlock?
-        "\n"_ IndentationIncrease_{ onFail: fail("Expected indentation increase") }
+        Newline_ IndentationIncrease_{ onFail: fail("Expected indentation increase") }
         CodeItem{ onFail: fail("Expected at least one body item") }
         (
             NonCodeBlock?
-            "\n"_ Indentation_
+            Newline_ Indentation_
             CodeItem{ onFail: fail("Expected body item after correct indentation")}
         )*
         IndentationDecrease_
@@ -151,7 +151,7 @@ StatementDoWhile:
         "do"_
         Whitespace?_ ":"_{ onFail: fail("Expected colon") }
         CodeBlock
-        Whitespace?_ "\n"_{ onFail: fail("Expected newline after do-while loop body") }
+        Whitespace?_ Newline_{ onFail: fail("Expected newline after do-while loop body") }
         Indentation_{ onFail: fail("Expected indentation") }
         "while"_
         Whitespace_
@@ -165,12 +165,12 @@ StatementIfElifElse:
         StatementIf
         (
             NonCodeBlock?
-            "\n"_ Indentation_
+            Newline_ Indentation_
             StatementElif
         )*
         (
             NonCodeBlock?
-            "\n"_ Indentation_
+            Newline_ Indentation_
             StatementElse
         )?
     )
@@ -249,11 +249,11 @@ EnumMemberList:
     Whitespace?_ EnumMemberLine
     (
         NonCodeBlock?
-        "\n"_ IndentationIncrease_{ onFail: fail("Expected indentation increase") }
+        Newline_ IndentationIncrease_{ onFail: fail("Expected indentation increase") }
         EnumMemberLine{ onFail: fail("Expected at least one enum member") }
         (
             NonCodeBlock?
-            "\n"_ Indentation_
+            Newline_ Indentation_
             EnumMemberLine{ onFail: fail("Expected enum member after correct indentation")}
         )*
         IndentationDecrease_
@@ -396,11 +396,11 @@ InlineAsmBody:
     Whitespace?_ LiteralString
     (
         NonCodeBlock?
-        "\n"_ IndentationIncrease_{ onFail: fail("Expected indentation increase") }
+        Newline_ IndentationIncrease_{ onFail: fail("Expected indentation increase") }
         LiteralString{ onFail: fail("Expected at least one assembly line") }
         (
             NonCodeBlock?
-            "\n"_ Indentation_
+            Newline_ Indentation_
             LiteralString{ onFail: fail("Expected assembly line after correct indentation")}
         )*
         IndentationDecrease_
@@ -450,7 +450,7 @@ DatatypeNamed:
             Whitespace?_
             "*"_->Pointer
             Whitespace?_
-        ("const"_->Const)?
+            ("const"_->Const)?
         )*
         (
             Whitespace?_
@@ -471,7 +471,7 @@ Expression:
 
 \\ Assignment operators and ternary operator
 ExprPrec1Operator: [ "=" "+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>=" TernaryOperator ]
-ExprPrec1:
+ExprPrec1(collapse):
     (
         ExprPrec2
         (
@@ -491,7 +491,7 @@ TernaryOperator:
 
 \\ Logical OR
 ExprPrec2Operator: "||"
-ExprPrec2:
+ExprPrec2(collapse):
     (
         ExprPrec3
         (
@@ -504,7 +504,7 @@ ExprPrec2:
 
 \\ Logical AND
 ExprPrec3Operator: "&&"
-ExprPrec3:
+ExprPrec3(collapse):
     (
         ExprPrec4
         (
@@ -517,7 +517,7 @@ ExprPrec3:
 
 \\ Bitwise OR
 ExprPrec4Operator: ( "|" [ "|" "=" ]!~_ )
-ExprPrec4:
+ExprPrec4(collapse):
     (
         ExprPrec5
         (
@@ -530,7 +530,7 @@ ExprPrec4:
 
 \\ Bitwise XOR
 ExprPrec5Operator: ( "^" [ "^" "=" ]!~_ )
-ExprPrec5:
+ExprPrec5(collapse):
     (
         ExprPrec6
         (
@@ -543,7 +543,7 @@ ExprPrec5:
 
 \\ Bitwise AND
 ExprPrec6Operator: ( "&" [ "&" "=" ]!~_ )
-ExprPrec6:
+ExprPrec6(collapse):
     (
         ExprPrec7
         (
@@ -557,7 +557,7 @@ ExprPrec6:
 
 \\ Comparison operators (equal, not equal)
 ExprPrec7Operator: [ "==" "!=" ]
-ExprPrec7:
+ExprPrec7(collapse):
     (
         ExprPrec8
         (
@@ -570,7 +570,7 @@ ExprPrec7:
 
 \\ Comparison operators (less than, less than or equal, greater than, greater than or equal)
 ExprPrec8Operator: [ "<=" "<" ">=" ">" ]
-ExprPrec8:
+ExprPrec8(collapse):
     (
         ExprPrec9
         (
@@ -583,7 +583,7 @@ ExprPrec8:
 
 \\ Bitwise shift operators
 ExprPrec9Operator: ( [ "<<" ">>" ] "="!~_ )
-ExprPrec9:
+ExprPrec9(collapse):
     (
         ExprPrec10
         (
@@ -596,7 +596,7 @@ ExprPrec9:
 
 \\ Addition and subtraction
 ExprPrec10Operator: ( [ "+" "-" ] "="!~_ )
-ExprPrec10:
+ExprPrec10(collapse):
     (
         ExprPrec11
         (
@@ -609,7 +609,7 @@ ExprPrec10:
 
 \\ Multiplication, division and modulo
 ExprPrec11Operator: ( [ "*" "/" "%" ] "="!~_ )
-ExprPrec11:
+ExprPrec11(collapse):
     (
         ExprPrec12
         (
@@ -623,7 +623,7 @@ ExprPrec11:
 \\ Prefix operators
 \\ TODO: Proper sizeof operator
 ExprPrec12Operator: [ "." "++" "--" "+" "-" "!" "~" "*" "&" ExprOpTypeCast ]
-ExprPrec12:
+ExprPrec12(collapse):
     (
         (
             Whitespace?_
@@ -655,7 +655,7 @@ ExprOpTypeCast:
 
 \\ Postfix operators
 ExprPrec13Operator: [ "++" "--" ExprOpFunctionCall ExprOpSubscript ]
-ExprPrec13:
+ExprPrec13(collapse):
     (
         ExprPrec14
         (
@@ -709,7 +709,7 @@ ExprOpSubscript:
     )
 
 ExprPrec14Operator: [ "." "->" ]
-ExprPrec14:
+ExprPrec14(collapse):
     (
         ExprPrec15
         (
@@ -720,7 +720,7 @@ ExprPrec14:
         )*
     )
 
-ExprPrec15:
+ExprPrec15(collapse):
     "("_ Whitespace?_ Expression Whitespace?_ ")"_{ onFail: fail("Expected closing parenthesis for atom")}
     LambdaDefinition
     Identifier
@@ -825,7 +825,7 @@ NonCodeBlock(hidden):
     (
         [ EmptyLine_ Comment ]
         (
-            "\n"_
+            Newline_
             [ EmptyLine_ Comment ]
         )*
     )

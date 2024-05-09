@@ -79,5 +79,10 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     if ((size_t)result.pos_end.index < code_str.size())
         throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(path_str));
 
+    // TODO: remove debug tree graphviz + render
+    system("mkdir -p out/");
+    qrawlr::write_file("out/tree.gv", result.tree->to_digraph_str(m_verbose));
+    system("dot -Tpdf -o out/tree.pdf out/tree.gv");
+
     // TODO: read result tree
 }
