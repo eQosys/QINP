@@ -3,6 +3,7 @@
 #include "errors/QinpError.h"
 #include "utility/FileReader.h"
 #include "utility/StringHelpers.h"
+#include "utility/ImportSpecifiers.h"
 #include "grammar/QinpGrammarCStr.h"
 
 Program::Program(bool verbose)
@@ -25,8 +26,14 @@ void Program::add_import_directory(const std::string& path_str)
     m_import_dirs.push_back(path);
 }
 
-void Program::import_source_file(std::string path_str, const std::string& import_from_dir_str, bool skip_duplicate, bool ignore_import_dirs)
+void Program::import_source_file(std::string path_str, bool skip_duplicate, bool ignore_import_dirs)
 {
+    std::filesystem::path import_from_dir;
+    if (!m_translation_units.empty())
+        import_from_dir = std::filesystem::path(curr_tu().get_path()).parent_path();
+    else
+        import_from_dir = "";
+
     std::filesystem::path path(path_str);
     if (!path.is_absolute())
     {
@@ -34,7 +41,7 @@ void Program::import_source_file(std::string path_str, const std::string& import
 
         // try importing relative to "importer"
         try {
-            path_str = std::filesystem::canonical(import_from_dir_str / path).generic_string();
+            path_str = std::filesystem::canonical(import_from_dir / path).generic_string();
             found_base = true;
         }
         catch (const std::filesystem::filesystem_error& e)
@@ -81,14 +88,15 @@ void Program::import_source_code(const std::string& code_str, const std::string&
         throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(path_str));
 
     // TODO: remove debug tree graphviz + render
-    system("mkdir -p out/");
-    qrawlr::write_file("out/tree.gv", result.tree->to_digraph_str(m_verbose));
-    system("dot -Tpdf -o out/tree.pdf out/tree.gv");
+    //std::string out_file_pdf = "out/" + replace_all(path_str, "/", ".") + ".pdf";
+    //system("mkdir -p out/");
+    //qrawlr::write_file("out/tree.gv", result.tree->to_digraph_str(m_verbose));
+    //std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
+    //system(dot_command.c_str());
 
-    // TODO: Proper backup
-    auto backup_translation_unit_path = m_current_translation_unit_path;
+    push_tu(path_str, result.tree);
     handle_tree_node(result.tree, "GlobalCode", nullptr);
-    m_current_translation_unit_path = backup_translation_unit_path;
+    pop_tu();
 }
 
 void Program::handle_tree_node(qrawlr::ParseTreeRef tree, const std::string& name, void* pData)
@@ -102,25 +110,30 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
 
     // Check if nodes' name matches any of the given names
     if (names.find(node->get_name()) == names.end())
-        throw qrawlr::GrammarException("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names, ", ") + "]", node->get_pos_begin().to_string(m_current_translation_unit_path));
+        throw make_grammar_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names, ", ") + "]", node);
 
     static const std::map<std::string, Handler> handlers = {
-        { "GlobalCode", handle_tree_node_global_code },
-        { "String",     handle_tree_node_string },
+        { "GlobalCode",           &Program::handle_tree_node_global_code        },
+        { "StatementImport",      &Program::handle_tree_node_stmt_import        },
+        { "ImportSpecifiers",     &Program::handle_tree_node_import_specifiers  },
+        { "LiteralString",        &Program::handle_tree_node_literal_string     },
+        { "Comment",              &Program::handle_tree_node_comment            },
     };
 
     // Get the corresponding handler
     auto it = handlers.find(node->get_name());
     if (it == handlers.end())
-        throw QinpError("[*handle_tree_node_one_of*]: Unhandled node name '" + node->get_name() + "'");
+        throw make_grammar_exception("[*handle_tree_node_one_of*]: Unhandled node name '" + node->get_name() + "'", node);
     Handler handler = it->second;
 
     // Call the handler
     (this->*handler)(node, pData);
 }
 
-void Program::handle_tree_node_global_code(qrawlr::ParseTreeNodeRef node, void* pData)
+void Program::handle_tree_node_global_code(qrawlr::ParseTreeNodeRef node, void* pUnused)
 {
+    (void)pUnused;
+
     static const std::set<std::string> valid_children = {
         "Comment",
         "StatementPass", "StatementDefer",
@@ -139,7 +152,46 @@ void Program::handle_tree_node_global_code(qrawlr::ParseTreeNodeRef node, void* 
         handle_tree_node_one_of(child, valid_children, nullptr);
 }
 
-void Program::handle_tree_node_string(qrawlr::ParseTreeNodeRef node, void* pString)
+void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+
+    qrawlr::Flags<ImportSpecifier> flags;
+    handle_tree_node(qrawlr::expect_child_node(node, "ImportSpecifiers"), "ImportSpecifiers", &flags);
+    // TODO: handle flags
+
+    std::string path_str;
+    handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
+
+    // TODO: remove debug print
+    printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().get_path().c_str());
+
+    import_source_file(path_str, true);
+}
+
+void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags)
+{
+    auto& flags = *(qrawlr::Flags<ImportSpecifier>*)pFlags;
+
+    for (auto child : node->get_children())
+    {
+        auto leaf = qrawlr::expect_leaf(child);
+        auto value = leaf->get_value();
+
+        if (value == "linux")
+            flags.set(ImportSpecifier::Platform_Linux);
+        else if (value == "windows")
+            flags.set(ImportSpecifier::Platform_Windows);
+        else if (value == "macos")
+            flags.set(ImportSpecifier::Platform_MacOS);
+        else if (value == "defer")
+            flags.set(ImportSpecifier::Defer);
+        else
+            throw make_grammar_exception("Unknown import specifier '" + value + "'", child);
+    }
+}
+
+void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pString)
 {
     std::string& string_out = *(std::string*)pString;
     string_out.clear();
@@ -176,8 +228,42 @@ void Program::handle_tree_node_string(qrawlr::ParseTreeNodeRef node, void* pStri
         {
             auto it = sequences.find(seq[0]);
             if (it == sequences.end())
-                throw qrawlr::GrammarException("Unknown escape sequence", child->get_pos_begin().to_string(m_current_translation_unit_path));
+                throw make_grammar_exception("Unknown escape sequence", child);
             string_out.push_back(it->second);
         }
     }
+}
+
+void Program::handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+    (void)node;
+
+    // TODO: comment extraction
+}
+
+qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem)
+{
+    return make_grammar_exception(message, elem, curr_tu().get_path());
+}
+
+qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem, const std::string& path)
+{
+    return qrawlr::GrammarException(message, elem->get_pos_begin().to_string(path));
+}
+
+TranslationUnit& Program::push_tu(const std::string& path, qrawlr::ParseTreeRef tree)
+{
+    m_translation_units.emplace(path, tree);
+    return curr_tu();
+}
+
+TranslationUnit& Program::curr_tu()
+{
+    return m_translation_units.top();
+}
+
+void Program::pop_tu()
+{
+    m_translation_units.pop();
 }
