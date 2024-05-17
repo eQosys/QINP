@@ -208,11 +208,8 @@ StatementPackDeclDef:
 PackHeader:
     (
         "pack"_ Whitespace_
-        PackName{ onFail: fail("Expected pack name") }
+        SymbolReference{ onFail: fail("Expected pack name") }
     )
-
-PackName:
-    SymbolReference
 
 PackDeclaration:
     Whitespace?_ "..."_
@@ -233,11 +230,8 @@ StatementEnumDeclDef:
 EnumHeader:
     (
         "enum"_ Whitespace_
-        EnumName{ onFail: fail("Expected enum name") }
+        SymbolReference{ onFail: fail("Expected enum name") }
     )
-
-EnumName:
-    SymbolReference
 
 EnumDeclaration:
     Whitespace?_ "..."_
@@ -291,14 +285,11 @@ FunctionHeader:
         "fn"_ Whitespace?_
         FunctionReturnType
         Whitespace?_
-        FunctionName{ onFail: fail("Expected function name") }
+        SymbolReference{ onFail: fail("Expected function name") }
         FunctionParameters
         Whitespace?_
         FunctionSpecifiers
     )
-
-FunctionName:
-    SymbolReference
 
 FunctionReturnType:
     (

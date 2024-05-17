@@ -5,6 +5,7 @@
 #include "utility/StringHelpers.h"
 #include "utility/ImportSpecifiers.h"
 #include "grammar/QinpGrammarCStr.h"
+#include "symbols/Symbols.h"
 
 Program::Program(bool verbose)
     : m_verbose(verbose),
@@ -30,7 +31,7 @@ void Program::import_source_file(std::string path_str, bool skip_duplicate, bool
 {
     std::filesystem::path import_from_dir;
     if (!m_translation_units.empty())
-        import_from_dir = std::filesystem::path(curr_tu().get_path()).parent_path();
+        import_from_dir = std::filesystem::path(curr_tu().path()).parent_path();
     else
         import_from_dir = "";
 
@@ -94,7 +95,7 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     //std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
     //system(dot_command.c_str());
 
-    push_tu(path_str, result.tree);
+    push_tu(path_str);
     handle_tree_node(result.tree, "GlobalCode", nullptr);
     pop_tu();
 }
@@ -113,8 +114,10 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         throw make_grammar_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names, ", ") + "]", node);
 
     static const std::map<std::string, Handler> handlers = {
-        { "GlobalCode",           &Program::handle_tree_node_global_code        },
+        { "GlobalCode",           &Program::handle_tree_node_code_block         },
+        { "CodeBlock",            &Program::handle_tree_node_code_block         },
         { "StatementImport",      &Program::handle_tree_node_stmt_import        },
+        { "StatementSpace",       &Program::handle_tree_node_stmt_space         },
         { "ImportSpecifiers",     &Program::handle_tree_node_import_specifiers  },
         { "LiteralString",        &Program::handle_tree_node_literal_string     },
         { "Comment",              &Program::handle_tree_node_comment            },
@@ -130,7 +133,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
     (this->*handler)(node, pData);
 }
 
-void Program::handle_tree_node_global_code(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::handle_tree_node_code_block(qrawlr::ParseTreeNodeRef node, void* pUnused)
 {
     (void)pUnused;
 
@@ -164,9 +167,25 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
 
     // TODO: remove debug print
-    printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().get_path().c_str());
+    printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().path().c_str());
 
     import_source_file(path_str, true);
+}
+
+void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+
+    std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
+
+    // TODO: check if space already exists
+
+    auto space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().path(), node->get_pos_begin()));
+
+    curr_tu().curr_sym()->add_child(space);
+    curr_tu().enter_symbol(space);
+    handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock"), "CodeBlock", nullptr);
+    curr_tu().leave_symbol();
 }
 
 void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags)
@@ -244,7 +263,7 @@ void Program::handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnu
 
 qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem)
 {
-    return make_grammar_exception(message, elem, curr_tu().get_path());
+    return make_grammar_exception(message, elem, curr_tu().path());
 }
 
 qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem, const std::string& path)
@@ -252,9 +271,9 @@ qrawlr::GrammarException Program::make_grammar_exception(const std::string& mess
     return qrawlr::GrammarException(message, elem->get_pos_begin().to_string(path));
 }
 
-TranslationUnit& Program::push_tu(const std::string& path, qrawlr::ParseTreeRef tree)
+TranslationUnit& Program::push_tu(const std::string& path)
 {
-    m_translation_units.emplace(path, tree);
+    m_translation_units.emplace(path);
     return curr_tu();
 }
 
