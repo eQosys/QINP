@@ -389,9 +389,9 @@ space std:
 		return true
 
 	fn<> String.swap(String* self, String* other)!:
-		swap_obj(self->m_data, other->m_data)
-		swap_obj(self->m_length, other->m_length)
-		swap_obj(self->m_reserved, other->m_reserved)
+		SWAP_OBJ(self->m_data, other->m_data)
+		SWAP_OBJ(self->m_length, other->m_length)
+		SWAP_OBJ(self->m_reserved, other->m_reserved)
 
 	fn<Order> String.compare(String const* self, String const* other) nodiscard!:
 		return self->compare(other->m_data)

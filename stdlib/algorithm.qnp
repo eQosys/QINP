@@ -4,8 +4,6 @@
 import "error.qnp"
 import "memory.qnp"
 
-import "stdio.qnp"
-
 space std:
 	\\ Function signature for a comparison function.
 	define FN_COMPARE fn<bool>(void const*, void const*)
@@ -38,6 +36,11 @@ space std:
 	\\ Macro to define a lambda function that deletes an object.
 	\\ @param type The type of the object.
 	define LMBD_DELETE_DT(type) lambda<>(void* ptr): .std.delete((type*)ptr);
+
+	\\ Swaps the content of two objects. (The size of both objects must be the same and detectable with `sizeof`)
+	\\ @param a The first object.
+	\\ @param b The second object.
+	define SWAP_OBJ(a, b) .std.swap(&a, &b, sizeof(a))
 
 	\\ Sorts an array of elements.
 	\\ @param array The array to sort.
@@ -83,11 +86,6 @@ space std:
 	\\ @param swap A function that swaps two elements.
 	\\ @param random A function that returns a random number.
 	fn<> shuffle(void* array, u64 count, u64 elemSize, FN_SWAP swap, FN_RANDOM random)...
-
-	\\ Swaps the content of two objects. (The size of both objects must be the same and detectable with `sizeof`)
-	\\ @param a The first object.
-	\\ @param b The second object.
-	define swap_obj(a, b) .std.swap(&a, &b, sizeof(a))
 
 	\\ Swaps the content of two arrays.
 	\\ @param a The first array.
