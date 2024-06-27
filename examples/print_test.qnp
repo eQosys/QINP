@@ -1,3 +1,18 @@
 import "stdio.qnp"
 
 std.println("--- %-20 ---")
+
+var<u64[5]> arr
+arr[0] = 2
+arr[1] = 4
+arr[2] = 6
+arr[3] = 8
+arr[4] = 1123
+
+std.printArray( \
+    arr, \
+    sizeof(arr) / sizeof(u64), \
+    sizeof(u64),  \
+    lambda<i32>(void const* elem): return std.print(*(u64*)elem);, \
+    "[", ", ", "]\n" \
+)
