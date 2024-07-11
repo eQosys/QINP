@@ -9,6 +9,7 @@
 
 Program::Program(bool verbose)
     : m_verbose(verbose),
+    m_root_sym(Symbol::make<SymbolSpace>("<root>", Location::from_qrawlr("<root>", {}), nullptr)),
     m_grammar(
         qrawlr::Grammar::load_from_text(
             QINP_GRAMMAR_C_STR,
@@ -114,13 +115,14 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         throw make_grammar_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names, ", ") + "]", node);
 
     static const std::map<std::string, Handler> handlers = {
-        { "GlobalCode",           &Program::handle_tree_node_code_block         },
-        { "CodeBlock",            &Program::handle_tree_node_code_block         },
-        { "StatementImport",      &Program::handle_tree_node_stmt_import        },
-        { "StatementSpace",       &Program::handle_tree_node_stmt_space         },
-        { "ImportSpecifiers",     &Program::handle_tree_node_import_specifiers  },
-        { "LiteralString",        &Program::handle_tree_node_literal_string     },
-        { "Comment",              &Program::handle_tree_node_comment            },
+        { "GlobalCode",               &Program::handle_tree_node_code_block         },
+        { "CodeBlock",                &Program::handle_tree_node_code_block         },
+        { "StatementImport",          &Program::handle_tree_node_stmt_import        },
+        { "StatementSpace",           &Program::handle_tree_node_stmt_space         },
+        { "StatementFunctionDeclDef", &Program::handle_tree_node_stmt_func_decl_def },
+        { "ImportSpecifiers",         &Program::handle_tree_node_import_specifiers  },
+        { "LiteralString",            &Program::handle_tree_node_literal_string     },
+        { "Comment",                  &Program::handle_tree_node_comment            },
     };
 
     // Get the corresponding handler
@@ -178,14 +180,24 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
 
-    // TODO: check if space already exists
+    auto space = curr_tu().get_symbol(space_name, true);
+    if (!space) // create new space
+        space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().path(), node->get_pos_begin()), curr_tu().curr_symbol());
 
-    auto space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().path(), node->get_pos_begin()));
-
-    curr_tu().curr_sym()->add_child(space);
+    curr_tu().curr_symbol()->add_child(space);
     curr_tu().enter_symbol(space);
     handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock"), "CodeBlock", nullptr);
     curr_tu().leave_symbol();
+}
+
+void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+
+    std::string func_name = qrawlr::expect_child_leaf(node, "FunctionHeader.SymbolReference.Identifier.0")->get_value();
+
+    // TODO: proper implementation
+    printf("Reached function with name '%s'\n", func_name.c_str());
 }
 
 void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags)
@@ -273,7 +285,7 @@ qrawlr::GrammarException Program::make_grammar_exception(const std::string& mess
 
 TranslationUnit& Program::push_tu(const std::string& path)
 {
-    m_translation_units.emplace(path);
+    m_translation_units.emplace(path, m_root_sym);
     return curr_tu();
 }
 

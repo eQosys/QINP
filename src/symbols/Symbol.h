@@ -12,7 +12,7 @@ class Symbol
 {
 public:
     Symbol() = default;
-    Symbol(const std::string& name, const Location& location);
+    Symbol(const std::string& name, const Location& location, SymbolRef parent);
 public:
     virtual ~Symbol() = default;
 public:
@@ -20,6 +20,7 @@ public:
     SymbolRef get_child(const std::string& name) const;
 public:
     const std::string& name() const;
+    const Location& location() const;
 public:
     template <typename T>
     bool is_of_type() const;
@@ -31,6 +32,7 @@ public:
 private:
     std::string m_name;
     Location m_location;
+    std::weak_ptr<Symbol> m_parent;
     std::map<std::string, SymbolRef> m_children;
 };
 

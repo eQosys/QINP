@@ -25,6 +25,7 @@ add_executable(
     qinp
     "src/QINP.cpp"
     "src/Program.cpp"
+    "src/TranslationUnit.cpp"
     "src/utility/Platform.cpp"
     "src/utility/FileReader.cpp"
     "src/utility/HelpPrinter.cpp"

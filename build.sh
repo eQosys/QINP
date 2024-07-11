@@ -23,7 +23,7 @@ validConfigs="Release Debug RelWithDebInfo"
 
 if [[ ! " ${validConfigs} " =~ " ${CONFIG} " ]]; then
     echo "Invalid Configuration selected!"
-    exit
+    exit 1
 fi
 
 BIN_DIR="bin/${CONFIG}"
@@ -46,6 +46,8 @@ fi
 
 echo "Building project..."
 cmake --build . -j ${NUM_PROCESSORS}
+
+[ $? -eq 0 ] && echo "Build successful" || exit $?
 
 echo "Copying stdlib..."
 rm -r stdlib

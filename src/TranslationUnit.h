@@ -1,25 +1,22 @@
 #pragma once
 
-#include "libQrawlr.h"
+#include <vector>
 
 #include "symbols/SymbolSpace.h"
 
 class TranslationUnit
 {
 public:
-    TranslationUnit(const std::string& path)
-        : m_path(path), m_root_sym(Symbol::make<SymbolSpace>("<global>", Location(path))), m_sym_stack()
-    {
-        m_sym_stack.push(m_root_sym);
-    }
+    TranslationUnit(const std::string& path, SymbolRef root_sym);
 public:
-    void enter_symbol(SymbolRef sym) { m_sym_stack.push(sym); }
-    void leave_symbol() { m_sym_stack.pop(); }
-    SymbolRef curr_sym() const { return m_sym_stack.top(); }
+    void enter_symbol(SymbolRef sym);
+    void leave_symbol();
+    SymbolRef curr_symbol() const;
+    SymbolRef get_symbol(const std::string& path, bool local_only, bool from_root = false) const;
 public:
-    const std::string& path() const { return m_path; }
+    const std::string& path() const;
 private:
     std::string m_path;
     SymbolRef m_root_sym;
-    std::stack<SymbolRef> m_sym_stack;
+    std::vector<SymbolRef> m_sym_stack;
 };
