@@ -1,6 +1,6 @@
 #include "TranslationUnit.h"
 
-TranslationUnit::TranslationUnit(const std::string& path, SymbolRef root_sym)
+TranslationUnit::TranslationUnit(const std::string& path, const SymbolRef root_sym)
     : m_path(path), m_root_sym(root_sym), m_sym_stack()
 {
     m_sym_stack.push_back(m_root_sym);
@@ -21,14 +21,14 @@ SymbolRef TranslationUnit::curr_symbol() const
     return m_sym_stack.back();
 }
 
-SymbolRef TranslationUnit::get_symbol(const std::string& name, bool local_only, bool from_root) const
+SymbolRef TranslationUnit::get_symbol_by_name(const std::string& name, bool local_only, bool from_root) const
 {
     if (from_root)
-        return m_root_sym->get_child(name);
+        return m_root_sym->get_child_by_name(name);
 
     for (auto it = m_sym_stack.rbegin(); it != m_sym_stack.rend(); ++it)
     {
-        auto sym = (*it)->get_child(name);
+        auto sym = (*it)->get_child_by_name(name);
         if (sym)
             return sym;
         if (local_only)
@@ -38,7 +38,7 @@ SymbolRef TranslationUnit::get_symbol(const std::string& name, bool local_only, 
     return nullptr;
 }
 
-const std::string& TranslationUnit::path() const
+const std::string& TranslationUnit::get_path() const
 {
     return m_path;
 }

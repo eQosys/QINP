@@ -32,7 +32,7 @@ void Program::import_source_file(std::string path_str, bool skip_duplicate, bool
 {
     std::filesystem::path import_from_dir;
     if (!m_translation_units.empty())
-        import_from_dir = std::filesystem::path(curr_tu().path()).parent_path();
+        import_from_dir = std::filesystem::path(curr_tu().get_path()).parent_path();
     else
         import_from_dir = "";
 
@@ -169,7 +169,7 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
 
     // TODO: remove debug print
-    printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().path().c_str());
+    printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().get_path().c_str());
 
     import_source_file(path_str, true);
 }
@@ -180,9 +180,9 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
 
-    auto space = curr_tu().get_symbol(space_name, true);
+    auto space = curr_tu().get_symbol_by_name(space_name, true);
     if (!space) // create new space
-        space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().path(), node->get_pos_begin()), curr_tu().curr_symbol());
+        space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().get_path(), node->get_pos_begin()), curr_tu().curr_symbol());
 
     curr_tu().curr_symbol()->add_child(space);
     curr_tu().enter_symbol(space);
@@ -275,7 +275,7 @@ void Program::handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnu
 
 qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem)
 {
-    return make_grammar_exception(message, elem, curr_tu().path());
+    return make_grammar_exception(message, elem, curr_tu().get_path());
 }
 
 qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem, const std::string& path)

@@ -17,10 +17,10 @@ public:
     virtual ~Symbol() = default;
 public:
     void add_child(SymbolRef sym);
-    SymbolRef get_child(const std::string& name) const;
+    SymbolRef get_child_by_name(const std::string& name) const;
 public:
-    const std::string& name() const;
-    const Location& location() const;
+    const std::string& get_name() const;
+    const Location& get_location() const;
 public:
     template <typename T>
     bool is_of_type() const;

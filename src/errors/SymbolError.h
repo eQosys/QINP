@@ -7,7 +7,7 @@ class SymbolError : public QinpError
 {
 public:
     SymbolError(SymbolRef sym, const std::string& what)
-        : QinpError(sym->location().to_string() + ": " + what)
+        : QinpError(sym->get_location().to_string() + ": " + what)
     {}
 public:
     using QinpError::QinpError;

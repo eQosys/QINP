@@ -8,13 +8,13 @@ Symbol::Symbol(const std::string& name, const Location& location, SymbolRef pare
 
 void Symbol::add_child(SymbolRef sym)
 {
-    if (m_children.find(sym->name()) != m_children.end())
-        throw SymbolError(sym, "Duplicate symbol: " + sym->name());
+    if (m_children.find(sym->get_name()) != m_children.end())
+        throw SymbolError(sym, "Duplicate symbol: " + sym->get_name());
 
-    m_children[sym->name()] = sym;
+    m_children[sym->get_name()] = sym;
 }
 
-SymbolRef Symbol::get_child(const std::string& name) const
+SymbolRef Symbol::get_child_by_name(const std::string& name) const
 {
     auto it = m_children.find(name);
     if (it == m_children.end())
@@ -22,12 +22,12 @@ SymbolRef Symbol::get_child(const std::string& name) const
     return it->second;
 }
 
-const std::string& Symbol::name() const
+const std::string& Symbol::get_name() const
 {
     return m_name;
 }
 
-const Location& Symbol::location() const
+const Location& Symbol::get_location() const
 {
     return m_location;
 }
