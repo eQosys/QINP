@@ -3,8 +3,8 @@
 #include "Architecture.h"
 #include "Platform.h"
 
-#if defined(QINP_ARCHITECTURE_X86)
-    #define QINP_CURRENT_ARCHITECTURE Architecture::x86
+#if defined(QINP_ARCHITECTURE_X86_64)
+    #define QINP_CURRENT_ARCHITECTURE Architecture::x86_64
 #elif defined(QINP_ARCHITECTURE_QIPU)
     #define QINP_CURRENT_ARCHITECTURE Architecture::QIPU
 #else

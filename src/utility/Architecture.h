@@ -5,7 +5,7 @@
 enum class Architecture
 {
     Unknown,
-    x86,
+    x86_64,
     QIPU
 };
 

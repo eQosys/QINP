@@ -25,10 +25,12 @@ add_executable(
     qinp
     "src/QINP.cpp"
     "src/Program.cpp"
-    "src/Datatype.cpp"
     "src/TranslationUnit.cpp"
+    "src/utility/Timer.cpp"
+    "src/utility/Datatype.cpp"
     "src/utility/Platform.cpp"
     "src/utility/FileReader.cpp"
+    "src/utility/SymbolPath.cpp"
     "src/utility/HelpPrinter.cpp"
     "src/utility/Architecture.cpp"
     "src/utility/CmdArgParser.cpp"
@@ -61,4 +63,4 @@ elseif (APPLE)
     add_compile_definitions(QINP_PLATFORM_APPLE)
 endif()
 
-add_compile_definitions(QINP_ARCHITECTURE_X86)
+add_compile_definitions(QINP_ARCHITECTURE_X86_64)

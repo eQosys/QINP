@@ -8,12 +8,18 @@
 
 #include "libQrawlr.h"
 #include "TranslationUnit.h"
+#include "utility/Architecture.h"
+
+typedef std::shared_ptr<class Program> ProgramRef;
 
 class Program
 {
-public:
+protected:
     Program() = delete;
-    Program(bool verbose);
+    Program(Architecture arch, bool verbose);
+public:
+    int get_ptr_size() const;
+    int get_builtin_type_size(const std::string& type_name) const;
 public:
     void add_import_directory(const std::string& path_str);
     void import_source_file(std::string path_str, bool skip_duplicate, bool ignore_import_dirs = false);
@@ -33,6 +39,7 @@ private:
     qrawlr::GrammarException make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem);
     qrawlr::GrammarException make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem, const std::string& path);
 private:
+    Architecture m_architecture;
     bool m_verbose;
     SymbolRef m_root_sym;
     qrawlr::Grammar m_grammar;
@@ -45,4 +52,9 @@ private:
     void pop_tu();
 private:
     typedef void (Program::*Handler)(qrawlr::ParseTreeNodeRef, void*);
+public:
+    static ProgramRef get();
+    static void init(Architecture arch, bool verbose);
+private:
+    static ProgramRef s_singleton;
 };

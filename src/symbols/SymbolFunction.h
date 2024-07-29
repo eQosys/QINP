@@ -2,7 +2,9 @@
 
 #include "Symbol.h"
 
-#include "Datatype.h"
+#include "utility/Datatype.h"
+#include "utility/CodeBlock.h"
+#include "utility/Parameters.h"
 
 class SymbolFunctionName : public Symbol
 {
@@ -14,6 +16,6 @@ class SymbolFunction : public Symbol
     using Symbol::Symbol;
 private:
     Datatype m_return_type;
-    Parameters m_params;
+    Parameter_Decl m_params;
     CodeBlock m_body;
 };

@@ -1,5 +1,6 @@
 #include "Program.h"
 #include "errors/ErrorPrinter.h"
+#include "utility/Timer.h"
 #include "utility/HelpPrinter.h"
 #include "utility/CmdArgParser.h"
 #include "utility/AutoDefinitions.h"
@@ -66,23 +67,28 @@ int main(int argc, const char** argv, const char** env)
         if (args.find(CMD_ARG__VERBOSE) != args.end())
             verbose = true;
 
-        Program program(verbose);
+        Program::init(architecture, verbose);
+        auto program = Program::get();
 
         // add stdlib import directory if specified in the environment
         if (environ.find("QINP_STDLIB") != environ.end())
-            program.add_import_directory(environ["QINP_STDLIB"]);
+            program->add_import_directory(environ["QINP_STDLIB"]);
         else if (verbose)
             print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library"));
 
         // add specified import directories
         for (const auto& path_str : args[CMD_ARG__IMPORT_DIR])
-            program.add_import_directory(path_str);
+            program->add_import_directory(path_str);
 
         // add source files
         if (args[CMD_ARG__POSITIONAL].empty())
             throw QinpError("No source files specified");
-        for (const auto& path_str : args[CMD_ARG__POSITIONAL])
-            program.import_source_file(path_str, "", true);
+
+        {
+            Timer t("Source file import", verbose);
+            for (const auto& path_str : args[CMD_ARG__POSITIONAL])
+                program->import_source_file(path_str, "", true);
+        }
 
         // TODO: generate assembly
 

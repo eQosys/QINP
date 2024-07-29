@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "utility/SymbolPath.h"
 #include "symbols/SymbolSpace.h"
 
 class TranslationUnit
@@ -12,7 +13,8 @@ public:
     void enter_symbol(SymbolRef sym);
     void leave_symbol();
     SymbolRef curr_symbol() const;
-    SymbolRef get_symbol_by_name(const std::string& path, bool local_only, bool from_root = false) const;
+    SymbolRef get_symbol_by_path(const std::string& path_str, bool local_only, bool from_root = false) const;
+    SymbolRef get_symbol_by_path(const SymbolPath& path, SymbolRef root_sym) const;
 public:
     const std::string& get_path() const;
 private:

@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "Program.h"
+
 _Datatype::_Datatype(bool _is_const)
     : m_is_const(_is_const)
 {}
@@ -41,8 +43,13 @@ Datatype::Type Datatype_Named::get_type() const
 
 int Datatype_Named::get_size() const
 {
-    // TODO: Implement function
-    throw std::logic_error("Datatype_Named::get_size() not implemented yet!");
+    auto program = Program::get();
+    int size = program->get_builtin_type_size(m_name);
+    if (size > 0)
+        return size;
+
+    // TODO: Implementation
+    throw std::logic_error("Datatype_Named::get_size() for non-builtin types not implemented yet!");
     return -1;
 }
 
@@ -67,9 +74,7 @@ Datatype::Type Datatype_Function::get_type() const
 
 int Datatype_Function::get_size() const
 {
-    // TODO: Implement function
-    throw std::logic_error("Datatype_Named::get_size() not implemented yet!");
-    return -1;
+    return Program::get()->get_ptr_size();
 }
 
 Datatype_Array::Datatype_Array(int num_elements, Datatype child, bool _is_const)
@@ -102,9 +107,7 @@ Datatype::Type Datatype_Pointer::get_type() const
 
 int Datatype_Pointer::get_size() const
 {
-    // TODO: Implement function
-    throw std::logic_error("Datatype_Pointer::get_size() not implemented yet!");
-    return -1;
+    return Program::get()->get_ptr_size();
 }
 
 Datatype_Reference::Datatype_Reference(Datatype child, bool _is_const)
@@ -118,7 +121,5 @@ Datatype::Type Datatype_Reference::get_type() const
 
 int Datatype_Reference::get_size() const
 {
-    // TODO: Implement function
-    throw std::logic_error("Datatype_Reference::get_size() not implemented yet!");
-    return -1;
+    return Program::get()->get_ptr_size();
 }

@@ -7,8 +7,10 @@
 #include "grammar/QinpGrammarCStr.h"
 #include "symbols/Symbols.h"
 
-Program::Program(bool verbose)
-    : m_verbose(verbose),
+ProgramRef Program::s_singleton = nullptr;
+
+Program::Program(Architecture arch, bool verbose)
+    : m_architecture(arch), m_verbose(verbose),
     m_root_sym(Symbol::make<SymbolSpace>("<root>", Location::from_qrawlr("<root>", {}), nullptr)),
     m_grammar(
         qrawlr::Grammar::load_from_text(
@@ -18,6 +20,39 @@ Program::Program(bool verbose)
     )
 {
     ;
+}
+
+int Program::get_ptr_size() const
+{
+    switch (m_architecture)
+    {
+    case Architecture::Unknown: throw QinpError("[*Program::get_ptr_size*]: Unknown architecture!");
+    case Architecture::x86_64: return 8;
+    case Architecture::QIPU: return 4;
+    default: throw QinpError("[*Program::get_ptr_size*]: Unhandled Architecture!");
+    }
+}
+
+int Program::get_builtin_type_size(const std::string& type_name) const
+{
+    static const std::map<std::string, int> type_map = {
+        { "void", 1 },
+        { "i8",   1 },
+        { "i16",  2 },
+        { "i32",  4 },
+        { "i64",  8 },
+        { "u8",   1 },
+        { "u16",  2 },
+        { "u32",  4 },
+        { "u64",  8 }
+    };
+
+    auto it = type_map.find(type_name);
+
+    if (it == type_map.end())
+        return -1;
+
+    return it->second;
 }
 
 void Program::add_import_directory(const std::string& path_str)
@@ -86,7 +121,7 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     // Parse source code with Qrawlr
     // qrawlr::GrammarException handled by main function
     qrawlr::MatchResult result = m_grammar.apply_to(code_str, "GlobalCode", path_str);
-    if ((size_t)result.pos_end.index < code_str.size())
+    if ((std::size_t)result.pos_end.index < code_str.size())
         throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(path_str));
 
     // TODO: remove debug tree graphviz + render
@@ -112,7 +147,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
 
     // Check if nodes' name matches any of the given names
     if (names.find(node->get_name()) == names.end())
-        throw make_grammar_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names, ", ") + "]", node);
+        throw make_grammar_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names.begin(), names.end(), ", ") + "]", node);
 
     static const std::map<std::string, Handler> handlers = {
         { "GlobalCode",               &Program::handle_tree_node_code_block         },
@@ -168,8 +203,8 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     std::string path_str;
     handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
 
-    // TODO: remove debug print
-    printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().get_path().c_str());
+    if (m_verbose)
+        printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().get_path().c_str());
 
     import_source_file(path_str, true);
 }
@@ -180,7 +215,7 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
 
-    auto space = curr_tu().get_symbol_by_name(space_name, true);
+    auto space = curr_tu().get_symbol_by_path(space_name, true);
     if (!space) // create new space
         space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().get_path(), node->get_pos_begin()), curr_tu().curr_symbol());
 
@@ -297,4 +332,16 @@ TranslationUnit& Program::curr_tu()
 void Program::pop_tu()
 {
     m_translation_units.pop();
+}
+
+ProgramRef Program::get()
+{
+    if (!s_singleton)
+        throw QinpError("[*Program::get*]: Program singleton has not been initialized yet!");
+    return s_singleton;
+}
+
+void Program::init(Architecture arch, bool verbose)
+{
+    s_singleton = std::shared_ptr<Program>(new Program(arch, verbose));
 }
