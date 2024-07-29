@@ -39,6 +39,7 @@ add_executable(
     "src/errors/ErrorPrinter.cpp"
     "src/grammar/QinpGrammarCStr.cpp"
     "src/symbols/Symbol.cpp"
+    "src/symbols/SymbolFunction.cpp"
     )
 
 include_directories(

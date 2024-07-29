@@ -13,7 +13,7 @@ public:
     void enter_symbol(SymbolRef sym);
     void leave_symbol();
     SymbolRef curr_symbol() const;
-    SymbolRef get_symbol_by_path(const std::string& path_str, bool local_only, bool from_root = false) const;
+    SymbolRef get_symbol_by_path(const SymbolPath& path, bool local_only) const;
     SymbolRef get_symbol_by_path(const SymbolPath& path, SymbolRef root_sym) const;
 public:
     const std::string& get_path() const;

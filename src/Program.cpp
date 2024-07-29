@@ -122,7 +122,7 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     // qrawlr::GrammarException handled by main function
     qrawlr::MatchResult result = m_grammar.apply_to(code_str, "GlobalCode", path_str);
     if ((std::size_t)result.pos_end.index < code_str.size())
-        throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(path_str));
+        throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(std::function([&](int){ return path_str; })));
 
     // TODO: remove debug tree graphviz + render
     //std::string out_file_pdf = "out/" + replace_all(path_str, "/", ".") + ".pdf";
@@ -130,6 +130,8 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     //qrawlr::write_file("out/tree.gv", result.tree->to_digraph_str(m_verbose));
     //std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
     //system(dot_command.c_str());
+
+    m_file_tree_ids.insert({ result.tree->get_pos_begin().tree_id, path_str });
 
     push_tu(path_str);
     handle_tree_node(result.tree, "GlobalCode", nullptr);
@@ -155,6 +157,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "StatementImport",          &Program::handle_tree_node_stmt_import        },
         { "StatementSpace",           &Program::handle_tree_node_stmt_space         },
         { "StatementFunctionDeclDef", &Program::handle_tree_node_stmt_func_decl_def },
+        { "FunctionHeader",           &Program::handle_tree_node_func_header        },
         { "ImportSpecifiers",         &Program::handle_tree_node_import_specifiers  },
         { "LiteralString",            &Program::handle_tree_node_literal_string     },
         { "Comment",                  &Program::handle_tree_node_comment            },
@@ -229,10 +232,37 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
 {
     (void)pUnused;
 
-    std::string func_name = qrawlr::expect_child_leaf(node, "FunctionHeader.SymbolReference.Identifier.0")->get_value();
+    SymbolRef sym;
+    handle_tree_node(qrawlr::expect_child_node(node, "FunctionHeader"), "FunctionHeader", &sym);
+
+    if (qrawlr::has_child_node(node, "FunctionDeclaration"))
+        ; // Nothing to do
+    else if (qrawlr::has_child_node(node, "FunctionDefinition"))
+    {
+        auto& func = sym->as_type<SymbolFunction>();
+        if (func.is_defined())
+            throw make_grammar_exception("Function '' has already been defined here: ", node);
+        // TODO: Parse function body
+    }
+    else
+        throw QinpError("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!");
+
+    printf("Reached function with name '%s'\n", sym->get_name().c_str());
+}
+
+void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pSym)
+{
+    auto& sym = *(SymbolRef*)pSym;
+
+    Datatype return_type;
+    SymbolPath name_path;
+    Parameter_Decl parameters;
+    handle_tree_node(qrawlr::expect_child_node(node, "FunctionReturnType"), "FunctionReturnType", &return_type);
+    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"), "SymbolReference", &name_path);
+    handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters"), "FunctionParameters", &parameters);
 
     // TODO: proper implementation
-    printf("Reached function with name '%s'\n", func_name.c_str());
+    sym = Symbol::make<Symbol>("HELLO", Location(), nullptr);
 }
 
 void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags)
@@ -310,12 +340,8 @@ void Program::handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnu
 
 qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem)
 {
-    return make_grammar_exception(message, elem, curr_tu().get_path());
-}
-
-qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem, const std::string& path)
-{
-    return qrawlr::GrammarException(message, elem->get_pos_begin().to_string(path));
+    auto f = [&](int tree_id){ return m_file_tree_ids.find(tree_id)->second; };
+    return qrawlr::GrammarException(message, elem->get_pos_begin().to_string(f));
 }
 
 TranslationUnit& Program::push_tu(const std::string& path)

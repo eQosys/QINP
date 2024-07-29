@@ -21,13 +21,8 @@ SymbolRef TranslationUnit::curr_symbol() const
     return m_sym_stack.back();
 }
 
-SymbolRef TranslationUnit::get_symbol_by_path(const std::string& path_str, bool local_only, bool from_root) const
+SymbolRef TranslationUnit::get_symbol_by_path(const SymbolPath& path, bool local_only) const
 {
-    SymbolPath path(path_str);
-
-    if (from_root)
-        return get_symbol_by_path(path, m_root_sym);
-
     for (auto it = m_sym_stack.rbegin(); it != m_sym_stack.rend(); ++it)
     {
         auto sym = get_symbol_by_path(path, *it);
