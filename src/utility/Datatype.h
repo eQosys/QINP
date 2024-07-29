@@ -19,13 +19,13 @@ public:
     using std::shared_ptr<class _Datatype>::shared_ptr;
 public:
     template <class Dt, typename ...Args>
-    static Datatype make(Args... args);
+    static Datatype make(Args&&... args);
 };
 
 template <class Dt, typename ...Args>
-Datatype Datatype::make(Args... args)
+Datatype Datatype::make(Args&&... args)
 {
-    return std::make_shared<Dt>(std::forward(args...));
+    return std::make_shared<Dt>(std::forward<Args>(args)...);
 }
 
 class _Datatype

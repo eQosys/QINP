@@ -399,7 +399,7 @@ InlineAsmBody:
 
 \\ ---------------- DATATYPES ----------------
 
-Datatype(hidden):
+Datatype:
     DatatypeBlueprint
     DatatypeFunction
     DatatypeNamed

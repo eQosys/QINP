@@ -157,6 +157,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "StatementImport",          &Program::handle_tree_node_stmt_import        },
         { "StatementSpace",           &Program::handle_tree_node_stmt_space         },
         { "StatementFunctionDeclDef", &Program::handle_tree_node_stmt_func_decl_def },
+        { "FunctionReturnType",       &Program::handle_tree_node_func_ret_type      },
         { "FunctionHeader",           &Program::handle_tree_node_func_header        },
         { "ImportSpecifiers",         &Program::handle_tree_node_import_specifiers  },
         { "LiteralString",            &Program::handle_tree_node_literal_string     },
@@ -258,11 +259,22 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     SymbolPath name_path;
     Parameter_Decl parameters;
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionReturnType"), "FunctionReturnType", &return_type);
-    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"), "SymbolReference", &name_path);
+    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"),    "SymbolReference",    &name_path);
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters"), "FunctionParameters", &parameters);
 
     // TODO: proper implementation
     sym = Symbol::make<Symbol>("HELLO", Location(), nullptr);
+}
+
+void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)
+{
+    if (!qrawlr::has_child_node(node, "Datatype")) // No return type specified
+    {
+        *(Datatype*)pReturn_type = Datatype::make<Datatype_Named>("void", false);
+        return;
+    }
+
+    handle_tree_node(qrawlr::expect_child_node(node, "Datatype"), "Datatype", pReturn_type);
 }
 
 void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags)

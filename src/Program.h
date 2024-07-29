@@ -33,6 +33,7 @@ private:
     void handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pSym);
+    void handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type);
     void handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags);
     void handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pString);
     void handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnused);
