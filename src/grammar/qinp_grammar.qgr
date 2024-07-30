@@ -313,7 +313,7 @@ FunctionParameters:
         Whitespace?_ ")"_{ onFail: fail("Expected closing parenthesis") }
     )
 
-FunctionParameter:
+FunctionParameter(hidden):
     ( Datatype Whitespace?_ Identifier{ onFail: fail("Expected function parameter name") } )->Normal
     "..."_->Variadic
 

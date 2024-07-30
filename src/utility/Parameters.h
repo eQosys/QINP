@@ -11,5 +11,5 @@ struct Parameter
 struct Parameter_Decl
 {
     std::vector<Parameter> named_parameters;
-    bool has_variadic;
+    bool has_variadic_parameters = false;
 };

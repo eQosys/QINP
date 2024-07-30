@@ -1,7 +1,7 @@
 #include "TranslationUnit.h"
 
 TranslationUnit::TranslationUnit(const std::string& path, const SymbolRef root_sym)
-    : m_path(path), m_root_sym(root_sym), m_sym_stack()
+    : m_file_path(path), m_root_sym(root_sym), m_sym_stack()
 {
     m_sym_stack.push_back(m_root_sym);
 }
@@ -21,11 +21,14 @@ SymbolRef TranslationUnit::curr_symbol() const
     return m_sym_stack.back();
 }
 
-SymbolRef TranslationUnit::get_symbol_by_path(const SymbolPath& path, bool local_only) const
+SymbolRef TranslationUnit::get_symbol_from_path(const SymbolPath& path, bool local_only) const
 {
+    if (path.is_from_root())
+        return get_symbol_from_path(path, m_root_sym);
+
     for (auto it = m_sym_stack.rbegin(); it != m_sym_stack.rend(); ++it)
     {
-        auto sym = get_symbol_by_path(path, *it);
+        auto sym = get_symbol_from_path(path, *it);
         if (sym)
             return sym;
         if (local_only)
@@ -35,7 +38,7 @@ SymbolRef TranslationUnit::get_symbol_by_path(const SymbolPath& path, bool local
     return nullptr;
 }
 
-SymbolRef TranslationUnit::get_symbol_by_path(const SymbolPath& path, SymbolRef root_sym) const
+SymbolRef TranslationUnit::get_symbol_from_path(const SymbolPath& path, SymbolRef root_sym) const
 {
     for (auto& part : path.get_parts())
     {
@@ -47,7 +50,7 @@ SymbolRef TranslationUnit::get_symbol_by_path(const SymbolPath& path, SymbolRef 
     return root_sym;
 }
 
-const std::string& TranslationUnit::get_path() const
+const std::string& TranslationUnit::get_file_path() const
 {
-    return m_path;
+    return m_file_path;
 }

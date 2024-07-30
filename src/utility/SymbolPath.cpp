@@ -18,9 +18,13 @@ SymbolPath::SymbolPath(const std::string& path)
     } while (sep != std::string::npos);
 }
 
+SymbolPath::SymbolPath(const std::vector<std::string>& parts, bool is_from_root)
+    : m_from_root(is_from_root), m_parts(parts)
+{}
+
 std::string SymbolPath::to_string() const
 {
-    return join(m_parts.begin(), m_parts.end(), ".");
+    return (m_from_root ? "." : "") + join(m_parts.begin(), m_parts.end(), ".");
 }
 
 bool SymbolPath::is_from_root() const
@@ -31,4 +35,17 @@ bool SymbolPath::is_from_root() const
 const std::vector<std::string>& SymbolPath::get_parts() const
 {
     return m_parts;
+}
+
+
+std::string SymbolPath::get_name() const
+{
+    return m_parts.back();
+}
+
+SymbolPath SymbolPath::get_parent_path() const
+{
+    auto parts = m_parts;
+    parts.pop_back();
+    return SymbolPath(parts, m_from_root);
 }
