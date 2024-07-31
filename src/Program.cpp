@@ -11,7 +11,7 @@ ProgramRef Program::s_singleton = nullptr;
 
 Program::Program(Architecture arch, bool verbose)
     : m_architecture(arch), m_verbose(verbose),
-    m_root_sym(Symbol::make<SymbolSpace>("<root>", Location::from_qrawlr("<root>", {}), nullptr)),
+    m_root_sym(Symbol<SymbolSpace>::make("<root>", Location::from_qrawlr("<root>", {})).as_type<_Symbol>()),
     m_grammar(
         qrawlr::Grammar::load_from_text(
             QINP_GRAMMAR_C_STR,
@@ -225,9 +225,9 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     auto space = curr_tu().get_symbol_from_path(space_name, true);
     if (!space) // create new space
-        space = Symbol::make<SymbolSpace>(space_name, Location::from_qrawlr(curr_tu().get_file_path(), node->get_pos_begin()), curr_tu().curr_symbol());
+        space = Symbol<SymbolSpace>::make(space_name, Location::from_qrawlr(curr_tu().get_file_path(), node->get_pos_begin()));
 
-    curr_tu().curr_symbol()->add_child(space);
+    curr_tu().curr_symbol().add_child(space);
     curr_tu().enter_symbol(space);
     handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock"), "CodeBlock", nullptr);
     curr_tu().leave_symbol();
@@ -237,15 +237,15 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
 {
     (void)pUnused;
 
-    SymbolRef sym;
+    Symbol sym;
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionHeader"), "FunctionHeader", &sym);
 
     if (qrawlr::has_child_node(node, "FunctionDeclaration"))
         ; // Nothing to do
     else if (qrawlr::has_child_node(node, "FunctionDefinition"))
     {
-        auto& func = sym->as_type<SymbolFunction>();
-        if (func.is_defined())
+        auto func = sym.as_type<SymbolFunction>();
+        if (func->is_defined())
             throw make_grammar_exception("Function '' has already been defined here: ", node);
         // TODO: Parse function body
     }
@@ -257,7 +257,7 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
 
 void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pSym)
 {
-    auto& sym = *(SymbolRef*)pSym;
+    auto& sym = *(Symbol<>*)pSym;
 
     Datatype return_type;
     SymbolPath name_path;
@@ -271,15 +271,14 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     if (!sym)
     {
         auto parent = curr_tu().get_symbol_from_path(name_path.get_parent_path());
-        sym = Symbol::make<SymbolFunctionName>(
+        sym = Symbol<SymbolFunctionName>::make(
             name_path.get_name(),
-            node->get_pos_begin(),
-            parent
-        );
-        parent->add_child(sym);
+            Location()
+        ).as_type<_Symbol>();
+        parent.add_child(sym);
     }
 
-    if (!sym->is_of_type<SymbolFunctionName>())
+    if (!sym.is_of_type<SymbolFunctionName>())
     {
         // TODO: Throw if not function name
     }
@@ -287,7 +286,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     // TODO: Check if function with same signature already exists
 
     // TODO: proper implementation
-    sym = Symbol::make<SymbolFunction>(name_path.to_string(), Location(), nullptr);
+    sym = Symbol<SymbolFunction>::make(name_path.to_string(), Location()).as_type<_Symbol>();
 }
 
 void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)

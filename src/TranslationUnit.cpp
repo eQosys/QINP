@@ -1,12 +1,12 @@
 #include "TranslationUnit.h"
 
-TranslationUnit::TranslationUnit(const std::string& path, const SymbolRef root_sym)
+TranslationUnit::TranslationUnit(const std::string& path, const Symbol<> root_sym)
     : m_file_path(path), m_root_sym(root_sym), m_sym_stack()
 {
     m_sym_stack.push_back(m_root_sym);
 }
 
-void TranslationUnit::enter_symbol(SymbolRef sym)
+void TranslationUnit::enter_symbol(Symbol<> sym)
 {
     m_sym_stack.push_back(sym);
 }
@@ -16,12 +16,12 @@ void TranslationUnit::leave_symbol()
     m_sym_stack.pop_back();
 }
 
-SymbolRef TranslationUnit::curr_symbol() const
+Symbol<> TranslationUnit::curr_symbol() const
 {
     return m_sym_stack.back();
 }
 
-SymbolRef TranslationUnit::get_symbol_from_path(const SymbolPath& path, bool local_only) const
+Symbol<> TranslationUnit::get_symbol_from_path(const SymbolPath& path, bool local_only) const
 {
     if (path.is_from_root())
         return get_symbol_from_path(path, m_root_sym);
@@ -38,7 +38,7 @@ SymbolRef TranslationUnit::get_symbol_from_path(const SymbolPath& path, bool loc
     return nullptr;
 }
 
-SymbolRef TranslationUnit::get_symbol_from_path(const SymbolPath& path, SymbolRef root_sym) const
+Symbol<> TranslationUnit::get_symbol_from_path(const SymbolPath& path, Symbol<> root_sym) const
 {
     for (auto& part : path.get_parts())
     {

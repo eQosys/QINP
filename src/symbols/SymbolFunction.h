@@ -6,14 +6,14 @@
 #include "utility/CodeBlock.h"
 #include "utility/Parameters.h"
 
-class SymbolFunctionName : public Symbol
+class SymbolFunctionName : public _Symbol
 {
-    using Symbol::Symbol;
+    using _Symbol::_Symbol;
 };
 
-class SymbolFunction : public Symbol
+class SymbolFunction : public _Symbol
 {
-    using Symbol::Symbol;
+    using _Symbol::_Symbol;
 public:
     bool is_defined() const;
 private:

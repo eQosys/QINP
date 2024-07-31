@@ -4,7 +4,7 @@
 
 #include "Symbol.h"
 
-class SymbolSpace : public Symbol
+class SymbolSpace : public _Symbol
 {
-    using Symbol::Symbol;
+    using _Symbol::_Symbol;
 };

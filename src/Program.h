@@ -46,7 +46,7 @@ private:
 private:
     Architecture m_architecture;
     bool m_verbose;
-    SymbolRef m_root_sym;
+    Symbol<> m_root_sym;
     qrawlr::Grammar m_grammar;
     std::vector<std::filesystem::path> m_import_dirs;
     std::set<std::string> m_imported_files;

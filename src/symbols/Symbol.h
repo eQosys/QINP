@@ -6,50 +6,71 @@
 
 #include "utility/Location.h"
 
-typedef std::shared_ptr<class Symbol> SymbolRef;
-
-class Symbol
+template <class SymType = class _Symbol>
+class Symbol : public std::shared_ptr<SymType>
 {
 public:
-    Symbol() = default;
-    Symbol(const std::string& name, const Location& location, SymbolRef parent);
+    using std::shared_ptr<SymType>::shared_ptr;
 public:
-    virtual ~Symbol() = default;
+    void add_child(Symbol<> sym);
 public:
-    void add_child(SymbolRef sym);
-    SymbolRef get_child_by_name(const std::string& name) const;
+    template <typename... Args>
+    static Symbol<SymType> make(Args&&... args);
+public:
+    template <class NewT>
+    bool is_of_type() const;
+    template <class NewT>
+    Symbol<NewT> as_type();
+};
+
+class _Symbol
+{
+public:
+    _Symbol() = default;
+    _Symbol(const std::string& name, const Location& location);
+public:
+    virtual ~_Symbol() = default;
+public:
+    Symbol<> get_child_by_name(const std::string& name) const;
 public:
     const std::string& get_name() const;
+    Symbol<> get_parent() const;
     const Location& get_location() const;
-public:
-    template <typename T>
-    bool is_of_type() const;
-    template <typename T>
-    T& as_type();
-public:
-    template <typename T, typename... Args>
-    static std::shared_ptr<T> make(Args&&... args);
+private:
+    void add_child(Symbol<> sym, Symbol<> this_sym);
 private:
     std::string m_name;
     Location m_location;
-    std::weak_ptr<Symbol> m_parent;
-    std::map<std::string, SymbolRef> m_children;
+    std::weak_ptr<_Symbol> m_parent;
+    std::map<std::string, Symbol<>> m_children;
+private:
+    friend class Symbol<>;
 };
 
-template <typename T>
-bool Symbol::is_of_type() const
+template <class SymType>
+void Symbol<SymType>::add_child(Symbol<> sym)
 {
-    return dynamic_cast<const T*>(this) != nullptr;
+    (*this)->add_child(sym, *this);
 }
 
-template <typename T>
-T& Symbol::as_type()
+template <class SymType>
+template <class NewT>
+bool Symbol<SymType>::is_of_type() const
 {
-    return dynamic_cast<T&>(*this);
+    return std::dynamic_pointer_cast<NewT>(*this) != nullptr;
 }
 
-template <typename T, typename... Args>
-std::shared_ptr<T> Symbol::make(Args&&... args)
+template <class SymType>
+template <class NewT>
+Symbol<NewT> Symbol<SymType>::as_type()
 {
-    return std::make_shared<T>(std::forward<Args>(args)...);
+    auto sym = std::dynamic_pointer_cast<NewT>(*this);
+    return *(Symbol<NewT>*)(&sym);
+}
+
+template <class SymType>
+template <typename... Args>
+Symbol<SymType> Symbol<SymType>::make(Args&&... args)
+{
+    return Symbol<SymType>(new SymType(std::forward<Args>(args)...));
 }
