@@ -51,6 +51,7 @@ private:
     std::vector<std::filesystem::path> m_import_dirs;
     std::set<std::string> m_imported_files;
     std::map<int, std::string> m_file_tree_ids;
+    std::function<std::string(int)> m_f_tree_id_to_name;
 private:
     std::stack<TranslationUnit> m_translation_units;
     TranslationUnit& push_tu(const std::string& path);

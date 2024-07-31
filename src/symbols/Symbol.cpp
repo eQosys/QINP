@@ -38,3 +38,14 @@ const qrawlr::Position& _Symbol::get_position() const
 {
     return m_position;
 }
+
+SymbolPath _Symbol::get_symbol_path() const
+{
+    auto p = get_parent();
+    if (!p)
+        return SymbolPath("." + get_name());
+
+    auto path = p->get_symbol_path();
+    path.enter(get_name());
+    return path;
+}

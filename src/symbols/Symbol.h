@@ -5,6 +5,7 @@
 #include <string>
 
 #include "libQrawlr.h"
+#include "utility/SymbolPath.h"
 
 template <class SymType = class _Symbol>
 class Symbol : public std::shared_ptr<SymType>
@@ -36,6 +37,7 @@ public:
     const std::string& get_name() const;
     Symbol<> get_parent() const;
     const qrawlr::Position& get_position() const;
+    SymbolPath get_symbol_path() const;
 private:
     void add_child(Symbol<> sym, Symbol<> this_sym);
 private:

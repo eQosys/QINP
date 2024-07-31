@@ -19,7 +19,7 @@ public:
 private:
     bool m_is_defined;
 
-    Datatype m_return_type;
+    Datatype<> m_return_type;
     Parameter_Decl m_params;
     bool m_nodiscard;
     CodeBlock m_body;

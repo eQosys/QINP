@@ -5,7 +5,7 @@
 #include <vector>
 #include <utility>
 
-#define MAKE_DT(dt, ...) Datatype::make<dt>(__VA_ARGS__)
+#define MAKE_DT(dt, ...) Datatype<dt>::make(__VA_ARGS__)
 
 #define DT_NAMED(...) MAKE_DT(_Datatype_Named, __VA_ARGS__)
 #define DT_MACRO(...) MAKE_DT(_Datatype_Macro, __VA_ARGS__)
@@ -13,8 +13,10 @@
 #define DT_ARRAY(...) MAKE_DT(_Datatype_Array, __VA_ARGS__)
 #define DT_POINTER(...) MAKE_DT(_Datatype_Pointer, __VA_ARGS__)
 #define DT_REFERENCE(...) MAKE_DT(_Datatype_Reference, __VA_ARGS__)
+#define DT_VARIADIC(...) MAKE_DT(_Datatype_Variadic, __VA_ARGS__)
 
-class Datatype : public std::shared_ptr<class _Datatype>
+template <class Dt = class _Datatype>
+class Datatype : public std::shared_ptr<Dt>
 {
 public:
     enum class Type
@@ -22,19 +24,24 @@ public:
         Name, Macro,
         Function,
         Array, Pointer,
-        Reference
+        Reference,
+        Variadic
     };
 public:
-    using std::shared_ptr<class _Datatype>::shared_ptr;
+    using std::shared_ptr<Dt>::shared_ptr;
 public:
-    template <class Dt, typename ...Args>
-    static std::shared_ptr<Dt> make(Args&&... args);
+    template <class NewDt>
+    Datatype<NewDt> as_type();
+public:
+    template <typename ...Args>
+    static Datatype<Dt> make(Args&&... args);
 };
 
-template <class Dt, typename ...Args>
-std::shared_ptr<Dt> Datatype::make(Args&&... args)
+template <class Dt>
+template <typename ...Args>
+Datatype<Dt> Datatype<Dt>::make(Args&&... args)
 {
-    return std::make_shared<Dt>(std::forward<Args>(args)...);
+    return Datatype<Dt>(new Dt(std::forward<Args>(args)...));
 }
 
 class _Datatype
@@ -45,31 +52,36 @@ public:
     virtual ~_Datatype() = default;
 public:
     bool is_const() const;
-    virtual Datatype::Type get_type() const = 0;
+    std::string get_symbol_name() const;
+    virtual Datatype<>::Type get_type() const = 0;
     virtual int get_size() const = 0;
-    virtual Datatype get_dereferenced() const;
-public:
-    template <class Dt>
-    Dt& as_type();
+    virtual Datatype<> get_dereferenced() const;
+protected:
+    virtual std::string __get_symbol_name() const = 0;
 private:
     bool m_is_const;
 };
 
 template <class Dt>
-Dt& _Datatype::as_type()
+template <class NewDt>
+Datatype<NewDt> Datatype<Dt>::as_type()
 {
-    return dynamic_cast<Dt&>(*this);
+    auto dt = std::dynamic_pointer_cast<NewDt>(*this);
+    return *(Datatype<NewDt>*)(&dt);
 }
 
 class _Datatype_Parent : public _Datatype
 {
 public:
     _Datatype_Parent() = delete;
-    _Datatype_Parent(Datatype child, bool _is_const);
+    _Datatype_Parent(Datatype<> child, bool _is_const);
 public:
-    virtual Datatype get_dereferenced() const override;
+    virtual Datatype<> get_dereferenced() const override;
+protected:
+    virtual std::string __get_symbol_name() const override final;
+    virtual std::string __get_parent_symbol_name() const = 0;
 private:
-    Datatype m_child;
+    Datatype<> m_child;
 };
 
 class _Datatype_Named : public _Datatype
@@ -80,8 +92,10 @@ public:
 public:
     const std::string& get_name() const;
 public:
-    virtual Datatype::Type get_type() const override;
+    virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
+protected:
+    virtual std::string __get_symbol_name() const override;
 private:
     std::string m_name;
 };
@@ -91,25 +105,29 @@ class _Datatype_Macro : public _Datatype_Named
 public:
     using _Datatype_Named::_Datatype_Named;
 public:
-    virtual Datatype::Type get_type() const override;
+    virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
+protected:
+    virtual std::string __get_symbol_name() const override;
 };
 
-typedef std::vector<Datatype> Parameter_Types;
+typedef std::vector<Datatype<>> Parameter_Types;
 
 class _Datatype_Function : public _Datatype
 {
 public:
     _Datatype_Function() = delete;
-    _Datatype_Function(Datatype return_type, const Parameter_Types& parameter_types, bool _is_const);
+    _Datatype_Function(Datatype<> return_type, const Parameter_Types& parameter_types, bool _is_const);
 public:
-    Datatype get_return_type() const;
-    const std::vector<Datatype>& get_parameter_types() const;
+    Datatype<> get_return_type() const;
+    const std::vector<Datatype<>>& get_parameter_types() const;
 public:
-    virtual Datatype::Type get_type() const override;
+    virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
+protected:
+    virtual std::string __get_symbol_name() const override;
 private:
-    Datatype m_return_type;
+    Datatype<> m_return_type;
     Parameter_Types m_parameter_types;
 };
 
@@ -117,12 +135,14 @@ class _Datatype_Array : public _Datatype_Parent
 {
 public:
     _Datatype_Array() = delete;
-    _Datatype_Array(int num_elements, Datatype child, bool _is_const);
+    _Datatype_Array(int num_elements, Datatype<> child, bool _is_const);
 public:
     int get_num_elements() const;
 public:
-    virtual Datatype::Type get_type() const override;
+    virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
+protected:
+    virtual std::string __get_parent_symbol_name() const override;
 private:
     int m_num_elements;
 };
@@ -131,18 +151,33 @@ class _Datatype_Pointer : public _Datatype_Parent
 {
 public:
     _Datatype_Pointer() = delete;
-    _Datatype_Pointer(Datatype child, bool _is_const);
+    _Datatype_Pointer(Datatype<> child, bool _is_const);
 public:
-    virtual Datatype::Type get_type() const override;
+    virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
+protected:
+    virtual std::string __get_parent_symbol_name() const override;
 };
 
 class _Datatype_Reference : public _Datatype_Parent
 {
 public:
     _Datatype_Reference() = delete;
-    _Datatype_Reference(Datatype child, bool _is_const);
+    _Datatype_Reference(Datatype<> child, bool _is_const);
 public:
-    virtual Datatype::Type get_type() const override;
+    virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
+protected:
+    virtual std::string __get_parent_symbol_name() const override;
+};
+
+class _Datatype_Variadic : public _Datatype
+{
+public:
+    _Datatype_Variadic();
+public:
+    virtual Datatype<>::Type get_type() const override;
+    virtual int get_size() const override;
+protected:
+    virtual std::string __get_symbol_name() const override;
 };
