@@ -7,6 +7,8 @@
 #include "libQrawlr.h"
 #include "utility/SymbolPath.h"
 
+#define SYMBOL_NAME_BLUEPRINT "$__BLUEPRINT__$"
+
 template <class SymType = class _Symbol>
 class Symbol : public std::shared_ptr<SymType>
 {

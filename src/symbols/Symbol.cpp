@@ -11,8 +11,10 @@ void _Symbol::add_child(Symbol<> sym, Symbol<> this_sym)
     if (m_children.find(sym->get_name()) != m_children.end())
         throw SymbolError(sym, "Duplicate symbol: " + sym->get_name());
 
+    // TODO: Check if symbol already has another parent
+
     m_children[sym->get_name()] = sym;
-    m_parent = this_sym;
+    sym->m_parent = this_sym;
 }
 
 Symbol<> _Symbol::get_child_by_name(const std::string& name) const
@@ -43,7 +45,7 @@ SymbolPath _Symbol::get_symbol_path() const
 {
     auto p = get_parent();
     if (!p)
-        return SymbolPath("." + get_name());
+        return SymbolPath(get_name());
 
     auto path = p->get_symbol_path();
     path.enter(get_name());

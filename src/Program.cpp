@@ -11,7 +11,7 @@ ProgramRef Program::s_singleton = nullptr;
 
 Program::Program(Architecture arch, bool verbose)
     : m_architecture(arch), m_verbose(verbose),
-    m_root_sym(Symbol<SymbolSpace>::make("<root>", qrawlr::Position()).as_type<_Symbol>()),
+    m_root_sym(Symbol<SymbolSpace>::make("", qrawlr::Position()).as_type<_Symbol>()),
     m_grammar(
         qrawlr::Grammar::load_from_text(
             QINP_GRAMMAR_C_STR,
@@ -247,12 +247,14 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
         auto func = sym.as_type<SymbolFunction>();
         if (func->is_defined())
             throw make_grammar_exception("Function '' has already been defined here: ", node);
+
         // TODO: Parse function body
+        throw std::logic_error("[*Program::handle_tree_node_stmt_func_decl_def*]: Function definition not implemented yet!");
     }
     else
         throw QinpError("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!");
 
-    printf("Reached function with name '%s'\n", sym->get_name().c_str());
+    printf("Reached function with name '%s'\n", sym->get_symbol_path().to_string().c_str());
 }
 
 void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pSym)
@@ -260,20 +262,21 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     auto& sym = *(Symbol<>*)pSym;
 
     Datatype return_type;
-    SymbolPath symbol_path;
+    SymbolPath func_name_path;
     Parameter_Decl parameters;
+    bool is_nodiscard = false;
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionReturnType"), "FunctionReturnType", &return_type);
-    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"),    "SymbolReference",    &symbol_path);
+    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"),    "SymbolReference",    &func_name_path);
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters"), "FunctionParameters", &parameters);
     // TODO: Handle Function Specifiers
 
     // Get SymbolFunctionName
-    sym = curr_tu().get_symbol_from_path(symbol_path);
+    sym = curr_tu().get_symbol_from_path(func_name_path);
     if (!sym)
     {
-        auto parent = curr_tu().get_symbol_from_path(symbol_path.get_parent_path());
+        auto parent = curr_tu().get_symbol_from_path(func_name_path.get_parent_path());
         sym = Symbol<SymbolFunctionName>::make(
-            symbol_path.get_name(),
+            func_name_path.get_name(),
             node->get_pos_begin()
         ).as_type<_Symbol>();
         parent.add_child(sym);
@@ -281,15 +284,43 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
 
     if (!sym.is_of_type<SymbolFunctionName>())
         throw make_grammar_exception("Cannot declare/define function with name '" +
-            symbol_path.get_name() +
+            func_name_path.get_name() +
             "', non-function symbol with same name already defined here: " +
             sym->get_position().to_string(m_f_tree_id_to_name), node);
 
-    // TODO: Check if function with same signature already exists
-    symbol_path.enter(parameters.get_symbol_name());
+    auto spec_path = SymbolPath(func_name_path).enter(parameters.get_symbol_path_str());
 
-    // TODO: proper implementation
-    sym = Symbol<SymbolFunction>::make(symbol_path.to_string(), node->get_pos_begin()).as_type<_Symbol>();
+    // Create and enter blueprint symbol if necessary
+    if (parameters.is_blueprint)
+    {
+        auto bp = sym->get_child_by_name(SYMBOL_NAME_BLUEPRINT);
+        if (!bp)
+        {
+            bp = Symbol<SymbolSpace>::make(
+                SYMBOL_NAME_BLUEPRINT,
+                node->get_pos_begin()
+            );
+            sym.add_child(bp);
+        }
+
+        sym = bp;
+    }
+
+    // Create specialization if not already declared
+    auto spec = curr_tu().get_symbol_from_path(spec_path).as_type<SymbolFunction>();
+    if (!spec)
+    {
+        spec = Symbol<SymbolFunction>::make(
+            return_type,
+            spec_path.get_name(),
+            parameters,
+            is_nodiscard,
+            node->get_pos_begin()
+        );
+        sym.add_child(spec);
+    }
+
+    sym = spec;
 }
 
 void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)
@@ -335,7 +366,7 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
         else if (param_node->get_name() == "Variadic")
         {
             parameters.is_blueprint = true;
-            
+
             Parameter param;
             param.datatype = DT_VARIADIC();
             param.name = "__VA_ARGS__";
