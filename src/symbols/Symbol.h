@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "utility/Location.h"
+#include "libQrawlr.h"
 
 template <class SymType = class _Symbol>
 class Symbol : public std::shared_ptr<SymType>
@@ -27,7 +27,7 @@ class _Symbol
 {
 public:
     _Symbol() = default;
-    _Symbol(const std::string& name, const Location& location);
+    _Symbol(const std::string& name, const qrawlr::Position& position);
 public:
     virtual ~_Symbol() = default;
 public:
@@ -35,12 +35,12 @@ public:
 public:
     const std::string& get_name() const;
     Symbol<> get_parent() const;
-    const Location& get_location() const;
+    const qrawlr::Position& get_position() const;
 private:
     void add_child(Symbol<> sym, Symbol<> this_sym);
 private:
     std::string m_name;
-    Location m_location;
+    qrawlr::Position m_position;
     std::weak_ptr<_Symbol> m_parent;
     std::map<std::string, Symbol<>> m_children;
 private:

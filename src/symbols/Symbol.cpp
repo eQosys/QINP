@@ -2,8 +2,8 @@
 
 #include "errors/SymbolError.h"
 
-_Symbol::_Symbol(const std::string& name, const Location& location)
-    : m_name(name), m_location(location), m_parent()
+_Symbol::_Symbol(const std::string& name, const qrawlr::Position& position)
+    : m_name(name), m_position(position), m_parent()
 {}
 
 void _Symbol::add_child(Symbol<> sym, Symbol<> this_sym)
@@ -34,7 +34,7 @@ Symbol<> _Symbol::get_parent() const
     return *(Symbol<>*)(&p);
 }
 
-const Location& _Symbol::get_location() const
+const qrawlr::Position& _Symbol::get_position() const
 {
-    return m_location;
+    return m_position;
 }

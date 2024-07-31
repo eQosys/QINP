@@ -11,7 +11,7 @@ ProgramRef Program::s_singleton = nullptr;
 
 Program::Program(Architecture arch, bool verbose)
     : m_architecture(arch), m_verbose(verbose),
-    m_root_sym(Symbol<SymbolSpace>::make("<root>", Location::from_qrawlr("<root>", {})).as_type<_Symbol>()),
+    m_root_sym(Symbol<SymbolSpace>::make("<root>", qrawlr::Position()).as_type<_Symbol>()),
     m_grammar(
         qrawlr::Grammar::load_from_text(
             QINP_GRAMMAR_C_STR,
@@ -225,7 +225,7 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     auto space = curr_tu().get_symbol_from_path(space_name, true);
     if (!space) // create new space
-        space = Symbol<SymbolSpace>::make(space_name, Location::from_qrawlr(curr_tu().get_file_path(), node->get_pos_begin()));
+        space = Symbol<SymbolSpace>::make(space_name, node->get_pos_begin());
 
     curr_tu().curr_symbol().add_child(space);
     curr_tu().enter_symbol(space);
@@ -273,7 +273,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
         auto parent = curr_tu().get_symbol_from_path(name_path.get_parent_path());
         sym = Symbol<SymbolFunctionName>::make(
             name_path.get_name(),
-            Location()
+            qrawlr::Position()
         ).as_type<_Symbol>();
         parent.add_child(sym);
     }
@@ -286,7 +286,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     // TODO: Check if function with same signature already exists
 
     // TODO: proper implementation
-    sym = Symbol<SymbolFunction>::make(name_path.to_string(), Location()).as_type<_Symbol>();
+    sym = Symbol<SymbolFunction>::make(name_path.to_string(), qrawlr::Position()).as_type<_Symbol>();
 }
 
 void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)
