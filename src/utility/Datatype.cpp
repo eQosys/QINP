@@ -60,7 +60,7 @@ int _Datatype_Named::get_size() const
         return size;
 
     // TODO: Implementation
-    throw std::logic_error("Datatype_Named::get_size() for non-builtin types not implemented yet!");
+    throw std::runtime_error("Datatype_Named::get_size() for non-builtin types not implemented yet!");
     return -1;
 }
 
@@ -76,7 +76,7 @@ Datatype<>::Type _Datatype_Macro::get_type() const
 
 int _Datatype_Macro::get_size() const
 {
-    throw std::logic_error("Datatype_Macro::get_size() not implemented yet!");
+    throw std::runtime_error("Datatype_Macro::get_size() not implemented yet!");
     return -1;
 }
 
@@ -191,7 +191,7 @@ Datatype<>::Type _Datatype_Variadic::get_type() const
 
 int _Datatype_Variadic::get_size() const
 {
-    throw std::logic_error("Cannot get_size() from variadic datatype!");
+    throw std::runtime_error("Cannot get_size() from variadic datatype!");
 }
 
 std::string _Datatype_Variadic::__get_symbol_name() const

@@ -3,11 +3,13 @@
 #include <set>
 #include <vector>
 #include <stack>
+#include <queue>
 #include <string>
 #include <filesystem>
 
 #include "libQrawlr.h"
 #include "TranslationUnit.h"
+#include "errors/QinpError.h"
 #include "utility/Architecture.h"
 
 typedef std::shared_ptr<class Program> ProgramRef;
@@ -41,8 +43,9 @@ private:
     void handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatype);
     void handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pString);
     void handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPath);
+    void handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused);
 private:
-    qrawlr::GrammarException make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem);
+    QinpError make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem);
 private:
     Architecture m_architecture;
     bool m_verbose;
@@ -53,9 +56,11 @@ private:
     std::map<int, std::string> m_file_tree_ids;
     std::function<std::string(int)> m_f_tree_id_to_name;
 private:
-    std::stack<TranslationUnit> m_translation_units;
-    TranslationUnit& push_tu(const std::string& path);
-    TranslationUnit& curr_tu();
+    std::stack<TranslationUnitRef> m_translation_units;
+    std::queue<TranslationUnitRef> m_deferred_translation_units;
+    TranslationUnitRef push_tu(const std::string& path);
+    TranslationUnitRef push_tu(TranslationUnitRef tu);
+    TranslationUnitRef curr_tu();
     void pop_tu();
 private:
     typedef void (Program::*Handler)(qrawlr::ParseTreeNodeRef, void*);

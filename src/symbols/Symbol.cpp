@@ -6,15 +6,42 @@ _Symbol::_Symbol(const std::string& name, const qrawlr::Position& position)
     : m_name(name), m_position(position), m_parent()
 {}
 
-void _Symbol::add_child(Symbol<> sym, Symbol<> this_sym)
+Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling)
 {
-    if (m_children.find(sym->get_name()) != m_children.end())
-        throw SymbolError(sym, "Duplicate symbol: " + sym->get_name());
+    if (child_sym->get_parent() != nullptr)
+        throw SymbolError(
+            child_sym,
+            "Cannot add symbol '" + child_sym->get_name() +
+            "' as a child to '" + this_sym->get_symbol_path().to_string() +
+            "', it already has a parent (" +
+            child_sym->get_parent()->get_symbol_path().to_string() + ")"
+        );
 
-    // TODO: Check if symbol already has another parent
+    auto it = m_children.find(child_sym->get_name());
+    if (it == m_children.end())
+    {
+        m_children[child_sym->get_name()] = child_sym;
+        child_sym->m_parent = this_sym;
+        return child_sym;
+    }
 
-    m_children[sym->get_name()] = sym;
-    sym->m_parent = this_sym;
+    auto old_child_sym = it->second;
+
+    switch (dupHandling)
+    {
+    case DuplicateHandling::Throw:
+        throw SymbolError(child_sym, "Duplicate symbol: '" + child_sym->get_name() + "' in '" + this_sym->get_symbol_path().to_string() + "'");
+    case DuplicateHandling::Keep:
+        return old_child_sym;
+    case DuplicateHandling::Replace:
+        m_children[child_sym->get_name()] = child_sym;
+        child_sym->m_parent = this_sym;
+        return child_sym;
+    default:
+        std::runtime_error("[*_Symbol::add_child*]: Unhandled value of DuplicateHandling!");
+    }
+
+    return nullptr;
 }
 
 Symbol<> _Symbol::get_child_by_name(const std::string& name) const

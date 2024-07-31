@@ -9,13 +9,20 @@
 
 #define SYMBOL_NAME_BLUEPRINT "$__BLUEPRINT__$"
 
+enum class DuplicateHandling
+{
+    Throw,  // Throws an exception when a duplicate symbol is detected
+    Keep,   // Keeps the already existing symbol and discards the new symbol
+    Replace // Replaces the existing symbol with the new symbol
+};
+
 template <class SymType = class _Symbol>
 class Symbol : public std::shared_ptr<SymType>
 {
 public:
     using std::shared_ptr<SymType>::shared_ptr;
 public:
-    void add_child(Symbol<> sym);
+    Symbol<> add_child(Symbol<> child_sym, DuplicateHandling dupHandling = DuplicateHandling::Throw);
 public:
     template <typename... Args>
     static Symbol<SymType> make(Args&&... args);
@@ -41,7 +48,7 @@ public:
     const qrawlr::Position& get_position() const;
     SymbolPath get_symbol_path() const;
 private:
-    void add_child(Symbol<> sym, Symbol<> this_sym);
+    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling);
 private:
     std::string m_name;
     qrawlr::Position m_position;
@@ -52,9 +59,9 @@ private:
 };
 
 template <class SymType>
-void Symbol<SymType>::add_child(Symbol<> sym)
+Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, DuplicateHandling dupHandling)
 {
-    (*this)->add_child(sym, *this);
+    return (*this)->add_child(*this, child_sym, dupHandling);
 }
 
 template <class SymType>

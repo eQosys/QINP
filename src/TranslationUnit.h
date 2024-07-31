@@ -5,6 +5,8 @@
 #include "utility/SymbolPath.h"
 #include "symbols/SymbolSpace.h"
 
+typedef std::shared_ptr<class TranslationUnit> TranslationUnitRef;
+
 class TranslationUnit
 {
 public:

@@ -67,7 +67,7 @@ void Program::import_source_file(std::string path_str, bool skip_duplicate, bool
 {
     std::filesystem::path import_from_dir;
     if (!m_translation_units.empty())
-        import_from_dir = std::filesystem::path(curr_tu().get_file_path()).parent_path();
+        import_from_dir = std::filesystem::path(curr_tu()->get_file_path()).parent_path();
     else
         import_from_dir = "";
 
@@ -149,7 +149,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
 
     // Check if nodes' name matches any of the given names
     if (names.find(node->get_name()) == names.end())
-        throw make_grammar_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names.begin(), names.end(), ", ") + "]", node);
+        throw make_node_exception("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names.begin(), names.end(), ", ") + "]", node);
 
     static const std::map<std::string, Handler> handlers = {
         { "GlobalCode",               &Program::handle_tree_node_code_block         },
@@ -166,12 +166,13 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "Datatype",                 &Program::handle_tree_node_datatype           },
         { "Identifier",               &Program::handle_tree_node_identifier         },
         { "SymbolReference",          &Program::handle_tree_node_symbol_reference   },
+        { "StatementDefer",           &Program::handle_tree_node_stmt_defer         },
     };
 
     // Get the corresponding handler
     auto it = handlers.find(node->get_name());
     if (it == handlers.end())
-        throw make_grammar_exception("[*handle_tree_node_one_of*]: Unhandled node name '" + node->get_name() + "'", node);
+        throw make_node_exception("[*handle_tree_node_one_of*]: Unhandled node name '" + node->get_name() + "'", node);
     Handler handler = it->second;
 
     // Call the handler
@@ -212,7 +213,7 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
 
     if (m_verbose)
-        printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu().get_file_path().c_str());
+        printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu()->get_file_path().c_str());
 
     import_source_file(path_str, true);
 }
@@ -223,14 +224,14 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
 
-    auto space = curr_tu().get_symbol_from_path(space_name, true);
-    if (!space) // create new space
-        space = Symbol<SymbolSpace>::make(space_name, node->get_pos_begin());
+    auto space = curr_tu()->curr_symbol().add_child(
+        Symbol<SymbolSpace>::make(space_name, node->get_pos_begin()),
+        DuplicateHandling::Keep
+    );
 
-    curr_tu().curr_symbol().add_child(space);
-    curr_tu().enter_symbol(space);
+    curr_tu()->enter_symbol(space);
     handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock"), "CodeBlock", nullptr);
-    curr_tu().leave_symbol();
+    curr_tu()->leave_symbol();
 }
 
 void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
@@ -246,13 +247,13 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
     {
         auto func = sym.as_type<SymbolFunction>();
         if (func->is_defined())
-            throw make_grammar_exception("Function '' has already been defined here: ", node);
+            throw make_node_exception("Function '' has already been defined here: ", node);
 
         // TODO: Parse function body
-        throw std::logic_error("[*Program::handle_tree_node_stmt_func_decl_def*]: Function definition not implemented yet!");
+        throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Function definition not implemented yet!", node);
     }
     else
-        throw QinpError("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!");
+        throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!", node);
 
     printf("Reached function with name '%s'\n", sym->get_symbol_path().to_string().c_str());
 }
@@ -271,19 +272,16 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     // TODO: Handle Function Specifiers
 
     // Get SymbolFunctionName
-    sym = curr_tu().get_symbol_from_path(func_name_path);
-    if (!sym)
-    {
-        auto parent = curr_tu().get_symbol_from_path(func_name_path.get_parent_path());
-        sym = Symbol<SymbolFunctionName>::make(
+    sym = curr_tu()->get_symbol_from_path(func_name_path.get_parent_path()).add_child(
+        Symbol<SymbolFunctionName>::make(
             func_name_path.get_name(),
             node->get_pos_begin()
-        ).as_type<_Symbol>();
-        parent.add_child(sym);
-    }
+        ).as_type<_Symbol>(),
+        DuplicateHandling::Keep
+    );
 
     if (!sym.is_of_type<SymbolFunctionName>())
-        throw make_grammar_exception("Cannot declare/define function with name '" +
+        throw make_node_exception("Cannot declare/define function with name '" +
             func_name_path.get_name() +
             "', non-function symbol with same name already defined here: " +
             sym->get_position().to_string(m_f_tree_id_to_name), node);
@@ -293,34 +291,26 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     // Create and enter blueprint symbol if necessary
     if (parameters.is_blueprint)
     {
-        auto bp = sym->get_child_by_name(SYMBOL_NAME_BLUEPRINT);
-        if (!bp)
-        {
-            bp = Symbol<SymbolSpace>::make(
+        sym = sym.add_child(
+            Symbol<SymbolSpace>::make(
                 SYMBOL_NAME_BLUEPRINT,
                 node->get_pos_begin()
-            );
-            sym.add_child(bp);
-        }
-
-        sym = bp;
+            ),
+            DuplicateHandling::Keep
+        );
     }
 
     // Create specialization if not already declared
-    auto spec = curr_tu().get_symbol_from_path(spec_path).as_type<SymbolFunction>();
-    if (!spec)
-    {
-        spec = Symbol<SymbolFunction>::make(
+    sym = sym.add_child(
+        Symbol<SymbolFunction>::make(
             return_type,
             spec_path.get_name(),
             parameters,
             is_nodiscard,
             node->get_pos_begin()
-        );
-        sym.add_child(spec);
-    }
-
-    sym = spec;
+        ),
+        DuplicateHandling::Keep
+    );
 }
 
 void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)
@@ -341,7 +331,7 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
     for (auto tree_ref : node->get_children())
     {
         if (!parameters.named_parameters.empty() && parameters.named_parameters.back().datatype->get_type() == Datatype<>::Type::Variadic)
-            throw make_grammar_exception("Variadic parameter must be at the end of the parameter list", tree_ref);
+            throw make_node_exception("Variadic parameter must be at the end of the parameter list", tree_ref);
 
         auto param_node = qrawlr::expect_node(tree_ref);
         if (param_node->get_name() == "Normal")
@@ -374,7 +364,7 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
         }
         else
         {
-            throw std::logic_error("[*Program::handle_tree_node_func_params*]: Unhandled parameter type!");
+            throw make_node_exception("[*Program::handle_tree_node_func_params*]: Unhandled parameter type!", node);
         }
     }
 }
@@ -397,7 +387,7 @@ void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, 
         else if (value == "defer")
             flags.set(ImportSpecifier::Defer);
         else
-            throw make_grammar_exception("Unknown import specifier '" + value + "'", child);
+            throw make_node_exception("Unknown import specifier '" + value + "'", child);
     }
 }
 
@@ -438,7 +428,7 @@ void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, voi
         {
             auto it = sequences.find(seq[0]);
             if (it == sequences.end())
-                throw make_grammar_exception("Unknown escape sequence", child);
+                throw make_node_exception("Unknown escape sequence", child);
             string_out.push_back(it->second);
         }
     }
@@ -502,19 +492,19 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         else if (elem->get_name() == "Expression")
         {
             // TODO: Implementation
-            throw std::logic_error("[]: Handling of datatype array not implemented yet!");
+            throw make_node_exception("[]: Handling of datatype array not implemented yet!", node);
             int num_elements = 1;
             dt = DT_ARRAY(num_elements, dt, is_const).as_type<_Datatype>();
         }
         else if (elem->get_name() == "Reference")
         {
             // TODO: Implementation
-            throw std::logic_error("[]: Handling of datatype reference not implemented yet!");
+            throw make_node_exception("[]: Handling of datatype reference not implemented yet!", node);
             dt = DT_REFERENCE(dt, is_const).as_type<_Datatype>();
         }
         else
         {
-            throw std::logic_error("[*Program::handle_tree_node_datatype*]: Unhandled element type!");
+            throw make_node_exception("[*Program::handle_tree_node_datatype*]: Unhandled element type!", node);
         }
     }
 }
@@ -540,18 +530,34 @@ void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, v
     *(SymbolPath*)pPath = SymbolPath(elements, is_from_root);
 }
 
-qrawlr::GrammarException Program::make_grammar_exception(const std::string& message, qrawlr::ParseTreeRef elem)
+void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused)
 {
-    return qrawlr::GrammarException(message, elem->get_pos_begin().to_string(m_f_tree_id_to_name));
+    (void)pUnused;
+    (void)node;
+
+    m_deferred_translation_units.push(curr_tu());
+    pop_tu();
+    push_tu(m_deferred_translation_units.front());
+    m_deferred_translation_units.pop();
 }
 
-TranslationUnit& Program::push_tu(const std::string& path)
+QinpError Program::make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem)
 {
-    m_translation_units.emplace(path, m_root_sym);
+    return QinpError(qrawlr::GrammarException(message, elem->get_pos_begin().to_string(m_f_tree_id_to_name)).what());
+}
+
+TranslationUnitRef Program::push_tu(const std::string& path)
+{
+    return push_tu(std::make_shared<TranslationUnit>(path, m_root_sym));
+}
+
+TranslationUnitRef Program::push_tu(TranslationUnitRef tu)
+{
+    m_translation_units.push(tu);
     return curr_tu();
 }
 
-TranslationUnit& Program::curr_tu()
+TranslationUnitRef Program::curr_tu()
 {
     return m_translation_units.top();
 }
