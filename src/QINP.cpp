@@ -34,6 +34,58 @@ const std::vector<CmdArgDesc> CMD_ARG_DESCRIPTORS = {
     { CMD_ARG__EXPORT_COMMENTS,    "export-comments",    CmdArgParam::Single }
 };
 
+Architecture get_architecture_from_args(const CmdArgMap& args)
+{
+    Architecture architecture = QINP_CURRENT_ARCHITECTURE;
+    if (args.find(CMD_ARG__ARCHITECTURE) != args.end())
+        architecture = architecture_from_string(args.at(CMD_ARG__ARCHITECTURE)[0]);
+    if (architecture == Architecture::Unknown)
+        throw QinpError("Unknown architecture '" + args.at(CMD_ARG__ARCHITECTURE)[0] + "'");
+    return architecture;
+}
+
+Platform get_platform_from_args(const CmdArgMap& args)
+{
+    Platform platform = QINP_CURRENT_PLATFORM;
+    if (args.find(CMD_ARG__PLATFORM) != args.end())
+        platform = platform_from_string(args.at(CMD_ARG__ARCHITECTURE)[0]);
+    if (platform == Platform::Unknown)
+        throw QinpError("Unknown platform '" + args.at(CMD_ARG__PLATFORM)[0] + "'");
+    return platform;
+}
+
+void add_import_directories_to_program(ProgramRef program, const CmdArgMap& args, const EnvironmentMap& environ, bool verbose)
+{
+    // add stdlib import directory if specified in the environment
+    if (environ.find("QINP_STDLIB") != environ.end())
+        program->add_import_directory(environ.at("QINP_STDLIB"));
+    else if (verbose)
+        print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library"));
+
+    // add specified import directories
+    for (const auto& path_str : args.at(CMD_ARG__IMPORT_DIR))
+        program->add_import_directory(path_str);
+}
+
+bool get_verbose_enabled(const CmdArgMap& args)
+{
+    return args.find(CMD_ARG__VERBOSE) != args.end();
+}
+
+ProgramRef initialize_program(Architecture architecture, bool verbose)
+{
+    Timer t("Program::init", verbose);
+    Program::init(architecture, verbose);
+    return Program::get();
+}
+
+void import_source_files(ProgramRef program, const CmdArgMap& args, bool verbose)
+{
+    Timer t("Source file import", verbose);
+    for (const auto& path_str : args.at(CMD_ARG__POSITIONAL))
+        program->import_source_file(path_str, "", true);
+}
+
 int main(int argc, const char** argv, const char** env)
 {
     try {
@@ -48,52 +100,18 @@ int main(int argc, const char** argv, const char** env)
             return EXIT_SUCCESS;
         }
 
-        // Retrieve (selected) architecture
-        Architecture architecture = QINP_CURRENT_ARCHITECTURE;
-        if (args.find(CMD_ARG__ARCHITECTURE) != args.end())
-            architecture = architecture_from_string(args[CMD_ARG__ARCHITECTURE][0]);
-        if (architecture == Architecture::Unknown)
-            throw QinpError("Unknown architecture '" + args[CMD_ARG__ARCHITECTURE][0] + "'");
+        Architecture architecture = get_architecture_from_args(args);
+        Platform platform = get_platform_from_args(args);
+        bool verbose = get_verbose_enabled(args);
+        auto program = initialize_program(architecture, verbose);
 
-        // Retrieve (selected) platform
-        Platform platform = QINP_CURRENT_PLATFORM;
-        if (args.find(CMD_ARG__PLATFORM) != args.end())
-            platform = platform_from_string(args[CMD_ARG__ARCHITECTURE][0]);
-        if (platform == Platform::Unknown)
-            throw QinpError("Unknown platform '" + args[CMD_ARG__PLATFORM][0] + "'");
+        add_import_directories_to_program(program, args, environ, verbose);
 
-        // Retrieve wether to show verbose info or not
-        bool verbose = false;
-        if (args.find(CMD_ARG__VERBOSE) != args.end())
-            verbose = true;
-
-        // initialize and get program singleton
-        {
-            Timer t("Program::init", verbose);
-            Program::init(architecture, verbose);
-        }
-        auto program = Program::get();
-
-        // add stdlib import directory if specified in the environment
-        if (environ.find("QINP_STDLIB") != environ.end())
-            program->add_import_directory(environ["QINP_STDLIB"]);
-        else if (verbose)
-            print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library"));
-
-        // add specified import directories
-        for (const auto& path_str : args[CMD_ARG__IMPORT_DIR])
-            program->add_import_directory(path_str);
-
-        // check if source files are not specified
+        // check if at least one source file was specified
         if (args[CMD_ARG__POSITIONAL].empty())
             throw QinpError("No source files specified");
 
-        // add source files
-        {
-            Timer t("Source file import", verbose);
-            for (const auto& path_str : args[CMD_ARG__POSITIONAL])
-                program->import_source_file(path_str, "", true);
-        }
+        import_source_files(program, args, verbose);
 
         {
             Timer t("Assembly generation", verbose);
