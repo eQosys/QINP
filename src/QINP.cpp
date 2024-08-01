@@ -67,7 +67,10 @@ int main(int argc, const char** argv, const char** env)
         if (args.find(CMD_ARG__VERBOSE) != args.end())
             verbose = true;
 
-        Program::init(architecture, verbose);
+        {
+            Timer t("Program::init", verbose);
+            Program::init(architecture, verbose);
+        }
         auto program = Program::get();
 
         // add stdlib import directory if specified in the environment
@@ -90,9 +93,15 @@ int main(int argc, const char** argv, const char** env)
                 program->import_source_file(path_str, "", true);
         }
 
-        // TODO: generate assembly
+        {
+            Timer t("Assembly generation", verbose);
+            // TODO: generate assembly
+        }
 
-        // TODO: compile to binary
+        {
+            Timer t("Assembler invocation", verbose);
+            // TODO: compile to binary
+        }
     }
     catch (const qrawlr::GrammarException& err)
     {
