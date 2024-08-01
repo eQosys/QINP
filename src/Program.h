@@ -61,7 +61,7 @@ private:
     TranslationUnitRef push_tu(const std::string& path);
     TranslationUnitRef push_tu(TranslationUnitRef tu);
     TranslationUnitRef curr_tu();
-    void pop_tu();
+    TranslationUnitRef pop_tu();
 private:
     typedef void (Program::*Handler)(qrawlr::ParseTreeNodeRef, void*);
 public:

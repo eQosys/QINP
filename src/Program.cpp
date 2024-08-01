@@ -534,8 +534,7 @@ void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* p
     (void)pUnused;
     (void)node;
 
-    m_deferred_translation_units.push(curr_tu());
-    pop_tu();
+    m_deferred_translation_units.push(pop_tu());
     push_tu(m_deferred_translation_units.front());
     m_deferred_translation_units.pop();
 }
@@ -561,9 +560,11 @@ TranslationUnitRef Program::curr_tu()
     return m_translation_units.top();
 }
 
-void Program::pop_tu()
+TranslationUnitRef Program::pop_tu()
 {
+    auto tu = curr_tu();
     m_translation_units.pop();
+    return tu;
 }
 
 ProgramRef Program::get()
