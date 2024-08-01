@@ -291,7 +291,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     {
         sym = sym.add_child(
             Symbol<SymbolSpace>::make(
-                SYMBOL_NAME_BLUEPRINT,
+                SYMBOL_NAME_BLUEPRINTS,
                 node->get_pos_begin()
             ),
             DuplicateHandling::Keep

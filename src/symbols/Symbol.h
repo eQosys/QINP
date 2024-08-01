@@ -7,7 +7,7 @@
 #include "libQrawlr.h"
 #include "utility/SymbolPath.h"
 
-#define SYMBOL_NAME_BLUEPRINT "$__BLUEPRINT__$"
+#define SYMBOL_NAME_BLUEPRINTS "$_BPS_$"
 
 enum class DuplicateHandling
 {
