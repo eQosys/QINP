@@ -94,20 +94,14 @@ int main(int argc, const char** argv, const char** env)
 
         // TODO: compile to binary
     }
-    catch (const QinpError& err)
-    {
-        print_error(err);
-        return EXIT_FAILURE;
-    }
-    catch (const qrawlr::GrammarException& err)
-    {
-        print_error(err);
-        return EXIT_FAILURE;
-    }
     catch (const std::runtime_error& err)
     {
         print_error(err);
         return EXIT_FAILURE;
+    }
+    catch (std::exception& err)
+    {
+        print_generic_error(std::string("STD: ") + err.what());
     }
     catch (...)
     {
