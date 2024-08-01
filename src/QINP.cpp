@@ -67,6 +67,7 @@ int main(int argc, const char** argv, const char** env)
         if (args.find(CMD_ARG__VERBOSE) != args.end())
             verbose = true;
 
+        // initialize and get program singleton
         {
             Timer t("Program::init", verbose);
             Program::init(architecture, verbose);
@@ -83,10 +84,11 @@ int main(int argc, const char** argv, const char** env)
         for (const auto& path_str : args[CMD_ARG__IMPORT_DIR])
             program->add_import_directory(path_str);
 
-        // add source files
+        // check if source files are not specified
         if (args[CMD_ARG__POSITIONAL].empty())
             throw QinpError("No source files specified");
 
+        // add source files
         {
             Timer t("Source file import", verbose);
             for (const auto& path_str : args[CMD_ARG__POSITIONAL])

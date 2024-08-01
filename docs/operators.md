@@ -20,30 +20,30 @@
 
 | Assignment | In-/Decrement | Arithmetic | Logical  | Comparison | Member Access | Other
 | ---------- | ------------- | ---------- | -------  | ---------- | ------------- | -----
-| a = b      | ++a           | +a         | !a       | a == b     | a[b]          | a(...)
-| a += b     | --a           | -a         | a && b   | a != b     | *a            | (a)b
-| a -= b     | a++           | a + b      | a \|\| b | a < b      | &a            | sizeof(a)
-| a *= b     | a--           | a - b      |          | a > b      | a.b           | a ? b : c
-| a /= b     |               | a * b      |          | a <= b     | a->b          |
-| a %= b     |               | a / b      |          | a >= b     |               |
-| a &= b     |               | a % b      |          |            |               |
-| a \|= b    |               | ~a         |          |            |               |
-| a ^= b     |               | a & b      |          |            |               |
-| a <<= b    |               | a \| b     |          |            |               |
-| a >>= b    |               | a ^ b      |          |            |               |
-|            |               | a << b     |          |            |               |
-|            |               | a >> b     |          |            |               |
+| `a=b`      | `++a`         | `+a`       | `!a`     | `a==b`     | `a[b]`        | `a(...)`
+| `a+=b`     | `--a`         | `-a`       | `a&&b`   | `a!=b`     | `*a`          | `(a)b`
+| `a-=b`     | `a++`         | `a+b`      | `a\|\|b` | `a<b`      | `&a`          | `sizeof(a)`
+| `a*=b`     | `a--`         | `a-b`      |          | `a>b`      | `a.b`         | `a?b:c`
+| `a/=b`     |               | `a*b`      |          | `a<=b`     | `a->b`        |
+| `a%=b`     |               | `a/b`      |          | `a>=b`     |               |
+| `a&=b`     |               | `a%b`      |          |            |               |
+| `a\|=b`    |               | `~a`       |          |            |               |
+| `a^=b`     |               | `a&b`      |          |            |               |
+| `a<<=b`    |               | `a\|b`     |          |            |               |
+| `a>>=b`    |               | `a^b`      |          |            |               |
+|            |               | `a<<b`     |          |            |               |
+|            |               | `a>>b`     |          |            |               |
 
 ---
 
 ### Operator Precedence
 
-Operators with a lower precedence are evaluated first.
+Expressions using operators with a lower precedence are evaluated first.
 
 | Precedence | Operator                                                                               | Associativity
 | ---------- | -------------------------------------------------------------------------------------- | -------------
 | 1          | `a.b` `a->b`                                                                           | left-to-right
-| 2          | `a++` `a--` `a()` `a[]`                                                                | left-to-right
+| 2          | `a++` `a--` `a(...)` `a[b]`                                                            | left-to-right
 | 3          | `++a` `--a` `+a` `-a` `!a` `~a` `(a)b` `*a` `&a`                                       | right-to-left
 | 4          | `a*b` `a/b` `a%b`                                                                      | left-to-right
 | 5          | `a+b` `a-b`                                                                            | left-to-right
@@ -62,8 +62,8 @@ Operators with a lower precedence are evaluated first.
 ### Assignment
 
 The assignment operators are used to assign a value (second operand) to an lvalue (first operand).
-While the direct assignment operator `=` is used to assign a value to a variable, the other assignment operators modify the value of the first operand.
-If the datatypes of the operands don't match, the value of the second operand is converted to the datatype of the first operand.
+While the direct assignment operator `=` is used to assign a value to an lvalue, the other assignment operators modify the value of the first operand.
+If the datatypes of the operands don't match, the value of the second operand is converted to the datatype of the first operand (if applicable).
 
 ---
 

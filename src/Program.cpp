@@ -489,14 +489,14 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         else if (elem->get_name() == "Expression")
         {
             // TODO: Implementation
-            throw make_node_exception("[]: Handling of datatype array not implemented yet!", node);
+            throw make_node_exception("[*Program::handle_tree_node_datatype*]: Handling of datatype array not implemented yet!", node);
             int num_elements = 1;
             dt = DT_ARRAY(num_elements, dt, is_const).as_type<_Datatype>();
         }
         else if (elem->get_name() == "Reference")
         {
             // TODO: Implementation
-            throw make_node_exception("[]: Handling of datatype reference not implemented yet!", node);
+            throw make_node_exception("[*Program::handle_tree_node_datatype*]: Handling of datatype reference not implemented yet!", node);
             dt = DT_REFERENCE(dt, is_const).as_type<_Datatype>();
         }
         else
