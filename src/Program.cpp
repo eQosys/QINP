@@ -417,7 +417,8 @@ void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, voi
             continue;
         }
 
-        std::string seq = qrawlr::expect_leaf(qrawlr::expect_node(child, "EscapeSequence"))->get_value();
+        qrawlr::expect_node(child, "EscapeSequence");
+        std::string seq = qrawlr::expect_child_leaf(child, "0")->get_value();
         if (seq[0] == 'x')
         {
             string_out.push_back((char)std::stoi(seq.substr(1), nullptr, 16));
