@@ -94,6 +94,11 @@ int main(int argc, const char** argv, const char** env)
 
         // TODO: compile to binary
     }
+    catch (const qrawlr::GrammarException& err)
+    {
+        print_generic_error(std::string("Qrawlr: ") + err.what());
+        return EXIT_FAILURE;
+    }
     catch (const std::runtime_error& err)
     {
         print_error(err);
@@ -102,6 +107,7 @@ int main(int argc, const char** argv, const char** env)
     catch (std::exception& err)
     {
         print_generic_error(std::string("STD: ") + err.what());
+        return EXIT_FAILURE;
     }
     catch (...)
     {
