@@ -286,8 +286,6 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
             "', non-function symbol with same name already defined here: " +
             sym->get_position().to_string(m_f_tree_id_to_name), node);
 
-    auto spec_path = SymbolPath(func_name_path).enter(parameters.get_symbol_path_str());
-
     // Create and enter blueprint symbol if necessary
     if (parameters.is_blueprint)
     {
@@ -304,7 +302,6 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     sym = sym.add_child(
         Symbol<SymbolFunction>::make(
             return_type,
-            spec_path.get_name(),
             parameters,
             is_nodiscard,
             node->get_pos_begin()

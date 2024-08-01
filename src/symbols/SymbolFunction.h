@@ -14,7 +14,7 @@ class SymbolFunctionName : public _Symbol
 class SymbolFunction : public _Symbol
 {
 public:
-    SymbolFunction(Datatype<> return_type, const std::string& name, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position);
+    SymbolFunction(Datatype<> return_type, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position);
 public:
     bool is_defined() const;
 private:
