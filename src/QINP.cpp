@@ -38,9 +38,8 @@ Architecture get_architecture_from_args(const CmdArgMap& args)
 {
     Architecture architecture = QINP_CURRENT_ARCHITECTURE;
     if (args.find(CMD_ARG__ARCHITECTURE) != args.end())
-        architecture = architecture_from_string(args.at(CMD_ARG__ARCHITECTURE)[0]);
-    if (architecture == Architecture::Unknown)
-        throw QinpError("Unknown architecture '" + args.at(CMD_ARG__ARCHITECTURE)[0] + "'");
+        if ((architecture = architecture_from_string(args.at(CMD_ARG__ARCHITECTURE)[0])) == Architecture::Unknown)
+            throw QinpError("Unknown architecture '" + args.at(CMD_ARG__ARCHITECTURE)[0] + "'");
     return architecture;
 }
 
@@ -48,9 +47,8 @@ Platform get_platform_from_args(const CmdArgMap& args)
 {
     Platform platform = QINP_CURRENT_PLATFORM;
     if (args.find(CMD_ARG__PLATFORM) != args.end())
-        platform = platform_from_string(args.at(CMD_ARG__ARCHITECTURE)[0]);
-    if (platform == Platform::Unknown)
-        throw QinpError("Unknown platform '" + args.at(CMD_ARG__PLATFORM)[0] + "'");
+        if ((platform = platform_from_string(args.at(CMD_ARG__PLATFORM)[0])) == Platform::Unknown)
+            throw QinpError("Unknown platform '" + args.at(CMD_ARG__PLATFORM)[0] + "'");
     return platform;
 }
 
@@ -63,8 +61,9 @@ void add_import_directories_to_program(ProgramRef program, const CmdArgMap& args
         print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library"));
 
     // add specified import directories
-    for (const auto& path_str : args.at(CMD_ARG__IMPORT_DIR))
-        program->add_import_directory(path_str);
+    if (args.find(CMD_ARG__IMPORT_DIR) != args.end())
+        for (const auto& path_str : args.at(CMD_ARG__IMPORT_DIR))
+            program->add_import_directory(path_str);
 }
 
 bool get_verbose_enabled(const CmdArgMap& args)
@@ -81,6 +80,9 @@ ProgramRef initialize_program(Architecture architecture, bool verbose)
 
 void import_source_files(ProgramRef program, const CmdArgMap& args, bool verbose)
 {
+    if (args.find(CMD_ARG__POSITIONAL) == args.end())
+        throw QinpError("No source files specified");
+        
     Timer t("Source file import", verbose);
     for (const auto& path_str : args.at(CMD_ARG__POSITIONAL))
         program->import_source_file(path_str, "", true);
@@ -101,15 +103,11 @@ int main(int argc, const char** argv, const char** env)
         }
 
         Architecture architecture = get_architecture_from_args(args);
-        Platform platform = get_platform_from_args(args);
+        //Platform platform = get_platform_from_args(args);
         bool verbose = get_verbose_enabled(args);
         auto program = initialize_program(architecture, verbose);
 
         add_import_directories_to_program(program, args, environ, verbose);
-
-        // check if at least one source file was specified
-        if (args[CMD_ARG__POSITIONAL].empty())
-            throw QinpError("No source files specified");
 
         import_source_files(program, args, verbose);
 
