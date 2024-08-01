@@ -11,3 +11,4 @@ enum class Platform
 };
 
 Platform platform_from_string(const std::string& platform_str);
+std::string platform_to_string(Platform platform);

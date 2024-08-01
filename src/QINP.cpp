@@ -71,10 +71,10 @@ bool get_verbose_enabled(const CmdArgMap& args)
     return args.find(CMD_ARG__VERBOSE) != args.end();
 }
 
-ProgramRef initialize_program(Architecture architecture, bool verbose)
+ProgramRef initialize_program(Architecture architecture, Platform platform, bool verbose)
 {
     Timer t("Program::init", verbose);
-    Program::init(architecture, verbose);
+    Program::init(architecture, platform, verbose);
     return Program::get();
 }
 
@@ -103,9 +103,9 @@ int main(int argc, const char** argv, const char** env)
         }
 
         Architecture architecture = get_architecture_from_args(args);
-        //Platform platform = get_platform_from_args(args);
+        Platform platform = get_platform_from_args(args);
         bool verbose = get_verbose_enabled(args);
-        auto program = initialize_program(architecture, verbose);
+        auto program = initialize_program(architecture, platform, verbose);
 
         add_import_directories_to_program(program, args, environ, verbose);
 

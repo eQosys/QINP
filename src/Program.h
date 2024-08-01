@@ -11,6 +11,7 @@
 #include "TranslationUnit.h"
 #include "errors/QinpError.h"
 #include "utility/Architecture.h"
+#include "utility/Platform.h"
 
 typedef std::shared_ptr<class Program> ProgramRef;
 
@@ -18,7 +19,7 @@ class Program
 {
 protected:
     Program() = delete;
-    Program(Architecture arch, bool verbose);
+    Program(Architecture arch, Platform platform, bool verbose);
 public:
     int get_ptr_size() const;
     int get_builtin_type_size(const std::string& type_name) const;
@@ -48,6 +49,7 @@ private:
     QinpError make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem);
 private:
     Architecture m_architecture;
+    Platform m_platform;
     bool m_verbose;
     Symbol<> m_root_sym;
     qrawlr::Grammar m_grammar;
@@ -66,7 +68,7 @@ private:
     typedef void (Program::*Handler)(qrawlr::ParseTreeNodeRef, void*);
 public:
     static ProgramRef get();
-    static void init(Architecture arch, bool verbose);
+    static void init(Architecture arch, Platform platform, bool verbose);
 private:
     static ProgramRef s_singleton;
 };

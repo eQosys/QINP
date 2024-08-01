@@ -9,8 +9,8 @@
 
 ProgramRef Program::s_singleton = nullptr;
 
-Program::Program(Architecture arch, bool verbose)
-    : m_architecture(arch), m_verbose(verbose),
+Program::Program(Architecture arch, Platform platform, bool verbose)
+    : m_architecture(arch), m_platform(platform), m_verbose(verbose),
     m_root_sym(Symbol<SymbolSpace>::make("", qrawlr::Position())),
     m_grammar(
         qrawlr::Grammar::load_from_text(
@@ -211,6 +211,8 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
 
     std::string path_str;
     handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
+    replace_all(path_str, "{architecture}", architecture_to_string(m_architecture));
+    replace_all(path_str, "{platform}", platform_to_string(m_platform));
 
     if (m_verbose)
         printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu()->get_file_path().c_str());
@@ -574,7 +576,7 @@ ProgramRef Program::get()
     return s_singleton;
 }
 
-void Program::init(Architecture arch, bool verbose)
+void Program::init(Architecture arch, Platform platform, bool verbose)
 {
-    s_singleton = std::shared_ptr<Program>(new Program(arch, verbose));
+    s_singleton = std::shared_ptr<Program>(new Program(arch, platform, verbose));
 }
