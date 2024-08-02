@@ -249,10 +249,21 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
     {
         auto func = sym.as_type<SymbolFunction>();
         if (func->is_defined())
-            throw make_node_exception("Function '' has already been defined here: ", node);
+            throw make_node_exception("Function '" + func->get_symbol_path().to_string() + "' has already been defined.", node);
 
-        // TODO: Parse function body
-        throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Function definition not implemented yet!", node);
+        if (func.is_of_type<SymbolFunctionSpecification>())
+        {
+            // TODO: Parse function body
+            throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Function specification definition not implemented yet!", node);
+        }
+        else if (func.is_of_type<SymbolFunctionBlueprint>())
+        {
+            func.as_type<SymbolFunctionBlueprint>()->set_definition(qrawlr::expect_child(node, "FunctionDefinition.CodeBlock", m_f_tree_id_to_name));
+        }
+        else
+        {
+            throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Unknown SymbolFunction* type!", node);
+        }
     }
     else
         throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!", node);
@@ -298,18 +309,30 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
             ),
             DuplicateHandling::Keep
         );
-    }
 
-    // Create specialization if not already declared
-    sym = sym.add_child(
-        Symbol<SymbolFunction>::make(
-            return_type,
-            parameters,
-            is_nodiscard,
-            node->get_pos_begin()
-        ),
-        DuplicateHandling::Keep
-    );
+        sym = sym.add_child(
+            Symbol<SymbolFunctionBlueprint>::make(
+                return_type,
+                parameters,
+                is_nodiscard,
+                node->get_pos_begin()
+            ),
+            DuplicateHandling::Keep
+        );
+    }
+    else
+    {
+        // Create specialization if not already declared
+        sym = sym.add_child(
+            Symbol<SymbolFunctionSpecification>::make(
+                return_type,
+                parameters,
+                is_nodiscard,
+                node->get_pos_begin()
+            ),
+            DuplicateHandling::Keep
+        );
+    }
 }
 
 void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)
