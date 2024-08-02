@@ -559,6 +559,7 @@ void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* p
     (void)pUnused;
     (void)node;
 
+    // TODO: Proper deferring
     m_deferred_translation_units.push(pop_tu());
     push_tu(m_deferred_translation_units.front());
     m_deferred_translation_units.pop();
