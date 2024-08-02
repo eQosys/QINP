@@ -145,7 +145,7 @@ void Program::handle_tree_node(qrawlr::ParseTreeRef tree, const std::string& nam
 
 void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<std::string>& names, void* pData)
 {
-    auto node = qrawlr::expect_node(tree);
+    auto node = qrawlr::expect_node(tree, m_f_tree_id_to_name);
 
     // Check if nodes' name matches any of the given names
     if (names.find(node->get_name()) == names.end())
@@ -206,11 +206,11 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     (void)pUnused;
 
     qrawlr::Flags<ImportSpecifier> flags;
-    handle_tree_node(qrawlr::expect_child_node(node, "ImportSpecifiers"), "ImportSpecifiers", &flags);
+    handle_tree_node(qrawlr::expect_child_node(node, "ImportSpecifiers", m_f_tree_id_to_name), "ImportSpecifiers", &flags);
     // TODO: handle flags
 
     std::string path_str;
-    handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
+    handle_tree_node(qrawlr::expect_child_node(node, "LiteralString", m_f_tree_id_to_name), "LiteralString", &path_str);
     replace_all(path_str, "{architecture}", architecture_to_string(m_architecture));
     replace_all(path_str, "{platform}", platform_to_string(m_platform));
 
@@ -224,7 +224,7 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 {
     (void)pUnused;
 
-    std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
+    std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0", m_f_tree_id_to_name)->get_value();
 
     auto space = curr_tu()->curr_symbol().add_child(
         Symbol<SymbolSpace>::make(space_name, node->get_pos_begin()),
@@ -232,7 +232,7 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
     );
 
     curr_tu()->enter_symbol(space);
-    handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock"), "CodeBlock", nullptr);
+    handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock", m_f_tree_id_to_name), "CodeBlock", nullptr);
     curr_tu()->leave_symbol();
 }
 
@@ -241,7 +241,7 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
     (void)pUnused;
 
     Symbol sym;
-    handle_tree_node(qrawlr::expect_child_node(node, "FunctionHeader"), "FunctionHeader", &sym);
+    handle_tree_node(qrawlr::expect_child_node(node, "FunctionHeader", m_f_tree_id_to_name), "FunctionHeader", &sym);
 
     if (qrawlr::has_child_node(node, "FunctionDeclaration"))
         ; // Nothing to do
@@ -268,9 +268,9 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     SymbolPath func_name_path;
     Parameter_Decl parameters;
     bool is_nodiscard = false;
-    handle_tree_node(qrawlr::expect_child_node(node, "FunctionReturnType"), "FunctionReturnType", &return_type);
-    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"),    "SymbolReference",    &func_name_path);
-    handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters"), "FunctionParameters", &parameters);
+    handle_tree_node(qrawlr::expect_child_node(node, "FunctionReturnType", m_f_tree_id_to_name), "FunctionReturnType", &return_type);
+    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name),    "SymbolReference",    &func_name_path);
+    handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters", m_f_tree_id_to_name), "FunctionParameters", &parameters);
     // TODO: Handle Function Specifiers
 
     // Get SymbolFunctionName
@@ -320,7 +320,7 @@ void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void
         return;
     }
 
-    handle_tree_node(qrawlr::expect_child_node(node, "Datatype"), "Datatype", pReturn_type);
+    handle_tree_node(qrawlr::expect_child_node(node, "Datatype", m_f_tree_id_to_name), "Datatype", pReturn_type);
 }
 
 void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParameters)
@@ -332,12 +332,12 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
         if (!parameters.named_parameters.empty() && parameters.named_parameters.back().datatype->get_type() == Datatype<>::Type::Variadic)
             throw make_node_exception("Variadic parameter must be at the end of the parameter list", tree_ref);
 
-        auto param_node = qrawlr::expect_node(tree_ref);
+        auto param_node = qrawlr::expect_node(tree_ref, m_f_tree_id_to_name);
         if (param_node->get_name() == "Normal")
         {
             Parameter param;
-            handle_tree_node(qrawlr::expect_child_node(param_node, "Datatype"), "Datatype", &param.datatype);
-            handle_tree_node(qrawlr::expect_child_node(param_node, "Identifier"), "Identifier", &param.name);
+            handle_tree_node(qrawlr::expect_child_node(param_node, "Datatype", m_f_tree_id_to_name), "Datatype", &param.datatype);
+            handle_tree_node(qrawlr::expect_child_node(param_node, "Identifier", m_f_tree_id_to_name), "Identifier", &param.name);
             parameters.named_parameters.push_back(param);
 
             // Check if param is macro
@@ -375,7 +375,7 @@ void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, 
 
     for (auto child : node->get_children())
     {
-        auto leaf = qrawlr::expect_leaf(child);
+        auto leaf = qrawlr::expect_leaf(child, m_f_tree_id_to_name);
         auto value = leaf->get_value();
 
         if (value == "linux")
@@ -419,8 +419,8 @@ void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, voi
             continue;
         }
 
-        qrawlr::expect_node(child, "EscapeSequence");
-        std::string seq = qrawlr::expect_child_leaf(child, "0")->get_value();
+        qrawlr::expect_node(child, "EscapeSequence", m_f_tree_id_to_name);
+        std::string seq = qrawlr::expect_child_leaf(child, "0", m_f_tree_id_to_name)->get_value();
         if (seq[0] == 'x')
         {
             string_out.push_back((char)std::stoi(seq.substr(1), nullptr, 16));
@@ -452,7 +452,7 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
     {
         // TODO: More elaborate blueprint handling
         std::string identifier;
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeBlueprint.Identifier"), "Identifier", &identifier);
+        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeBlueprint.Identifier", m_f_tree_id_to_name), "Identifier", &identifier);
         dt = DT_MACRO(identifier, false);
         return;
     }
@@ -461,17 +461,17 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         // TODO: Handle constness
         Datatype return_type;
         Parameter_Types parameters;
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.FunctionReturnType"), "FunctionReturnType", &return_type);
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.DatatypeFunctionParameters"), "DatatypeFunctionParameters", &parameters);
+        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.FunctionReturnType", m_f_tree_id_to_name), "FunctionReturnType", &return_type);
+        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.DatatypeFunctionParameters", m_f_tree_id_to_name), "DatatypeFunctionParameters", &parameters);
         dt = DT_FUNCTION(return_type, parameters, false);
         return;
     }
     
-    node = qrawlr::expect_child_node(node, "DatatypeNamed");
+    node = qrawlr::expect_child_node(node, "DatatypeNamed", m_f_tree_id_to_name);
     auto& children = node->get_children();
     for (auto it = children.begin(); it != children.end(); ++it)
     {
-        auto elem = qrawlr::expect_node(*it);
+        auto elem = qrawlr::expect_node(*it, m_f_tree_id_to_name);
         
         bool is_const = false;
         if (qrawlr::is_node(*++it, "Const"))
@@ -512,7 +512,7 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
 
 void Program::handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pString)
 {
-    *(std::string*)pString = qrawlr::expect_child_leaf(node, "0")->get_value();
+    *(std::string*)pString = qrawlr::expect_child_leaf(node, "0", m_f_tree_id_to_name)->get_value();
 }
 
 void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPath)
