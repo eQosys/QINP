@@ -602,12 +602,12 @@ void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* 
     SymbolPath path;
     handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name), "SymbolReference", &path);
     // TODO: Find/Create enum symbol
-    throw std::runtime_error("[*Program::handle_tree_node_enum_header*]: Not implemented yet!");
+    throw make_node_exception("[*Program::handle_tree_node_enum_header*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pSym)
 {
-    throw std::runtime_error("[*Program::handle_tree_node_enum_def*]: Not implemented yet!");
+    throw make_node_exception("[*Program::handle_tree_node_enum_def*]: Not implemented yet!", node);
 }
 
 QinpError Program::make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem)
