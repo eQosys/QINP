@@ -21,7 +21,7 @@ Symbol<> TranslationUnit::curr_symbol() const
     return m_sym_stack.back();
 }
 
-Symbol<> TranslationUnit::get_symbol_from_path(const SymbolPath& path, bool local_only) const
+Symbol<> TranslationUnit::get_symbol_from_path(const SymbolPath& path) const
 {
     if (path.is_from_root())
         return get_symbol_from_path(path, m_root_sym);
@@ -31,8 +31,6 @@ Symbol<> TranslationUnit::get_symbol_from_path(const SymbolPath& path, bool loca
         auto sym = get_symbol_from_path(path, *it);
         if (sym)
             return sym;
-        if (local_only)
-            break;
     }
 
     return nullptr;

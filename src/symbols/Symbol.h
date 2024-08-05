@@ -22,7 +22,9 @@ class Symbol : public std::shared_ptr<SymType>
 public:
     using std::shared_ptr<SymType>::shared_ptr;
 public:
-    Symbol<> add_child(Symbol<> child_sym, DuplicateHandling dupHandling = DuplicateHandling::Throw);
+    Symbol<> add_child(Symbol<> child_sym, DuplicateHandling dupHandling = DuplicateHandling::Throw, std::function<std::string(int)> tree_id_to_name = nullptr);
+    Symbol<SymType>& if_null(std::function<void(void)> func);
+    const Symbol<SymType>& if_null(std::function<void(void)> func) const;
 public:
     template <typename... Args>
     static Symbol<SymType> make(Args&&... args);
@@ -48,7 +50,7 @@ public:
     const qrawlr::Position& get_position() const;
     SymbolPath get_symbol_path() const;
 private:
-    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling);
+    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling, std::function<std::string(int)> tree_id_to_name);
 private:
     std::string m_name;
     qrawlr::Position m_position;
@@ -59,9 +61,27 @@ private:
 };
 
 template <class SymType>
-Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, DuplicateHandling dupHandling)
+Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, DuplicateHandling dupHandling, std::function<std::string(int)> tree_id_to_name)
 {
-    return (*this)->add_child(*this, child_sym, dupHandling);
+    return (*this)->add_child(*this, child_sym, dupHandling, tree_id_to_name);
+}
+
+template <class SymType>
+Symbol<SymType>& Symbol<SymType>::if_null(std::function<void(void)> func)
+{
+    if (this->get() == nullptr)
+        func();
+    
+    return *this;
+}
+
+template <class SymType>
+const Symbol<SymType>& Symbol<SymType>::if_null(std::function<void(void)> func) const
+{
+    if (this->get() == nullptr)
+        func();
+    
+    return *this;
 }
 
 template <class SymType>

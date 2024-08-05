@@ -6,15 +6,16 @@ _Symbol::_Symbol(const std::string& name, const qrawlr::Position& position)
     : m_name(name), m_position(position), m_parent()
 {}
 
-Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling)
+Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling, std::function<std::string(int)> tree_id_to_name)
 {
     if (child_sym->get_parent() != nullptr)
         throw SymbolError(
-            child_sym,
             "Cannot add symbol '" + child_sym->get_name() +
             "' as a child to '" + this_sym->get_symbol_path().to_string() +
             "', it already has a parent (" +
-            child_sym->get_parent()->get_symbol_path().to_string() + ")"
+            child_sym->get_parent()->get_symbol_path().to_string() + ")",
+            child_sym,
+            tree_id_to_name
         );
 
     auto it = m_children.find(child_sym->get_name());
@@ -30,7 +31,7 @@ Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHand
     switch (dupHandling)
     {
     case DuplicateHandling::Throw:
-        throw SymbolError(child_sym, "Duplicate symbol: '" + child_sym->get_name() + "' in '" + this_sym->get_symbol_path().to_string() + "'");
+        throw SymbolError("Duplicate symbol: '" + child_sym->get_name() + "' in '" + this_sym->get_symbol_path().to_string() + "'", child_sym, tree_id_to_name);
     case DuplicateHandling::Keep:
         return old_child_sym;
     case DuplicateHandling::Replace:

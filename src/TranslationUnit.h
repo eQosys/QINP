@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "errors/SymbolError.h"
 #include "utility/SymbolPath.h"
 #include "symbols/SymbolSpace.h"
 
@@ -15,7 +16,7 @@ public:
     void enter_symbol(Symbol<> sym);
     void leave_symbol();
     Symbol<> curr_symbol() const;
-    Symbol<> get_symbol_from_path(const SymbolPath& path, bool local_only = false) const;
+    Symbol<> get_symbol_from_path(const SymbolPath& path) const;
     Symbol<> get_symbol_from_path(const SymbolPath& path, Symbol<> root_sym) const;
 public:
     const std::string& get_file_path() const;

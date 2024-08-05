@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Symbol.h"
+#include "SymbolDeclDef.h"
 
 #include "utility/Datatype.h"
 #include "utility/CodeBlock.h"
@@ -11,19 +11,11 @@ class SymbolFunctionName : public _Symbol
     using _Symbol::_Symbol;
 };
 
-class SymbolFunction : public _Symbol
+class SymbolFunction : public _SymbolDeclDef
 {
 public:
     SymbolFunction(Datatype<> return_type, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position);
-public:
-    bool is_defined() const;
-    const qrawlr::Position& get_definition_position() const;
-protected:
-    void set_defined(const qrawlr::Position& definition_position);
 private:
-    bool m_is_defined;
-    qrawlr::Position m_definition_position;
-
     Datatype<> m_return_type;
     Parameter_Decl m_params;
     bool m_nodiscard;

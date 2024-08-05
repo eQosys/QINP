@@ -599,10 +599,18 @@ void Program::handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node,
 
 void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pSym)
 {
-    SymbolPath path;
-    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name), "SymbolReference", &path);
-    // TODO: Find/Create enum symbol
-    throw make_node_exception("[*Program::handle_tree_node_enum_header*]: Not implemented yet!", node);
+    auto& sym = *(Symbol<>*)pSym;
+
+    SymbolPath enum_path;
+    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name), "SymbolReference", &enum_path);
+    
+    sym = curr_tu()->get_symbol_from_path(enum_path.get_parent_path()).add_child(
+        Symbol<SymbolEnum>::make(
+            enum_path.get_name(),
+            node->get_pos_begin()
+        ),
+        DuplicateHandling::Keep
+    );
 }
 
 void Program::handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pSym)
