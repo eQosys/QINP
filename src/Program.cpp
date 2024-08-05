@@ -167,6 +167,9 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "Identifier",               &Program::handle_tree_node_identifier         },
         { "SymbolReference",          &Program::handle_tree_node_symbol_reference   },
         { "StatementDefer",           &Program::handle_tree_node_stmt_defer         },
+        { "StatementEnumDeclDef",     &Program::handle_tree_node_stmt_enum_decl_def },
+        { "EnumHeader",               &Program::handle_tree_node_enum_header        },
+        { "EnumDefinition",           &Program::handle_tree_node_enum_def           },
     };
 
     // Get the corresponding handler
@@ -244,7 +247,9 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionHeader", m_f_tree_id_to_name), "FunctionHeader", &sym);
 
     if (qrawlr::has_child_node(node, "FunctionDeclaration"))
+    {
         ; // Nothing to do
+    }
     else if (qrawlr::has_child_node(node, "FunctionDefinition"))
     {
         auto func = sym.as_type<SymbolFunction>();
@@ -254,7 +259,10 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
         if (func.is_of_type<SymbolFunctionSpecification>())
         {
             // TODO: Parse function body
-            throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Function specification definition not implemented yet!", node);
+            auto& block = func.as_type<SymbolFunctionSpecification>()->set_definition(node->get_pos_begin());
+            curr_tu()->enter_symbol(func);
+            handle_tree_node(qrawlr::expect_child(node, "FunctionDefinition.CodeBlock", m_f_tree_id_to_name), "CodeBlock", &block);
+            curr_tu()->leave_symbol();
         }
         else if (func.is_of_type<SymbolFunctionBlueprint>())
         {
@@ -266,8 +274,11 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
         }
     }
     else
+    {
         throw make_node_exception("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!", node);
+    }
 
+    // TODO: Remove debug print
     printf("Reached function with name '%s'\n", sym->get_symbol_path().to_string().c_str());
 }
 
@@ -563,6 +574,40 @@ void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* p
     m_deferred_translation_units.push(pop_tu());
     push_tu(m_deferred_translation_units.front());
     m_deferred_translation_units.pop();
+}
+
+void Program::handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+
+    Symbol symEnum;
+    handle_tree_node(qrawlr::expect_child_node(node, "EnumHeader", m_f_tree_id_to_name), "EnumHeader", &symEnum);
+
+    if (qrawlr::has_child_node(node, "EnumDeclaration"))
+    {
+        ; // Nothing to do
+    }
+    else if (qrawlr::has_child_node(node, "EnumDefinition"))
+    {
+        handle_tree_node(qrawlr::expect_child_node(node, "EnumDefinition", m_f_tree_id_to_name), "EnumDefinition", &symEnum);
+    }
+    else
+    {
+        throw make_node_exception("[*Program::handle_tree_node_stmt_enum_decl_def*]: Missing 'EnumDeclaration' or 'EnumDefinition' node!", node);
+    }
+}
+
+void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pSym)
+{
+    SymbolPath path;
+    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name), "SymbolReference", &path);
+    // TODO: Find/Create enum symbol
+    throw std::runtime_error("[*Program::handle_tree_node_enum_header*]: Not implemented yet!");
+}
+
+void Program::handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pSym)
+{
+    throw std::runtime_error("[*Program::handle_tree_node_enum_def*]: Not implemented yet!");
 }
 
 QinpError Program::make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem)

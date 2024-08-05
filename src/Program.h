@@ -45,6 +45,9 @@ private:
     void handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pString);
     void handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPath);
     void handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused);
+    void handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
+    void handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pSym);
+    void handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pSym);
 private:
     QinpError make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem);
 private:
