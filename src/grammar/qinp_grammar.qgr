@@ -704,7 +704,7 @@ ExprPrec14(collapse):
     )
 
 ExprPrec15(collapse):
-    "("_ Whitespace?_ Expression Whitespace?_ ")"_{ onFail: fail("Expected closing parenthesis for atom")}
+    "("_ Whitespace?_ ExprPrec1 Whitespace?_ ")"_{ onFail: fail("Expected closing parenthesis for atom")}
     LambdaDefinition
     Identifier
     Literal
