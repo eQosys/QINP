@@ -6,7 +6,7 @@ _Symbol::_Symbol(const std::string& name, const qrawlr::Position& position)
     : m_name(name), m_position(position), m_parent()
 {}
 
-Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling, std::function<std::string(int)> tree_id_to_name)
+Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling)
 {
     if (child_sym->get_parent() != nullptr)
         throw SymbolError(

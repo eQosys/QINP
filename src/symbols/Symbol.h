@@ -22,7 +22,7 @@ class Symbol : public std::shared_ptr<SymType>
 public:
     using std::shared_ptr<SymType>::shared_ptr;
 public:
-    Symbol<> add_child(Symbol<> child_sym, DuplicateHandling dupHandling = DuplicateHandling::Throw, std::function<std::string(int)> tree_id_to_name = nullptr);
+    Symbol<> add_child(Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling = DuplicateHandling::Throw);
     Symbol<SymType>& if_null(std::function<void(void)> func);
     const Symbol<SymType>& if_null(std::function<void(void)> func) const;
 public:
@@ -50,20 +50,21 @@ public:
     const qrawlr::Position& get_position() const;
     SymbolPath get_symbol_path() const;
 private:
-    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling, std::function<std::string(int)> tree_id_to_name);
+    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling);
 private:
     std::string m_name;
     qrawlr::Position m_position;
     std::weak_ptr<_Symbol> m_parent;
     std::map<std::string, Symbol<>> m_children;
 private:
-    friend class Symbol<>;
+    template <class SymType>
+    friend class Symbol;
 };
 
 template <class SymType>
-Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, DuplicateHandling dupHandling, std::function<std::string(int)> tree_id_to_name)
+Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling)
 {
-    return (*this)->add_child(*this, child_sym, dupHandling, tree_id_to_name);
+    return (*this)->add_child(*this, child_sym, tree_id_to_name, dupHandling);
 }
 
 template <class SymType>

@@ -35,19 +35,21 @@ private:
     void handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pSym);
-    void handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type);
-    void handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParameters);
-    void handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags);
-    void handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pString);
+    void handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pFuncSymOut);
+    void handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturnTypeOut);
+    void handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParamsOut);
+    void handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlagsOut);
+    void handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pStringOut);
     void handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatype);
-    void handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pString);
-    void handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPath);
+    void handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut);
+    void handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pStringOut);
+    void handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPathOut);
     void handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pSym);
-    void handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pSym);
+    void handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pEnumSymOut);
+    void handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym);
+    void handle_tree_node_enum_member_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym);
+    void handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
 private:
     QinpError make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem);
 private:

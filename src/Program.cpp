@@ -170,6 +170,8 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "StatementEnumDeclDef",     &Program::handle_tree_node_stmt_enum_decl_def },
         { "EnumHeader",               &Program::handle_tree_node_enum_header        },
         { "EnumDefinition",           &Program::handle_tree_node_enum_def           },
+        { "EnumMemberDefinition",     &Program::handle_tree_node_enum_member_def    },
+        { "StatementVariableDeclDef", &Program::handle_tree_node_stmt_var_decl_def  },
     };
 
     // Get the corresponding handler
@@ -231,6 +233,7 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     auto space = curr_tu()->curr_symbol().add_child(
         Symbol<SymbolSpace>::make(space_name, node->get_pos_begin()),
+        nullptr,
         DuplicateHandling::Keep
     );
 
@@ -260,6 +263,7 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
         {
             // TODO: Parse function body
             auto& block = func.as_type<SymbolFunctionSpecification>()->set_definition(node->get_pos_begin());
+
             curr_tu()->enter_symbol(func);
             handle_tree_node(qrawlr::expect_child(node, "FunctionDefinition.CodeBlock", m_f_tree_id_to_name), "CodeBlock", &block);
             curr_tu()->leave_symbol();
@@ -282,9 +286,9 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
     printf("Reached function with name '%s'\n", sym->get_symbol_path().to_string().c_str());
 }
 
-void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pSym)
+void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pFuncSymOut)
 {
-    auto& sym = *(Symbol<>*)pSym;
+    auto& sym = *(Symbol<>*)pFuncSymOut;
 
     Datatype return_type;
     SymbolPath func_name_path;
@@ -301,6 +305,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
             func_name_path.get_name(),
             node->get_pos_begin()
         ),
+            nullptr,
         DuplicateHandling::Keep
     );
 
@@ -318,6 +323,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
                 SYMBOL_NAME_BLUEPRINTS,
                 node->get_pos_begin()
             ),
+            nullptr,
             DuplicateHandling::Keep
         );
 
@@ -328,6 +334,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
                 is_nodiscard,
                 node->get_pos_begin()
             ),
+            nullptr,
             DuplicateHandling::Keep
         );
     }
@@ -341,25 +348,26 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
                 is_nodiscard,
                 node->get_pos_begin()
             ),
+            nullptr,
             DuplicateHandling::Keep
         );
     }
 }
 
-void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturn_type)
+void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturnTypeOut)
 {
     if (!qrawlr::has_child_node(node, "Datatype")) // No return type specified
     {
-        *(Datatype<>*)pReturn_type = DT_NAMED("void", false);
+        *(Datatype<>*)pReturnTypeOut = DT_NAMED("void", false);
         return;
     }
 
-    handle_tree_node(qrawlr::expect_child_node(node, "Datatype", m_f_tree_id_to_name), "Datatype", pReturn_type);
+    handle_tree_node(qrawlr::expect_child_node(node, "Datatype", m_f_tree_id_to_name), "Datatype", pReturnTypeOut);
 }
 
-void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParameters)
+void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParamsOut)
 {
-    auto& parameters = *(Parameter_Decl*)pParameters;
+    auto& parameters = *(Parameter_Decl*)pParamsOut;
 
     for (auto tree_ref : node->get_children())
     {
@@ -403,9 +411,9 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
     }
 }
 
-void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlags)
+void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlagsOut)
 {
-    auto& flags = *(qrawlr::Flags<ImportSpecifier>*)pFlags;
+    auto& flags = *(qrawlr::Flags<ImportSpecifier>*)pFlagsOut;
 
     for (auto child : node->get_children())
     {
@@ -425,9 +433,9 @@ void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, 
     }
 }
 
-void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pString)
+void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pStringOut)
 {
-    std::string& string_out = *(std::string*)pString;
+    std::string& string_out = *(std::string*)pStringOut;
     string_out.clear();
 
     static const std::map<char, char> sequences = {
@@ -478,9 +486,9 @@ void Program::handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnu
 }
 
 
-void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatype)
+void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut)
 {
-    auto& dt = *(Datatype<>*)pDatatype;
+    auto& dt = *(Datatype<>*)pDatatypeOut;
 
     if (qrawlr::has_child_node(node, "DatatypeBlueprint"))
     {
@@ -508,7 +516,7 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         auto elem = qrawlr::expect_node(*it, m_f_tree_id_to_name);
         
         bool is_const = false;
-        if (qrawlr::is_node(*++it, "Const"))
+        if (++it != children.end() && qrawlr::is_node(*it, "Const"))
             is_const = true;
         else
             --it;
@@ -544,12 +552,12 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
     }
 }
 
-void Program::handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pString)
+void Program::handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pStringOut)
 {
-    *(std::string*)pString = qrawlr::expect_child_leaf(node, "0", m_f_tree_id_to_name)->get_value();
+    *(std::string*)pStringOut = qrawlr::expect_child_leaf(node, "0", m_f_tree_id_to_name)->get_value();
 }
 
-void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPath)
+void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPathOut)
 {
     std::vector<std::string> elements;
     bool is_from_root = qrawlr::has_child_leaf(node, "0");
@@ -562,7 +570,7 @@ void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, v
         elements.push_back(identifier);
     }
 
-    *(SymbolPath*)pPath = SymbolPath(elements, is_from_root);
+    *(SymbolPath*)pPathOut = SymbolPath(elements, is_from_root);
 }
 
 void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused)
@@ -597,25 +605,58 @@ void Program::handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node,
     }
 }
 
-void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pSym)
+void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pEnumSymOut)
 {
-    auto& sym = *(Symbol<>*)pSym;
+    auto& enumSym = *(Symbol<>*)pEnumSymOut;
 
     SymbolPath enum_path;
     handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name), "SymbolReference", &enum_path);
     
-    sym = curr_tu()->get_symbol_from_path(enum_path.get_parent_path()).add_child(
+    enumSym = curr_tu()->get_symbol_from_path(enum_path.get_parent_path()).add_child(
         Symbol<SymbolEnum>::make(
             enum_path.get_name(),
             node->get_pos_begin()
         ),
+        nullptr,
         DuplicateHandling::Keep
     );
 }
 
-void Program::handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pSym)
+void Program::handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym)
 {
-    throw make_node_exception("[*Program::handle_tree_node_enum_def*]: Not implemented yet!", node);
+    for (auto& child : qrawlr::expect_child_node(node, "EnumMemberList", m_f_tree_id_to_name)->get_children())
+        handle_tree_node(child, "EnumMemberDefinition", pEnumSym);
+}
+
+void Program::handle_tree_node_enum_member_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym)
+{
+    auto& enumSym = *(Symbol<SymbolEnum>*)pEnumSym;
+
+    std::string name;
+    handle_tree_node(qrawlr::expect_child_node(node, "Identifier", m_f_tree_id_to_name), "Identifier", &name);
+
+    std::size_t value = enumSym->next_value();
+    if (qrawlr::has_child_node(node, "Expression"))
+    {
+        // TODO: Implementation
+        throw make_node_exception("[*Program::handle_tree_node_enum_member_def*]: Member with initializer not implemented yet!", node);
+    }
+
+    enumSym.add_child(
+        Symbol<SymbolEnumMember>::make(
+            name,
+            value,
+            node->get_pos_begin()
+        ),
+        m_f_tree_id_to_name
+    );
+}
+
+void Program::handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+
+    throw make_node_exception("[*Program::handle_tree_node_stmt_var_decl_def*]: Not implemented yet!", node);
 }
 
 QinpError Program::make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem)

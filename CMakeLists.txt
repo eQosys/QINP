@@ -43,6 +43,7 @@ add_executable(
     "src/symbols/SymbolEnum.cpp"
     "src/symbols/SymbolDeclDef.cpp"
     "src/symbols/SymbolFunction.cpp"
+    "src/symbols/SymbolVariable.cpp"
     )
 
 include_directories(

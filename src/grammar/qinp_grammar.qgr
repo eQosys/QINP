@@ -253,7 +253,7 @@ EnumMemberList:
         IndentationDecrease_
     )
 
-EnumMemberLine:
+EnumMemberLine(hidden):
     (
         EnumMemberDefinition
         (

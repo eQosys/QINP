@@ -51,6 +51,8 @@ public:
     _Datatype(bool _is_const);
     virtual ~_Datatype() = default;
 public:
+    void make_const();
+public:
     bool is_const() const;
     std::string get_symbol_name() const;
     virtual Datatype<>::Type get_type() const = 0;

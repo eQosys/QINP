@@ -9,6 +9,11 @@ _Datatype::_Datatype(bool _is_const)
     : m_is_const(_is_const)
 {}
 
+void _Datatype::make_const()
+{
+    m_is_const = true;
+}
+
 bool _Datatype::is_const() const
 {
     return m_is_const;
