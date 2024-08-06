@@ -283,7 +283,7 @@ StatementFunctionDeclDef:
 FunctionHeader:
     (
         "fn"_ Whitespace?_
-        FunctionReturnType
+        OptionalDatatype
         Whitespace?_
         SymbolReference{ onFail: fail("Expected function name") }
         FunctionParameters
@@ -291,7 +291,7 @@ FunctionHeader:
         FunctionSpecifiers
     )
 
-FunctionReturnType:
+OptionalDatatype:
     (
         "<"_ Whitespace?_
         Datatype?
@@ -341,9 +341,9 @@ StatementExternFunctionDecl:
 \\ ---------------- VARIABLES ----------------
 
 StatementVariableDeclDef:
-    VariableDeclarator VariableDatatype Whitespace?_ VariableName{ onFail: fail("Expected variable name") } VariableInitializer
+    VariableDeclarators OptionalDatatype Whitespace?_ VariableName{ onFail: fail("Expected variable name") } VariableInitializer
 
-VariableDeclarator:
+VariableDeclarators:
     (
         "static"
         (
@@ -352,14 +352,6 @@ VariableDeclarator:
         )?
     )
     [ "var" "const" ]
-
-VariableDatatype:
-    (
-        "<"_ Whitespace?_
-        Datatype?
-        Whitespace?_ ">"_{ onFail: fail("Expected closing angle bracket") }
-    )
-    ""_
 
 VariableName:
     Identifier
@@ -413,7 +405,7 @@ DatatypeBlueprint:
 DatatypeFunction:
     (
         "fn"_ Whitespace?_
-        FunctionReturnType
+        OptionalDatatype
         Whitespace?_
         DatatypeFunctionParameters
     )
@@ -720,7 +712,7 @@ ExprPrec15(collapse):
 LambdaDefinition:
     (
         "lambda"_ Whitespace?_
-        FunctionReturnType
+        OptionalDatatype
         Whitespace?_
         FunctionParameters{ onFail: fail("Expected lambda parameters") }
         Whitespace?_

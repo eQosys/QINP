@@ -44,6 +44,7 @@ add_executable(
     "src/symbols/SymbolDeclDef.cpp"
     "src/symbols/SymbolFunction.cpp"
     "src/symbols/SymbolVariable.cpp"
+    "src/expressions/Expression.cpp"
     )
 
 include_directories(

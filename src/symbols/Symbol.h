@@ -26,13 +26,13 @@ public:
     Symbol<SymType>& if_null(std::function<void(void)> func);
     const Symbol<SymType>& if_null(std::function<void(void)> func) const;
 public:
-    template <typename... Args>
-    static Symbol<SymType> make(Args&&... args);
-public:
     template <class NewT>
     bool is_of_type() const;
     template <class NewT>
     Symbol<NewT> as_type();
+public:
+    template <typename... Args>
+    static Symbol<SymType> make(Args&&... args);
 };
 
 class _Symbol

@@ -6,8 +6,8 @@
 
 struct VariableDeclarators
 {
-    bool is_static;
-    bool is_const;
+    bool is_static = false;
+    bool is_const = false;
 };
 
 class SymbolVariable : public _SymbolDeclDef

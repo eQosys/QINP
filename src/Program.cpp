@@ -6,6 +6,7 @@
 #include "utility/ImportSpecifiers.h"
 #include "grammar/QinpGrammarCStr.h"
 #include "symbols/Symbols.h"
+#include "expressions/Expressions.h"
 
 ProgramRef Program::s_singleton = nullptr;
 
@@ -158,7 +159,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "StatementSpace",           &Program::handle_tree_node_stmt_space         },
         { "StatementFunctionDeclDef", &Program::handle_tree_node_stmt_func_decl_def },
         { "FunctionHeader",           &Program::handle_tree_node_func_header        },
-        { "FunctionReturnType",       &Program::handle_tree_node_func_ret_type      },
+        { "OptionalDatatype",         &Program::handle_tree_node_optional_datatype  },
         { "FunctionParameters",       &Program::handle_tree_node_func_params        },
         { "ImportSpecifiers",         &Program::handle_tree_node_import_specifiers  },
         { "LiteralString",            &Program::handle_tree_node_literal_string     },
@@ -172,6 +173,24 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "EnumDefinition",           &Program::handle_tree_node_enum_def           },
         { "EnumMemberDefinition",     &Program::handle_tree_node_enum_member_def    },
         { "StatementVariableDeclDef", &Program::handle_tree_node_stmt_var_decl_def  },
+        { "VariableDeclarators",      &Program::handle_tree_node_var_declarators    },
+        { "VariableInitializer",      &Program::handle_tree_node_var_initializer    },
+        { "Expression",               &Program::handle_tree_node_expression         },
+        { "ExprPrec1",                &Program::handle_tree_node_expr_prec_1        },
+        { "ExprPrec2",                &Program::handle_tree_node_expr_prec_2        },
+        { "ExprPrec3",                &Program::handle_tree_node_expr_prec_3        },
+        { "ExprPrec4",                &Program::handle_tree_node_expr_prec_4        },
+        { "ExprPrec5",                &Program::handle_tree_node_expr_prec_5        },
+        { "ExprPrec6",                &Program::handle_tree_node_expr_prec_6        },
+        { "ExprPrec7",                &Program::handle_tree_node_expr_prec_7        },
+        { "ExprPrec8",                &Program::handle_tree_node_expr_prec_8        },
+        { "ExprPrec9",                &Program::handle_tree_node_expr_prec_9        },
+        { "ExprPrec10",               &Program::handle_tree_node_expr_prec_10       },
+        { "ExprPrec11",               &Program::handle_tree_node_expr_prec_11       },
+        { "ExprPrec12",               &Program::handle_tree_node_expr_prec_12       },
+        { "ExprPrec13",               &Program::handle_tree_node_expr_prec_13       },
+        { "ExprPrec14",               &Program::handle_tree_node_expr_prec_14       },
+        { "ExprPrec15",               &Program::handle_tree_node_expr_prec_15       },
     };
 
     // Get the corresponding handler
@@ -181,7 +200,16 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
     Handler handler = it->second;
 
     // Call the handler
-    (this->*handler)(node, pData);
+    try {
+        (this->*handler)(node, pData);
+    }
+    catch (std::runtime_error& err)
+    {
+        if (m_verbose)
+            throw make_node_exception("[" + node->get_name() + "]\n" + err.what(), node);
+        else
+            throw err;
+    }
 }
 
 void Program::handle_tree_node_code_block(qrawlr::ParseTreeNodeRef node, void* pUnused)
@@ -294,7 +322,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     SymbolPath func_name_path;
     Parameter_Decl parameters;
     bool is_nodiscard = false;
-    handle_tree_node(qrawlr::expect_child_node(node, "FunctionReturnType", m_f_tree_id_to_name), "FunctionReturnType", &return_type);
+    handle_tree_node(qrawlr::expect_child_node(node, "OptionalDatatype", m_f_tree_id_to_name), "OptionalDatatype", &return_type);
     handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference", m_f_tree_id_to_name),    "SymbolReference",    &func_name_path);
     handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters", m_f_tree_id_to_name), "FunctionParameters", &parameters);
     // TODO: Handle Function Specifiers
@@ -354,15 +382,15 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     }
 }
 
-void Program::handle_tree_node_func_ret_type(qrawlr::ParseTreeNodeRef node, void* pReturnTypeOut)
+void Program::handle_tree_node_optional_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut)
 {
     if (!qrawlr::has_child_node(node, "Datatype")) // No return type specified
     {
-        *(Datatype<>*)pReturnTypeOut = DT_NAMED("void", false);
+        *(Datatype<>*)pDatatypeOut = DT_NAMED("void", false);
         return;
     }
 
-    handle_tree_node(qrawlr::expect_child_node(node, "Datatype", m_f_tree_id_to_name), "Datatype", pReturnTypeOut);
+    handle_tree_node(qrawlr::expect_child_node(node, "Datatype", m_f_tree_id_to_name), "Datatype", pDatatypeOut);
 }
 
 void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParamsOut)
@@ -503,7 +531,7 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         // TODO: Handle constness
         Datatype return_type;
         Parameter_Types parameters;
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.FunctionReturnType", m_f_tree_id_to_name), "FunctionReturnType", &return_type);
+        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.OptionalDatatype", m_f_tree_id_to_name), "OptionalDatatype", &return_type);
         handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.DatatypeFunctionParameters", m_f_tree_id_to_name), "DatatypeFunctionParameters", &parameters);
         dt = DT_FUNCTION(return_type, parameters, false);
         return;
@@ -656,7 +684,137 @@ void Program::handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, 
 {
     (void)pUnused;
 
+    VariableDeclarators declarators;
+    Datatype<> datatype;
+    std::string name;
+    Expression<> initializer;
+
+    handle_tree_node(qrawlr::expect_child_node(node, "VariableDeclarators", m_f_tree_id_to_name), "VariableDeclarators", &declarators);
+    handle_tree_node(qrawlr::expect_child_node(node, "OptionalDatatype", m_f_tree_id_to_name), "OptionalDatatype", &datatype);
+    handle_tree_node(qrawlr::expect_child_node(node, "VariableName.Identifier", m_f_tree_id_to_name), "Identifier", &name);
+    handle_tree_node(qrawlr::expect_child_node(node, "VariableInitializer", m_f_tree_id_to_name), "VariableInitializer", &initializer);
+
     throw make_node_exception("[*Program::handle_tree_node_stmt_var_decl_def*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, void* pDeclaratorsOut)
+{
+    auto& declarators = *(VariableDeclarators*)pDeclaratorsOut;
+
+    for (auto& child : node->get_children())
+    {
+        auto declarator = qrawlr::expect_leaf(child, m_f_tree_id_to_name);
+        auto& value = declarator->get_value();
+        if (value == "static")
+            declarators.is_static = true;
+        else if (value == "var")
+            ; // Nothing to do
+        else if (value == "const")
+            declarators.is_const = true;
+        else
+            throw make_node_exception("[*Program::handle_tree_node_var_declarators*]: Unexpected declarator '" + value + "'!", child);
+    }
+}
+
+void Program::handle_tree_node_var_initializer(qrawlr::ParseTreeNodeRef node, void* pInitializerOut)
+{
+    if (qrawlr::has_child_node(node, "Expression"))
+        handle_tree_node(qrawlr::expect_child_node(node, "Expression", m_f_tree_id_to_name), "Expression", pInitializerOut);
+    else
+        *(Expression<>*)pInitializerOut = nullptr;
+}
+
+void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    handle_appr_expr_prec(qrawlr::expect_child_node(node, "0", m_f_tree_id_to_name), pExpressionOut);
+}
+
+void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    static const std::set<std::string> valid_names = {
+        "ExprPrec1",  "ExprPrec2",  "ExprPrec3",
+        "ExprPrec4",  "ExprPrec5",  "ExprPrec6",
+        "ExprPrec7",  "ExprPrec8",  "ExprPrec9",
+        "ExprPrec10", "ExprPrec11", "ExprPrec12",
+        "ExprPrec13", "ExprPrec14", "ExprPrec15"
+    };
+
+    handle_tree_node_one_of(node, valid_names, pExpressionOut);
+}
+
+void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_1*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_2*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_3*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_4*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_5*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_6*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_7*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_8*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_9*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_10*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_11*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_12*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_13*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Not implemented yet!", node);
+}
+
+void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+{
+    throw make_node_exception("[*handle_tree_node_expr_prec_15*]: Not implemented yet!", node);
 }
 
 QinpError Program::make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem)

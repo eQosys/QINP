@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "Statement.h"
+#include "expressions/Expression.h"
 
 struct CodeBlock
 {
-    std::vector<StatementRef> statements;
+    std::vector<Expression<>> statements;
 };
