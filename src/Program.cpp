@@ -261,7 +261,7 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
 
     auto space = curr_tu()->curr_symbol().add_child(
         Symbol<SymbolSpace>::make(space_name, node->get_pos_begin()),
-        nullptr,
+        m_f_tree_id_to_name,
         DuplicateHandling::Keep
     );
 
@@ -333,7 +333,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
             func_name_path.get_name(),
             node->get_pos_begin()
         ),
-            nullptr,
+        m_f_tree_id_to_name,
         DuplicateHandling::Keep
     );
 
@@ -351,7 +351,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
                 SYMBOL_NAME_BLUEPRINTS,
                 node->get_pos_begin()
             ),
-            nullptr,
+            m_f_tree_id_to_name,
             DuplicateHandling::Keep
         );
 
@@ -362,7 +362,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
                 is_nodiscard,
                 node->get_pos_begin()
             ),
-            nullptr,
+            m_f_tree_id_to_name,
             DuplicateHandling::Keep
         );
     }
@@ -376,7 +376,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
                 is_nodiscard,
                 node->get_pos_begin()
             ),
-            nullptr,
+            m_f_tree_id_to_name,
             DuplicateHandling::Keep
         );
     }
@@ -645,7 +645,7 @@ void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* 
             enum_path.get_name(),
             node->get_pos_begin()
         ),
-        nullptr,
+        m_f_tree_id_to_name,
         DuplicateHandling::Keep
     );
 }
