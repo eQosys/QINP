@@ -736,7 +736,7 @@ void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpres
         "ExprPrec4",  "ExprPrec5",  "ExprPrec6",
         "ExprPrec7",  "ExprPrec8",  "ExprPrec9",
         "ExprPrec10", "ExprPrec11", "ExprPrec12",
-        "ExprPrec13", "ExprPrec14", "ExprPrec15"
+        "ExprPrec13", "ExprPrec14", "ExprPrec15",
     };
 
     handle_tree_node_one_of(node, valid_names, pExpressionOut);
@@ -807,14 +807,68 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
     throw make_node_exception("[*handle_tree_node_expr_prec_13*]: Not implemented yet!", node);
 }
 
+Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinOp generate_expression)
+{
+    auto& children = superNode->get_children();
+
+    std::size_t id_curr;
+    std::size_t id_end;
+    std::size_t (*move_id)(std::size_t&);
+
+    auto move_id_ltr = [](std::size_t& id){ return id++; };
+    auto move_id_rtl = [](std::size_t& id){ return id--; };
+
+    switch (evalOrder)
+    {
+    case EvaluationOrder::Left_to_Right: id_curr = 0; id_end = children.size(); move_id = move_id_ltr; break;
+    case EvaluationOrder::Right_to_Left: id_curr = children.size() - 1; id_end = -1; move_id = move_id_rtl; break;
+    default: throw make_node_exception("[*Program::expr_parse_helper_binary_op*]: Invalid EvaluationOrder provided!", superNode);
+    }
+
+    Expression<> exprPrimary;
+    handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)], m_f_tree_id_to_name), &exprPrimary);
+
+    while (id_curr != id_end)
+    {
+        Expression<> exprSecondary;
+        auto opTree = qrawlr::expect_child(children[move_id(id_curr)], "0", m_f_tree_id_to_name);
+        handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)], m_f_tree_id_to_name), &exprSecondary);
+
+        switch (evalOrder)
+        {
+        case EvaluationOrder::Left_to_Right: exprPrimary = generate_expression(opTree, exprPrimary, exprSecondary); break;
+        case EvaluationOrder::Right_to_Left: exprPrimary = generate_expression(opTree, exprSecondary, exprPrimary); break;
+        }
+    }
+
+    return exprPrimary;
+}
+
 void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Not implemented yet!", node);
+    expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight)
+        {
+            throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Not implemented yet!", opTree);
+            return exprLeft;
+        }
+    );
 }
 
 void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    throw make_node_exception("[*handle_tree_node_expr_prec_15*]: Not implemented yet!", node);
+    auto sub_node = qrawlr::expect_child_node(node, "0", m_f_tree_id_to_name);
+    if (sub_node->get_name() == "ExprPrec1")
+        handle_appr_expr_prec(sub_node, pExpressionOut);
+    else if (sub_node->get_name() == "LambdaDefinition")
+        throw make_node_exception("[*handle_tree_node_expr_prec_15*]: LambdaDefinition not implemented yet!", node);
+    else if (sub_node->get_name() == "Identifier")
+        throw make_node_exception("[*handle_tree_node_expr_prec_15*]: Identifier not implemented yet!", node);
+    else if (sub_node->get_name() == "Literal")
+        throw make_node_exception("[*handle_tree_node_expr_prec_15*]: Literal not implemented yet!", node);
+    else
+        throw make_node_exception("[*handle_tree_node_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
 }
 
 QinpError Program::make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem)

@@ -12,8 +12,20 @@
 #include "errors/QinpError.h"
 #include "utility/Architecture.h"
 #include "utility/Platform.h"
+#include "expressions/Expression.h"
+#include "expressions/ExpressionUnaryOp.h"
+#include "expressions/ExpressionBinaryOp.h"
+#include "expressions/ExpressionTernaryOp.h"
 
 typedef std::shared_ptr<class Program> ProgramRef;
+
+typedef std::function<Expression<>(qrawlr::ParseTreeRef, Expression<>, Expression<>)> ExprGeneratorBinOp;
+
+enum class EvaluationOrder
+{
+    Left_to_Right,
+    Right_to_Left,
+};
 
 class Program
 {
@@ -69,6 +81,7 @@ private:
     void handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
+    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinOp generate_expression);
 private:
     QinpError make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem);
 private:

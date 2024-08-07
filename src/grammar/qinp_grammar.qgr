@@ -703,7 +703,7 @@ ExprPrec14(collapse):
         )*
     )
 
-ExprPrec15(collapse):
+ExprPrec15:
     "("_ Whitespace?_ ExprPrec1 Whitespace?_ ")"_{ onFail: fail("Expected closing parenthesis for atom")}
     LambdaDefinition
     Identifier
