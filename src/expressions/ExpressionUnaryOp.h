@@ -5,18 +5,13 @@
 enum class UnaryOperatorType
 {
     AccessFromGlobal,
-    PrefixIncrement,
-    PrefixDecrement,
-    PostfixIncrement,
-    PostfixDecrement,
-    Plus,
-    Minus,
-    LogicalNot,
-    BitwiseNot,
-    Dereference,
-    PointerTo,
+    PrefixIncrement, PrefixDecrement,
+    PostfixIncrement, PostfixDecrement,
+    PrefixPlus, PrefixMinus,
+    LogicalNot, BitwiseNot,
+    Dereference, PointerTo,
     TypeCast,
-    SizeOf
+    SizeOf,
 };
 
 class ExpressionUnaryOperator : public _Expression

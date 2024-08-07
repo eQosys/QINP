@@ -5,21 +5,14 @@
 enum class BinaryOperatorType
 {
     Assign,
-    AssignSum,
-    AssignDifference,
-    AssignProduct,
-    AssignQuotient,
+    AssignSum, AssignDifference,
+    AssignProduct, AssignQuotient,
     AssignModulo,
-    AssignLogicalAnd,
-    AssignLogicalOr,
-    AssignLogicalXor,
-    AssignShiftLeft,
-    AssignShiftRight,
-    AssignBinaryAnd,
-    AssignBinaryOr,
-    AssignBinaryXor,
-    LogicalOr, LogicalXor, LogicalAnd,
-    BitwiseOr, BitwiseXor, BitwiseAnd,
+    AssignLogicalAnd, AssignLogicalOr, AssignLogicalXor,
+    AssignBitwiseAnd, AssignBitwiseOr, AssignBitwiseXor,
+    AssignShiftLeft, AssignShiftRight,
+    LogicalAnd, LogicalOr, LogicalXor,
+    BitwiseAnd, BitwiseOr, BitwiseXor,
     Equal, NotEqual,
     SmallerEquals, Smaller,
     GreaterEquals, Greater,
@@ -27,10 +20,9 @@ enum class BinaryOperatorType
     Sum, Difference,
     Product, Quotient,
     Modulo,
-    AccessMember,
-    AccessPointerMember,
+    AccessMember, AccessPointerMember,
     FunctionCall,
-    Subscript
+    Subscript,
 };
 
 class ExpressionBinaryOperator : public _Expression

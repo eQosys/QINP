@@ -4,7 +4,7 @@
 
 enum class TernaryOperatorType
 {
-    TernaryIfElse
+    TernaryIfElse,
 };
 
 class ExpressionTernaryOperator : public _Expression
