@@ -15,3 +15,8 @@ bool ExpressionSymbol::results_in_object() const
 {
     return m_symbol->is_object();
 }
+
+Symbol<> ExpressionSymbol::get_symbol() const
+{
+    return m_symbol;
+}

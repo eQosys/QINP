@@ -816,11 +816,15 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
 {
     expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
-        [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight)
+        [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
             if (opStr == ".")
             {
+                if (!exprRight.is_of_type<ExpressionIdentifier>())
+                    throw make_expr_error("Expected identifier on right-hand-side of member access operator!", exprRight);
+                auto& nameRight = exprRight.as_type<ExpressionIdentifier>()->get_name();
+
                 // Convert identifier to symbol
                 if (exprLeft.is_of_type<ExpressionIdentifier>())
                 {
@@ -835,6 +839,21 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
                     );
                 }
 
+                if (exprLeft->results_in_object())
+                {
+                    ;
+                }
+                else
+                {
+                    if (!exprLeft.is_of_type<ExpressionSymbol>())
+                        throw make_expr_error("Cannot access non-object non-symbol!", exprLeft);
+
+                    return Expression<ExpressionSymbol>::make(
+                        curr_tu()->get_symbol_from_path(nameRight, exprLeft.as_type<ExpressionSymbol>()->get_symbol()),
+                        exprRight->get_position()
+                    );
+                }
+
                 if (exprLeft.is_of_type<ExpressionSymbol>())
                 {
                     ;
@@ -846,8 +865,9 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
             {
                 throw make_node_error("[*handle_tree_node_expr_prec_14*]: Pointer member access not implemented yet!", opTree);
             }
-            else
-                throw make_node_error("[*handle_tree_node_expr_prec_14*]: Unhandled operator '" + opStr + "'!", opTree);
+            
+            throw make_node_error("[*handle_tree_node_expr_prec_14*]: Unhandled operator '" + opStr + "'!", opTree);
+        
             return exprLeft;
         }
     );
