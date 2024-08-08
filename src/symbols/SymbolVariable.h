@@ -14,6 +14,9 @@ class SymbolVariable : public _SymbolDeclDef
 {
 public:
     SymbolVariable(const std::string& name, const VariableDeclarators& declarators, Datatype<> datatype, Expression<> initializer, const qrawlr::Position& position);
+public:
+    virtual bool is_object() const override;
+    virtual Datatype<> get_datatype() const override;
 private:
     bool m_is_static;
     Datatype<> m_datatype;

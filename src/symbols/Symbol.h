@@ -5,6 +5,7 @@
 #include <string>
 
 #include "libQrawlr.h"
+#include "utility/Datatype.h"
 #include "utility/SymbolPath.h"
 
 #define SYMBOL_NAME_BLUEPRINTS "$_BPS_$"
@@ -49,6 +50,9 @@ public:
     Symbol<> get_parent() const;
     const qrawlr::Position& get_position() const;
     SymbolPath get_symbol_path() const;
+public:
+    virtual bool is_object() const = 0;
+    virtual Datatype<> get_datatype() const = 0;
 private:
     Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling);
 private:

@@ -9,6 +9,9 @@
 class SymbolFunctionName : public _Symbol
 {
     using _Symbol::_Symbol;
+public:
+    virtual bool is_object() const override;
+    virtual Datatype<> get_datatype() const override;
 };
 
 class SymbolFunction : public _SymbolDeclDef
@@ -26,6 +29,9 @@ class SymbolFunctionSpecification : public SymbolFunction
 public:
     using SymbolFunction::SymbolFunction;
 public:
+    virtual bool is_object() const override;
+    virtual Datatype<> get_datatype() const override;
+public:
     CodeBlock& set_definition(const qrawlr::Position& definition_position);
 private:
     CodeBlock m_body;
@@ -35,6 +41,9 @@ class SymbolFunctionBlueprint : public SymbolFunction
 {
 public:
     using SymbolFunction::SymbolFunction;
+public:
+    virtual bool is_object() const override;
+    virtual Datatype<> get_datatype() const override;
 public:
     void set_definition(qrawlr::ParseTreeRef body_tree);
 private:

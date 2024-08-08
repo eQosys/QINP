@@ -85,7 +85,8 @@ private:
     void handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinOp generate_expression);
 private:
-    QinpError make_node_exception(const std::string& message, qrawlr::ParseTreeRef elem);
+    QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem);
+    QinpError make_expr_error(const std::string& message, Expression<> expr);
 private:
     Architecture m_architecture;
     Platform m_platform;
