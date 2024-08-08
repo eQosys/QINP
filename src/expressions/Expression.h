@@ -28,7 +28,8 @@ public:
 public:
     Datatype<> get_datatype() const;
     const qrawlr::Position& get_position() const;
-    virtual bool is_const_expr() const;
+    virtual bool is_const_expr() const = 0;
+    virtual bool results_in_object() const = 0;
 private:
     Datatype<> m_datatype;
     qrawlr::Position m_position;

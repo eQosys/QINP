@@ -15,9 +15,3 @@ const qrawlr::Position& _Expression::get_position() const
 {
     return m_position;
 }
-
-bool _Expression::is_const_expr() const
-{
-    throw QinpError("[*_Expression::is_const_expr*]: Non-overloaded version not callable!");
-    return true;
-}

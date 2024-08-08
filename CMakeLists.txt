@@ -48,6 +48,7 @@ add_executable(
     "src/expressions/ExpressionUnaryOp.cpp"
     "src/expressions/ExpressionBinaryOp.cpp"
     "src/expressions/ExpressionTernaryOp.cpp"
+    "src/expressions/ExpressionIdentifier.cpp"
     )
 
 include_directories(
