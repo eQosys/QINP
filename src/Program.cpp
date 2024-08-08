@@ -56,6 +56,11 @@ int Program::get_builtin_type_size(const std::string& type_name) const
     return it->second;
 }
 
+std::function<std::string(int)> Program::get_fn_tree_id_to_name() const
+{
+    return m_f_tree_id_to_name;
+}
+
 void Program::add_import_directory(const std::string& path_str)
 {
     auto path = std::filesystem::path(path_str);
@@ -813,7 +818,23 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
         node, EvaluationOrder::Left_to_Right,
         [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight)
         {
-            throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Not implemented yet!", opTree);
+            auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
+            if (opStr == ".")
+            {
+                if (exprLeft.is_of_type<ExpressionIdentifier>())
+                    exprLeft = Expression<ExpressionSymbol>::make(
+                        curr_tu()->get_symbol_from_path(exprLeft.as_type<ExpressionIdentifier>()->get_name()),
+                        exprLeft->get_position()
+                    );
+                
+                throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Member access not implemented yet!", opTree);
+            }
+            else if (opStr == "->")
+            {
+                throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Pointer member access not implemented yet!", opTree);
+            }
+            else
+                throw make_node_exception("[*handle_tree_node_expr_prec_14*]: Unhandled operator '" + opStr + "'!", opTree);
             return exprLeft;
         }
     );

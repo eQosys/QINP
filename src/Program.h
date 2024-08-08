@@ -36,6 +36,8 @@ public:
     int get_ptr_size() const;
     int get_builtin_type_size(const std::string& type_name) const;
 public:
+    std::function<std::string(int)> get_fn_tree_id_to_name() const;
+public:
     void add_import_directory(const std::string& path_str);
     void import_source_file(std::string path_str, bool skip_duplicate, bool ignore_import_dirs = false);
     void import_source_code(const std::string& code_str, const std::string& path_str = "<inline>");
