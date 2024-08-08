@@ -5,6 +5,16 @@ SymbolEnum::SymbolEnum(const std::string& name, const qrawlr::Position& declarat
     m_last_value(-1)
 {}
 
+bool SymbolEnum::is_object() const
+{
+    return false;
+}
+
+Datatype<> SymbolEnum::get_datatype() const
+{
+    return DT_NAMED(get_symbol_path().to_string(), true);
+}
+
 void SymbolEnum::set_definition(const qrawlr::Position& definition_position)
 {
     set_defined(definition_position);
@@ -24,6 +34,16 @@ SymbolEnumMember::SymbolEnumMember(const std::string& name, std::size_t value, c
     : _Symbol(name, position),
     m_value(value)
 {}
+
+bool SymbolEnumMember::is_object() const
+{
+    return true;
+}
+
+Datatype<> SymbolEnumMember::get_datatype() const
+{
+    return DT_NAMED(get_symbol_path().to_string(), true);
+}
 
 std::size_t SymbolEnumMember::get_value() const
 {

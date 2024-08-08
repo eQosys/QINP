@@ -8,3 +8,13 @@ SymbolVariable::SymbolVariable(const std::string& name, const VariableDeclarator
 {
     set_defined(position);
 }
+
+bool SymbolVariable::is_object() const
+{
+    throw std::runtime_error("[*SymbolVariable::is_object*]: Not implemented yet!");
+}
+
+Datatype<> SymbolVariable::get_datatype() const
+{
+    throw std::runtime_error("[*SymbolVariable::get_datatype*]: Not implemented yet!");
+}

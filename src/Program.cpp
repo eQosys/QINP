@@ -837,7 +837,7 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
 
                 if (exprLeft.is_of_type<ExpressionSymbol>())
                 {
-                    
+                    ;
                 }
                 
                 throw make_node_error("[*handle_tree_node_expr_prec_14*]: Member access not implemented yet!", opTree);
