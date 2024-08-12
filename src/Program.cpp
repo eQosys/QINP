@@ -699,7 +699,17 @@ void Program::handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, 
     handle_tree_node(qrawlr::expect_child_node(node, "VariableName.Identifier", m_f_tree_id_to_name), "Identifier", &name);
     handle_tree_node(qrawlr::expect_child_node(node, "VariableInitializer", m_f_tree_id_to_name), "VariableInitializer", &initializer);
 
-    throw make_node_error("[*Program::handle_tree_node_stmt_var_decl_def*]: Not implemented yet!", node);
+    curr_tu()->curr_symbol().add_child(
+        Symbol<SymbolVariable>::make(
+            name,
+            declarators,
+            datatype,
+            initializer,
+            node->get_pos_begin()
+        ),
+        m_f_tree_id_to_name,
+        DuplicateHandling::Throw
+    );
 }
 
 void Program::handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, void* pDeclaratorsOut)
@@ -749,7 +759,39 @@ void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpres
 
 void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    throw make_node_error("[*handle_tree_node_expr_prec_1*]: Not implemented yet!", node);
+    expr_parse_helper_binary_op(
+        node, EvaluationOrder::Right_to_Left,
+        [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO Check if ternary or binary operator
+            auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
+
+            // TODO: Check if datatypes match, add conversion when necessary
+            auto datatype = exprLeft->get_datatype();
+
+            BinaryOperatorType opType;
+            if (opStr == "=") opType = BinaryOperatorType::Assign;
+            else if (opStr == "+=") opType = BinaryOperatorType::AssignSum;
+            else if (opStr == "-=") opType = BinaryOperatorType::AssignDifference;
+            else if (opStr == "*=") opType = BinaryOperatorType::AssignProduct;
+            else if (opStr == "/=") opType = BinaryOperatorType::AssignQuotient;
+            else if (opStr == "%=") opType = BinaryOperatorType::AssignModulo;
+            else if (opStr == "&=") opType = BinaryOperatorType::AssignLogicalAnd;
+            else if (opStr == "|=") opType = BinaryOperatorType::AssignLogicalOr;
+            else if (opStr == "^=") opType = BinaryOperatorType::AssignLogicalXor;
+            else if (opStr == "<<=") opType = BinaryOperatorType::AssignShiftLeft;
+            else if (opStr == ">>=") opType = BinaryOperatorType::AssignShiftRight;
+            else throw make_node_error("Unknown operator'" + opStr + "'!", opTree);
+
+            return Expression<ExpressionBinaryOperator>::make(
+                opType,
+                exprLeft,
+                exprRight,
+                datatype,
+                opTree->get_pos_begin()
+            );
+        }
+    );
 }
 
 void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
