@@ -11,7 +11,7 @@ Datatype<> SymbolFunctionName::get_datatype() const
 }
 
 SymbolFunction::SymbolFunction(Datatype<> return_type, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position)
-    : _SymbolDeclDef(parameters.get_symbol_path_str(), position),
+    : SymbolSpace(parameters.get_symbol_path_str(), position),
     m_return_type(return_type),
     m_params(parameters), m_nodiscard(is_nodiscard)
 {}

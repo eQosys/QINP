@@ -15,11 +15,6 @@ Datatype<> SymbolEnum::get_datatype() const
     return DT_NAMED(get_symbol_path().to_string(), true);
 }
 
-void SymbolEnum::set_definition(const qrawlr::Position& definition_position)
-{
-    set_defined(definition_position);
-}
-
 std::size_t SymbolEnum::next_value()
 {
     return ++m_last_value;

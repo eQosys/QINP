@@ -66,6 +66,7 @@ private:
     void handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, void* pDeclaratorsOut);
     void handle_tree_node_var_initializer(qrawlr::ParseTreeNodeRef node, void* pInitializerOut);
+    void handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);

@@ -180,6 +180,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "StatementVariableDeclDef", &Program::handle_tree_node_stmt_var_decl_def  },
         { "VariableDeclarators",      &Program::handle_tree_node_var_declarators    },
         { "VariableInitializer",      &Program::handle_tree_node_var_initializer    },
+        { "StatementReturn",          &Program::handle_tree_node_stmt_return        },
         { "Expression",               &Program::handle_tree_node_expression         },
         { "ExprPrec1",                &Program::handle_tree_node_expr_prec_1        },
         { "ExprPrec2",                &Program::handle_tree_node_expr_prec_2        },
@@ -268,7 +269,10 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
         Symbol<SymbolSpace>::make(space_name, node->get_pos_begin()),
         m_f_tree_id_to_name,
         DuplicateHandling::Keep
-    );
+    ).as_type<SymbolSpace>();
+
+    if (!space->is_defined())
+        space->set_definition(node->get_pos_begin());
 
     curr_tu()->enter_symbol(space);
     handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock", m_f_tree_id_to_name), "CodeBlock", nullptr);
@@ -739,9 +743,29 @@ void Program::handle_tree_node_var_initializer(qrawlr::ParseTreeNodeRef node, vo
         *(Expression<>*)pInitializerOut = nullptr;
 }
 
+void Program::handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)pUnused;
+
+    throw make_node_error("[*Program::handle_tree_node_stmt_return*]: Not implemented yet!", node);
+}
+
 void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    bool add_to_body = false;
+    Expression<> expr_to_add;
+    if (!pExpressionOut)
+    {
+        add_to_body = true;
+        pExpressionOut = &expr_to_add;
+    }
+    
     handle_appr_expr_prec(qrawlr::expect_child_node(node, "0", m_f_tree_id_to_name), pExpressionOut);
+
+    if (add_to_body)
+    {
+        //curr_tu()->curr_symbol()->
+    }
 }
 
 void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
@@ -759,7 +783,7 @@ void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpres
 
 void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    expr_parse_helper_binary_op(
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Right_to_Left,
         [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
@@ -796,67 +820,91 @@ void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* 
 
 void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_2*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_3*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_4*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_5*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_6*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_7*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_8*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_9*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_10*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_11*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_12*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
+    (void)pExpressionOut;
+
     throw make_node_error("[*handle_tree_node_expr_prec_13*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    expr_parse_helper_binary_op(
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {

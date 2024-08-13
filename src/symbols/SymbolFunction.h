@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SymbolDeclDef.h"
+#include "SymbolSpace.h"
 
 #include "utility/Datatype.h"
 #include "utility/CodeBlock.h"
@@ -14,7 +14,7 @@ public:
     virtual Datatype<> get_datatype() const override;
 };
 
-class SymbolFunction : public _SymbolDeclDef
+class SymbolFunction : public SymbolSpace
 {
 public:
     SymbolFunction(Datatype<> return_type, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position);

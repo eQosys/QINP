@@ -10,8 +10,6 @@ public:
     virtual bool is_object() const override;
     virtual Datatype<> get_datatype() const override;
 public:
-    void set_definition(const qrawlr::Position& definition_position);
-public:
     std::size_t next_value();
     void set_last_value(std::size_t value);
 private:

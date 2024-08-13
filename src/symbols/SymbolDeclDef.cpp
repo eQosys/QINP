@@ -18,7 +18,7 @@ const qrawlr::Position& _SymbolDeclDef::get_definition_position() const
 void _SymbolDeclDef::set_defined(const qrawlr::Position& definition_position)
 {
     if (is_defined())
-        throw std::runtime_error("Function '" + get_symbol_path().to_string() + "' has already been defined!");
+        throw std::runtime_error("[*_SymbolDeclDef::set_defined*]: Symbol '" + get_symbol_path().to_string() + "' has already been defined!");
     
     m_is_defined = true;
     m_definition_position = definition_position;
