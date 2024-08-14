@@ -6,5 +6,5 @@
 
 struct CodeBlock
 {
-    std::vector<Expression<>> statements;
+    std::vector<Expression<>> expressions;
 };

@@ -19,7 +19,8 @@
 
 typedef std::shared_ptr<class Program> ProgramRef;
 
-typedef std::function<Expression<>(qrawlr::ParseTreeRef, Expression<>, Expression<>)> ExprGeneratorBinOp;
+typedef std::function<Expression<>(qrawlr::ParseTreeRef, Expression<>)> ExprGeneratorUnaryOp;
+typedef std::function<Expression<>(qrawlr::ParseTreeRef, Expression<>, Expression<>)> ExprGeneratorBinaryOp;
 
 enum class EvaluationOrder
 {
@@ -84,7 +85,8 @@ private:
     void handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinOp generate_expression);
+    Expression<> expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOp generate_expression);
+    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOp generate_expression);
 private:
     QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem);
     QinpError make_expr_error(const std::string& message, Expression<> expr);

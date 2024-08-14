@@ -747,25 +747,30 @@ void Program::handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* 
 {
     (void)pUnused;
 
-    throw make_node_error("[*Program::handle_tree_node_stmt_return*]: Not implemented yet!", node);
+    // TODO: Check if current scope allows return statement
+
+    Expression<> expr;
+    handle_tree_node(qrawlr::expect_child_node(node, "Expression", m_f_tree_id_to_name), "Expression", &expr);
+
+    curr_tu()->curr_symbol().as_type<SymbolSpace>()->append_expr(
+        Expression<ExpressionReturn>::make(
+            expr,
+            node->get_pos_begin()
+        )
+    );
 }
 
 void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    bool add_to_body = false;
-    Expression<> expr_to_add;
+    Expression<> expr_to_add = nullptr;
     if (!pExpressionOut)
-    {
-        add_to_body = true;
         pExpressionOut = &expr_to_add;
-    }
     
     handle_appr_expr_prec(qrawlr::expect_child_node(node, "0", m_f_tree_id_to_name), pExpressionOut);
 
-    if (add_to_body)
-    {
-        //curr_tu()->curr_symbol()->
-    }
+    // When pExpressionOut was null on call, expr_to_add is now non-null
+    if (expr_to_add)
+        curr_tu()->curr_symbol().as_type<SymbolSpace>()->append_expr(expr_to_add);
 }
 
 void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
@@ -897,9 +902,38 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
 
 void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_unary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](qrawlr::ParseTreeRef opTree, Expression<> expr)
+        {
+            if (qrawlr::is_leaf(opTree))
+            {
+                auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
 
-    throw make_node_error("[*handle_tree_node_expr_prec_13*]: Not implemented yet!", node);
+                throw make_node_error("[*handle_tree_node_expr_prec_13*]: postfix increment/decrement not implemented yet!", node);
+
+                if (opStr == "++")
+                {
+                    ;
+                }
+                else if (opStr == "--")
+                {
+                    ;
+                }
+                else
+                {
+                    throw make_node_error("[*handle_tree_node_expr_prec_13*]: Unhandled operator '" + opStr + "'", node);
+                }
+            }
+            else // is_node
+            {
+                throw make_node_error("[*handle_tree_node_expr_prec_13*]: Function calls and subscripts not implemented yet!", node);
+            }
+
+
+            return nullptr;
+        }
+    );
 }
 
 void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
@@ -985,7 +1019,38 @@ void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void*
         throw make_node_error("[*handle_tree_node_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
 }
 
-Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinOp generate_expression)
+Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOp generate_expression)
+{
+    auto& children = superNode->get_children();
+
+    std::size_t id_curr;
+    std::size_t id_end;
+    std::size_t (*move_id)(std::size_t&);
+
+    auto move_id_ltr = [](std::size_t& id){ return id++; };
+    auto move_id_rtl = [](std::size_t& id){ return id--; };
+
+    switch (evalOrder)
+    {
+    case EvaluationOrder::Left_to_Right: id_curr = 0; id_end = children.size(); move_id = move_id_ltr; break;
+    case EvaluationOrder::Right_to_Left: id_curr = children.size() - 1; id_end = -1; move_id = move_id_rtl; break;
+    default: throw make_node_error("[*Program::expr_parse_helper_unary_op*]: Invalid EvaluationOrder provided!", superNode);
+    }
+
+    Expression<> expr;
+    handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)], m_f_tree_id_to_name), &expr);
+
+    while (id_curr != id_end)
+    {
+        auto opTree = qrawlr::expect_child(children[move_id(id_curr)], "0", m_f_tree_id_to_name);
+
+        expr = generate_expression(opTree, expr);
+    }
+
+    return expr;
+}
+
+Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOp generate_expression)
 {
     auto& children = superNode->get_children();
 

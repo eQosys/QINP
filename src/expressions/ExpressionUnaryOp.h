@@ -17,7 +17,8 @@ enum class UnaryOperatorType
 class ExpressionUnaryOperator : public _Expression
 {
 public:
-    ExpressionUnaryOperator(UnaryOperatorType type, Expression<> expr, Datatype<> datatype, const qrawlr::Position& position);
+    ExpressionUnaryOperator(UnaryOperatorType type, Expression<> sub_expr, Datatype<> datatype, const qrawlr::Position& position);
 private:
     UnaryOperatorType m_type;
+    Expression<> m_sub_expr;
 };

@@ -14,7 +14,7 @@ enum class DuplicateHandling
 {
     Throw,  // Throws an exception when a duplicate symbol is detected
     Keep,   // Keeps the already existing symbol and discards the new symbol
-    Replace // Replaces the existing symbol with the new symbol
+    Replace, // Replaces the existing symbol with the new symbol
 };
 
 template <class SymType = class _Symbol>

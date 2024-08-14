@@ -14,3 +14,8 @@ void SymbolSpace::set_definition(const qrawlr::Position& definition_position)
 {
     set_defined(definition_position);
 }
+
+void SymbolSpace::append_expr(Expression<> expr)
+{
+    m_body.expressions.push_back(expr);
+}

@@ -46,6 +46,7 @@ add_executable(
     "src/symbols/SymbolFunction.cpp"
     "src/symbols/SymbolVariable.cpp"
     "src/expressions/Expression.cpp"
+    "src/expressions/ExpressionReturn.cpp"
     "src/expressions/ExpressionSymbol.cpp"
     "src/expressions/ExpressionUnaryOp.cpp"
     "src/expressions/ExpressionBinaryOp.cpp"
