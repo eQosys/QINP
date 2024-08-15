@@ -19,8 +19,16 @@
 
 typedef std::shared_ptr<class Program> ProgramRef;
 
-typedef std::function<Expression<>(qrawlr::ParseTreeRef, Expression<>)> ExprGeneratorUnaryOp;
-typedef std::function<Expression<>(qrawlr::ParseTreeRef, Expression<>, Expression<>)> ExprGeneratorBinaryOp;
+struct OperatorInfo
+{
+    std::string value;
+    qrawlr::Position position;
+};
+
+typedef std::function<Expression<>(OperatorInfo, Expression<>)> ExprGeneratorUnaryOpStr;
+typedef std::function<Expression<>(qrawlr::ParseTreeNodeRef, Expression<>)> ExprGeneratorUnaryOpTree;
+typedef std::function<Expression<>(OperatorInfo, Expression<>, Expression<>)> ExprGeneratorBinaryOpStr;
+typedef std::function<Expression<>(qrawlr::ParseTreeNodeRef, Expression<>, Expression<>)> ExprGeneratorBinaryOpTree;
 
 enum class EvaluationOrder
 {
@@ -85,9 +93,10 @@ private:
     void handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    Expression<> expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOp generate_expression);
-    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOp generate_expression);
+    Expression<> expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree);
+    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree);
 private:
+    QinpError make_pos_error(const std::string& message, const qrawlr::Position& position);
     QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem);
     QinpError make_expr_error(const std::string& message, Expression<> expr);
 private:

@@ -708,12 +708,13 @@ void Program::handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, 
             name,
             declarators,
             datatype,
-            initializer,
             node->get_pos_begin()
         ),
         m_f_tree_id_to_name,
         DuplicateHandling::Throw
     );
+
+    // TODO: Append initializer to current space body
 }
 
 void Program::handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, void* pDeclaratorsOut)
@@ -790,36 +791,34 @@ void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Right_to_Left,
-        [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO Check if ternary or binary operator
-            auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
-
             // TODO: Check if datatypes match, add conversion when necessary
             auto datatype = exprLeft->get_datatype();
 
             BinaryOperatorType opType;
-            if (opStr == "=") opType = BinaryOperatorType::Assign;
-            else if (opStr == "+=") opType = BinaryOperatorType::AssignSum;
-            else if (opStr == "-=") opType = BinaryOperatorType::AssignDifference;
-            else if (opStr == "*=") opType = BinaryOperatorType::AssignProduct;
-            else if (opStr == "/=") opType = BinaryOperatorType::AssignQuotient;
-            else if (opStr == "%=") opType = BinaryOperatorType::AssignModulo;
-            else if (opStr == "&=") opType = BinaryOperatorType::AssignLogicalAnd;
-            else if (opStr == "|=") opType = BinaryOperatorType::AssignLogicalOr;
-            else if (opStr == "^=") opType = BinaryOperatorType::AssignLogicalXor;
-            else if (opStr == "<<=") opType = BinaryOperatorType::AssignShiftLeft;
-            else if (opStr == ">>=") opType = BinaryOperatorType::AssignShiftRight;
-            else throw make_node_error("Unknown operator'" + opStr + "'!", opTree);
+            if (opInfo.value == "=") opType = BinaryOperatorType::Assign;
+            else if (opInfo.value == "+=") opType = BinaryOperatorType::AssignSum;
+            else if (opInfo.value == "-=") opType = BinaryOperatorType::AssignDifference;
+            else if (opInfo.value == "*=") opType = BinaryOperatorType::AssignProduct;
+            else if (opInfo.value == "/=") opType = BinaryOperatorType::AssignQuotient;
+            else if (opInfo.value == "%=") opType = BinaryOperatorType::AssignModulo;
+            else if (opInfo.value == "&=") opType = BinaryOperatorType::AssignLogicalAnd;
+            else if (opInfo.value == "|=") opType = BinaryOperatorType::AssignLogicalOr;
+            else if (opInfo.value == "^=") opType = BinaryOperatorType::AssignLogicalXor;
+            else if (opInfo.value == "<<=") opType = BinaryOperatorType::AssignShiftLeft;
+            else if (opInfo.value == ">>=") opType = BinaryOperatorType::AssignShiftRight;
+            else throw make_pos_error("Unknown operator'" + opInfo.value + "'!", opInfo.position);
 
             return Expression<ExpressionBinaryOperator>::make(
                 opType,
                 exprLeft,
                 exprRight,
                 datatype,
-                opTree->get_pos_begin()
+                opInfo.position
             );
-        }
+        },
+        nullptr
     );
 }
 
@@ -827,109 +826,105 @@ void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* 
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_2*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_2*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_3*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_3*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_4*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_4*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_5*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_5*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_6*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_6*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_7*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_7*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_8*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_8*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_9*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_9*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_10*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_10*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_11*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_11*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     (void)pExpressionOut;
 
-    throw make_node_error("[*handle_tree_node_expr_prec_12*]: Not implemented yet!", node);
+    throw make_node_error("[*Program::handle_tree_node_expr_prec_12*]: Not implemented yet!", node);
 }
 
 void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_unary_op(
         node, EvaluationOrder::Left_to_Right,
-        [&](qrawlr::ParseTreeRef opTree, Expression<> expr)
+        [&](OperatorInfo opInfo, Expression<> expr) -> Expression<>
         {
-            if (qrawlr::is_leaf(opTree))
+            throw make_pos_error("[*Program::handle_tree_node_expr_prec_13*]: postfix increment/decrement not implemented yet!", opInfo.position);
+
+            if (opInfo.value == "++")
             {
-                auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
-
-                throw make_node_error("[*handle_tree_node_expr_prec_13*]: postfix increment/decrement not implemented yet!", node);
-
-                if (opStr == "++")
-                {
-                    ;
-                }
-                else if (opStr == "--")
-                {
-                    ;
-                }
-                else
-                {
-                    throw make_node_error("[*handle_tree_node_expr_prec_13*]: Unhandled operator '" + opStr + "'", node);
-                }
+                ;
             }
-            else // is_node
+            else if (opInfo.value == "--")
             {
-                throw make_node_error("[*handle_tree_node_expr_prec_13*]: Function calls and subscripts not implemented yet!", node);
+                ;
+            }
+            else
+            {
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator '" + opInfo.value + "'", opInfo.position);
             }
 
+            return nullptr;
+        },
+        [&](qrawlr::ParseTreeNodeRef opTree, Expression<> expr) -> Expression<>
+        {
+            throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Function calls and subscripts not implemented yet!", opTree);
 
             return nullptr;
         }
@@ -940,10 +935,9 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
-        [&](qrawlr::ParseTreeRef opTree, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            auto& opStr = qrawlr::expect_leaf(opTree, get_fn_tree_id_to_name())->get_value();
-            if (opStr == ".")
+            if (opInfo.value == ".")
             {
                 if (!exprRight.is_of_type<ExpressionIdentifier>())
                     throw make_expr_error("Expected identifier on right-hand-side of member access operator!", exprRight);
@@ -983,17 +977,18 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
                     ;
                 }
                 
-                throw make_node_error("[*handle_tree_node_expr_prec_14*]: Member access not implemented yet!", opTree);
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_14*]: Member access not implemented yet!", opInfo.position);
             }
-            else if (opStr == "->")
+            else if (opInfo.value == "->")
             {
-                throw make_node_error("[*handle_tree_node_expr_prec_14*]: Pointer member access not implemented yet!", opTree);
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_14*]: Pointer member access not implemented yet!", opInfo.position);
             }
             
-            throw make_node_error("[*handle_tree_node_expr_prec_14*]: Unhandled operator '" + opStr + "'!", opTree);
+            throw make_pos_error("[*Program::handle_tree_node_expr_prec_14*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
         
             return exprLeft;
-        }
+        },
+        nullptr
     );
 }
 
@@ -1003,7 +998,7 @@ void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void*
     if (sub_node->get_name() == "ExprPrec1")
         handle_appr_expr_prec(sub_node, pExpressionOut);
     else if (sub_node->get_name() == "LambdaDefinition")
-        throw make_node_error("[*handle_tree_node_expr_prec_15*]: LambdaDefinition not implemented yet!", node);
+        throw make_node_error("[*Program::handle_tree_node_expr_prec_15*]: LambdaDefinition not implemented yet!", node);
     else if (sub_node->get_name() == "Identifier")
     {
         std::string name;
@@ -1014,12 +1009,12 @@ void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void*
         );
     }
     else if (sub_node->get_name() == "Literal")
-        throw make_node_error("[*handle_tree_node_expr_prec_15*]: Literal not implemented yet!", node);
+        throw make_node_error("[*Program::handle_tree_node_expr_prec_15*]: Literal not implemented yet!", node);
     else
-        throw make_node_error("[*handle_tree_node_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
+        throw make_node_error("[*Program::handle_tree_node_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
 }
 
-Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOp generate_expression)
+Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree)
 {
     auto& children = superNode->get_children();
 
@@ -1043,14 +1038,32 @@ Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superN
     while (id_curr != id_end)
     {
         auto opTree = qrawlr::expect_child(children[move_id(id_curr)], "0", m_f_tree_id_to_name);
+        if (qrawlr::is_leaf(opTree))
+        {
+            if (!gen_expr_op_str)
+                throw make_node_error("[*Program::expr_parse_helper_unary_op*]: Handler for leaf-operators not provided!", opTree);
 
-        expr = generate_expression(opTree, expr);
+            expr = gen_expr_op_str(
+                {
+                    qrawlr::expect_leaf(opTree, m_f_tree_id_to_name)->get_value(),
+                    opTree->get_pos_begin()
+                },
+                expr
+            );
+        }
+        else
+        {
+            if (!gen_expr_op_str)
+                throw make_node_error("[*Program::expr_parse_helper_unary_op*]: Handler for node-operators not provided!", opTree);
+
+            expr = gen_expr_op_tree(qrawlr::expect_node(opTree, m_f_tree_id_to_name), expr);
+        }
     }
 
     return expr;
 }
 
-Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOp generate_expression)
+Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree)
 {
     auto& children = superNode->get_children();
 
@@ -1077,24 +1090,52 @@ Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef super
         auto opTree = qrawlr::expect_child(children[move_id(id_curr)], "0", m_f_tree_id_to_name);
         handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)], m_f_tree_id_to_name), &exprSecondary);
 
-        switch (evalOrder)
+        if (evalOrder == EvaluationOrder::Right_to_Left)
+            exprPrimary.swap(exprSecondary);
+
+        if (qrawlr::is_leaf(opTree))
         {
-        case EvaluationOrder::Left_to_Right: exprPrimary = generate_expression(opTree, exprPrimary, exprSecondary); break;
-        case EvaluationOrder::Right_to_Left: exprPrimary = generate_expression(opTree, exprSecondary, exprPrimary); break;
+            if (!gen_expr_op_str)
+                throw make_node_error("[*Program::expr_parse_helper_binary_op*]: Handler for leaf-operators not provided!", opTree);
+
+            exprPrimary = gen_expr_op_str(
+                {
+                    qrawlr::expect_leaf(opTree, m_f_tree_id_to_name)->get_value(),
+                    opTree->get_pos_begin()
+                },
+                exprPrimary,
+                exprSecondary
+            );
+        }
+        else
+        {
+            if (!gen_expr_op_str)
+                throw make_node_error("[*Program::expr_parse_helper_binary_op*]: Handler for node-operators not provided!", opTree);
+
+            exprPrimary = gen_expr_op_tree(
+                qrawlr::expect_node(opTree, m_f_tree_id_to_name),
+                exprPrimary,
+                exprSecondary
+            );
         }
     }
 
     return exprPrimary;
 }
 
+QinpError Program::make_pos_error(const std::string& message, const qrawlr::Position& position)
+{
+    return QinpError(qrawlr::GrammarException(message, position.to_string(m_f_tree_id_to_name)).what());
+}
+
 QinpError Program::make_node_error(const std::string& message, qrawlr::ParseTreeRef elem)
 {
-    return QinpError(qrawlr::GrammarException(message, elem->get_pos_begin().to_string(m_f_tree_id_to_name)).what());
+    return make_pos_error(message, elem->get_pos_begin());
 }
 
 QinpError Program::make_expr_error(const std::string& message, Expression<> expr)
 {
-    return QinpError(qrawlr::GrammarException(message, expr->get_position().to_string(m_f_tree_id_to_name)).what());
+    return make_pos_error(message, expr->get_position());
 }
 
 TranslationUnitRef Program::push_tu(const std::string& path)
