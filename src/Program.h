@@ -93,8 +93,10 @@ private:
     void handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
     void handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    Expression<> expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree);
-    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree);
+    Expression<> expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree);
+    Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, bool add_implicit_conversion, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree);
+private:
+    void add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expression<>& expr2) const;
 private:
     QinpError make_pos_error(const std::string& message, const qrawlr::Position& position);
     QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem);

@@ -794,9 +794,9 @@ void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Right_to_Left,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check if datatypes match, add conversion when necessary
             auto datatype = exprLeft->get_datatype();
 
             BinaryOperatorType opType;
@@ -829,10 +829,9 @@ void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             if (opInfo.value != "||")
                 throw make_pos_error("[*Program::handle_tree_node_expr_prec_2*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
@@ -854,10 +853,9 @@ void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             if (opInfo.value != "&&")
                 throw make_pos_error("[*Program::handle_tree_node_expr_prec_3*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
@@ -879,10 +877,9 @@ void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             if (opInfo.value != "|")
                 throw make_pos_error("[*Program::handle_tree_node_expr_prec_4*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
@@ -904,10 +901,9 @@ void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             if (opInfo.value != "^")
                 throw make_pos_error("[*Program::handle_tree_node_expr_prec_5*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
@@ -929,10 +925,9 @@ void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             if (opInfo.value != "&")
                 throw make_pos_error("[*Program::handle_tree_node_expr_prec_6*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
@@ -954,10 +949,9 @@ void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             BinaryOperatorType opType;
 
             if (opInfo.value == "==") opType = BinaryOperatorType::Equal;
@@ -982,10 +976,9 @@ void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             BinaryOperatorType opType;
 
             if (opInfo.value == "<=") opType = BinaryOperatorType::SmallerEquals;
@@ -1012,10 +1005,9 @@ void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* 
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             BinaryOperatorType opType;
 
             if (opInfo.value == "<<") opType = BinaryOperatorType::ShiftLeft;
@@ -1040,10 +1032,9 @@ void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void*
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             BinaryOperatorType opType;
 
             if (opInfo.value == "+") opType = BinaryOperatorType::Sum;
@@ -1068,10 +1059,9 @@ void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void*
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
-            // TODO: Check datatypes
-
             BinaryOperatorType opType;
 
             if (opInfo.value == "*") opType = BinaryOperatorType::Equal;
@@ -1215,6 +1205,7 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
 {
     *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
+        false,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             if (opInfo.value == ".")
@@ -1294,7 +1285,7 @@ void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void*
         throw make_node_error("[*Program::handle_tree_node_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
 }
 
-Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree)
+Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree)
 {
     auto& children = superNode->get_children();
 
@@ -1305,7 +1296,7 @@ Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superN
     auto move_id_ltr = [](std::size_t& id){ return id++; };
     auto move_id_rtl = [](std::size_t& id){ return id--; };
 
-    switch (evalOrder)
+    switch (eval_order)
     {
     case EvaluationOrder::Left_to_Right: id_curr = 0; id_end = children.size(); move_id = move_id_ltr; break;
     case EvaluationOrder::Right_to_Left: id_curr = children.size() - 1; id_end = -1; move_id = move_id_rtl; break;
@@ -1343,7 +1334,7 @@ Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superN
     return expr;
 }
 
-Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder evalOrder, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree)
+Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, bool add_implicit_conversion, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree)
 {
     auto& children = superNode->get_children();
 
@@ -1354,7 +1345,7 @@ Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef super
     auto move_id_ltr = [](std::size_t& id){ return id++; };
     auto move_id_rtl = [](std::size_t& id){ return id--; };
 
-    switch (evalOrder)
+    switch (eval_order)
     {
     case EvaluationOrder::Left_to_Right: id_curr = 0; id_end = children.size(); move_id = move_id_ltr; break;
     case EvaluationOrder::Right_to_Left: id_curr = children.size() - 1; id_end = -1; move_id = move_id_rtl; break;
@@ -1370,7 +1361,12 @@ Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef super
         auto opTree = qrawlr::expect_child(children[move_id(id_curr)], "0", m_f_tree_id_to_name);
         handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)], m_f_tree_id_to_name), &exprSecondary);
 
-        if (evalOrder == EvaluationOrder::Right_to_Left)
+        // TODO: Future: Check if overload exists (in EVERY handle_tree_node_expr_prec_*)
+
+        if (add_implicit_conversion)
+            add_implicit_conversion_to_same_datatype(exprPrimary, exprSecondary);
+
+        if (eval_order == EvaluationOrder::Right_to_Left)
             exprPrimary.swap(exprSecondary);
 
         if (qrawlr::is_leaf(opTree))
@@ -1401,6 +1397,11 @@ Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef super
     }
 
     return exprPrimary;
+}
+
+void Program::add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expression<>& expr2) const
+{
+    // TODO: Implementation
 }
 
 QinpError Program::make_pos_error(const std::string& message, const qrawlr::Position& position)
