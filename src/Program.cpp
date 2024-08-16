@@ -137,6 +137,9 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     //std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
     //system(dot_command.c_str());
 
+    if (!result.tree)
+        return;
+
     m_file_tree_ids.insert({ result.tree->get_pos_begin().tree_id, path_str });
 
     push_tu(path_str);

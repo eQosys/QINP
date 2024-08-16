@@ -58,7 +58,7 @@ void add_import_directories_to_program(ProgramRef program, const CmdArgMap& args
     if (environ.find("QINP_STDLIB") != environ.end())
         program->add_import_directory(environ.at("QINP_STDLIB"));
     else if (verbose)
-        print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library"));
+        print_warning(QinpError("Missing STDLIB environment variable, compiling without standard library."));
 
     // add specified import directories
     if (args.find(CMD_ARG__IMPORT_DIR) != args.end())
