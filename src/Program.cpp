@@ -827,79 +827,351 @@ void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* 
 
 void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_2*]: Not implemented yet!", node);
+            if (opInfo.value != "||")
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_2*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = DT_NAMED("bool", false);
+
+            return Expression<ExpressionBinaryOperator>::make(
+                BinaryOperatorType::LogicalOr,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_3*]: Not implemented yet!", node);
+            if (opInfo.value != "&&")
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_3*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = DT_NAMED("bool", false);
+
+            return Expression<ExpressionBinaryOperator>::make(
+                BinaryOperatorType::LogicalAnd,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_4*]: Not implemented yet!", node);
+            if (opInfo.value != "|")
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_4*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = exprLeft->get_datatype();
+
+            return Expression<ExpressionBinaryOperator>::make(
+                BinaryOperatorType::BitwiseOr,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_5*]: Not implemented yet!", node);
+            if (opInfo.value != "^")
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_5*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = exprLeft->get_datatype();
+
+            return Expression<ExpressionBinaryOperator>::make(
+                BinaryOperatorType::BitwiseXor,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_6*]: Not implemented yet!", node);
+            if (opInfo.value != "&")
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_6*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = exprLeft->get_datatype();
+
+            return Expression<ExpressionBinaryOperator>::make(
+                BinaryOperatorType::BitwiseAnd,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_7*]: Not implemented yet!", node);
+            BinaryOperatorType opType;
+
+            if (opInfo.value == "==") opType = BinaryOperatorType::Equal;
+            else if (opInfo.value == "!=") opType = BinaryOperatorType::NotEqual;
+            else throw make_pos_error("[*Program::handle_tree_node_expr_prec_7*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = DT_NAMED("bool", false);
+
+            return Expression<ExpressionBinaryOperator>::make(
+                opType,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_8*]: Not implemented yet!", node);
+            BinaryOperatorType opType;
+
+            if (opInfo.value == "<=") opType = BinaryOperatorType::SmallerEquals;
+            else if (opInfo.value == "<") opType = BinaryOperatorType::Smaller;
+            else if (opInfo.value == ">=") opType = BinaryOperatorType::GreaterEquals;
+            else if (opInfo.value == ">") opType = BinaryOperatorType::Greater;
+            else throw make_pos_error("[*Program::handle_tree_node_expr_prec_8*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = DT_NAMED("bool", false);
+
+            return Expression<ExpressionBinaryOperator>::make(
+                opType,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_9*]: Not implemented yet!", node);
+            BinaryOperatorType opType;
+
+            if (opInfo.value == "<<") opType = BinaryOperatorType::ShiftLeft;
+            else if (opInfo.value == ">>") opType = BinaryOperatorType::ShiftRight;
+            else throw make_pos_error("[*Program::handle_tree_node_expr_prec_9*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = exprLeft->get_datatype();
+
+            return Expression<ExpressionBinaryOperator>::make(
+                opType,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_10*]: Not implemented yet!", node);
+            BinaryOperatorType opType;
+
+            if (opInfo.value == "+") opType = BinaryOperatorType::Sum;
+            else if (opInfo.value == "-") opType = BinaryOperatorType::Difference;
+            else throw make_pos_error("[*Program::handle_tree_node_expr_prec_10*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = exprLeft->get_datatype();
+
+            return Expression<ExpressionBinaryOperator>::make(
+                opType,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+        node, EvaluationOrder::Left_to_Right,
+        [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
+        {
+            // TODO: Check datatypes
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_11*]: Not implemented yet!", node);
+            BinaryOperatorType opType;
+
+            if (opInfo.value == "*") opType = BinaryOperatorType::Equal;
+            else if (opInfo.value == "/") opType = BinaryOperatorType::NotEqual;
+            else if (opInfo.value == "%") opType = BinaryOperatorType::Modulo;
+            else throw make_pos_error("[*Program::handle_tree_node_expr_prec_11*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+
+            auto datatype = exprLeft->get_datatype();
+
+            return Expression<ExpressionBinaryOperator>::make(
+                opType,
+                exprLeft,
+                exprRight,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
-    (void)pExpressionOut;
+    *(Expression<>*)pExpressionOut = expr_parse_helper_unary_op(
+        node, EvaluationOrder::Right_to_Left,
+        [&](OperatorInfo opInfo, Expression<> expr) -> Expression<>
+        {
+            (void)expr;
 
-    throw make_node_error("[*Program::handle_tree_node_expr_prec_12*]: Not implemented yet!", node);
+            UnaryOperatorType opType;
+            Datatype<> datatype;
+
+            if (opInfo.value == ".")
+            {
+                if (!expr.is_of_type<ExpressionIdentifier>())
+                    throw make_expr_error("Expected identifier after global-scope operator!", expr);
+                
+                auto& name = expr.as_type<ExpressionIdentifier>()->get_name();
+                
+                return Expression<ExpressionSymbol>::make(
+                    m_root_sym->get_child_by_name(name),
+                    opInfo.position
+                );
+            }
+            else if (opInfo.value == "++")
+            {
+                opType = UnaryOperatorType::PrefixIncrement;
+                datatype = expr->get_datatype();
+            }
+            else if (opInfo.value == "--")
+            {
+                opType = UnaryOperatorType::PrefixDecrement;
+                datatype = expr->get_datatype();
+            }
+            else if (opInfo.value == "+")
+            {
+                opType = UnaryOperatorType::PrefixPlus;
+                datatype = expr->get_datatype();
+            }
+            else if (opInfo.value == "-")
+            {
+                opType = UnaryOperatorType::PrefixMinus;
+                datatype = expr->get_datatype();
+            }
+            else if (opInfo.value == "!")
+            {
+                opType = UnaryOperatorType::LogicalNot;
+                datatype = DT_NAMED("bool", false);
+            }
+            else if (opInfo.value == "~")
+            {
+                opType = UnaryOperatorType::BitwiseNot;
+                datatype = expr->get_datatype();
+            }
+            else if (opInfo.value == "*")
+            {
+                opType = UnaryOperatorType::Dereference;
+                datatype = expr->get_datatype();
+                // TODO: Modify datatype
+                make_pos_error("[*Program::handle_tree_node_expr_prec_12*]: Dereference operator not implemented yet!", opInfo.position);
+            }
+            else if (opInfo.value == "&")
+            {
+                opType = UnaryOperatorType::AddressOf;
+                datatype = expr->get_datatype();
+                // TODO: Modify datatype
+                make_pos_error("[*Program::handle_tree_node_expr_prec_12*]: Address-of operator not implemented yet!", opInfo.position);
+            }
+            else
+                throw make_pos_error("[*Program::handle_tree_node_expr_prec_12*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+        
+            return Expression<ExpressionUnaryOperator>::make(
+                opType,
+                expr,
+                datatype,
+                opInfo.position
+            );
+        },
+        nullptr
+    );
 }
 
 void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
@@ -908,26 +1180,31 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
         node, EvaluationOrder::Left_to_Right,
         [&](OperatorInfo opInfo, Expression<> expr) -> Expression<>
         {
-            throw make_pos_error("[*Program::handle_tree_node_expr_prec_13*]: postfix increment/decrement not implemented yet!", opInfo.position);
+            (void)expr;
 
             if (opInfo.value == "++")
             {
-                ;
+                make_pos_error("[*Program::handle_tree_node_expr_prec_13*]: Postfix increment not implemented yet!", opInfo.position);
             }
             else if (opInfo.value == "--")
             {
-                ;
+                make_pos_error("[*Program::handle_tree_node_expr_prec_13*]: Postfix decrement not implemented yet!", opInfo.position);
             }
             else
-            {
                 throw make_pos_error("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator '" + opInfo.value + "'", opInfo.position);
-            }
 
             return nullptr;
         },
         [&](qrawlr::ParseTreeNodeRef opTree, Expression<> expr) -> Expression<>
         {
-            throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Function calls and subscripts not implemented yet!", opTree);
+            (void)expr;
+
+            if (opTree->get_name() == "ExprOpFunctionCall")
+                throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Function calls not implemented yet!", opTree);
+            else if (opTree->get_name() == "ExprOpSubscript")
+                throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Subscripts not implemented yet!", opTree);
+            else
+                throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator!", opTree);
 
             return nullptr;
         }
