@@ -123,6 +123,26 @@ std::string _Datatype_Function::__get_symbol_name() const
     return "f<" + join(params.begin(), params.end(), ",") + ">";
 }
 
+_Datatype_FunctionName::_Datatype_FunctionName()
+    : _Datatype(false)
+{}
+
+Datatype<>::Type _Datatype_FunctionName::get_type() const
+{
+    return Datatype<>::Type::FunctionName;
+}
+
+int _Datatype_FunctionName::get_size() const
+{
+    throw QinpError("[*_Datatype_FunctionName::get_size*]: Cannot get_size!");
+}
+
+std::string _Datatype_FunctionName::__get_symbol_name() const
+{
+    // TODO: Better implementation?
+    return "?";
+}
+
 _Datatype_Array::_Datatype_Array(int num_elements, Datatype<> child, bool _is_const)
     : _Datatype_Parent(child, _is_const), m_num_elements(num_elements)
 {}

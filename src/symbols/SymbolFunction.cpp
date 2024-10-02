@@ -2,12 +2,12 @@
 
 bool SymbolFunctionName::is_object() const
 {
-    throw std::runtime_error("[*SymbolFunctionName::is_object*]: Not implemented yet!");
+    return false;
 }
 
 Datatype<> SymbolFunctionName::get_datatype() const
 {
-    throw std::runtime_error("[*SymbolFunctionName::get_datatype*]: Not implemented yet!");
+    return DT_FUNCTION_NAME();
 }
 
 SymbolFunction::SymbolFunction(Datatype<> return_type, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position)

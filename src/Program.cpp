@@ -1190,7 +1190,37 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
             (void)expr;
 
             if (opTree->get_name() == "ExprOpFunctionCall")
+            {
+                if (expr.is_of_type<ExpressionIdentifier>())
+                    expr = make_ExprSymbol_from_ExprIdentifier(expr);
+                
+                if (expr->get_datatype()->get_type() != Datatype<>::Type::Function &&
+                    expr->get_datatype()->get_type() != Datatype<>::Type::FunctionName)
+                    throw make_node_error("Cannot call non-function!", opTree);
+
+                // TODO: Handle blueprint parameters
+                std::vector<Expression<>> arguments;
+
+                auto& children = opTree->get_children();
+                for (int argID = 1; argID < children.size(); ++argID)
+                {
+                    auto child = qrawlr::expect_child(opTree, std::to_string(argID) + ".FunctionCallArgument.0", get_fn_tree_id_to_name());
+                    if (qrawlr::is_node(child, "Expression"))
+                    {
+                        Expression<> expr;
+                        handle_tree_node(child, "Expression", &expr);
+                        arguments.push_back(expr);
+                    }
+                    else if (qrawlr::is_leaf(child))
+                        throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Variadic unpacking not implemented yet!", child);
+                    else
+                        throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Unhandled child in 'FunctionCallArgument'!", child);
+                }
+
+                return make_ExprFunctionCall(expr, arguments);
+
                 throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Function calls not implemented yet!", opTree);
+            }
             else if (opTree->get_name() == "ExprOpSubscript")
                 throw make_node_error("[*Program::handle_tree_node_expr_prec_13*]: Subscripts not implemented yet!", opTree);
             else
@@ -1216,17 +1246,7 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
 
                 // Convert identifier to symbol
                 if (exprLeft.is_of_type<ExpressionIdentifier>())
-                {
-                    auto& name = exprLeft.as_type<ExpressionIdentifier>()->get_name();
-                    auto symbol = curr_tu()->get_symbol_from_path(name);
-                    if (!symbol)
-                        throw make_expr_error("Unknown identifier '" + name + "'", exprLeft);
-
-                    exprLeft = Expression<ExpressionSymbol>::make(
-                        symbol,
-                        exprLeft->get_position()
-                    );
-                }
+                    exprLeft = make_ExprSymbol_from_ExprIdentifier(exprLeft);
 
                 if (exprLeft->results_in_object())
                 {
@@ -1404,17 +1424,34 @@ void Program::add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expr
     // TODO: Implementation
 }
 
-QinpError Program::make_pos_error(const std::string& message, const qrawlr::Position& position)
+Expression<ExpressionSymbol> Program::make_ExprSymbol_from_ExprIdentifier(Expression<> expr) const
+{
+    auto exprIdentifier = expr.as_type<ExpressionIdentifier>();
+    if (!exprIdentifier)
+        throw make_expr_error("[*Program::make_ExprSymbol_from_ExprIdentifier*]: Provided expression is not of type 'ExpressionIdentifier'", expr);
+
+    auto& name = exprIdentifier.as_type<ExpressionIdentifier>()->get_name();
+    auto symbol = curr_tu()->get_symbol_from_path(name);
+    if (!symbol)
+        throw make_expr_error("Unknown identifier '" + name + "'", expr);
+
+    return Expression<ExpressionSymbol>::make(
+        symbol,
+        expr->get_position()
+    );
+}
+
+QinpError Program::make_pos_error(const std::string& message, const qrawlr::Position& position) const
 {
     return QinpError(qrawlr::GrammarException(message, position.to_string(m_f_tree_id_to_name)).what());
 }
 
-QinpError Program::make_node_error(const std::string& message, qrawlr::ParseTreeRef elem)
+QinpError Program::make_node_error(const std::string& message, qrawlr::ParseTreeRef elem) const
 {
     return make_pos_error(message, elem->get_pos_begin());
 }
 
-QinpError Program::make_expr_error(const std::string& message, Expression<> expr)
+QinpError Program::make_expr_error(const std::string& message, Expression<> expr) const
 {
     return make_pos_error(message, expr->get_position());
 }
@@ -1430,7 +1467,7 @@ TranslationUnitRef Program::push_tu(TranslationUnitRef tu)
     return curr_tu();
 }
 
-TranslationUnitRef Program::curr_tu()
+TranslationUnitRef Program::curr_tu() const
 {
     return m_translation_units.top();
 }

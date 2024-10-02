@@ -97,10 +97,11 @@ private:
     Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, bool add_implicit_conversion, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree);
 private:
     void add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expression<>& expr2) const;
+    Expression<class ExpressionSymbol> make_ExprSymbol_from_ExprIdentifier(Expression<> expr) const;
 private:
-    QinpError make_pos_error(const std::string& message, const qrawlr::Position& position);
-    QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem);
-    QinpError make_expr_error(const std::string& message, Expression<> expr);
+    QinpError make_pos_error(const std::string& message, const qrawlr::Position& position) const;
+    QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem) const;
+    QinpError make_expr_error(const std::string& message, Expression<> expr) const;
 private:
     Architecture m_architecture;
     Platform m_platform;
@@ -116,7 +117,7 @@ private:
     std::queue<TranslationUnitRef> m_deferred_translation_units;
     TranslationUnitRef push_tu(const std::string& path);
     TranslationUnitRef push_tu(TranslationUnitRef tu);
-    TranslationUnitRef curr_tu();
+    TranslationUnitRef curr_tu() const;
     TranslationUnitRef pop_tu();
 private:
     typedef void (Program::*Handler)(qrawlr::ParseTreeNodeRef, void*);

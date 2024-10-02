@@ -10,6 +10,7 @@
 #define DT_NAMED(...) MAKE_DT(_Datatype_Named, __VA_ARGS__)
 #define DT_MACRO(...) MAKE_DT(_Datatype_Macro, __VA_ARGS__)
 #define DT_FUNCTION(...) MAKE_DT(_Datatype_Function, __VA_ARGS__)
+#define DT_FUNCTION_NAME() MAKE_DT(_Datatype_FunctionName)
 #define DT_ARRAY(...) MAKE_DT(_Datatype_Array, __VA_ARGS__)
 #define DT_POINTER(...) MAKE_DT(_Datatype_Pointer, __VA_ARGS__)
 #define DT_REFERENCE(...) MAKE_DT(_Datatype_Reference, __VA_ARGS__)
@@ -22,7 +23,7 @@ public:
     enum class Type
     {
         Name, Macro,
-        Function,
+        Function, FunctionName,
         Array, Pointer,
         Reference,
         Variadic
@@ -131,6 +132,17 @@ protected:
 private:
     Datatype<> m_return_type;
     Parameter_Types m_parameter_types;
+};
+
+class _Datatype_FunctionName : public _Datatype
+{
+public:
+    _Datatype_FunctionName();
+public:
+    virtual Datatype<>::Type get_type() const override;
+    virtual int get_size() const override;
+protected:
+    virtual std::string __get_symbol_name() const override;
 };
 
 class _Datatype_Array : public _Datatype_Parent
