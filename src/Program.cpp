@@ -1430,7 +1430,7 @@ Expression<ExpressionSymbol> Program::make_ExprSymbol_from_ExprIdentifier(Expres
     if (!exprIdentifier)
         throw make_expr_error("[*Program::make_ExprSymbol_from_ExprIdentifier*]: Provided expression is not of type 'ExpressionIdentifier'", expr);
 
-    auto& name = exprIdentifier.as_type<ExpressionIdentifier>()->get_name();
+    auto& name = exprIdentifier->get_name();
     auto symbol = curr_tu()->get_symbol_from_path(name);
     if (!symbol)
         throw make_expr_error("Unknown identifier '" + name + "'", expr);
@@ -1439,6 +1439,23 @@ Expression<ExpressionSymbol> Program::make_ExprSymbol_from_ExprIdentifier(Expres
         symbol,
         expr->get_position()
     );
+}
+
+Expression<ExpressionFunctionCall> Program::make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments) const
+{
+    auto exprSymbol = expr.as_type<ExpressionSymbol>();
+    if (!exprSymbol)
+        throw make_expr_error("[*Program::make_ExprFunctionCall*]: Provided expression is not of type 'ExpressionSymbol'", expr);
+
+    auto symbol = exprSymbol->get_symbol();
+
+    if (!symbol.is_of_type<SymbolFunctionName>())
+        throw make_expr_error("[*Program::make_ExprFunctionCall*]: Provided expression does not resolve to symbol of type 'SymbolFunctionName'", expr);
+    
+    // TODO: Select correct child depending on passed arguments
+    throw make_expr_error("IT WORKED!", expr);
+
+    return Expression<ExpressionFunctionCall>::make();
 }
 
 QinpError Program::make_pos_error(const std::string& message, const qrawlr::Position& position) const
