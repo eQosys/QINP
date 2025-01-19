@@ -18,20 +18,24 @@ const char* CMD_ARG__RUNARG             = "a";
 const char* CMD_ARG__EXTERN_LIBRARY     = "x";
 const char* CMD_ARG__EXPORT_SYMBOL_INFO = "e";
 const char* CMD_ARG__EXPORT_COMMENTS    = "c";
+const char* CMD_ARG__RENDER_QRAWLR_TREE = "";
+const char* CMD_ARG__RENDER_SYMBOL_TREE = "";
 
-const std::vector<CmdArgDesc> CMD_ARG_DESCRIPTORS = {
-    { CMD_ARG__HELP,               "help",               CmdArgParam::Unused },
-    { CMD_ARG__VERBOSE,            "verbose",            CmdArgParam::Unused },
+const std::vector<CmdArgDesc<CmdFlag>> CMD_ARG_DESCRIPTORS = {
+    { CMD_ARG__HELP,               "help",               CmdArgParam::Unused, CmdFlag::Help },
+    { CMD_ARG__VERBOSE,            "verbose",            CmdArgParam::Unused, CmdFlag::Verbose },
     { CMD_ARG__IMPORT_DIR,         "import-dir",         CmdArgParam::Multi  },
     { CMD_ARG__OUTPUT_FILE,        "output-file",        CmdArgParam::Single },
-    { CMD_ARG__KEEP_INTERMEDIATE,  "keep-intermediate",  CmdArgParam::Unused },
-    { CMD_ARG__RUN,                "run",                CmdArgParam::Unused },
+    { CMD_ARG__KEEP_INTERMEDIATE,  "keep-intermediate",  CmdArgParam::Unused, CmdFlag::Keep_Intermediate_Files },
+    { CMD_ARG__RUN,                "run",                CmdArgParam::Unused, CmdFlag::Run_Generated_Executable },
     { CMD_ARG__ARCHITECTURE,       "architecture",       CmdArgParam::Single },
     { CMD_ARG__PLATFORM,           "platform",           CmdArgParam::Single },
     { CMD_ARG__RUNARG,             "runarg",             CmdArgParam::Multi  },
     { CMD_ARG__EXTERN_LIBRARY,     "extern-library",     CmdArgParam::Multi  },
-    { CMD_ARG__EXPORT_SYMBOL_INFO, "export-symbol-info", CmdArgParam::Single },
-    { CMD_ARG__EXPORT_COMMENTS,    "export-comments",    CmdArgParam::Single }
+    { CMD_ARG__EXPORT_SYMBOL_INFO, "export-symbol-info", CmdArgParam::Single, CmdFlag::Export_Symbol_Info },
+    { CMD_ARG__EXPORT_COMMENTS,    "export-comments",    CmdArgParam::Single, CmdFlag::Export_Comments },
+    { CMD_ARG__RENDER_QRAWLR_TREE, "render-qrawlr-tree", CmdArgParam::Unused, CmdFlag::Render_Qrawlr_Tree },
+    { CMD_ARG__RENDER_SYMBOL_TREE, "render-symbol-tree", CmdArgParam::Unused, CmdFlag::Render_Symbol_Tree },
 };
 
 Architecture get_architecture_from_args(const CmdArgMap& args)
@@ -66,15 +70,10 @@ void add_import_directories_to_program(ProgramRef program, const CmdArgMap& args
             program->add_import_directory(path_str);
 }
 
-bool get_verbose_enabled(const CmdArgMap& args)
+ProgramRef initialize_program(Architecture architecture, Platform platform, CmdFlags flags)
 {
-    return args.find(CMD_ARG__VERBOSE) != args.end();
-}
-
-ProgramRef initialize_program(Architecture architecture, Platform platform, bool verbose)
-{
-    Timer t("Program::init", verbose);
-    Program::init(architecture, platform, verbose);
+    Timer t("Program::init", flags.is_set(CmdFlag::Verbose));
+    Program::init(architecture, platform, flags);
     return Program::get();
 }
 
@@ -92,11 +91,13 @@ int main(int argc, const char** argv, const char** env)
 {
     try {
         // parse arguments and environment variables
-        CmdArgMap args = parse_cmd_args(argc - 1, argv + 1, CMD_ARG_DESCRIPTORS);
+        CmdArgMap args;
+        CmdFlags flags;
+        parse_cmd_args(argc - 1, argv + 1, CMD_ARG_DESCRIPTORS, args, flags);
         EnvironmentMap environ = parse_environment(env);
 
         // Print help if specified and exit
-        if (args.find(CMD_ARG__HELP) != args.end())
+        if (flags.is_set(CmdFlag::Help))
         {
             print_help(argv[0]);
             return EXIT_SUCCESS;
@@ -104,8 +105,8 @@ int main(int argc, const char** argv, const char** env)
 
         Architecture architecture = get_architecture_from_args(args);
         Platform platform = get_platform_from_args(args);
-        bool verbose = get_verbose_enabled(args);
-        auto program = initialize_program(architecture, platform, verbose);
+        bool verbose = flags.is_set(CmdFlag::Verbose);
+        auto program = initialize_program(architecture, platform, flags);
 
         add_import_directories_to_program(program, args, environ, verbose);
 

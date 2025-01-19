@@ -12,6 +12,7 @@
 #include "errors/QinpError.h"
 #include "utility/Architecture.h"
 #include "utility/Platform.h"
+#include "utility/CmdFlags.h"
 #include "expressions/Expression.h"
 #include "expressions/ExpressionUnaryOp.h"
 #include "expressions/ExpressionBinaryOp.h"
@@ -40,7 +41,9 @@ class Program
 {
 protected:
     Program() = delete;
-    Program(Architecture arch, Platform platform, bool verbose);
+    Program(Architecture arch, Platform platform, CmdFlags flags);
+public:
+    ~Program();
 public:
     int get_ptr_size() const;
     int get_builtin_type_size(const std::string& type_name) const;
@@ -106,7 +109,7 @@ private:
 private:
     Architecture m_architecture;
     Platform m_platform;
-    bool m_verbose;
+    CmdFlags m_flags;
     Symbol<> m_root_sym;
     qrawlr::Grammar m_grammar;
     std::vector<std::filesystem::path> m_import_dirs;
@@ -124,7 +127,7 @@ private:
     typedef void (Program::*Handler)(qrawlr::ParseTreeNodeRef, void*);
 public:
     static ProgramRef get();
-    static void init(Architecture arch, Platform platform, bool verbose);
+    static void init(Architecture arch, Platform platform, CmdFlags flags);
 private:
     static ProgramRef s_singleton;
 };

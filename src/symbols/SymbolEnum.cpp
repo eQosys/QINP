@@ -15,6 +15,18 @@ Datatype<> SymbolEnum::get_datatype() const
     return DT_NAMED(get_symbol_path().to_string(), true);
 }
 
+std::string SymbolEnum::get_digraph_impl_text(bool verbose) const
+{
+    std::string res = _SymbolDeclDef::get_digraph_impl_text(verbose);
+    // nothing to do
+    return res;
+}
+
+std::string SymbolEnum::get_symbol_type_str() const
+{
+    return "ENUM";
+}
+
 std::size_t SymbolEnum::next_value()
 {
     return ++m_last_value;
@@ -38,6 +50,18 @@ bool SymbolEnumMember::is_object() const
 Datatype<> SymbolEnumMember::get_datatype() const
 {
     return DT_NAMED(get_symbol_path().to_string(), true);
+}
+
+std::string SymbolEnumMember::get_digraph_impl_text(bool verbose) const
+{
+    std::string res = _Symbol::get_digraph_impl_text(verbose);
+    res += "Value: " + std::to_string(m_value) + "\n";
+    return res;
+}
+
+std::string SymbolEnumMember::get_symbol_type_str() const
+{
+    return "ENUM MEMBER";
 }
 
 std::size_t SymbolEnumMember::get_value() const

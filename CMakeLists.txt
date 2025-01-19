@@ -35,6 +35,7 @@ add_executable(
     "src/utility/HelpPrinter.cpp"
     "src/utility/Architecture.cpp"
     "src/utility/CmdArgParser.cpp"
+    "src/utility/StringEscape.cpp"
     "src/utility/StringHelpers.cpp"
     "src/utility/EnvironmentParser.cpp"
     "src/errors/ErrorPrinter.cpp"

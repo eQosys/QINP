@@ -1,0 +1,1 @@
+./build_and_run.sh -v -k -o=/tmp/qinp-out.out --render-qrawlr-tree --render-symbol-tree "$@"

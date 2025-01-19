@@ -17,6 +17,9 @@ public:
 public:
     virtual bool is_object() const override;
     virtual Datatype<> get_datatype() const override;
+protected:
+    virtual std::string get_digraph_impl_text(bool verbose) const override;
+    virtual std::string get_symbol_type_str() const override;
 private:
     bool m_is_static;
     Datatype<> m_datatype;

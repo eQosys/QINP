@@ -5,10 +5,13 @@
 
 const char* CMD_ARG__POSITIONAL = "pos-args";
 
-void register_argument(int& argc, const char**& argv, CmdArgMap& args, const CmdArgDesc& desc, std::string param)
+void register_argument(int& argc, const char**& argv, CmdArgMap& args, CmdFlags& flags, const CmdArgDesc<CmdFlag>& desc, std::string param)
 {
     // add arg to map if not already existent
     args[desc.short_name];
+
+    if (desc.modify_flags) // modify corresponding flag
+        flags.set(desc.flag_to_set);
 
     switch (desc.param)
     {
@@ -31,13 +34,12 @@ void register_argument(int& argc, const char**& argv, CmdArgMap& args, const Cmd
         param = argv++[0];
     }
 
+    // add parameter to argument map
     args[desc.short_name].push_back(param);
 }
 
-CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDesc>& argDescs)
+void parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDesc<CmdFlag>>& argDescs, CmdArgMap& args_out, CmdFlags& flags_out)
 {
-    CmdArgMap args;
-
     while (argc > 0)
     {
         --argc;
@@ -46,7 +48,7 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
         if (arg == "--") // remaining args are positional
         {
             while (argc-- > 0)
-                args[CMD_ARG__POSITIONAL].push_back(argv++[0]);
+                args_out[CMD_ARG__POSITIONAL].push_back(argv++[0]);
 
             break;
         }
@@ -64,11 +66,11 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
             bool found_arg = false;
             for (const auto& desc : argDescs)
             {
-                if (desc.long_name != arg)
+                if (desc.long_name.empty() || desc.long_name != arg)
                     continue;
 
                 found_arg = true;
-                register_argument(argc, argv, args, desc, param);
+                register_argument(argc, argv, args_out, flags_out, desc, param);
                 break;
             }
 
@@ -87,11 +89,11 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
             bool found_arg = false;
             for (const auto& desc : argDescs)
             {
-                if (desc.short_name != arg)
+                if (desc.short_name.empty() || desc.short_name != arg)
                     continue;
 
                 found_arg = true;
-                register_argument(argc, argv, args, desc, param);
+                register_argument(argc, argv, args_out, flags_out, desc, param);
                 break;
             }
 
@@ -102,8 +104,6 @@ CmdArgMap parse_cmd_args(int argc, const char** argv, const std::vector<CmdArgDe
         }
 
         // positional argument
-        args[CMD_ARG__POSITIONAL].push_back(arg);
+        args_out[CMD_ARG__POSITIONAL].push_back(arg);
     }
-
-    return args;
 }

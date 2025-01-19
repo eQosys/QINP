@@ -11,6 +11,9 @@ class SymbolSpace : public _SymbolDeclDef
 public:
     virtual bool is_object() const override;
     virtual Datatype<> get_datatype() const override;
+protected:
+    virtual std::string get_digraph_impl_text(bool verbose) const override;
+    virtual std::string get_symbol_type_str() const override;
 public:
     void set_definition(const qrawlr::Position& definition_position);
 public:

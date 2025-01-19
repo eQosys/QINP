@@ -39,7 +39,7 @@ public:
 class _Symbol
 {
 public:
-    _Symbol() = default;
+    _Symbol();
     _Symbol(const std::string& name, const qrawlr::Position& position);
 public:
     virtual ~_Symbol() = default;
@@ -55,11 +55,20 @@ public:
     virtual Datatype<> get_datatype() const = 0;
 private:
     Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling);
+public:
+    std::string to_digraph_str(bool verbose) const;
+protected:
+    void to_digraph_internal(std::string& graph, bool verbose) const;
+    virtual std::string get_digraph_impl_text(bool verbose) const;
+    virtual std::string get_symbol_type_str() const;
 private:
+    size_t m_id;
     std::string m_name;
     qrawlr::Position m_position;
     std::weak_ptr<_Symbol> m_parent;
     std::map<std::string, Symbol<>> m_children;
+private:
+    static size_t s_next_id;
 private:
     template <class SymType>
     friend class Symbol;

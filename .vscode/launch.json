@@ -12,7 +12,7 @@
             "env": {
                 "QINP_STDLIB": "./stdlib/"
             },
-            "args": [ "-v", "-k", "-r", "-e=examples/_symbols.json", "-c=examples/_comments.json", "-o=/tmp/qinp-out.out", "examples/fibonacci.qnp" ],
+            "args": [ "-v", "-k", "-r", "-e=examples/_symbols.json", "-c=examples/_comments.json", "-o=/tmp/qinp-out.out", "--render-symbol-tree", "examples/fibonacci.qnp" ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build",
         },

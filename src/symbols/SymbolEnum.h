@@ -9,6 +9,9 @@ public:
 public:
     virtual bool is_object() const override;
     virtual Datatype<> get_datatype() const override;
+protected:
+    virtual std::string get_digraph_impl_text(bool verbose) const override;
+    virtual std::string get_symbol_type_str() const override;
 public:
     std::size_t next_value();
     void set_last_value(std::size_t value);
@@ -23,6 +26,9 @@ public:
 public:
     virtual bool is_object() const override;
     virtual Datatype<> get_datatype() const override;
+protected:
+    virtual std::string get_digraph_impl_text(bool verbose) const override;
+    virtual std::string get_symbol_type_str() const override;
 public:
     std::size_t get_value() const;
 private:

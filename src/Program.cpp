@@ -10,8 +10,8 @@
 
 ProgramRef Program::s_singleton = nullptr;
 
-Program::Program(Architecture arch, Platform platform, bool verbose)
-    : m_architecture(arch), m_platform(platform), m_verbose(verbose),
+Program::Program(Architecture arch, Platform platform, CmdFlags flags)
+    : m_architecture(arch), m_platform(platform), m_flags(flags),
     m_root_sym(Symbol<SymbolSpace>::make("", qrawlr::Position())),
     m_grammar(
         qrawlr::Grammar::load_from_text(
@@ -21,6 +21,24 @@ Program::Program(Architecture arch, Platform platform, bool verbose)
     )
 {
     m_f_tree_id_to_name = [&](int tree_id){ return m_file_tree_ids.find(tree_id)->second; };
+}
+
+Program::~Program()
+{
+    if (m_flags.is_set(CmdFlag::Render_Symbol_Tree))
+    {
+        system("mkdir -p out/");
+
+        if (m_flags.is_set(CmdFlag::Verbose))
+            printf("Generating symbol tree graphviz...\n");
+        qrawlr::write_file("out/tree.gv", m_root_sym->to_digraph_str(m_flags.is_set(CmdFlag::Verbose)));
+
+        if (m_flags.is_set(CmdFlag::Verbose))
+            printf("Rendering symbol tree graphviz...\n");
+        std::string out_file_pdf = "out/symbol_tree.pdf";
+        std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
+        system(dot_command.c_str());
+    }
 }
 
 int Program::get_ptr_size() const
@@ -130,12 +148,20 @@ void Program::import_source_code(const std::string& code_str, const std::string&
     if ((std::size_t)result.pos_end.index < code_str.size())
         throw qrawlr::GrammarException("Could not parse remaining source", result.pos_end.to_string(std::function([&](int){ return path_str; })));
 
-    // TODO: remove debug tree graphviz + render
-    //std::string out_file_pdf = "out/" + replace_all(path_str, "/", ".") + ".pdf";
-    //system("mkdir -p out/");
-    //qrawlr::write_file("out/tree.gv", result.tree->to_digraph_str(m_verbose));
-    //std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
-    //system(dot_command.c_str());
+    if (m_flags.is_set(CmdFlag::Render_Qrawlr_Tree))
+    {
+        system("mkdir -p out/");
+
+        if (m_flags.is_set(CmdFlag::Verbose))
+            printf("Generating graphviz for qrawlr tree '%s'...\n", path_str.c_str());
+        qrawlr::write_file("out/tree.gv", result.tree->to_digraph_str(m_flags.is_set(CmdFlag::Verbose)));
+
+        if (m_flags.is_set(CmdFlag::Verbose))
+            printf("Rendering graphviz for qrawlr tree '%s'...\n", path_str.c_str());
+        std::string out_file_pdf = "out/" + replace_all(path_str, "/", ".") + ".pdf";
+        std::string dot_command = "dot -Tpdf -o \"" + out_file_pdf + "\" out/tree.gv";
+        system(dot_command.c_str());
+    }
 
     if (!result.tree)
         return;
@@ -214,7 +240,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
     }
     catch (std::runtime_error& err)
     {
-        if (m_verbose)
+        if (m_flags.is_set(CmdFlag::Verbose))
             throw make_node_error("[" + node->get_name() + "]\n" + err.what(), node);
         else
             throw err;
@@ -256,7 +282,7 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     replace_all(path_str, "{architecture}", architecture_to_string(m_architecture));
     replace_all(path_str, "{platform}", platform_to_string(m_platform));
 
-    if (m_verbose)
+    if (m_flags.is_set(CmdFlag::Verbose))
         printf("Importing '%s'... (requested by '%s')\n", path_str.c_str(), curr_tu()->get_file_path().c_str());
 
     import_source_file(path_str, true);
@@ -1503,7 +1529,7 @@ ProgramRef Program::get()
     return s_singleton;
 }
 
-void Program::init(Architecture arch, Platform platform, bool verbose)
+void Program::init(Architecture arch, Platform platform, CmdFlags flags)
 {
-    s_singleton = std::shared_ptr<Program>(new Program(arch, platform, verbose));
+    s_singleton = std::shared_ptr<Program>(new Program(arch, platform, flags));
 }
