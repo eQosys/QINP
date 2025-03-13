@@ -32,8 +32,9 @@ public:
     virtual bool is_const_expr() const = 0;
     virtual bool results_in_object() const = 0;
 private:
-    Datatype<> m_datatype;
     qrawlr::Position m_position;
+protected:
+    Datatype<> m_datatype;
 };
 
 template <class ExprType>

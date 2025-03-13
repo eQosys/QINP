@@ -325,10 +325,10 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
         if (func->is_defined())
             throw make_node_error("Function '" + func->get_symbol_path().to_string() + "' has already been defined.", node);
 
-        if (func.is_of_type<SymbolFunctionSpecification>())
+        if (func.is_of_type<SymbolFunctionSpecialization>())
         {
             // TODO: Parse function body
-            auto& block = func.as_type<SymbolFunctionSpecification>()->set_definition(node->get_pos_begin());
+            auto& block = func.as_type<SymbolFunctionSpecialization>()->set_definition(node->get_pos_begin());
 
             curr_tu()->enter_symbol(func);
             handle_tree_node(qrawlr::expect_child(node, "FunctionDefinition.CodeBlock", m_f_tree_id_to_name), "CodeBlock", &block);
@@ -408,7 +408,7 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
     {
         // Create specialization if not already declared
         sym = sym.add_child(
-            Symbol<SymbolFunctionSpecification>::make(
+            Symbol<SymbolFunctionSpecialization>::make(
                 return_type,
                 parameters,
                 is_nodiscard,
@@ -1467,7 +1467,7 @@ Expression<ExpressionSymbol> Program::make_ExprSymbol_from_ExprIdentifier(Expres
     );
 }
 
-Expression<ExpressionFunctionCall> Program::make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments) const
+Expression<ExpressionFunctionCall> Program::make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments)
 {
     auto exprSymbol = expr.as_type<ExpressionSymbol>();
     if (!exprSymbol)
@@ -1478,10 +1478,27 @@ Expression<ExpressionFunctionCall> Program::make_ExprFunctionCall(Expression<>& 
     if (!symbol.is_of_type<SymbolFunctionName>())
         throw make_expr_error("[*Program::make_ExprFunctionCall*]: Provided expression does not resolve to symbol of type 'SymbolFunctionName'", expr);
     
-    // TODO: Select correct child depending on passed arguments
-    throw make_expr_error("IT WORKED!", expr);
+    Expression<ExpressionFunctionCall> exprFuncCall;
 
-    return Expression<ExpressionFunctionCall>::make();
+    for (auto child : symbol->get_children())
+    {
+        auto childSym = child.second;
+        if (childSym.is_of_type<SymbolFunctionSpecialization>())
+        {
+            ;
+        }
+        else if (childSym.is_of_type<SymbolFunctionBlueprint>())
+        {
+            ;
+        }
+        else
+            throw make_expr_error("[*Program::make_ExprFunctionCall*]: Invalid child symbol found in symbol of type 'SymbolFunctionName'", expr);
+
+        Expression<ExpressionFunctionCall>::make(arguments);
+    }
+    
+
+    return exprFuncCall;
 }
 
 QinpError Program::make_pos_error(const std::string& message, const qrawlr::Position& position) const

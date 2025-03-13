@@ -34,7 +34,7 @@ std::string SymbolFunction::get_digraph_impl_text(bool verbose) const
 {
     std::string res = SymbolSpace::get_digraph_impl_text(verbose);
     res += "ReturnType: " + escape_string(m_return_type->get_symbol_name()) + "\n";
-    res += "Params: <to-implement>\n";
+    res += "Params: " + gen_params_digraph_text() + "\n";
     res += "NoDiscard: ";
     res += m_nodiscard ? "YES\n" : "no\n";
     return res;
@@ -45,29 +45,49 @@ std::string SymbolFunction::get_symbol_type_str() const
     return "FUNCTION";
 }
 
-bool SymbolFunctionSpecification::is_object() const
+std::string SymbolFunction::gen_params_digraph_text() const
+{
+    std::string res;
+
+    auto it = m_params.named_parameters.begin();
+    while (it != m_params.named_parameters.end())
+    {
+        res += it->datatype->get_symbol_name();
+        res += " ";
+        res += it->name;
+
+        ++it;
+
+        if (it != m_params.named_parameters.end())
+            res += ", ";
+    }
+
+    return res;
+}
+
+bool SymbolFunctionSpecialization::is_object() const
 {
     throw std::runtime_error("[*SymbolFunctionSpecification::is_object*]: Not implemented yet!");
 }
 
-Datatype<> SymbolFunctionSpecification::get_datatype() const
+Datatype<> SymbolFunctionSpecialization::get_datatype() const
 {
     throw std::runtime_error("[*SymbolFunctionSpecification::get_datatype*]: Not implemented yet!");
 }
 
-std::string SymbolFunctionSpecification::get_digraph_impl_text(bool verbose) const
+std::string SymbolFunctionSpecialization::get_digraph_impl_text(bool verbose) const
 {
     std::string res = SymbolFunction::get_digraph_impl_text(verbose);
     // nothing to do
     return res;
 }
 
-std::string SymbolFunctionSpecification::get_symbol_type_str() const
+std::string SymbolFunctionSpecialization::get_symbol_type_str() const
 {
     return "FUNCTION SPECIFICATION";
 }
 
-CodeBlock& SymbolFunctionSpecification::set_definition(const qrawlr::Position& definition_position)
+CodeBlock& SymbolFunctionSpecialization::set_definition(const qrawlr::Position& definition_position)
 {
     set_defined(definition_position);
     m_body = {};

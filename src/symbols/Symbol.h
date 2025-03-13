@@ -45,6 +45,7 @@ public:
     virtual ~_Symbol() = default;
 public:
     Symbol<> get_child_by_name(const std::string& name) const;
+    const std::map<std::string, Symbol<>>& get_children() const;
 public:
     const std::string& get_name() const;
     Symbol<> get_parent() const;

@@ -25,12 +25,14 @@ protected:
     virtual std::string get_digraph_impl_text(bool verbose) const override;
     virtual std::string get_symbol_type_str() const override;
 private:
+    std::string gen_params_digraph_text() const;
+private:
     Datatype<> m_return_type;
     Parameter_Decl m_params;
     bool m_nodiscard;
 };
 
-class SymbolFunctionSpecification : public SymbolFunction
+class SymbolFunctionSpecialization : public SymbolFunction
 {
 public:
     using SymbolFunction::SymbolFunction;

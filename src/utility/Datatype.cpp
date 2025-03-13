@@ -52,6 +52,11 @@ const std::string& _Datatype_Named::get_name() const
     return m_name;
 }
 
+bool _Datatype_Named::is_void() const
+{
+    return m_name == "void";
+}
+
 Datatype<>::Type _Datatype_Named::get_type() const
 {
     return Datatype<>::Type::Name;
@@ -72,6 +77,12 @@ int _Datatype_Named::get_size() const
 std::string _Datatype_Named::__get_symbol_name() const
 {
     return "n<" + get_name() + ">";
+}
+
+bool _Datatype_Macro::is_void() const
+{
+    // TODO: Implementation
+    return false;
 }
 
 Datatype<>::Type _Datatype_Macro::get_type() const
@@ -104,6 +115,11 @@ const std::vector<Datatype<>>& _Datatype_Function::get_parameter_types() const
     return m_parameter_types;
 }
 
+bool _Datatype_Function::is_void() const
+{
+    return false;
+}
+
 Datatype<>::Type _Datatype_Function::get_type() const
 {
     return Datatype<>::Type::Function;
@@ -126,6 +142,11 @@ std::string _Datatype_Function::__get_symbol_name() const
 _Datatype_FunctionName::_Datatype_FunctionName()
     : _Datatype(false)
 {}
+
+bool _Datatype_FunctionName::is_void() const
+{
+    return false;
+}
 
 Datatype<>::Type _Datatype_FunctionName::get_type() const
 {
@@ -152,6 +173,11 @@ int _Datatype_Array::get_num_elements() const
     return m_num_elements;
 }
 
+bool _Datatype_Array::is_void() const
+{
+    return false;
+}
+
 Datatype<>::Type _Datatype_Array::get_type() const
 {
     return Datatype<>::Type::Array;
@@ -170,6 +196,11 @@ std::string _Datatype_Array::__get_parent_symbol_name() const
 _Datatype_Pointer::_Datatype_Pointer(Datatype<> child, bool _is_const)
     : _Datatype_Parent(child, _is_const)
 {}
+
+bool _Datatype_Pointer::is_void() const
+{
+    return false;
+}
 
 Datatype<>::Type _Datatype_Pointer::get_type() const
 {
@@ -190,6 +221,11 @@ _Datatype_Reference::_Datatype_Reference(Datatype<> child, bool _is_const)
     : _Datatype_Parent(child, _is_const)
 {}
 
+bool _Datatype_Reference::is_void() const
+{
+    return false;
+}
+
 Datatype<>::Type _Datatype_Reference::get_type() const
 {
     return Datatype<>::Type::Reference;
@@ -208,6 +244,12 @@ std::string _Datatype_Reference::__get_parent_symbol_name() const
 _Datatype_Variadic::_Datatype_Variadic()
     : _Datatype(false)
 {}
+
+bool _Datatype_Variadic::is_void() const
+{
+    // TODO: Implementation
+    return false;
+}
 
 Datatype<>::Type _Datatype_Variadic::get_type() const
 {

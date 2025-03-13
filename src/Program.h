@@ -101,7 +101,7 @@ private:
 private:
     void add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expression<>& expr2) const;
     Expression<class ExpressionSymbol> make_ExprSymbol_from_ExprIdentifier(Expression<> expr) const;
-    Expression<class ExpressionFunctionCall> make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments) const;
+    Expression<class ExpressionFunctionCall> make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments);
 private:
     QinpError make_pos_error(const std::string& message, const qrawlr::Position& position) const;
     QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem) const;

@@ -22,6 +22,11 @@ Symbol<> _Symbol::get_child_by_name(const std::string& name) const
     return it->second;
 }
 
+const std::map<std::string, Symbol<>>& _Symbol::get_children() const
+{
+    return m_children;
+}
+
 const std::string& _Symbol::get_name() const
 {
     return m_name;

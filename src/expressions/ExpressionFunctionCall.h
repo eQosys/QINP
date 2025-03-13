@@ -15,6 +15,7 @@ private:
     enum class MatchLevel
     {
         NoMatch,
+        BlueprintGenerated,
         Exact,
     } m_match_level = MatchLevel::NoMatch;
 };

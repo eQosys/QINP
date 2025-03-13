@@ -13,6 +13,5 @@ bool ExpressionFunctionCall::is_const_expr() const
 
 bool ExpressionFunctionCall::results_in_object() const
 {
-    // TODO: Dependent on return type of called function
-    return false;
+    return m_datatype->is_void();
 }

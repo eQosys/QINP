@@ -56,6 +56,7 @@ public:
 public:
     bool is_const() const;
     std::string get_symbol_name() const;
+    virtual bool is_void() const = 0;
     virtual Datatype<>::Type get_type() const = 0;
     virtual int get_size() const = 0;
     virtual Datatype<> get_dereferenced() const;
@@ -95,6 +96,7 @@ public:
 public:
     const std::string& get_name() const;
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -108,6 +110,7 @@ class _Datatype_Macro : public _Datatype_Named
 public:
     using _Datatype_Named::_Datatype_Named;
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -125,6 +128,7 @@ public:
     Datatype<> get_return_type() const;
     const std::vector<Datatype<>>& get_parameter_types() const;
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -139,6 +143,7 @@ class _Datatype_FunctionName : public _Datatype
 public:
     _Datatype_FunctionName();
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -153,6 +158,7 @@ public:
 public:
     int get_num_elements() const;
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -167,6 +173,7 @@ public:
     _Datatype_Pointer() = delete;
     _Datatype_Pointer(Datatype<> child, bool _is_const);
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -179,6 +186,7 @@ public:
     _Datatype_Reference() = delete;
     _Datatype_Reference(Datatype<> child, bool _is_const);
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
@@ -190,6 +198,7 @@ class _Datatype_Variadic : public _Datatype
 public:
     _Datatype_Variadic();
 public:
+    virtual bool is_void() const override;
     virtual Datatype<>::Type get_type() const override;
     virtual int get_size() const override;
 protected:
