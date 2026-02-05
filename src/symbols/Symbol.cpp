@@ -106,6 +106,8 @@ std::string _Symbol::to_digraph_str(bool verbose) const
 
 std::string _Symbol::get_digraph_impl_text(bool verbose) const
 {
+    (void)verbose;
+    
     std::string res;
     res += "Name: " + escape_string(m_name) + "\n";
     return res;

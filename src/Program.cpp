@@ -210,6 +210,7 @@ void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<
         { "VariableDeclarators",      &Program::handle_tree_node_var_declarators    },
         { "VariableInitializer",      &Program::handle_tree_node_var_initializer    },
         { "StatementReturn",          &Program::handle_tree_node_stmt_return        },
+        { "StatementIfElifElse",      &Program::handle_tree_node_stmt_if_elif_else  },
         { "Expression",               &Program::handle_tree_node_expression         },
         { "ExprPrec1",                &Program::handle_tree_node_expr_prec_1        },
         { "ExprPrec2",                &Program::handle_tree_node_expr_prec_2        },
@@ -790,6 +791,13 @@ void Program::handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
+void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, void* pUnused)
+{
+    (void)node;
+    (void)pUnused;
+    throw make_pos_error("[*Program::handle_tree_node_stmt_if_elif_else*]: if/elif/else not implemented yet!", node->get_pos_begin());
+}
+
 void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
 {
     Expression<> expr_to_add = nullptr;
@@ -1228,7 +1236,7 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
                 std::vector<Expression<>> arguments;
 
                 auto& children = opTree->get_children();
-                for (int argID = 1; argID < children.size(); ++argID)
+                for (size_t argID = 1; argID < children.size(); ++argID)
                 {
                     auto child = qrawlr::expect_child(opTree, std::to_string(argID) + ".FunctionCallArgument.0", get_fn_tree_id_to_name());
                     if (qrawlr::is_node(child, "Expression"))
@@ -1447,6 +1455,7 @@ Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef super
 
 void Program::add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expression<>& expr2) const
 {
+    (void)expr1, (void)expr2;
     // TODO: Implementation
 }
 
@@ -1494,7 +1503,7 @@ Expression<ExpressionFunctionCall> Program::make_ExprFunctionCall(Expression<>& 
         else
             throw make_expr_error("[*Program::make_ExprFunctionCall*]: Invalid child symbol found in symbol of type 'SymbolFunctionName'", expr);
 
-        Expression<ExpressionFunctionCall>::make(arguments);
+        // TODO Expression<ExpressionFunctionCall>::make(arguments);
     }
     
 
