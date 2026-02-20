@@ -15,6 +15,7 @@
 #define DT_POINTER(...) MAKE_DT(_Datatype_Pointer, __VA_ARGS__)
 #define DT_REFERENCE(...) MAKE_DT(_Datatype_Reference, __VA_ARGS__)
 #define DT_VARIADIC(...) MAKE_DT(_Datatype_Variadic, __VA_ARGS__)
+#define DT_VOID() DT_NAMED("void", false)
 
 template <class Dt = class _Datatype>
 class Datatype : public std::shared_ptr<Dt>
@@ -55,6 +56,8 @@ public:
     void make_const();
 public:
     bool is_const() const;
+    bool is_macro() const;
+    bool is_variadic() const;
     std::string get_symbol_name() const;
     virtual bool is_void() const = 0;
     virtual Datatype<>::Type get_type() const = 0;

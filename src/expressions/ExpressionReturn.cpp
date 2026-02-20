@@ -1,7 +1,7 @@
 #include "ExpressionReturn.h"
 
 ExpressionReturn::ExpressionReturn(Expression<> sub_expr, const qrawlr::Position& position)
-    : _Expression(DT_NAMED("void", false), position),
+    : _Expression(DT_VOID(), position),
     m_sub_expr(sub_expr)
 {}
 

@@ -8,7 +8,7 @@
 #include "utility/Datatype.h"
 #include "utility/SymbolPath.h"
 
-#define SYMBOL_NAME_BLUEPRINTS "$_BPS_$"
+//#define SYMBOL_NAME_BLUEPRINTS "$_BPS_$"
 
 enum class DuplicateHandling
 {

@@ -20,4 +20,6 @@ public:
     void append_expr(Expression<> expr);
 private:
     CodeBlock m_body;
+public:
+    static std::string gen_unique_space_name(const std::string prefix);
 };

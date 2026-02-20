@@ -104,9 +104,9 @@ private:
     Expression<class ExpressionSymbol> make_ExprSymbol_from_ExprIdentifier(Expression<> expr) const;
     Expression<class ExpressionFunctionCall> make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments);
 private:
-    QinpError make_pos_error(const std::string& message, const qrawlr::Position& position) const;
-    QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem) const;
-    QinpError make_expr_error(const std::string& message, Expression<> expr) const;
+    // QinpError make_pos_error(const std::string& message, const qrawlr::Position& position) const;
+    // QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem) const;
+    // QinpError make_expr_error(const std::string& message, Expression<> expr) const;
 private:
     Architecture m_architecture;
     Platform m_platform;

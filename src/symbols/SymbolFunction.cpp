@@ -30,6 +30,51 @@ SymbolFunction::SymbolFunction(Datatype<> return_type, const Parameter_Decl& par
     m_params(parameters), m_nodiscard(is_nodiscard)
 {}
 
+bool SymbolFunction::is_variadic() const
+{
+    auto& np = m_params.named_parameters;
+    return np.size() > 0 && np.back().datatype->is_variadic();
+}
+
+std::pair<size_t, size_t> SymbolFunction::get_param_count_range() const
+{
+    size_t minCount = m_params.named_parameters.size();
+    size_t maxCount = is_variadic() ? -1 : minCount;
+
+    return { minCount, maxCount };
+}
+
+int SymbolFunction::get_conversion_score(const std::vector<Expression<>>& params) const
+{
+    auto paramsCountRange = get_param_count_range();
+    if (params.size() < paramsCountRange.first || paramsCountRange.second < params.size())
+        return -1; // parameter count does not match function specification
+
+    int cumConvScore = 0;
+    size_t variadicIndex = m_params.named_parameters.size() - 1;
+    
+    for (size_t i = 0; i < params.size(); ++i)
+    {
+        auto& targetParam = m_params.named_parameters[std::min(i, variadicIndex)];
+
+        int convScore = -1;
+
+        if (targetParam.datatype->is_variadic())
+            convScore = 1;
+        else if (targetParam.datatype->is_macro())
+            convScore = 1; // TODO: Proper macro handling
+        else
+            convScore = 0; // TODO: Proper conversion handling
+
+        if (convScore < 0)
+            return -1;
+
+        cumConvScore += convScore;
+    }
+
+    return cumConvScore;
+}
+
 std::string SymbolFunction::get_digraph_impl_text(bool verbose) const
 {
     std::string res = SymbolSpace::get_digraph_impl_text(verbose);

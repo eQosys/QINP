@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Expression.h"
+#include "ExpressionIf.h"
 #include "ExpressionReturn.h"
 #include "ExpressionSymbol.h"
 #include "ExpressionUnaryOp.h"

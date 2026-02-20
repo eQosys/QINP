@@ -21,6 +21,10 @@ class SymbolFunction : public SymbolSpace
 {
 public:
     SymbolFunction(Datatype<> return_type, const Parameter_Decl& parameters, bool is_nodiscard, const qrawlr::Position& position);
+public:
+    bool is_variadic() const;
+    std::pair<size_t, size_t> get_param_count_range() const;
+    int get_conversion_score(const std::vector<Expression<>>& params) const;
 protected:
     virtual std::string get_digraph_impl_text(bool verbose) const override;
     virtual std::string get_symbol_type_str() const override;

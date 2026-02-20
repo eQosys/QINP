@@ -47,12 +47,14 @@ add_executable(
     "src/symbols/SymbolFunction.cpp"
     "src/symbols/SymbolVariable.cpp"
     "src/expressions/Expression.cpp"
+    "src/expressions/ExpressionIf.cpp"
     "src/expressions/ExpressionReturn.cpp"
     "src/expressions/ExpressionSymbol.cpp"
     "src/expressions/ExpressionUnaryOp.cpp"
     "src/expressions/ExpressionBinaryOp.cpp"
     "src/expressions/ExpressionTernaryOp.cpp"
     "src/expressions/ExpressionIdentifier.cpp"
+    "src/expressions/ExpressionFunctionCall.cpp"
     )
 
 include_directories(

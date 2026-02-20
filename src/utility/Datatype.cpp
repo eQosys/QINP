@@ -19,6 +19,16 @@ bool _Datatype::is_const() const
     return m_is_const;
 }
 
+bool _Datatype::is_macro() const
+{
+    return get_type() == Datatype<>::Type::Macro;
+}
+
+bool _Datatype::is_variadic() const
+{
+    return get_type() == Datatype<>::Type::Variadic;
+}
+
 std::string _Datatype::get_symbol_name() const
 {
     return (is_const() ? "c" : "") + __get_symbol_name();
