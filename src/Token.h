@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <cstdint>
 
 struct Token
 {

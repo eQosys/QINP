@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <cstdint>
 
 #include "Errors/ProgGenError.h"
 
