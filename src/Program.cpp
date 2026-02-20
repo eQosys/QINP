@@ -1200,15 +1200,13 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
             {
                 opType = UnaryOperatorType::Dereference;
                 datatype = expr->get_datatype();
-                // TODO: Modify datatype
-                QinpError::from_pos("[*Program::handle_tree_node_expr_prec_12*]: Dereference operator not implemented yet!", opInfo.position);
+                datatype = datatype->get_dereferenced();
             }
             else if (opInfo.value == "&")
             {
                 opType = UnaryOperatorType::AddressOf;
                 datatype = expr->get_datatype();
-                // TODO: Modify datatype
-                QinpError::from_pos("[*Program::handle_tree_node_expr_prec_12*]: Address-of operator not implemented yet!", opInfo.position);
+                datatype = DT_POINTER(datatype, false);
             }
             else
                 throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_12*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
@@ -1278,11 +1276,16 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
                 }
 
                 return make_ExprFunctionCall(expr, arguments);
-
-                throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Function calls not implemented yet!", opTree);
             }
             else if (opTree->get_name() == "ExprOpSubscript")
-                throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Subscripts not implemented yet!", opTree);
+            {
+                Expression<> subExpr;
+                handle_tree_node(qrawlr::expect_child_node(opTree, "Expression"), "Expression", &subExpr);
+
+                return Expression<ExpressionSubscript>::make(
+                    expr, subExpr, opTree->get_pos_begin()
+                );
+            }
             else
                 throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator!", opTree);
 
