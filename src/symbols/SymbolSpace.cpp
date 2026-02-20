@@ -32,7 +32,7 @@ void SymbolSpace::append_expr(Expression<> expr)
     m_body.expressions.push_back(expr);
 }
 
-std::string gen_unique_space_name(const std::string& prefix)
+std::string SymbolSpace::gen_unique_space_name(const std::string& prefix)
 {
     static size_t next_id = 0;
     return prefix + "_" + std::to_string(next_id++);

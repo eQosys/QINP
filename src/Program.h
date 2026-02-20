@@ -48,8 +48,6 @@ public:
     int get_ptr_size() const;
     int get_builtin_type_size(const std::string& type_name) const;
 public:
-    std::function<std::string(int)> get_fn_tree_id_to_name() const;
-public:
     void add_import_directory(const std::string& path_str);
     void import_source_file(std::string path_str, bool skip_duplicate, bool ignore_import_dirs = false);
     void import_source_code(const std::string& code_str, const std::string& path_str = "<inline>");
@@ -65,7 +63,10 @@ private:
     void handle_tree_node_optional_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut);
     void handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParamsOut);
     void handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlagsOut);
+    void handle_tree_node_literal_integer(qrawlr::ParseTreeNodeRef node, void* pIntegerOut);
     void handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pStringOut);
+    void handle_tree_node_literal_char(qrawlr::ParseTreeNodeRef node, void* pCharOut);
+    void handle_tree_node_escape_sequence(qrawlr::ParseTreeNodeRef node, void* pCharOut);
     void handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnused);
     void handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut);
     void handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pStringOut);
@@ -104,10 +105,6 @@ private:
     Expression<class ExpressionSymbol> make_ExprSymbol_from_ExprIdentifier(Expression<> expr) const;
     Expression<class ExpressionFunctionCall> make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments);
 private:
-    // QinpError make_pos_error(const std::string& message, const qrawlr::Position& position) const;
-    // QinpError make_node_error(const std::string& message, qrawlr::ParseTreeRef elem) const;
-    // QinpError make_expr_error(const std::string& message, Expression<> expr) const;
-private:
     Architecture m_architecture;
     Platform m_platform;
     CmdFlags m_flags;
@@ -115,8 +112,6 @@ private:
     qrawlr::Grammar m_grammar;
     std::vector<std::filesystem::path> m_import_dirs;
     std::set<std::string> m_imported_files;
-    std::map<int, std::string> m_file_tree_ids;
-    std::function<std::string(int)> m_f_tree_id_to_name;
 private:
     std::stack<TranslationUnitRef> m_translation_units;
     std::queue<TranslationUnitRef> m_deferred_translation_units;

@@ -3,7 +3,7 @@
 #include "errors/QinpError.h"
 
 _Expression::_Expression(Datatype<> datatype, const qrawlr::Position& position)
-    : m_datatype(datatype), m_position(position)
+    : m_position(position), m_datatype(datatype)
 {}
 
 Datatype<> _Expression::get_datatype() const

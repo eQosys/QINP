@@ -751,7 +751,7 @@ Literal(hidden):
     LiteralString
     LiteralChar
 
-LiteralInteger(hidden):
+LiteralInteger:
     LiteralIntegerBin
     LiteralIntegerHex
     LiteralIntegerOct

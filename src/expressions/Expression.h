@@ -3,7 +3,9 @@
 #include "libQrawlr.h"
 #include "utility/Datatype.h"
 
-template <class ExprType = class _Expression>
+#include "_ExpressionPreDecl.h"
+
+template <class ExprType>
 class Expression : public std::shared_ptr<ExprType>
 {
 public:

@@ -38,6 +38,7 @@ add_executable(
     "src/utility/StringEscape.cpp"
     "src/utility/StringHelpers.cpp"
     "src/utility/EnvironmentParser.cpp"
+    "src/errors/QinpError.cpp"
     "src/errors/ErrorPrinter.cpp"
     "src/grammar/QinpGrammarCStr.cpp"
     "src/symbols/Symbol.cpp"

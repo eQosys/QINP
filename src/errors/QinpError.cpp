@@ -4,7 +4,7 @@
 
 QinpError QinpError::from_pos(const std::string& message, const qrawlr::Position& position)
 {
-    return QinpError(qrawlr::GrammarException(message, position.to_string(nullptr)).what());
+    return QinpError(qrawlr::GrammarException(message, position).what());
 }
 
 QinpError QinpError::from_node(const std::string& message, qrawlr::ParseTreeRef elem)

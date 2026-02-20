@@ -21,5 +21,5 @@ public:
 private:
     CodeBlock m_body;
 public:
-    static std::string gen_unique_space_name(const std::string prefix);
+    static std::string gen_unique_space_name(const std::string& prefix);
 };

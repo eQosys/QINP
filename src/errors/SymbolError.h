@@ -6,8 +6,8 @@
 class SymbolError : public QinpError
 {
 public:
-    SymbolError(const std::string& what, Symbol<> symbol, std::function<std::string(int)> tree_id_to_name)
-        : QinpError(symbol->get_position().to_string(tree_id_to_name) + ": " + what)
+    SymbolError(const std::string& what, Symbol<> symbol)
+        : QinpError(symbol->get_position().to_string() + ": " + what)
     {}
 public:
     using QinpError::QinpError;

@@ -23,7 +23,7 @@ class Symbol : public std::shared_ptr<SymType>
 public:
     using std::shared_ptr<SymType>::shared_ptr;
 public:
-    Symbol<> add_child(Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling = DuplicateHandling::Throw);
+    Symbol<> add_child(Symbol<> child_sym, DuplicateHandling dupHandling = DuplicateHandling::Throw);
     Symbol<SymType>& if_null(std::function<void(void)> func);
     const Symbol<SymType>& if_null(std::function<void(void)> func) const;
 public:
@@ -55,7 +55,7 @@ public:
     virtual bool is_object() const = 0;
     virtual Datatype<> get_datatype() const = 0;
 private:
-    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling);
+    Symbol<> add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling);
 public:
     std::string to_digraph_str(bool verbose) const;
 protected:
@@ -76,9 +76,9 @@ private:
 };
 
 template <class SymType>
-Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, std::function<std::string(int)> tree_id_to_name, DuplicateHandling dupHandling)
+Symbol<> Symbol<SymType>::add_child(Symbol<> child_sym, DuplicateHandling dupHandling)
 {
-    return (*this)->add_child(*this, child_sym, tree_id_to_name, dupHandling);
+    return (*this)->add_child(*this, child_sym, dupHandling);
 }
 
 template <class SymType>

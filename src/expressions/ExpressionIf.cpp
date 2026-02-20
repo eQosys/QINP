@@ -1,8 +1,9 @@
 #include "ExpressionIf.h"
 
-#include "QinpError.h"
+#include "errors/QinpError.h"
+#include "utility/SymbolPath.h"
 
-ExpressionIf::ExpressionIf(Expression<> condition, const qrawlr::Position& position)
+ExpressionIf::ExpressionIf(Expression<> condition, const SymbolPath& spacePath, const qrawlr::Position& position)
     : _Expression(DT_VOID(), position)
 {
     m_condition = condition;
