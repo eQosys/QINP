@@ -104,11 +104,13 @@ private:
     void add_implicit_conversion_to_same_datatype(Expression<>& expr1, Expression<>& expr2) const;
     Expression<class ExpressionSymbol> make_ExprSymbol_from_ExprIdentifier(Expression<> expr) const;
     Expression<class ExpressionFunctionCall> make_ExprFunctionCall(Expression<>& expr, const std::vector<Expression<>>& arguments);
+    Expression<class ExpressionSymbol> make_ExprString(const std::string& value, const qrawlr::Position& position);
 private:
     Architecture m_architecture;
     Platform m_platform;
     CmdFlags m_flags;
-    Symbol<> m_root_sym;
+    Symbol<class SymbolSpace> m_sym_root;
+    Symbol<class SymbolSpace> m_sym_strings;
     qrawlr::Grammar m_grammar;
     std::vector<std::filesystem::path> m_import_dirs;
     std::set<std::string> m_imported_files;

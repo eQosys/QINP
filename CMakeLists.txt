@@ -44,6 +44,7 @@ add_executable(
     "src/symbols/Symbol.cpp"
     "src/symbols/SymbolEnum.cpp"
     "src/symbols/SymbolSpace.cpp"
+    "src/symbols/SymbolString.cpp"
     "src/symbols/SymbolDeclDef.cpp"
     "src/symbols/SymbolFunction.cpp"
     "src/symbols/SymbolVariable.cpp"

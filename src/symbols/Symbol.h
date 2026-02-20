@@ -8,8 +8,6 @@
 #include "utility/Datatype.h"
 #include "utility/SymbolPath.h"
 
-//#define SYMBOL_NAME_BLUEPRINTS "$_BPS_$"
-
 enum class DuplicateHandling
 {
     Throw,  // Throws an exception when a duplicate symbol is detected
@@ -31,6 +29,8 @@ public:
     bool is_of_type() const;
     template <class NewT>
     Symbol<NewT> as_type();
+public:
+    static std::string gen_unique_name(const std::string& prefix);
 public:
     template <typename... Args>
     static Symbol<SymType> make(Args&&... args);
@@ -112,6 +112,13 @@ Symbol<NewT> Symbol<SymType>::as_type()
 {
     auto sym = std::dynamic_pointer_cast<NewT>(*this);
     return *(Symbol<NewT>*)(&sym);
+}
+
+template <class SymType>
+std::string Symbol<SymType>::gen_unique_name(const std::string& prefix)
+{
+    static size_t next_id = 0;
+    return prefix + "~" + std::to_string(next_id++);
 }
 
 template <class SymType>

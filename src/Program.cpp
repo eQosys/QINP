@@ -12,7 +12,7 @@ ProgramRef Program::s_singleton = nullptr;
 
 Program::Program(Architecture arch, Platform platform, CmdFlags flags)
     : m_architecture(arch), m_platform(platform), m_flags(flags),
-    m_root_sym(Symbol<SymbolSpace>::make("", qrawlr::Position())),
+    m_sym_root(Symbol<SymbolSpace>::make("", qrawlr::Position())),
     m_grammar(
         qrawlr::Grammar::load_from_text(
             QINP_GRAMMAR_C_STR,
@@ -20,7 +20,10 @@ Program::Program(Architecture arch, Platform platform, CmdFlags flags)
         )
     )
 {
-	;
+    m_sym_strings = m_sym_root.add_child(
+        Symbol<SymbolSpace>::make("~strings~", qrawlr::Position()),
+        DuplicateHandling::Keep
+    ).as_type<SymbolSpace>();
 }
 
 Program::~Program()
@@ -31,7 +34,7 @@ Program::~Program()
 
         if (m_flags.is_set(CmdFlag::Verbose))
             printf("Generating symbol tree graphviz...\n");
-        qrawlr::write_file("out/tree.gv", m_root_sym->to_digraph_str(m_flags.is_set(CmdFlag::Verbose)));
+        qrawlr::write_file("out/tree.gv", m_sym_root->to_digraph_str(m_flags.is_set(CmdFlag::Verbose)));
 
         if (m_flags.is_set(CmdFlag::Verbose))
             printf("Rendering symbol tree graphviz...\n");
@@ -376,17 +379,9 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
             "', non-function symbol with same name already defined here: " +
             sym->get_position().to_string(), node);
 
-    // Create and enter blueprint symbol if necessary
+    // Create blueprint symbol if necessary
     if (parameters.is_blueprint)
     {
-        // sym = sym.add_child(
-        //     Symbol<SymbolSpace>::make(
-        //         SYMBOL_NAME_BLUEPRINTS,
-        //         node->get_pos_begin()
-        //     ),
-        //     DuplicateHandling::Keep
-        // );
-
         sym = sym.add_child(
             Symbol<SymbolFunctionBlueprint>::make(
                 return_type,
@@ -807,7 +802,7 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
         handle_tree_node(qrawlr::expect_child_node(stmtNode, "Expression"), "Expression", &condition);
     
         auto space = curr_tu()->curr_symbol().add_child(
-            Symbol<SymbolSpace>::make(SymbolSpace::gen_unique_space_name(typeName), stmtNode->get_pos_begin()),
+            Symbol<SymbolSpace>::make(Symbol<>::gen_unique_name(typeName), stmtNode->get_pos_begin()),
             DuplicateHandling::Keep
         ).as_type<SymbolSpace>();
 
@@ -826,9 +821,7 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
 
     auto expr = if_elif_helper("if", qrawlr::expect_child_node(node, "StatementIf"));
 
-    // curr_tu()->curr_symbol().as_type<SymbolSpace>()->append_expr(
-        
-    // )
+    // TODO: Implement elif & else
 }
 
 void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
@@ -1169,7 +1162,7 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
                 auto& name = expr.as_type<ExpressionIdentifier>()->get_name();
                 
                 return Expression<ExpressionSymbol>::make(
-                    m_root_sym->get_child_by_name(name),
+                    m_sym_root->get_child_by_name(name),
                     opInfo.position
                 );
             }
@@ -1311,7 +1304,7 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
                     throw QinpError::from_expr("Expected identifier on right-hand-side of member access operator!", exprRight);
                 auto& nameRight = exprRight.as_type<ExpressionIdentifier>()->get_name();
 
-                // Convert identifier to symbol
+                // Convert identifier to symbol expression
                 if (exprLeft.is_of_type<ExpressionIdentifier>())
                     exprLeft = make_ExprSymbol_from_ExprIdentifier(exprLeft);
 
@@ -1374,7 +1367,7 @@ void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void*
 	{
 		std::string value;
 		handle_tree_node(sub_node, "LiteralString", &value);
-		throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_15*]: LiteralString not implemented yet!", node);
+        *(Expression<>*)pExpressionOut = make_ExprString(value, sub_node->get_pos_begin());
 	}
     else if (sub_node->get_name() == "LiteralChar")
 	{
@@ -1555,9 +1548,22 @@ Expression<ExpressionFunctionCall> Program::make_ExprFunctionCall(Expression<>& 
     return bestCandidateExpr;
 }
 
+Expression<ExpressionSymbol> Program::make_ExprString(const std::string& value, const qrawlr::Position& position)
+{
+    auto name = Symbol<>::gen_unique_name("s");
+
+    auto symStr = m_sym_strings.add_child(
+        Symbol<SymbolString>::make(
+            name, value, position
+        )
+    );
+
+    return Expression<ExpressionSymbol>::make(symStr, position);
+}
+
 TranslationUnitRef Program::push_tu(const std::string& path)
 {
-    return push_tu(std::make_shared<TranslationUnit>(path, m_root_sym));
+    return push_tu(std::make_shared<TranslationUnit>(path, m_sym_root));
 }
 
 TranslationUnitRef Program::push_tu(TranslationUnitRef tu)

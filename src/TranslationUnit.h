@@ -22,6 +22,6 @@ public:
     const std::string& get_file_path() const;
 private:
     const std::string m_file_path;
-    const Symbol<> m_root_sym;
+    const Symbol<> m_sym_root;
     std::vector<Symbol<>> m_sym_stack;
 };
