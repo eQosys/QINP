@@ -11,7 +11,6 @@ public:
     ExpressionFunctionCall(Symbol<SymbolFunction> funcSym, const std::vector<Expression<>>& params);
 public:
     virtual bool is_const_expr() const override;
-    virtual bool results_in_object() const override;
 public:
     const MatchLevel& get_match_level() const;
 private:

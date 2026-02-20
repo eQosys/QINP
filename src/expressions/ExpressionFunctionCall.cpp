@@ -21,11 +21,6 @@ bool ExpressionFunctionCall::is_const_expr() const
     return false;
 }
 
-bool ExpressionFunctionCall::results_in_object() const
-{
-    return m_datatype->is_void();
-}
-
 const ExpressionFunctionCall::MatchLevel& ExpressionFunctionCall::get_match_level() const
 {
     return m_matchLevel;

@@ -12,7 +12,7 @@ SymbolVariable::SymbolVariable(const std::string& name, const VariableDeclarator
 
 bool SymbolVariable::is_object() const
 {
-    throw std::runtime_error("[*SymbolVariable::is_object*]: Not implemented yet!");
+    return true;
 }
 
 Datatype<> SymbolVariable::get_datatype() const

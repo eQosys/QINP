@@ -14,8 +14,3 @@ bool ExpressionIdentifier::is_const_expr() const
 {
     return true;
 }
-
-bool ExpressionIdentifier::results_in_object() const
-{
-    return false;
-}

@@ -54,6 +54,8 @@ add_executable(
     "src/expressions/ExpressionSymbol.cpp"
     "src/expressions/ExpressionUnaryOp.cpp"
     "src/expressions/ExpressionBinaryOp.cpp"
+    "src/expressions/ExpressionTypeCast.cpp"
+    "src/expressions/ExpressionSubscript.cpp"
     "src/expressions/ExpressionTernaryOp.cpp"
     "src/expressions/ExpressionIdentifier.cpp"
     "src/expressions/ExpressionFunctionCall.cpp"

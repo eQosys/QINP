@@ -10,7 +10,6 @@ public:
     const std::string& get_name() const;
 public:
     virtual bool is_const_expr() const override;
-    virtual bool results_in_object() const override;
 private:
     std::string m_name;
 };

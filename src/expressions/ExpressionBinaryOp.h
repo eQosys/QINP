@@ -31,7 +31,6 @@ public:
     ExpressionBinaryOperator(BinaryOperatorType type, Expression<> exprLeft, Expression<> exprRight, Datatype<> datatype, const qrawlr::Position& position);
 public:
     virtual bool is_const_expr() const override;
-    virtual bool results_in_object() const override;
 private:
     BinaryOperatorType m_type;
     Expression<> m_exprLeft;

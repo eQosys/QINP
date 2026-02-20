@@ -22,7 +22,7 @@ Program::Program(Architecture arch, Platform platform, CmdFlags flags)
 {
     m_sym_strings = m_sym_root.add_child(
         Symbol<SymbolSpace>::make("~strings~", qrawlr::Position()),
-        DuplicateHandling::Keep
+        DuplicateHandling::Throw
     ).as_type<SymbolSpace>();
 }
 
@@ -796,21 +796,27 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
 {
 	(void)pUnused;
 
-    auto if_elif_helper = [this](const std::string& typeName, qrawlr::ParseTreeNodeRef stmtNode)
+	auto gen_space = [this](Symbol<> baseSym, const std::string& typeName, const qrawlr::Position& position)
+	{
+		return baseSym.add_child(
+			Symbol<SymbolSpace>::make(Symbol<>::gen_unique_name(typeName), position),
+			DuplicateHandling::Throw
+		).as_type<SymbolSpace>();
+	};
+
+    auto if_elif_helper = [this, gen_space](const std::string& typeName, qrawlr::ParseTreeNodeRef stmtNode)
     {
         Expression<> condition;
         handle_tree_node(qrawlr::expect_child_node(stmtNode, "Expression"), "Expression", &condition);
     
-        auto space = curr_tu()->curr_symbol().add_child(
-            Symbol<SymbolSpace>::make(Symbol<>::gen_unique_name(typeName), stmtNode->get_pos_begin()),
-            DuplicateHandling::Keep
-        ).as_type<SymbolSpace>();
+		auto space = gen_space(curr_tu()->curr_symbol(), typeName, stmtNode->get_pos_begin());
 
-        auto expr = Expression<ExpressionIf>::make(
-            condition,
-            space->get_symbol_path(),
-			stmtNode->get_pos_begin()
-        );
+		auto expr = curr_tu()->curr_symbol().as_type<SymbolSpace>()->append_expr(
+			Expression<ExpressionIf>::make(
+            	condition, space,
+				stmtNode->get_pos_begin()
+        	)
+		).as_type<ExpressionIf>();
 
         curr_tu()->enter_symbol(space);
         handle_tree_node(qrawlr::expect_child_node(stmtNode, "CodeBlock"), "CodeBlock", nullptr);
@@ -819,9 +825,36 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
         return expr;
     };
 
-    auto expr = if_elif_helper("if", qrawlr::expect_child_node(node, "StatementIf"));
+    auto exprTemp = if_elif_helper("if", qrawlr::expect_child_node(node, "StatementIf"));
 
-    // TODO: Implement elif & else
+	int i = 0;
+	while (qrawlr::has_child_node(node, "StatementElif#" + std::to_string(i)))
+	{
+		auto nodeElif = qrawlr::expect_child_node(node, "StatementElif#" + std::to_string(i));
+		auto spaceElif = gen_space(curr_tu()->curr_symbol(), "elif", nodeElif->get_pos_begin());
+
+		exprTemp->set_body_false(spaceElif);
+
+		curr_tu()->enter_symbol(spaceElif);
+		auto exprElif = if_elif_helper("elif", nodeElif);
+		curr_tu()->leave_symbol();
+
+		exprTemp = exprElif;
+
+		++i;
+	}
+
+	if (qrawlr::has_child_node(node, "StatementElse"))
+	{
+		auto nodeElse = qrawlr::expect_child_node(node, "StatementElse");
+		auto spaceElse = gen_space(curr_tu()->curr_symbol(), "else", nodeElse->get_pos_begin());
+
+		exprTemp->set_body_false(spaceElse);
+
+		curr_tu()->enter_symbol(spaceElse);
+        handle_tree_node(qrawlr::expect_child_node(nodeElse, "CodeBlock"), "CodeBlock", nullptr);
+		curr_tu()->leave_symbol();
+	}
 }
 
 void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
@@ -1149,8 +1182,6 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
         node, EvaluationOrder::Right_to_Left,
         [&](OperatorInfo opInfo, Expression<> expr) -> Expression<>
         {
-            (void)expr;
-
             UnaryOperatorType opType;
             Datatype<> datatype;
 
@@ -1218,7 +1249,25 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
                 opInfo.position
             );
         },
-        nullptr
+        [&](qrawlr::ParseTreeNodeRef opTree, Expression<> expr) -> Expression<>
+        {
+            if (opTree->get_name() == "ExprOpTypeCast")
+            {
+				Datatype<> target_type;
+				handle_tree_node(qrawlr::expect_child_node(opTree, "Datatype"), "Datatype", &target_type);
+
+				// TODO: Check for user defined conversion (implicit function call)
+
+				return Expression<ExpressionTypeCast>::make(
+					target_type,
+					expr
+				);
+            }
+            else
+                throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator!", opTree);
+
+            return nullptr;
+        }
     );
 }
 
@@ -1245,8 +1294,6 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
         },
         [&](qrawlr::ParseTreeNodeRef opTree, Expression<> expr) -> Expression<>
         {
-            (void)expr;
-
             if (opTree->get_name() == "ExprOpFunctionCall")
             {
                 if (expr.is_of_type<ExpressionIdentifier>())
@@ -1283,7 +1330,7 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
                 handle_tree_node(qrawlr::expect_child_node(opTree, "Expression"), "Expression", &subExpr);
 
                 return Expression<ExpressionSubscript>::make(
-                    expr, subExpr, opTree->get_pos_begin()
+                    expr, subExpr
                 );
             }
             else
@@ -1420,7 +1467,7 @@ Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superN
         }
         else
         {
-            if (!gen_expr_op_str)
+            if (!gen_expr_op_tree)
                 throw QinpError::from_node("[*Program::expr_parse_helper_unary_op*]: Handler for node-operators not provided!", opTree);
 
             expr = gen_expr_op_tree(qrawlr::expect_node(opTree), expr);

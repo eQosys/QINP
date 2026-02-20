@@ -11,8 +11,3 @@ bool ExpressionBinaryOperator::is_const_expr() const
 {
     return m_exprLeft->is_const_expr() && m_exprRight->is_const_expr();
 }
-
-bool ExpressionBinaryOperator::results_in_object() const
-{
-    return true;
-}

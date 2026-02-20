@@ -15,3 +15,8 @@ const qrawlr::Position& _Expression::get_position() const
 {
     return m_position;
 }
+
+bool _Expression::results_in_object() const
+{
+    return !m_datatype->is_void();
+}

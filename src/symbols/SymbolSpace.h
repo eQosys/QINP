@@ -17,7 +17,7 @@ protected:
 public:
     void set_definition(const qrawlr::Position& definition_position);
 public:
-    void append_expr(Expression<> expr);
+    Expression<> append_expr(Expression<> expr);
 private:
     CodeBlock m_body;
 };
