@@ -9,7 +9,7 @@ ExpressionIf::ExpressionIf(Expression<> condition, Symbol<const SymbolSpace> bod
 {
     m_condition = condition;
     if (!condition->results_in_object())
-        throw QinpError::from_pos("", position);
+        throw QinpError::from_pos("Condition must evaluate to non-void!", position);
 }
 
 bool ExpressionIf::is_const_expr() const

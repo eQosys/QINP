@@ -4,6 +4,7 @@
 #include "utility/Datatype.h"
 
 #include "_ExpressionPreDecl.h"
+#include "utility/ConstExprEval.h"
 
 template <class ExprType>
 class Expression : public std::shared_ptr<ExprType>
@@ -33,6 +34,7 @@ public:
 public:
     virtual bool is_const_expr() const = 0;
     virtual bool results_in_object() const;
+    //virtual ConstExprEval eval_const_expr() const = 0;
 private:
     qrawlr::Position m_position;
 protected:

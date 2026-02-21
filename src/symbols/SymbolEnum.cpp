@@ -49,7 +49,7 @@ bool SymbolEnumMember::is_object() const
 
 Datatype<> SymbolEnumMember::get_datatype() const
 {
-    return DT_NAMED(get_symbol_path().to_string(), true);
+    return DT_NAMED(get_symbol_path().get_parent_path().to_string(), true);
 }
 
 std::string SymbolEnumMember::get_digraph_impl_text(bool verbose) const
