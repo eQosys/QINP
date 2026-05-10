@@ -16,6 +16,7 @@ public:
 private:
     Symbol<> m_funcSym;
     const std::vector<Expression<>> m_params;
+public:
     class MatchLevel
     {
     public:

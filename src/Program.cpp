@@ -606,7 +606,13 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         else if (elem->get_name() == "Expression")
         {
             // TODO: Implementation
-            throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Handling of datatype array not implemented yet!", node);
+            Expression<> expr;
+            handle_tree_node(elem, "Expression", &expr);
+            if (!expr->is_const_expr())
+                throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Expected array size constexpr!", node);
+            auto result = expr->eval_const_expr();
+
+            throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Cannot evaluate constexpr at the moment!", node);
             int num_elements = 1;
             dt = DT_ARRAY(num_elements, dt, is_const);
         }
@@ -796,7 +802,7 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
 {
 	(void)pUnused;
 
-	auto gen_space = [this](Symbol<> baseSym, const std::string& typeName, const qrawlr::Position& position)
+	auto gen_space = [](Symbol<> baseSym, const std::string& typeName, const qrawlr::Position& position)
 	{
 		return baseSym.add_child(
 			Symbol<SymbolSpace>::make(Symbol<>::gen_unique_name(typeName), position),
