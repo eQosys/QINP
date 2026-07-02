@@ -8,6 +8,8 @@
 #include "utility/Datatype.h"
 #include "utility/SymbolPath.h"
 
+#include "expressions/ConstExprObject.h"
+
 enum class DuplicateHandling
 {
     Throw,  // Throws an exception when a duplicate symbol is detected
@@ -20,6 +22,9 @@ class Symbol : public std::shared_ptr<SymType>
 {
 public:
     using std::shared_ptr<SymType>::shared_ptr;
+    Symbol() = default;
+    Symbol(const std::shared_ptr<SymType>& ptr) : std::shared_ptr<SymType>(ptr) {}
+    Symbol(std::shared_ptr<SymType>&& ptr) : std::shared_ptr<SymType>(std::move(ptr)) {}
 public:
     Symbol<> add_child(Symbol<> child_sym, DuplicateHandling dupHandling = DuplicateHandling::Throw);
     Symbol<SymType>& if_null(std::function<void(void)> func);
@@ -52,6 +57,8 @@ public:
     const qrawlr::Position& get_position() const;
     SymbolPath get_symbol_path() const;
 public:
+    virtual bool is_const_expr() const;
+    virtual CEObject eval_const_expr() const;
     virtual bool is_object() const = 0;
     virtual Datatype<> get_datatype() const = 0;
 private:
@@ -110,8 +117,9 @@ template <class SymType>
 template <class NewT>
 Symbol<NewT> Symbol<SymType>::as_type()
 {
-    auto sym = std::dynamic_pointer_cast<NewT>(*this);
-    return *(Symbol<NewT>*)(&sym);
+    return Symbol<NewT>(std::dynamic_pointer_cast<NewT>(*this));
+    //auto sym = std::dynamic_pointer_cast<NewT>(*this);
+    //return *(Symbol<NewT>*)(&sym);
 }
 
 template <class SymType>

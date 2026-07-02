@@ -54,6 +54,16 @@ SymbolPath _Symbol::get_symbol_path() const
     return path;
 }
 
+bool _Symbol::is_const_expr() const
+{
+    return false;
+}
+
+CEObject _Symbol::eval_const_expr() const
+{
+    throw QinpError("Constexpr not available for this symbol type");
+}
+
 Symbol<> _Symbol::add_child(Symbol<> this_sym, Symbol<> child_sym, DuplicateHandling dupHandling)
 {
     if (child_sym->get_parent() != nullptr)

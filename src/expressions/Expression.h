@@ -12,6 +12,9 @@ class Expression : public std::shared_ptr<ExprType>
 {
 public:
     using std::shared_ptr<ExprType>::shared_ptr;
+    Expression() = default;
+    Expression(const std::shared_ptr<ExprType>& ptr) : std::shared_ptr<ExprType>(ptr) {}
+    Expression(std::shared_ptr<ExprType>&& ptr) : std::shared_ptr<ExprType>(std::move(ptr)) {}
 public:
     template <typename... Args>
     static Expression<ExprType> make (Args&&... args);
@@ -33,8 +36,8 @@ public:
     Datatype<> get_datatype() const;
     const qrawlr::Position& get_position() const;
 public:
-    virtual bool is_const_expr() const = 0;
-    virtual CEObject eval_const_expr() const = 0;
+    virtual bool is_const_expr() const;
+    virtual CEObject eval_const_expr() const;
     virtual bool results_in_object() const;
 private:
     qrawlr::Position m_position;
@@ -53,8 +56,9 @@ template <class ExprType>
 template <class NewT>
 Expression<NewT> Expression<ExprType>::as_type()
 {
-    auto sym = std::dynamic_pointer_cast<NewT>(*this);
-    return *(Expression<NewT>*)(&sym);
+    return Expression<NewT>(std::dynamic_pointer_cast<NewT>(*this));
+    //auto sym = std::dynamic_pointer_cast<NewT>(*this);
+    //return *(Expression<NewT>*)(&sym);
 }
 
 template <class ExprType>

@@ -42,6 +42,16 @@ SymbolEnumMember::SymbolEnumMember(const std::string& name, std::size_t value, c
     m_value(value)
 {}
 
+bool SymbolEnumMember::is_const_expr() const
+{
+    return true;
+}
+
+CEObject SymbolEnumMember::eval_const_expr() const
+{
+    return CEObject(DT_NAMED("u32", true), (void*)&m_value);
+}
+
 bool SymbolEnumMember::is_object() const
 {
     return true;

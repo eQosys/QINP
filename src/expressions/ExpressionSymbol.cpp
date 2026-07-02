@@ -7,8 +7,12 @@ ExpressionSymbol::ExpressionSymbol(Symbol<> symbol, const qrawlr::Position& posi
 
 bool ExpressionSymbol::is_const_expr() const
 {
-    // TODO: Implementation
-    return false;
+    return get_symbol()->is_const_expr();
+}
+
+CEObject ExpressionSymbol::eval_const_expr() const
+{
+    return get_symbol()->eval_const_expr();
 }
 
 bool ExpressionSymbol::results_in_object() const

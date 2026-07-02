@@ -24,6 +24,8 @@ class SymbolEnumMember : public _Symbol
 public:
     SymbolEnumMember(const std::string& name, std::size_t value, const qrawlr::Position& position);
 public:
+    virtual bool is_const_expr() const override;
+    virtual CEObject eval_const_expr() const override;
     virtual bool is_object() const override;
     virtual Datatype<> get_datatype() const override;
 protected:

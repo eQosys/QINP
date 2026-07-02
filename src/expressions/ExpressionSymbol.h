@@ -9,6 +9,7 @@ public:
     ExpressionSymbol(Symbol<> symbol, const qrawlr::Position& position);
 public:
     virtual bool is_const_expr() const override;
+    virtual CEObject eval_const_expr() const override;
     virtual bool results_in_object() const override;
 public:
     Symbol<> get_symbol() const;

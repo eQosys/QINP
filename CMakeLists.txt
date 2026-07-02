@@ -59,6 +59,7 @@ add_executable(
     "src/expressions/ExpressionTernaryOp.cpp"
     "src/expressions/ExpressionIdentifier.cpp"
     "src/expressions/ExpressionFunctionCall.cpp"
+    src/expressions/ConstExprObject.cpp
     )
 
 include_directories(

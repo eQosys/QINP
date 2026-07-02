@@ -31,6 +31,9 @@ public:
     };
 public:
     using std::shared_ptr<Dt>::shared_ptr;
+    Datatype() = default;
+    Datatype(const std::shared_ptr<Dt>& ptr) : std::shared_ptr<Dt>(ptr) {}
+    Datatype(std::shared_ptr<Dt>&& ptr) : std::shared_ptr<Dt>(std::move(ptr)) {}
 public:
     template <class NewDt>
     Datatype<NewDt> as_type();
@@ -73,8 +76,9 @@ template <class Dt>
 template <class NewDt>
 Datatype<NewDt> Datatype<Dt>::as_type()
 {
-    auto dt = std::dynamic_pointer_cast<NewDt>(*this);
-    return *(Datatype<NewDt>*)(&dt);
+    return Datatype<NewDt>(std::dynamic_pointer_cast<NewDt>(*this));
+    //auto dt = std::dynamic_pointer_cast<NewDt>(*this);
+    //return *(Datatype<NewDt>*)(&dt);
 }
 
 class _Datatype_Parent : public _Datatype
