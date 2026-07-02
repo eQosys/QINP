@@ -48,7 +48,7 @@ int Program::get_ptr_size() const
 {
     switch (m_architecture)
     {
-    case Architecture::Unknown: throw QinpError("[*Program::get_ptr_size*]: Unknown architecture!");
+    case Architecture::Unknown: throw QinpError("Unknown architecture!");
     case Architecture::x86_64: return 8;
     case Architecture::QIPU: return 4;
     default: throw QinpError("[*Program::get_ptr_size*]: Unhandled Architecture!");
@@ -165,120 +165,44 @@ void Program::import_source_code(const std::string& code_str, const std::string&
         return;
 
     push_tu(path_str);
-    handle_tree_node(result.tree, "GlobalCode", nullptr);
+    parse_code_block(qrawlr::expect_node(result.tree));
     pop_tu();
 }
 
-void Program::handle_tree_node(qrawlr::ParseTreeRef tree, const std::string& name, void* pData)
+void Program::parse_code_block(qrawlr::ParseTreeNodeRef node)
 {
-    handle_tree_node_one_of(tree, { name }, pData);
-}
-
-void Program::handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<std::string>& names, void* pData)
-{
-    auto node = qrawlr::expect_node(tree);
-
-    // Check if nodes' name matches any of the given names
-    if (names.find(node->get_name()) == names.end())
-        throw QinpError::from_node("[*handle_tree_node_one_of*]: Node with name '" + node->get_name() + "' does not match any of the given names: [ " + join(names.begin(), names.end(), ", ") + "]", node);
-
-    static const std::map<std::string, Handler> handlers = {
-        { "GlobalCode",               &Program::handle_tree_node_code_block         },
-        { "CodeBlock",                &Program::handle_tree_node_code_block         },
-        { "StatementImport",          &Program::handle_tree_node_stmt_import        },
-        { "StatementSpace",           &Program::handle_tree_node_stmt_space         },
-        { "StatementFunctionDeclDef", &Program::handle_tree_node_stmt_func_decl_def },
-        { "FunctionHeader",           &Program::handle_tree_node_func_header        },
-        { "OptionalDatatype",         &Program::handle_tree_node_optional_datatype  },
-        { "FunctionParameters",       &Program::handle_tree_node_func_params        },
-        { "ImportSpecifiers",         &Program::handle_tree_node_import_specifiers  },
-		{ "LiteralInteger",           &Program::handle_tree_node_literal_integer    },
-        { "LiteralString",            &Program::handle_tree_node_literal_string     },
-        { "LiteralChar",              &Program::handle_tree_node_literal_char       },
-		{ "EscapeSequence",           &Program::handle_tree_node_escape_sequence    },
-        { "Comment",                  &Program::handle_tree_node_comment            },
-        { "Datatype",                 &Program::handle_tree_node_datatype           },
-        { "Identifier",               &Program::handle_tree_node_identifier         },
-        { "SymbolReference",          &Program::handle_tree_node_symbol_reference   },
-        { "StatementDefer",           &Program::handle_tree_node_stmt_defer         },
-        { "StatementEnumDeclDef",     &Program::handle_tree_node_stmt_enum_decl_def },
-        { "EnumHeader",               &Program::handle_tree_node_enum_header        },
-        { "EnumDefinition",           &Program::handle_tree_node_enum_def           },
-        { "EnumMemberDefinition",     &Program::handle_tree_node_enum_member_def    },
-        { "StatementVariableDeclDef", &Program::handle_tree_node_stmt_var_decl_def  },
-        { "VariableDeclarators",      &Program::handle_tree_node_var_declarators    },
-        { "VariableInitializer",      &Program::handle_tree_node_var_initializer    },
-        { "StatementReturn",          &Program::handle_tree_node_stmt_return        },
-        { "StatementIfElifElse",      &Program::handle_tree_node_stmt_if_elif_else  },
-        { "Expression",               &Program::handle_tree_node_expression         },
-        { "ExprPrec1",                &Program::handle_tree_node_expr_prec_1        },
-        { "ExprPrec2",                &Program::handle_tree_node_expr_prec_2        },
-        { "ExprPrec3",                &Program::handle_tree_node_expr_prec_3        },
-        { "ExprPrec4",                &Program::handle_tree_node_expr_prec_4        },
-        { "ExprPrec5",                &Program::handle_tree_node_expr_prec_5        },
-        { "ExprPrec6",                &Program::handle_tree_node_expr_prec_6        },
-        { "ExprPrec7",                &Program::handle_tree_node_expr_prec_7        },
-        { "ExprPrec8",                &Program::handle_tree_node_expr_prec_8        },
-        { "ExprPrec9",                &Program::handle_tree_node_expr_prec_9        },
-        { "ExprPrec10",               &Program::handle_tree_node_expr_prec_10       },
-        { "ExprPrec11",               &Program::handle_tree_node_expr_prec_11       },
-        { "ExprPrec12",               &Program::handle_tree_node_expr_prec_12       },
-        { "ExprPrec13",               &Program::handle_tree_node_expr_prec_13       },
-        { "ExprPrec14",               &Program::handle_tree_node_expr_prec_14       },
-        { "ExprPrec15",               &Program::handle_tree_node_expr_prec_15       },
-    };
-
-    // Get the corresponding handler
-    auto it = handlers.find(node->get_name());
-    if (it == handlers.end())
-        throw QinpError::from_node("[*handle_tree_node_one_of*]: Unhandled node name '" + node->get_name() + "'", node);
-    Handler handler = it->second;
-
-    // Call the handler
-    try {
-        (this->*handler)(node, pData);
-    }
-    catch (std::runtime_error& err)
-    {
-        if (m_flags.is_set(CmdFlag::Verbose))
-            throw QinpError::from_node("[" + node->get_name() + "]\n" + err.what(), node);
-        else
-            throw err;
-    }
-}
-
-void Program::handle_tree_node_code_block(qrawlr::ParseTreeNodeRef node, void* pUnused)
-{
-    (void)pUnused;
-
-    static const std::set<std::string> valid_children = {
-        "Comment",
-        "StatementPass", "StatementDefer",
-        "StatementImport", "StatementSpace",
-        "StatementReturn", "StatementDefine",
-        "StatementWhile", "StatementDoWhile",
-        "StatementIfElifElse",
-        "StatementPackDeclDef", "StatementEnumDeclDef",
-        "StatementFunctionDeclDef", "StatementExternFunctionDecl",
-        "StatementVariableDeclDef",
-        "StatementInlineAssembly",
-        "Expression"
-    };
-
     for (auto child : node->get_children())
-        handle_tree_node_one_of(child, valid_children, nullptr);
+        parse_code_block_item(qrawlr::expect_node(child));
+}
+void Program::parse_code_block_item(qrawlr::ParseTreeNodeRef node)
+{
+    const std::string& name = node->get_name();
+    if      (name == "Comment")                     parse_comment(node);
+    else if (name == "StatementImport")             parse_stmt_import(node);
+    else if (name == "StatementSpace")              parse_stmt_space(node);
+    else if (name == "StatementFunctionDeclDef")    parse_stmt_func_decl_def(node);
+    else if (name == "StatementDefer")              parse_stmt_defer(node);
+    else if (name == "StatementEnumDeclDef")        parse_stmt_enum_decl_def(node);
+    else if (name == "StatementVariableDeclDef")    parse_stmt_var_decl_def(node);
+    else if (name == "StatementReturn")             parse_stmt_return(node);
+    else if (name == "StatementIfElifElse")         parse_stmt_if_elif_else(node);
+    else if (name == "Expression")                  parse_expression(node);
+    else if (name == "StatementPass")               throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else if (name == "StatementDefine")             throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else if (name == "StatementWhile")              throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else if (name == "StatementDoWhile")            throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else if (name == "StatementPackDeclDef")        throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else if (name == "StatementExternFunctionDecl") throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else if (name == "StatementInlineAssembly")     throw QinpError::from_node("[*Program::parse_code_block_item*]: " + name + " not implemented yet", node);
+    else throw QinpError::from_node("[*Program::parse_code_block_item*]: Unhandled code block item: " + name, node);
 }
 
-void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_import(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
-
-    qrawlr::Flags<ImportSpecifier> flags;
-    handle_tree_node(qrawlr::expect_child_node(node, "ImportSpecifiers"), "ImportSpecifiers", &flags);
+    qrawlr::Flags<ImportSpecifier> flags = parse_import_specifiers(qrawlr::expect_child_node(node, "ImportSpecifiers"));
     // TODO: handle flags
 
-    std::string path_str;
-    handle_tree_node(qrawlr::expect_child_node(node, "LiteralString"), "LiteralString", &path_str);
+    std::string path_str = parse_literal_string(qrawlr::expect_child_node(node, "LiteralString"));
     replace_all(path_str, "{architecture}", architecture_to_string(m_architecture));
     replace_all(path_str, "{platform}", platform_to_string(m_platform));
 
@@ -288,10 +212,8 @@ void Program::handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* 
     import_source_file(path_str, true);
 }
 
-void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_space(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
-
     std::string space_name = qrawlr::expect_child_leaf(node, "SpaceHeader.SpaceName.Identifier.0")->get_value();
 
     auto space = curr_tu()->curr_symbol().add_child(
@@ -303,16 +225,13 @@ void Program::handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* p
         space->set_definition(node->get_pos_begin());
 
     curr_tu()->enter_symbol(space);
-    handle_tree_node(qrawlr::expect_child_node(node, "CodeBlock"), "CodeBlock", nullptr);
+    parse_code_block(qrawlr::expect_child_node(node, "CodeBlock"));
     curr_tu()->leave_symbol();
 }
 
-void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
-
-    Symbol sym;
-    handle_tree_node(qrawlr::expect_child_node(node, "FunctionHeader"), "FunctionHeader", &sym);
+    Symbol sym = parse_func_header(qrawlr::expect_child_node(node, "FunctionHeader"));
 
     if (qrawlr::has_child_node(node, "FunctionDeclaration"))
     {
@@ -327,41 +246,41 @@ void Program::handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node,
         if (func.is_of_type<SymbolFunctionSpecialization>())
         {
             // TODO: Parse function body
-            auto& block = func.as_type<SymbolFunctionSpecialization>()->set_definition(node->get_pos_begin());
+            func.as_type<SymbolFunctionSpecialization>()->set_definition(node->get_pos_begin());
 
             curr_tu()->enter_symbol(func);
-            handle_tree_node(qrawlr::expect_child(node, "FunctionDefinition.CodeBlock"), "CodeBlock", &block);
+            parse_code_block(qrawlr::expect_child_node(node, "FunctionDefinition.CodeBlock"));
             curr_tu()->leave_symbol();
         }
         else if (func.is_of_type<SymbolFunctionBlueprint>())
         {
-            func.as_type<SymbolFunctionBlueprint>()->set_definition(qrawlr::expect_child(node, "FunctionDefinition.CodeBlock"));
+            func.as_type<SymbolFunctionBlueprint>()->set_definition(qrawlr::expect_child_node(node, "FunctionDefinition.CodeBlock"));
         }
         else
         {
-            throw QinpError::from_node("[*Program::handle_tree_node_stmt_func_decl_def*]: Unknown SymbolFunction* type!", node);
+            throw QinpError::from_node("[*Program::parse_stmt_func_decl_def*]: Unknown SymbolFunction* type!", node);
         }
     }
     else
     {
-        throw QinpError::from_node("[*Program::handle_tree_node_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!", node);
+        throw QinpError::from_node("[*Program::parse_stmt_func_decl_def*]: Missing 'FunctionDeclaration' or 'FunctionDefinition' node!", node);
     }
 
     // TODO: Remove debug print
     printf("Reached function with name '%s'\n", sym->get_symbol_path().to_string().c_str());
 }
 
-void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pFuncSymOut)
+Symbol<> Program::parse_func_header(qrawlr::ParseTreeNodeRef node)
 {
-    auto& sym = *(Symbol<>*)pFuncSymOut;
-
+    Symbol<> sym;
     Datatype return_type;
     SymbolPath func_name_path;
     Parameter_Decl parameters;
     bool is_nodiscard = false;
-    handle_tree_node(qrawlr::expect_child_node(node, "OptionalDatatype"), "OptionalDatatype", &return_type);
-    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"),    "SymbolReference",    &func_name_path);
-    handle_tree_node(qrawlr::expect_child_node(node, "FunctionParameters"), "FunctionParameters", &parameters);
+
+    return_type = parse_optional_datatype(qrawlr::expect_child_node(node, "OptionalDatatype"));
+    func_name_path = parse_symbol_reference(qrawlr::expect_child_node(node, "SymbolReference"));
+    parameters = parse_func_params(qrawlr::expect_child_node(node, "FunctionParameters"));
     // TODO: Handle Function Specifiers
 
     // Get SymbolFunctionName
@@ -405,22 +324,20 @@ void Program::handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* 
             DuplicateHandling::Keep
         );
     }
+    return sym;
 }
 
-void Program::handle_tree_node_optional_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut)
+Datatype<> Program::parse_optional_datatype(qrawlr::ParseTreeNodeRef node)
 {
     if (!qrawlr::has_child_node(node, "Datatype")) // No return type specified
-    {
-        *(Datatype<>*)pDatatypeOut = DT_NAMED("void", false);
-        return;
-    }
+        return DT_NAMED("void", false);
 
-    handle_tree_node(qrawlr::expect_child_node(node, "Datatype"), "Datatype", pDatatypeOut);
+    return parse_datatype(qrawlr::expect_child_node(node, "Datatype"));
 }
 
-void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParamsOut)
+Parameter_Decl Program::parse_func_params(qrawlr::ParseTreeNodeRef node)
 {
-    auto& parameters = *(Parameter_Decl*)pParamsOut;
+    Parameter_Decl parameters;
 
     for (auto tree_ref : node->get_children())
     {
@@ -431,8 +348,8 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
         if (param_node->get_name() == "Normal")
         {
             Parameter param;
-            handle_tree_node(qrawlr::expect_child_node(param_node, "Datatype"), "Datatype", &param.datatype);
-            handle_tree_node(qrawlr::expect_child_node(param_node, "Identifier"), "Identifier", &param.name);
+            param.datatype = parse_datatype(qrawlr::expect_child_node(param_node, "Datatype"));
+            param.name = parse_identifier(qrawlr::expect_child_node(param_node, "Identifier"));
             parameters.named_parameters.push_back(param);
 
             // Check if param is macro
@@ -459,14 +376,16 @@ void Program::handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* 
         }
         else
         {
-            throw QinpError::from_node("[*Program::handle_tree_node_func_params*]: Unhandled parameter type!", node);
+            throw QinpError::from_node("[*Program::parse_func_params*]: Unhandled parameter type!", node);
         }
     }
+
+    return parameters;
 }
 
-void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlagsOut)
+qrawlr::Flags<ImportSpecifier> Program::parse_import_specifiers(qrawlr::ParseTreeNodeRef node)
 {
-    auto& flags = *(qrawlr::Flags<ImportSpecifier>*)pFlagsOut;
+    qrawlr::Flags<ImportSpecifier> flags;
 
     for (auto child : node->get_children())
     {
@@ -482,20 +401,20 @@ void Program::handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, 
         else if (value == "defer")
             flags.set(ImportSpecifier::Defer);
         else
-            throw QinpError::from_node("Unknown import specifier '" + value + "'", child);
+            throw QinpError::from_node("[*Program::parse_import_specifiers*]: Unknown import specifier '" + value + "'", child);
     }
+
+    return flags;
 }
 
-void Program::handle_tree_node_literal_integer(qrawlr::ParseTreeNodeRef node, void* pIntegerOut)
+Expression<> Program::parse_literal_integer(qrawlr::ParseTreeNodeRef node)
 {
-	(void)pIntegerOut;
-	throw QinpError::from_node("[*Program::handle_tree_node_literal_int*]: Not implemented yet!", node);
+	throw QinpError::from_node("[*Program::parse_literal_integer*]: Not implemented yet!", node);
 }
 
-void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pStringOut)
+std::string Program::parse_literal_string(qrawlr::ParseTreeNodeRef node)
 {
-    std::string& string_out = *(std::string*)pStringOut;
-    string_out.clear();
+    std::string string_out;
 
     for (auto child : node->get_children())
     {
@@ -505,19 +424,19 @@ void Program::handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, voi
             continue;
         }
 
-		char chr;
-		handle_tree_node(qrawlr::expect_node(child, "EscapeSequence"), "EscapeSequence", &chr);
+		char chr = parse_escape_sequence(qrawlr::expect_node(child));
 		string_out.push_back(chr);
     }
+
+    return string_out;
 }
 
-void Program::handle_tree_node_literal_char(qrawlr::ParseTreeNodeRef node, void* pCharOut)
+char Program::parse_literal_char(qrawlr::ParseTreeNodeRef node)
 {
-	(void)pCharOut;
-	throw QinpError::from_node("[*Program::handle_tree_node_literal_char*]: Not implemented yet!", node);
+	throw QinpError::from_node("[*Program::parse_literal_char*]: Not implemented yet!", node);
 }
 
-void Program::handle_tree_node_escape_sequence(qrawlr::ParseTreeNodeRef node, void* pCharOut)
+char Program::parse_escape_sequence(qrawlr::ParseTreeNodeRef node)
 {
 	static const std::map<char, char> sequences = {
         { '0',  '\0' },
@@ -535,53 +454,56 @@ void Program::handle_tree_node_escape_sequence(qrawlr::ParseTreeNodeRef node, vo
     };
 
     std::string seq = qrawlr::expect_child_leaf(node, "0")->get_value();
+
     if (seq[0] == 'x')
     {
-        *(char*)pCharOut = (char)std::stoi(seq.substr(1), nullptr, 16);
+        return (char)std::stoi(seq.substr(1), nullptr, 16);
     }
     else
     {
         auto it = sequences.find(seq[0]);
+
         if (it == sequences.end())
             throw QinpError::from_node("Unknown escape sequence", node);
-		*(char*)pCharOut = it->second;
+
+		return it->second;
     }
 }
 
-void Program::handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_comment(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
     (void)node;
 
     // TODO: comment extraction
 }
 
 
-void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut)
+Datatype<> Program::parse_datatype(qrawlr::ParseTreeNodeRef node)
 {
-    auto& dt = *(Datatype<>*)pDatatypeOut;
+    Datatype<> dt;
 
     if (qrawlr::has_child_node(node, "DatatypeBlueprint"))
     {
         // TODO: More elaborate blueprint handling
-        std::string identifier;
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeBlueprint.Identifier"), "Identifier", &identifier);
-        dt = DT_MACRO(identifier, false);
-        return;
+        std::string identifier = parse_identifier(qrawlr::expect_child_node(node, "DatatypeBlueprint.Identifier"));
+        return DT_MACRO(identifier, false);
     }
     else if (qrawlr::has_child_node(node, "DatatypeFunction"))
     {
         // TODO: Handle constness
-        Datatype return_type;
+        Datatype return_type = parse_optional_datatype(qrawlr::expect_child_node(node, "DatatypeFunction.OptionalDatatype"));
+        Parameter_Decl decl_params = parse_func_params(qrawlr::expect_child_node(node, "DatatypeFunction.DatatypeFunctionParameters"));
         Parameter_Types parameters;
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.OptionalDatatype"), "OptionalDatatype", &return_type);
-        handle_tree_node(qrawlr::expect_child_node(node, "DatatypeFunction.DatatypeFunctionParameters"), "DatatypeFunctionParameters", &parameters);
-        dt = DT_FUNCTION(return_type, parameters, false);
-        return;
+
+        for (const auto& p : decl_params.named_parameters)
+            parameters.push_back(p.datatype);
+
+        return DT_FUNCTION(return_type, parameters, false);
     }
     
     node = qrawlr::expect_child_node(node, "DatatypeNamed");
     auto& children = node->get_children();
+
     for (auto it = children.begin(); it != children.end(); ++it)
     {
         auto elem = qrawlr::expect_node(*it);
@@ -595,7 +517,7 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         if (elem->get_name() == "SymbolReference")
         {
             SymbolPath name_path;
-            handle_tree_node(elem, "SymbolReference", &name_path);
+            name_path = parse_symbol_reference(elem);
             // TODO: Could use SymbolPath instead of string?
             dt = DT_NAMED(name_path.to_string(), is_const);
         }
@@ -607,34 +529,36 @@ void Program::handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDa
         {
             // TODO: Implementation
             Expression<> expr;
-            handle_tree_node(elem, "Expression", &expr);
+            expr = parse_expression(elem);
             if (!expr->is_const_expr())
-                throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Expected array size constexpr!", node);
+                throw QinpError::from_node("Expected array size constexpr!", elem);
             auto result = expr->eval_const_expr();
 
-            throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Cannot evaluate constexpr at the moment!", node);
+            throw QinpError::from_node("[*Program::parse_datatype*]: Cannot evaluate constexpr at the moment!", elem);
             int num_elements = 1;
             dt = DT_ARRAY(num_elements, dt, is_const);
         }
         else if (elem->get_name() == "Reference")
         {
             // TODO: Implementation
-            throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Handling of datatype reference not implemented yet!", node);
+            throw QinpError::from_node("[*Program::parse_datatype*]: Handling of datatype reference not implemented yet!", node);
             dt = DT_REFERENCE(dt, is_const);
         }
         else
         {
-            throw QinpError::from_node("[*Program::handle_tree_node_datatype*]: Unhandled element type!", node);
+            throw QinpError::from_node("[*Program::parse_datatype*]: Unhandled element type!", node);
         }
     }
+
+    return dt;
 }
 
-void Program::handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pStringOut)
+std::string Program::parse_identifier(qrawlr::ParseTreeNodeRef node)
 {
-    *(std::string*)pStringOut = qrawlr::expect_child_leaf(node, "0")->get_value();
+    return qrawlr::expect_child_leaf(node, "0")->get_value();
 }
 
-void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPathOut)
+SymbolPath Program::parse_symbol_reference(qrawlr::ParseTreeNodeRef node)
 {
     std::vector<std::string> elements;
     bool is_from_root = qrawlr::has_child_leaf(node, "0");
@@ -643,16 +567,15 @@ void Program::handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, v
     for (std::size_t i = is_from_root ? 1 : 0; i < children.size(); ++i)
     {
         std::string identifier;
-        handle_tree_node(children[i], "Identifier", &identifier);
+        identifier = parse_identifier(qrawlr::expect_node(children[i]));
         elements.push_back(identifier);
     }
 
-    *(SymbolPath*)pPathOut = SymbolPath(elements, is_from_root);
+    return SymbolPath(elements, is_from_root);
 }
 
-void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_defer(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
     (void)node;
 
     // TODO: Proper deferring
@@ -661,12 +584,11 @@ void Program::handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* p
     m_deferred_translation_units.pop();
 }
 
-void Program::handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
 
     Symbol symEnum;
-    handle_tree_node(qrawlr::expect_child_node(node, "EnumHeader"), "EnumHeader", &symEnum);
+    symEnum = parse_enum_header(qrawlr::expect_child_node(node, "EnumHeader"));
 
     if (qrawlr::has_child_node(node, "EnumDeclaration"))
     {
@@ -674,20 +596,20 @@ void Program::handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node,
     }
     else if (qrawlr::has_child_node(node, "EnumDefinition"))
     {
-        handle_tree_node(qrawlr::expect_child_node(node, "EnumDefinition"), "EnumDefinition", &symEnum);
+        parse_enum_def(qrawlr::expect_child_node(node, "EnumDefinition"), symEnum);
     }
     else
     {
-        throw QinpError::from_node("[*Program::handle_tree_node_stmt_enum_decl_def*]: Missing 'EnumDeclaration' or 'EnumDefinition' node!", node);
+        throw QinpError::from_node("[*Program::parse_stmt_enum_decl_def*]: Missing 'EnumDeclaration' or 'EnumDefinition' node!", node);
     }
 }
 
-void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pEnumSymOut)
+Symbol<> Program::parse_enum_header(qrawlr::ParseTreeNodeRef node)
 {
-    auto& enumSym = *(Symbol<>*)pEnumSymOut;
+    Symbol<> enumSym;
 
     SymbolPath enum_path;
-    handle_tree_node(qrawlr::expect_child_node(node, "SymbolReference"), "SymbolReference", &enum_path);
+    enum_path = parse_symbol_reference(qrawlr::expect_child_node(node, "SymbolReference"));
     
     enumSym = curr_tu()->get_symbol_from_path(enum_path.get_parent_path()).add_child(
         Symbol<SymbolEnum>::make(
@@ -696,26 +618,26 @@ void Program::handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* 
         ),
         DuplicateHandling::Keep
     );
+
+    return enumSym;
 }
 
-void Program::handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym)
+void Program::parse_enum_def(qrawlr::ParseTreeNodeRef node, Symbol<>& enumSym)
 {
     for (auto& child : qrawlr::expect_child_node(node, "EnumMemberList")->get_children())
-        handle_tree_node(child, "EnumMemberDefinition", pEnumSym);
+        parse_enum_member_def(qrawlr::expect_node(child), enumSym);
 }
 
-void Program::handle_tree_node_enum_member_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym)
+void Program::parse_enum_member_def(qrawlr::ParseTreeNodeRef node, Symbol<>& enumSym)
 {
-    auto& enumSym = *(Symbol<SymbolEnum>*)pEnumSym;
-
     std::string name;
-    handle_tree_node(qrawlr::expect_child_node(node, "Identifier"), "Identifier", &name);
+    name = parse_identifier(qrawlr::expect_child_node(node, "Identifier"));
 
-    std::size_t value = enumSym->next_value();
+    std::size_t value = enumSym.as_type<SymbolEnum>()->next_value();
     if (qrawlr::has_child_node(node, "Expression"))
     {
         // TODO: Implementation
-        throw QinpError::from_node("[*Program::handle_tree_node_enum_member_def*]: Member with initializer not implemented yet!", node);
+        throw QinpError::from_node("[*Program::parse_enum_member_def*]: Member with initializer not implemented yet!", node);
     }
 
     enumSym.add_child(
@@ -727,19 +649,17 @@ void Program::handle_tree_node_enum_member_def(qrawlr::ParseTreeNodeRef node, vo
     );
 }
 
-void Program::handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
-
     VariableDeclarators declarators;
     Datatype<> datatype;
     std::string name;
     Expression<> initializer;
 
-    handle_tree_node(qrawlr::expect_child_node(node, "VariableDeclarators"), "VariableDeclarators", &declarators);
-    handle_tree_node(qrawlr::expect_child_node(node, "OptionalDatatype"), "OptionalDatatype", &datatype);
-    handle_tree_node(qrawlr::expect_child_node(node, "VariableName.Identifier"), "Identifier", &name);
-    handle_tree_node(qrawlr::expect_child_node(node, "VariableInitializer"), "VariableInitializer", &initializer);
+    declarators = parse_var_declarators(qrawlr::expect_child_node(node, "VariableDeclarators"));
+    datatype = parse_optional_datatype(qrawlr::expect_child_node(node, "OptionalDatatype"));
+    name = parse_identifier(qrawlr::expect_child_node(node, "VariableName.Identifier"));
+    initializer = parse_var_initializer(qrawlr::expect_child_node(node, "VariableInitializer"));
 
     curr_tu()->curr_symbol().add_child(
         Symbol<SymbolVariable>::make(
@@ -754,9 +674,9 @@ void Program::handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, 
     // TODO: Append initializer to current space body
 }
 
-void Program::handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, void* pDeclaratorsOut)
+VariableDeclarators Program::parse_var_declarators(qrawlr::ParseTreeNodeRef node)
 {
-    auto& declarators = *(VariableDeclarators*)pDeclaratorsOut;
+    VariableDeclarators declarators;
 
     for (auto& child : node->get_children())
     {
@@ -769,26 +689,27 @@ void Program::handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, vo
         else if (value == "const")
             declarators.is_const = true;
         else
-            throw QinpError::from_node("[*Program::handle_tree_node_var_declarators*]: Unexpected declarator '" + value + "'!", child);
+            throw QinpError::from_node("[*Program::parse_var_declarators*]: Unexpected declarator '" + value + "'!", child);
     }
+
+    return declarators;
 }
 
-void Program::handle_tree_node_var_initializer(qrawlr::ParseTreeNodeRef node, void* pInitializerOut)
+Expression<> Program::parse_var_initializer(qrawlr::ParseTreeNodeRef node)
 {
+    Expression<> initializer;
     if (qrawlr::has_child_node(node, "Expression"))
-        handle_tree_node(qrawlr::expect_child_node(node, "Expression"), "Expression", pInitializerOut);
-    else
-        *(Expression<>*)pInitializerOut = nullptr;
+        return parse_expression(qrawlr::expect_child_node(node, "Expression"));
+
+    return nullptr;
 }
 
-void Program::handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_return(qrawlr::ParseTreeNodeRef node)
 {
-    (void)pUnused;
-
     // TODO: Check if current scope allows return statement
 
     Expression<> expr;
-    handle_tree_node(qrawlr::expect_child_node(node, "Expression"), "Expression", &expr);
+    expr = parse_expression(qrawlr::expect_child_node(node, "Expression"));
 
     curr_tu()->curr_symbol().as_type<SymbolSpace>()->append_expr(
         Expression<ExpressionReturn>::make(
@@ -798,10 +719,8 @@ void Program::handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, void* pUnused)
+void Program::parse_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node)
 {
-	(void)pUnused;
-
 	auto gen_space = [](Symbol<> baseSym, const std::string& typeName, const qrawlr::Position& position)
 	{
 		return baseSym.add_child(
@@ -813,7 +732,7 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
     auto if_elif_helper = [this, gen_space](const std::string& typeName, qrawlr::ParseTreeNodeRef stmtNode)
     {
         Expression<> condition;
-        handle_tree_node(qrawlr::expect_child_node(stmtNode, "Expression"), "Expression", &condition);
+        condition = parse_expression(qrawlr::expect_child_node(stmtNode, "Expression"));
     
 		auto space = gen_space(curr_tu()->curr_symbol(), typeName, stmtNode->get_pos_begin());
 
@@ -825,7 +744,7 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
 		).as_type<ExpressionIf>();
 
         curr_tu()->enter_symbol(space);
-        handle_tree_node(qrawlr::expect_child_node(stmtNode, "CodeBlock"), "CodeBlock", nullptr);
+        parse_code_block(qrawlr::expect_child_node(stmtNode, "CodeBlock"));
         curr_tu()->leave_symbol();
 
         return expr;
@@ -858,40 +777,45 @@ void Program::handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, 
 		exprTemp->set_body_false(spaceElse);
 
 		curr_tu()->enter_symbol(spaceElse);
-        handle_tree_node(qrawlr::expect_child_node(nodeElse, "CodeBlock"), "CodeBlock", nullptr);
+        parse_code_block(qrawlr::expect_child_node(nodeElse, "CodeBlock"));
 		curr_tu()->leave_symbol();
 	}
 }
 
-void Program::handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expression(qrawlr::ParseTreeNodeRef node)
 {
-    Expression<> expr_to_add = nullptr;
-    if (!pExpressionOut)
-        pExpressionOut = &expr_to_add;
-    
-    handle_appr_expr_prec(qrawlr::expect_child_node(node, "0"), pExpressionOut);
+    Expression<> expr_to_add = parse_appr_expr_prec(qrawlr::expect_child_node(node, "0"));
 
-    // When pExpressionOut was null on call, expr_to_add is now non-null
     if (expr_to_add)
         curr_tu()->curr_symbol().as_type<SymbolSpace>()->append_expr(expr_to_add);
+
+    return expr_to_add;
 }
 
-void Program::handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_appr_expr_prec(qrawlr::ParseTreeNodeRef node)
 {
-    static const std::set<std::string> valid_names = {
-        "ExprPrec1",  "ExprPrec2",  "ExprPrec3",
-        "ExprPrec4",  "ExprPrec5",  "ExprPrec6",
-        "ExprPrec7",  "ExprPrec8",  "ExprPrec9",
-        "ExprPrec10", "ExprPrec11", "ExprPrec12",
-        "ExprPrec13", "ExprPrec14", "ExprPrec15",
-    };
-
-    handle_tree_node_one_of(node, valid_names, pExpressionOut);
+    const std::string& name = node->get_name();
+    if      (name == "ExprPrec1")  return parse_expr_prec_1(node);
+    else if (name == "ExprPrec2")  return parse_expr_prec_2(node);
+    else if (name == "ExprPrec3")  return parse_expr_prec_3(node);
+    else if (name == "ExprPrec4")  return parse_expr_prec_4(node);
+    else if (name == "ExprPrec5")  return parse_expr_prec_5(node);
+    else if (name == "ExprPrec6")  return parse_expr_prec_6(node);
+    else if (name == "ExprPrec7")  return parse_expr_prec_7(node);
+    else if (name == "ExprPrec8")  return parse_expr_prec_8(node);
+    else if (name == "ExprPrec9")  return parse_expr_prec_9(node);
+    else if (name == "ExprPrec10") return parse_expr_prec_10(node);
+    else if (name == "ExprPrec11") return parse_expr_prec_11(node);
+    else if (name == "ExprPrec12") return parse_expr_prec_12(node);
+    else if (name == "ExprPrec13") return parse_expr_prec_13(node);
+    else if (name == "ExprPrec14") return parse_expr_prec_14(node);
+    else if (name == "ExprPrec15") return parse_expr_prec_15(node);
+    else throw QinpError::from_node("[*Program::parse_appr_expr_prec*]: Unhandled expr prec: " + name, node);
 }
 
-void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_1(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Right_to_Left,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -910,7 +834,7 @@ void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* 
             else if (opInfo.value == "^=") opType = BinaryOperatorType::AssignLogicalXor;
             else if (opInfo.value == "<<=") opType = BinaryOperatorType::AssignShiftLeft;
             else if (opInfo.value == ">>=") opType = BinaryOperatorType::AssignShiftRight;
-            else throw QinpError::from_pos("Unknown operator'" + opInfo.value + "'!", opInfo.position);
+            else throw QinpError::from_pos("Unknown operator: '" + opInfo.value + "'!", opInfo.position);
 
             return Expression<ExpressionBinaryOperator>::make(
                 opType,
@@ -924,15 +848,15 @@ void Program::handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_2(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             if (opInfo.value != "||")
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_2*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_2*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = DT_NAMED("bool", false);
 
@@ -948,15 +872,15 @@ void Program::handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_3(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             if (opInfo.value != "&&")
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_3*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_3*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = DT_NAMED("bool", false);
 
@@ -972,15 +896,15 @@ void Program::handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_4(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             if (opInfo.value != "|")
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_4*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_4*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = exprLeft->get_datatype();
 
@@ -996,15 +920,15 @@ void Program::handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_5(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             if (opInfo.value != "^")
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_5*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_5*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = exprLeft->get_datatype();
 
@@ -1020,15 +944,15 @@ void Program::handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_6(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
         {
             if (opInfo.value != "&")
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_6*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_6*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = exprLeft->get_datatype();
 
@@ -1044,9 +968,9 @@ void Program::handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_7(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -1055,7 +979,7 @@ void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* 
 
             if (opInfo.value == "==") opType = BinaryOperatorType::Equal;
             else if (opInfo.value == "!=") opType = BinaryOperatorType::NotEqual;
-            else throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_7*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+            else throw QinpError::from_pos("[*Program::parse_expr_prec_7*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = DT_NAMED("bool", false);
 
@@ -1071,9 +995,9 @@ void Program::handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_8(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -1084,7 +1008,7 @@ void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* 
             else if (opInfo.value == "<") opType = BinaryOperatorType::Smaller;
             else if (opInfo.value == ">=") opType = BinaryOperatorType::GreaterEquals;
             else if (opInfo.value == ">") opType = BinaryOperatorType::Greater;
-            else throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_8*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+            else throw QinpError::from_pos("[*Program::parse_expr_prec_8*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = DT_NAMED("bool", false);
 
@@ -1100,9 +1024,9 @@ void Program::handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_9(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -1111,7 +1035,7 @@ void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* 
 
             if (opInfo.value == "<<") opType = BinaryOperatorType::ShiftLeft;
             else if (opInfo.value == ">>") opType = BinaryOperatorType::ShiftRight;
-            else throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_9*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+            else throw QinpError::from_pos("[*Program::parse_expr_prec_9*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = exprLeft->get_datatype();
 
@@ -1127,9 +1051,9 @@ void Program::handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* 
     );
 }
 
-void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_10(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -1138,7 +1062,7 @@ void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void*
 
             if (opInfo.value == "+") opType = BinaryOperatorType::Sum;
             else if (opInfo.value == "-") opType = BinaryOperatorType::Difference;
-            else throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_10*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+            else throw QinpError::from_pos("[*Program::parse_expr_prec_10*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = exprLeft->get_datatype();
 
@@ -1154,9 +1078,9 @@ void Program::handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void*
     );
 }
 
-void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_11(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         true,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -1166,7 +1090,7 @@ void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void*
             if (opInfo.value == "*") opType = BinaryOperatorType::Equal;
             else if (opInfo.value == "/") opType = BinaryOperatorType::NotEqual;
             else if (opInfo.value == "%") opType = BinaryOperatorType::Modulo;
-            else throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_11*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+            else throw QinpError::from_pos("[*Program::parse_expr_prec_11*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
 
             auto datatype = exprLeft->get_datatype();
 
@@ -1182,9 +1106,9 @@ void Program::handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void*
     );
 }
 
-void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_12(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_unary_op(
+    return expr_parse_helper_unary_op(
         node, EvaluationOrder::Right_to_Left,
         [&](OperatorInfo opInfo, Expression<> expr) -> Expression<>
         {
@@ -1246,7 +1170,7 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
                 datatype = DT_POINTER(datatype, false);
             }
             else
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_12*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_12*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
         
             return Expression<ExpressionUnaryOperator>::make(
                 opType,
@@ -1259,8 +1183,7 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
         {
             if (opTree->get_name() == "ExprOpTypeCast")
             {
-				Datatype<> target_type;
-				handle_tree_node(qrawlr::expect_child_node(opTree, "Datatype"), "Datatype", &target_type);
+				Datatype<> target_type = parse_datatype(qrawlr::expect_child_node(opTree, "Datatype"));
 
 				// TODO: Check for user defined conversion (implicit function call)
 
@@ -1270,16 +1193,16 @@ void Program::handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void*
 				);
             }
             else
-                throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator!", opTree);
+                throw QinpError::from_node("[*Program::parse_expr_prec_12*]: Unhandled operator!", opTree);
 
             return nullptr;
         }
     );
 }
 
-void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_13(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_unary_op(
+    return expr_parse_helper_unary_op(
         node, EvaluationOrder::Left_to_Right,
         [&](OperatorInfo opInfo, Expression<> expr) -> Expression<>
         {
@@ -1287,14 +1210,14 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
 
             if (opInfo.value == "++")
             {
-                QinpError::from_pos("[*Program::handle_tree_node_expr_prec_13*]: Postfix increment not implemented yet!", opInfo.position);
+                QinpError::from_pos("[*Program::parse_expr_prec_13*]: Postfix increment not implemented yet!", opInfo.position);
             }
             else if (opInfo.value == "--")
             {
-                QinpError::from_pos("[*Program::handle_tree_node_expr_prec_13*]: Postfix decrement not implemented yet!", opInfo.position);
+                QinpError::from_pos("[*Program::parse_expr_prec_13*]: Postfix decrement not implemented yet!", opInfo.position);
             }
             else
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator '" + opInfo.value + "'", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_13*]: Unhandled operator '" + opInfo.value + "'", opInfo.position);
 
             return nullptr;
         },
@@ -1319,13 +1242,13 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
                     if (qrawlr::is_node(child, "Expression"))
                     {
                         Expression<> expr;
-                        handle_tree_node(child, "Expression", &expr);
+                        expr = parse_expression(qrawlr::expect_node(child));
                         arguments.push_back(expr);
                     }
                     else if (qrawlr::is_leaf(child))
-                        throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Variadic unpacking not implemented yet!", child);
+                        throw QinpError::from_node("[*Program::parse_expr_prec_13*]: Variadic unpacking not implemented yet!", child);
                     else
-                        throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Unhandled child in 'FunctionCallArgument'!", child);
+                        throw QinpError::from_node("[*Program::parse_expr_prec_13*]: Unhandled child in 'FunctionCallArgument'!", child);
                 }
 
                 return make_ExprFunctionCall(expr, arguments);
@@ -1333,23 +1256,23 @@ void Program::handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void*
             else if (opTree->get_name() == "ExprOpSubscript")
             {
                 Expression<> subExpr;
-                handle_tree_node(qrawlr::expect_child_node(opTree, "Expression"), "Expression", &subExpr);
+                subExpr = parse_expression(qrawlr::expect_child_node(opTree, "Expression"));
 
                 return Expression<ExpressionSubscript>::make(
                     expr, subExpr
                 );
             }
             else
-                throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_13*]: Unhandled operator!", opTree);
+                throw QinpError::from_node("[*Program::parse_expr_prec_13*]: Unhandled operator!", opTree);
 
             return nullptr;
         }
     );
 }
 
-void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_14(qrawlr::ParseTreeNodeRef node)
 {
-    *(Expression<>*)pExpressionOut = expr_parse_helper_binary_op(
+    return expr_parse_helper_binary_op(
         node, EvaluationOrder::Left_to_Right,
         false,
         [&](OperatorInfo opInfo, Expression<> exprLeft, Expression<> exprRight) -> Expression<>
@@ -1384,14 +1307,14 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
                     ;
                 }
                 
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_14*]: Member access not implemented yet!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_14*]: Member access not implemented yet!", opInfo.position);
             }
             else if (opInfo.value == "->")
             {
-                throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_14*]: Pointer member access not implemented yet!", opInfo.position);
+                throw QinpError::from_pos("[*Program::parse_expr_prec_14*]: Pointer member access not implemented yet!", opInfo.position);
             }
             
-            throw QinpError::from_pos("[*Program::handle_tree_node_expr_prec_14*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
+            throw QinpError::from_pos("[*Program::parse_expr_prec_14*]: Unhandled operator '" + opInfo.value + "'!", opInfo.position);
         
             return exprLeft;
         },
@@ -1399,39 +1322,41 @@ void Program::handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void*
     );
 }
 
-void Program::handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut)
+Expression<> Program::parse_expr_prec_15(qrawlr::ParseTreeNodeRef node)
 {
     auto sub_node = qrawlr::expect_child_node(node, "0");
     if (sub_node->get_name() == "ExprPrec1")
-        handle_appr_expr_prec(sub_node, pExpressionOut);
+        return parse_appr_expr_prec(sub_node);
     else if (sub_node->get_name() == "LambdaDefinition")
-        throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_15*]: LambdaDefinition not implemented yet!", sub_node);
+        throw QinpError::from_node("[*Program::parse_expr_prec_15*]: LambdaDefinition not implemented yet!", sub_node);
     else if (sub_node->get_name() == "Identifier")
     {
-        std::string name;
-        handle_tree_node(sub_node, "Identifier", &name);
-        *(Expression<>*)pExpressionOut = Expression<ExpressionIdentifier>::make(
+        std::string name = parse_identifier(sub_node);
+
+        return Expression<ExpressionIdentifier>::make(
             name,
             sub_node->get_pos_begin()
         );
     }
     else if (sub_node->get_name() == "LiteralInteger")
 	{
-		handle_tree_node(sub_node, "LiteralInteger", pExpressionOut);
+		return parse_literal_integer(sub_node);
 	}
 	else if (sub_node->get_name() == "LiteralString")
 	{
-		std::string value;
-		handle_tree_node(sub_node, "LiteralString", &value);
-        *(Expression<>*)pExpressionOut = make_ExprString(value, sub_node->get_pos_begin());
+		std::string value = parse_literal_string(sub_node);
+
+        return make_ExprString(value, sub_node->get_pos_begin());
 	}
     else if (sub_node->get_name() == "LiteralChar")
 	{
-		char chr;
-		handle_tree_node(sub_node, "LiteralChar", &chr);
+		parse_literal_char(sub_node);
+        throw QinpError::from_node("[*Program::parse_expr_prec_15*]: LiteralChar parsing incomplete", sub_node);
 	}
     else
-        throw QinpError::from_node("[*Program::handle_tree_node_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
+        throw QinpError::from_node("[*Program::parse_expr_prec_15*]: Unhandled sub_node '" + sub_node->get_name() + "'!", node);
+        
+    return nullptr;
 }
 
 Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree)
@@ -1453,7 +1378,7 @@ Expression<> Program::expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superN
     }
 
     Expression<> expr;
-    handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)]), &expr);
+    expr = parse_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)]));
 
     while (id_curr != id_end)
     {
@@ -1502,15 +1427,15 @@ Expression<> Program::expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef super
     }
 
     Expression<> exprPrimary;
-    handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)]), &exprPrimary);
+    exprPrimary = parse_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)]));
 
     while (id_curr != id_end)
     {
         Expression<> exprSecondary;
         auto opTree = qrawlr::expect_child(children[move_id(id_curr)], "0");
-        handle_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)]), &exprSecondary);
+        exprSecondary = parse_appr_expr_prec(qrawlr::expect_node(children[move_id(id_curr)]));
 
-        // TODO: Future: Check if overload exists (in EVERY handle_tree_node_expr_prec_*)
+        // TODO: Future: Check if overload exists (in EVERY parse method*)
 
         if (add_implicit_conversion)
             add_implicit_conversion_to_same_datatype(exprPrimary, exprSecondary);

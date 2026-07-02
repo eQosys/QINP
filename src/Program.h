@@ -9,6 +9,9 @@
 
 #include "libQrawlr.h"
 #include "TranslationUnit.h"
+#include "utility/Parameters.h"
+#include "utility/ImportSpecifiers.h"
+#include "symbols/SymbolVariable.h"
 #include "errors/QinpError.h"
 #include "utility/Architecture.h"
 #include "utility/Platform.h"
@@ -52,52 +55,53 @@ public:
     void import_source_file(std::string path_str, bool skip_duplicate, bool ignore_import_dirs = false);
     void import_source_code(const std::string& code_str, const std::string& path_str = "<inline>");
 private:
-    void handle_tree_node(qrawlr::ParseTreeRef tree, const std::string& name, void* pData);
-    void handle_tree_node_one_of(qrawlr::ParseTreeRef tree, const std::set<std::string>& names, void* pData);
+    
+    
 private:
-    void handle_tree_node_code_block(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_stmt_import(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_stmt_space(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_func_header(qrawlr::ParseTreeNodeRef node, void* pFuncSymOut);
-    void handle_tree_node_optional_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut);
-    void handle_tree_node_func_params(qrawlr::ParseTreeNodeRef node, void* pParamsOut);
-    void handle_tree_node_import_specifiers(qrawlr::ParseTreeNodeRef node, void* pFlagsOut);
-    void handle_tree_node_literal_integer(qrawlr::ParseTreeNodeRef node, void* pIntegerOut);
-    void handle_tree_node_literal_string(qrawlr::ParseTreeNodeRef node, void* pStringOut);
-    void handle_tree_node_literal_char(qrawlr::ParseTreeNodeRef node, void* pCharOut);
-    void handle_tree_node_escape_sequence(qrawlr::ParseTreeNodeRef node, void* pCharOut);
-    void handle_tree_node_comment(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_datatype(qrawlr::ParseTreeNodeRef node, void* pDatatypeOut);
-    void handle_tree_node_identifier(qrawlr::ParseTreeNodeRef node, void* pStringOut);
-    void handle_tree_node_symbol_reference(qrawlr::ParseTreeNodeRef node, void* pPathOut);
-    void handle_tree_node_stmt_defer(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_enum_header(qrawlr::ParseTreeNodeRef node, void* pEnumSymOut);
-    void handle_tree_node_enum_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym);
-    void handle_tree_node_enum_member_def(qrawlr::ParseTreeNodeRef node, void* pEnumSym);
-    void handle_tree_node_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_var_declarators(qrawlr::ParseTreeNodeRef node, void* pDeclaratorsOut);
-    void handle_tree_node_var_initializer(qrawlr::ParseTreeNodeRef node, void* pInitializerOut);
-    void handle_tree_node_stmt_return(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node, void* pUnused);
-    void handle_tree_node_expression(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_appr_expr_prec(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_1(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_2(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_3(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_4(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_5(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_6(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_7(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_8(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_9(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_10(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_11(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_12(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_13(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_14(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
-    void handle_tree_node_expr_prec_15(qrawlr::ParseTreeNodeRef node, void* pExpressionOut);
+    void parse_code_block(qrawlr::ParseTreeNodeRef node);
+    void parse_code_block_item(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_import(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_space(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_func_decl_def(qrawlr::ParseTreeNodeRef node);
+    Symbol<> parse_func_header(qrawlr::ParseTreeNodeRef node);
+    Datatype<> parse_optional_datatype(qrawlr::ParseTreeNodeRef node);
+    Parameter_Decl parse_func_params(qrawlr::ParseTreeNodeRef node);
+    qrawlr::Flags<ImportSpecifier> parse_import_specifiers(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_literal_integer(qrawlr::ParseTreeNodeRef node);
+    std::string parse_literal_string(qrawlr::ParseTreeNodeRef node);
+    char parse_literal_char(qrawlr::ParseTreeNodeRef node);
+    char parse_escape_sequence(qrawlr::ParseTreeNodeRef node);
+    void parse_comment(qrawlr::ParseTreeNodeRef node);
+    Datatype<> parse_datatype(qrawlr::ParseTreeNodeRef node);
+    std::string parse_identifier(qrawlr::ParseTreeNodeRef node);
+    SymbolPath parse_symbol_reference(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_defer(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_enum_decl_def(qrawlr::ParseTreeNodeRef node);
+    Symbol<> parse_enum_header(qrawlr::ParseTreeNodeRef node);
+    void parse_enum_def(qrawlr::ParseTreeNodeRef node, Symbol<>& enumSym);
+    void parse_enum_member_def(qrawlr::ParseTreeNodeRef node, Symbol<>& enumSym);
+    void parse_stmt_var_decl_def(qrawlr::ParseTreeNodeRef node);
+    VariableDeclarators parse_var_declarators(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_var_initializer(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_return(qrawlr::ParseTreeNodeRef node);
+    void parse_stmt_if_elif_else(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expression(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_appr_expr_prec(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_1(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_2(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_3(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_4(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_5(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_6(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_7(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_8(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_9(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_10(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_11(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_12(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_13(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_14(qrawlr::ParseTreeNodeRef node);
+    Expression<> parse_expr_prec_15(qrawlr::ParseTreeNodeRef node);
     Expression<> expr_parse_helper_unary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, ExprGeneratorUnaryOpStr gen_expr_op_str, ExprGeneratorUnaryOpTree gen_expr_op_tree);
     Expression<> expr_parse_helper_binary_op(qrawlr::ParseTreeNodeRef superNode, EvaluationOrder eval_order, bool add_implicit_conversion, ExprGeneratorBinaryOpStr gen_expr_op_str, ExprGeneratorBinaryOpTree gen_expr_op_tree);
 private:
