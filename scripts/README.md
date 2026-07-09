@@ -1,0 +1,1 @@
+Run all scripts from the project's root directory

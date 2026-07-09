@@ -8,9 +8,9 @@ fi
 
 if [ "${CONFIG}" = "all" ]; then
     echo "Running build script for Configurations 'Release', 'Debug' & 'RelWithDebInfo'..."
-    ./build.sh Release &
-    ./build.sh Debug &
-    ./build.sh RelWithDebInfo &
+    ./scripts/build.sh Release &
+    ./scripts/build.sh Debug &
+    ./scripts/build.sh RelWithDebInfo &
     exit
 fi
 
