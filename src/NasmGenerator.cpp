@@ -490,8 +490,8 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 
 		if (
 			(isUnsignedInt(oldType) && isInteger(newType)) ||
-			(isInteger(oldType) && isPointer(newType)) ||
-			(isBool(oldType) && (isInteger(newType) || isPointer(newType))) ||
+			(isInteger(oldType) && (isPointer(newType) || isEnum(ngi.program, newType))) ||
+			(isBool(oldType) && (isInteger(newType) || isPointer(newType) || isEnum(ngi.program, newType))) ||
 			(isEnum(ngi.program, oldType))
 			)
 		{
@@ -509,7 +509,7 @@ void genExpr(NasmGenInfo& ngi, const Expression* expr)
 			break;
 		}
 
-		if ((isPointer(oldType) || isFuncPtr(oldType)) && (((isPointer(newType) || isFuncPtr(newType) || isInteger(newType)))))
+		if ((isPointer(oldType) || isFuncPtr(oldType)) && (((isPointer(newType) || isFuncPtr(newType) || isInteger(newType) || isEnum(ngi.program, newType)))))
 		{
 			break;
 		}
@@ -1178,7 +1178,17 @@ void genStatementAsm(NasmGenInfo& ngi, StatementRef statement)
 			else
 			{
 				primRegLToRVal(ngi);
-				ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegUsage(ngi) << "\n";
+				int retSize = getDatatypeSize(ngi.program, ngi.primReg.datatype);
+				if (retSize < 8)
+				{
+					if (isSignedInt(ngi.primReg.datatype))
+						ss << "  movsx rax, " << primRegName(retSize) << "\n";
+					else if (retSize == 4)
+						ss << "  mov eax, eax\n";
+					else
+						ss << "  movzx rax, " << primRegName(retSize) << "\n";
+				}
+				ss << "  mov " << basePtrOffset(statement->funcRetOffset) << ", " << primRegName(8) << "\n";
 			}
 		}
 		ss << "  mov rsp, rbp\n";
